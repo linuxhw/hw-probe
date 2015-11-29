@@ -1,0 +1,67 @@
+
+Copyright (C) 2014-2015 Andrey Ponomarenko's Linux Hardware Project
+All rights reserved.
+
+
+RELEASE INFORMATION
+
+Project:           HW Probe
+Version:           1.0
+Date:              2015-11-29
+
+
+This file explains how to install and setup environment
+for the tool in your computer.
+
+
+Content:
+
+   1. Requirements for Linux
+   2. Configure and Install
+   3. Usage
+
+
+1. REQUIREMENTS FOR LINUX
+=========================
+
+   1. Perl 5
+   2. hwinfo
+   3. curl
+   4. dmidecode
+   5. pciutils
+   6. usbutils
+
+1.1 Suggestions
+
+   1. hdparm
+   2. smartmontools
+   3. inxi
+   4. pnputils
+
+
+
+2. CONFIGURE AND INSTALL
+========================
+
+   This command will install a hw-probe program in the
+   PREFIX/bin system directory:
+
+     sudo make install prefix=PREFIX [/usr, /usr/local, ...]
+
+2.1 Remove
+
+     sudo make uninstall prefix=PREFIX
+
+
+
+3. USAGE
+========
+
+   Make a probe and upload result to the DB (run as root,
+   PC_NAME — any name of the computer):
+
+     hw-probe -all -upload -id PC_NAME
+
+
+
+Enjoy!

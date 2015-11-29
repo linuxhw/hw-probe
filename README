@@ -1,0 +1,34 @@
+NAME:
+  Hardware Probe Tool (HW Probe) is a tool to probe for hardware, check its operability and upload result to the Linux hardware DB: http://linux-hardware.org/
+  
+  You'll get an URL to view the probe of the computer. Probe — is a snapshot of your computer's hardware state and system logs.
+  
+  Sample probe: http://linux-hardware.org/index.php?probe=b394035f90
+  
+  Share your probes and logs with Linux developers in order to debug and fix problems on your computer. Simplify inventory of hardware and navigate over the computers in your company.
+
+INSTALL:
+  sudo make install prefix=/usr
+
+REQUIRES:
+  Perl 5
+  hwinfo
+  curl
+  dmidecode
+  pciutils
+  usbutils
+
+SUGGESTS:
+  hdparm
+  smartmontools
+  inxi
+  pnputils
+
+USAGE:
+  hw-probe -all -upload -id PC_NAME
+
+  Run as root, PC_NAME — any name of the computer.
+
+GROUP COMPUTERS (INVENTORY):
+  hw-probe -get-group
+  hw-probe -all -upload -id PC_NAME -group ID
