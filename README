@@ -1,5 +1,5 @@
 NAME:
-  Hardware Probe Tool (HW Probe) is a tool to probe for hardware, check its operability and upload result to the Linux hardware DB: http://linux-hardware.org/
+  Hardware Probe Tool (HW Probe) — a tool to probe for hardware, check its operability and upload result to the Linux hardware DB: http://linux-hardware.org
   
   You'll get an URL to view the probe of the computer. Probe — is a snapshot of your computer's hardware state and system logs.
   

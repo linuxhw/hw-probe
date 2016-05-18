@@ -240,6 +240,9 @@ OTHER OPTIONS
   -get-group
       Get group id.
 
+DATA LOCATION:
+  You can find created probes in the \"<HOME>/HW_PROBE\" directory.
+
 ";
 
 sub helpMsg() {
@@ -1500,7 +1503,7 @@ sub probeHW()
             $Mon{uc($V.$D)} = $ID;
         }
         
-        if($Device{"Type"}=~/touchpad|keyboard/
+        if($Device{"Type"}=~/touchpad/
         and $Bus eq "ps/2")
         {
             if(not $Sys{"Type"} or $Sys{"Type"} eq "desktop") {
@@ -2186,11 +2189,11 @@ sub probeHW()
         { # notebook or desktop
             if($Info=~/Type:[ ]*(.+?)[ ]*(\n|\Z)/)
             {
-                $Sys{"Type"} = lc($1);
-                $Sys{"Type"}=~s/ chassis//i;
+                my $CType = lc($1);
+                $CType=~s/ chassis//i;
                 
-                if($Sys{"Type"}=~/unknown|other/) {
-                    delete($Sys{"Type"});
+                if($CType!~/unknown|other/) {
+                    $Sys{"Type"} = $CType;
                 }
             }
         }
@@ -3453,6 +3456,9 @@ sub probeDistr()
         if($Name and $Release) {
             return lc($Name)."-".$Release;
         }
+        elsif($Name) {
+            return lc($Name);
+        }
     }
     
     my $OS_Rel = "";
@@ -3480,6 +3486,9 @@ sub probeDistr()
         
         if($Name and $Release) {
             return lc($Name)."-".lc($Release);
+        }
+        elsif($Name) {
+            return lc($Name);
         }
     }
     
