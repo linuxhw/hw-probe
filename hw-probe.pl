@@ -1,11 +1,11 @@
 #!/usr/bin/perl
 #########################################################################
-# Hardware Probe Tool 1.0
+# Hardware Probe Tool 1.1
 # A tool to probe for hardware and upload result to the Linux Hardware DB
 #
 # WWW: http://linux-hardware.org
 #
-# Copyright (C) 2014-2015 Andrey Ponomarenko's Linux Hardware Project
+# Copyright (C) 2014-2016 Andrey Ponomarenko's Linux Hardware Project
 #
 # Written by Andrey Ponomarenko
 # LinkedIn: http://www.linkedin.com/pub/andrey-ponomarenko/67/366/818
@@ -63,7 +63,7 @@ use Config;
 
 use strict;
 
-my $TOOL_VERSION = "1.0";
+my $TOOL_VERSION = "1.1";
 my $CmdName = basename($0);
 
 my $URL = "http://linux-hardware.org";
@@ -78,7 +78,7 @@ my $ORIG_DIR = cwd();
 my ($Help, $ShowVersion, $Probe, $Check, $Logs, $Show, $Compact, $Verbose,
 $All, $PC_Name, $Key, $Upload, $FixProbe, $Printers, $DumpVersion, $Source,
 $Debug, $PciIDs, $UsbIDs, $SdioIDs, $LogLevel, $ListProbes, $DumpACPI,
-$DecodeACPI, $Clean, $Scanners, $Group, $GetGroup);
+$DecodeACPI, $Clean, $Scanners, $Group, $GetGroup, $PnpIDs);
 
 my $TMP_DIR = tempdir(CLEANUP=>1);
 
@@ -119,6 +119,7 @@ GetOptions("h|help!" => \$Help,
   "pci-ids=s" => \$PciIDs,
   "usb-ids=s" => \$UsbIDs,
   "sdio-ids=s" => \$SdioIDs,
+  "pnp-ids=s" => \$PnpIDs,
   "list!" => \$ListProbes,
   "clean!" => \$Clean,
   "debug|d!" => \$Debug,
@@ -219,10 +220,11 @@ OTHER OPTIONS
   -verbose
       Use with -show option to show type and status of the device.
   
-  -pci-ids PATH
-  -usb-ids PATH
+  -pci-ids  PATH
+  -usb-ids  PATH
   -sdio-ids PATH
-      Path to {pci,usb,sdio}.ids file to read missed device names.
+  -pnp-ids  PATH
+      Path to {pci,usb,sdio,pnp}.ids file to read missed device names.
   
   -list
       List executed probes (for debugging).
@@ -253,6 +255,7 @@ sub helpMsg() {
 my %HW;
 my %KernMod = ();
 my %WLanInterface = ();
+my %PermanentAddr = ();
 
 # Tests
 my %TestRes;
@@ -312,7 +315,8 @@ my %MonVendor = (
     "LEN" => "Lenovo",
     "LPL" => "LG Philips",
     "VSC" => "ViewSonic",
-    "SNY" => "Sony"
+    "SNY" => "Sony",
+    "PHL" => "Philips"
 );
 
 my %PciClassType = (
@@ -742,7 +746,7 @@ sub getPnpVendor($)
     }
     
     if(not keys(%PnpVendor)) {
-        readPnpIds_Sys();
+        readPnpIds();
     }
     
     if(defined $PnpVendor{$V}) {
@@ -752,12 +756,23 @@ sub getPnpVendor($)
     return undef;
 }
 
-sub readPnpIds_Sys()
+sub readPnpIds()
 {
-    my $Path = "/usr/share/hwdata/pnp.ids"; # Fresh, RELS
+    my $Path = undef;
+    
+    if($PnpIDs) {
+        $Path = $PnpIDs;
+    }
+    else {
+        $Path = "/usr/share/hwdata/pnp.ids"; # ROSA Fresh, RELS
+    }
     
     if(not -e $Path) {
-        $Path = "/usr/share/misc/pnp.ids"; # Marathon
+        $Path = "/usr/share/misc/pnp.ids"; # ROSA Marathon
+    }
+    
+    if(not -e $Path) {
+        return;
     }
     
     foreach (split(/\n/, readFile($Path)))
@@ -814,7 +829,7 @@ sub getDefaultType($$)
         
         if($Bus eq "usb")
         {
-            if($Name=~/camera|webcam/i) {
+            if($Name=~/camera|webcam|web cam/i) {
                 return "camera";
             }
             elsif($Name=~/card reader/i) {
@@ -846,6 +861,9 @@ sub getDefaultType($$)
             }
             elsif($Name=~/(\A| )Phone(\Z| )/i) {
                 return "phone";
+            }
+            elsif($Name=~/Gamepad/i) {
+                return "gamepad";
             }
         }
         elsif($Bus eq "pci")
@@ -1506,7 +1524,9 @@ sub probeHW()
         if($Device{"Type"}=~/touchpad/
         and $Bus eq "ps/2")
         {
-            if(not $Sys{"Type"} or $Sys{"Type"} eq "desktop") {
+            if(not $Sys{"Type"}
+            or $Sys{"Type"} eq "desktop"
+            or $Sys{"Type"} eq "other") {
                 $Sys{"Type"} = "notebook";
             }
         }
@@ -2407,7 +2427,7 @@ sub probeHW()
             {
                 push(@Name, $Device{"Release Date"});
                 
-                if($BiosDate=~/(\d\d\d\d)/) {
+                if($BiosDate=~/\b(\d\d\d\d)\b/) {
                     $Sys{"Year"} = $1;
                 }
             }
@@ -3211,7 +3231,10 @@ sub listDir($)
 
 sub probeSys()
 {
-    $Sys{"System"} = probeDistr();
+    my ($Distr, $Rel) = probeDistr();
+    
+    $Sys{"System"} = $Distr;
+    $Sys{"SystemRel"} = $Rel;
     
     if(not $Sys{"System"}) {
         print STDERR "WARNING: failed to detect Linux distribution\n";
@@ -3285,85 +3308,156 @@ sub probeSys()
     
     $Sys{"Model"} = fixModel($Sys{"Vendor"}, $Sys{"Model"}, $Sys{"Version"});
     
-    listProbe("logs", "ifconfig");
-    if(not check_Cmd("ifconfig"))
-    {
-        print STDERR "ERROR: can't find 'ifconfig'\n";
-        exit(1);
-    }
-    
-    if(my $IFConfig = `ifconfig -a 2>&1`)
-    {
-        if($Logs) {
-            writeLog($LOG_DIR."/ifconfig", $IFConfig);
-        }
-        
-        my (@Eth, @Wlan, @Other) = ();
-        
-        foreach my $Block (split(/[\n]\s*[\n]+/, $IFConfig))
-        {
-            my $Addr = undef;
-            
-            if($Block=~/ether\s+([^\s]+)/)
-            { # Fresh
-                $Addr = lc($1);
-            }
-            elsif($Block=~/HWaddr\s+([^\s]+)/)
-            { # Marathon
-                $Addr = lc($1);
-            }
-            
-            if($Addr and $Addr ne "00:00:00:00:00:00")
-            {
-                if($Block=~/\A(e\w+\d):/)
-                {
-                    my $I = $1;
-                    my $RealMac = getRealHWaddr($I);
-                    
-                    if($RealMac and $Addr ne $RealMac) {
-                        $Addr = $RealMac;
-                    }
-                    
-                    push(@Eth, $Addr);
-                }
-                elsif($Block=~/\A(w\w+\d):/)
-                {
-                    $WLanInterface{$1} = 1;
-                    push(@Wlan, $Addr);
-                }
-                else {
-                    push(@Other, $Addr);
-                }
-            }
-        }
-        
-        if(@Eth)
-        {
-            # @Eth = sort @Eth;
-            $Sys{"HWaddr"} = $Eth[0];
-        }
-        elsif(@Wlan)
-        {
-            # @Wlan = sort @Wlan;
-            $Sys{"HWaddr"} = $Wlan[0];
-        }
-        elsif(@Other)
-        {
-            # @Other = sort @Other;
-            $Sys{"HWaddr"} = $Other[0];
-        }
-        else
-        {
-            print STDERR "ERROR: failed to detect hwaddr\n";
-            exit(1);
-        }
-        
-        $Sys{"HWaddr"}=~s/:/-/g;
-    }
-    
     foreach (keys(%Sys)) {
         chomp($Sys{$_});
     }
+}
+
+sub probeHWaddr()
+{
+    my $IFConfig = undef;
+    
+    if($FixProbe)
+    {
+        if($IFConfig = readFile($FixProbe_Logs."/ifconfig"))
+        { # fix HWaddr
+            my $EthtoolP = readFile($FixProbe_Logs."/ethtool_p");
+            
+            if($EthtoolP)
+            {
+                foreach my $E (split(/\n/, $EthtoolP))
+                {
+                    if($E=~/(.+)\=\>(.+)/) {
+                        $PermanentAddr{$1} = $2;
+                    }
+                }
+            }
+            
+            my $UAddr = $Sys{"HWaddr"};
+            $UAddr=~s/\-/:/g;
+            
+            if($EthtoolP or $IFConfig=~/\Q$UAddr\E/i)
+            {
+                if(my $NewAddr = detectHWaddr($IFConfig)) {
+                    $Sys{"HWaddr"} = $NewAddr;
+                }
+            }
+        }
+    }
+    else
+    {
+        listProbe("logs", "ifconfig");
+        if(not check_Cmd("ifconfig"))
+        {
+            print STDERR "ERROR: can't find 'ifconfig'\n";
+            exit(1);
+        }
+        
+        if($IFConfig = `ifconfig -a 2>&1`)
+        {
+            if($Logs) {
+                writeLog($LOG_DIR."/ifconfig", $IFConfig);
+            }
+            
+            $Sys{"HWaddr"} = detectHWaddr($IFConfig);
+            
+            if(not $Sys{"HWaddr"})
+            {
+                print STDERR "ERROR: failed to detect hwaddr\n";
+                exit(1);
+            }
+            
+            if($Logs)
+            {
+                my $EthtoolP = "";
+                foreach my $E (sort keys(%PermanentAddr)) {
+                    $EthtoolP .= $E."=>".$PermanentAddr{$E}."\n";
+                }
+                if($EthtoolP) {
+                    writeLog($LOG_DIR."/ethtool_p", $EthtoolP);
+                }
+            }
+        }
+    }
+}
+
+sub detectHWaddr($)
+{
+    my $IFConfig = $_[0];
+    
+    my (@Eth, @Wlan, @Other) = ();
+    
+    foreach my $Block (split(/[\n]\s*[\n]+/, $IFConfig))
+    {
+        my $Addr = undef;
+        
+        if($Block=~/ether\s+([^\s]+)/)
+        { # Fresh
+            $Addr = lc($1);
+        }
+        elsif($Block=~/HWaddr\s+([^\s]+)/)
+        { # Marathon
+            $Addr = lc($1);
+        }
+        
+        if($Addr and $Addr ne "00:00:00:00:00:00")
+        {
+            my $NetDev = undef;
+            
+            if($Block=~/\A([^:]+):/) {
+                $NetDev = $1;
+            }
+            else {
+                next;
+            }
+            
+            if(not $FixProbe)
+            {
+                if(my $RealMac = getRealHWaddr($NetDev)) {
+                    $PermanentAddr{$NetDev} = $RealMac;
+                }
+            }
+            
+            if(defined $PermanentAddr{$NetDev}) {
+                $Addr = $PermanentAddr{$NetDev};
+            }
+            
+            if($NetDev=~/\Aenp\d+s\d+.*u\d+\Z/i)
+            { # enp0s20f0u3, enp0s29u1u5, enp0s20u1, etc.
+                push(@Other, $Addr);
+            }
+            elsif($NetDev=~/\Ae/)
+            {
+                push(@Eth, $Addr);
+            }
+            elsif($NetDev=~/\Aw/)
+            {
+                $WLanInterface{$NetDev} = 1;
+                push(@Wlan, $Addr);
+            }
+            else {
+                push(@Other, $Addr);
+            }
+        }
+    }
+    
+    my $Sel = undef;
+    
+    if(@Eth) {
+        $Sel = $Eth[0];
+    }
+    elsif(@Wlan) {
+        $Sel = $Wlan[0];
+    }
+    elsif(@Other) {
+        $Sel = $Other[0];
+    }
+    else {
+        return undef;
+    }
+    
+    $Sel=~s/:/-/g;
+    return $Sel;
 }
 
 sub getRealHWaddr($)
@@ -3428,25 +3522,35 @@ sub probeDistr()
         }
         
         if($Name=~/\AROSAEnterpriseServer/i) {
-            return "rels-".$Release;
+            return ("rels-".$Release, "");
         }
         elsif($Name=~/\ARosa\.DX/i)
         {
             if($Descr=~/(Chrome|Nickel|Cobalt)/i) {
-                return "rosa.dx-".lc($1)."-".$Release;
+                return ("rosa.dx-".lc($1)."-".$Release, "");
             }
         }
         elsif($Descr=~/\AROSA SX/i)
         {
             if($Descr=~/(CHROME|NICKEL|COBALT)/i) {
-                return "rosa.sx-".lc($1)."-".$Release;
+                return ("rosa.sx-".lc($1)."-".$Release, "");
             }
         }
-        elsif($Name=~/\AROSA/i) {
-            return "rosa-".$Release;
+        elsif($Name=~/\AROSA/i)
+        {
+            my $Rel = "";
+            
+            if($Descr=~/ R([\d\-\.]+)/i) {
+                $Rel = "rosafresh-r".$1;
+            }
+            elsif($Descr=~/ Enterprise Desktop X([\d\-\.]+)/i) {
+                $Rel = "red-x".$1;
+            }
+            
+            return ("rosa-".$Release, $Rel);
         }
         elsif($Name=~/\AOpenMandriva/i) {
-            return "openmandriva-".$Release;
+            return ("openmandriva-".$Release, "");
         }
         
         $Name=~s/\s+(Linux|Project)(\s+|\Z)/ /i;
@@ -3454,10 +3558,7 @@ sub probeDistr()
         $Name=~s/\s+/\-/g;
         
         if($Name and $Release) {
-            return lc($Name)."-".$Release;
-        }
-        elsif($Name) {
-            return lc($Name);
+            return (lc($Name)."-".$Release, "");
         }
     }
     
@@ -3474,25 +3575,24 @@ sub probeDistr()
     {
         my ($Name, $Release) = ();
         
-        if($OS_Rel=~/\bID=\s*\"?(.*)\"?/) {
+        if($OS_Rel=~/\bID=\s*[\"\']*([^"'\n]+)/) {
             $Name = $1;
-            
         }
-        if($OS_Rel=~/\bVERSION_ID=\s*\"?(.*)\"?/) {
+        if($OS_Rel=~/\bVERSION_ID=\s*[\"\']*([^"'\n]+)/) {
             $Release = $1;
         }
         
         $Name=~s/\s+Linux(\s+|\Z)/ /i;
         
         if($Name and $Release) {
-            return lc($Name)."-".lc($Release);
+            return (lc($Name)."-".lc($Release), "");
         }
         elsif($Name) {
-            return lc($Name);
+            return (lc($Name), "");
         }
     }
     
-    return "";
+    return ("", "");
 }
 
 sub devID(@)
@@ -3575,6 +3675,9 @@ sub writeHost()
 {
     my $Host = "";
     $Host .= "system:".$Sys{"System"}."\n";
+    if($Sys{"SystemRel"}) {
+        $Host .= "systemrel:".$Sys{"SystemRel"}."\n";
+    }
     if($Sys{"Build"}) {
         $Host .= "build:".$Sys{"Build"}."\n"; # Live
     }
@@ -3732,9 +3835,12 @@ sub writeLogs()
     
     if(check_Cmd("update-alternatives"))
     {
-        listProbe("logs", "update-alternatives");
-        my $GlConfAlt = `update-alternatives --list 2>/dev/null`;
-        writeLog($LOG_DIR."/update-alternatives", $GlConfAlt);
+        if($Sys{"system"}=~/rosa/i)
+        {
+            listProbe("logs", "update-alternatives");
+            my $Alternatives = `update-alternatives --list 2>/dev/null`;
+            writeLog($LOG_DIR."/update-alternatives", $Alternatives);
+        }
     }
     
     listProbe("logs", "biosdecode");
@@ -3883,9 +3989,12 @@ sub writeLogs()
         my $Findmnt = `findmnt 2>&1`;
         writeLog($LOG_DIR."/findmnt", $Findmnt);
         
-        listProbe("logs", "fdisk");
-        my $Fdisk = `fdisk -l 2>&1`;
-        writeLog($LOG_DIR."/fdisk", $Fdisk);
+        if($Admin)
+        {
+            listProbe("logs", "fdisk");
+            my $Fdisk = `fdisk -l 2>&1`;
+            writeLog($LOG_DIR."/fdisk", $Fdisk);
+        }
         
         if(check_Cmd("inxi"))
         {
@@ -4068,6 +4177,24 @@ sub writeLogs()
             $Mprobe .= "\n\n";
         }
         writeLog($LOG_DIR."/modprobe.d", $Mprobe);
+        
+        listProbe("logs", "xorg.conf.d");
+        my @XorgConfD = listDir("/etc/X11/xorg.conf.d/");
+        my $XConfig = "";
+        foreach my $Xc (sort @XorgConfD)
+        {
+            if($Xc!~/\.conf\Z/) {
+                next;
+            }
+            $XConfig .= $Xc."\n";
+            foreach (1 .. length($Xc)) {
+                $XConfig .= "-";
+            }
+            $XConfig .= "\n";
+            $XConfig .= readFile("/etc/X11/xorg.conf.d/".$Xc);
+            $XConfig .= "\n\n";
+        }
+        writeLog($LOG_DIR."/xorg.conf.d", $XConfig);
         
         if($Scanners)
         {
@@ -4456,7 +4583,7 @@ sub showInfo()
     
     print "\n";
     print "Host Info\n";
-    showHash(\%STbl, "system", "user", "node", "arch", "kernel", "vendor", "model", "board", "hwaddr", "id");
+    showHash(\%STbl, "system", "user", "node", "arch", "kernel", "vendor", "model", "year", "board", "hwaddr", "type", "id");
 }
 
 sub showTable(@)
@@ -4916,6 +5043,15 @@ sub scenario()
         }
     }
     
+    if($PnpIDs)
+    {
+        if(not -e $PnpIDs)
+        {
+            print STDERR "ERROR: can't access \'$PnpIDs\'\n";
+            exit(1);
+        }
+    }
+    
     if($FixProbe)
     {
         if(not -e $FixProbe)
@@ -4964,6 +5100,7 @@ sub scenario()
     if($Probe or $Check)
     {
         probeSys();
+        probeHWaddr();
         probeHW();
         
         writeDevs();
@@ -4992,34 +5129,61 @@ sub scenario()
     elsif($FixProbe)
     {
         readHost($FixProbe); # instead of probeSys
+        probeHWaddr();
         probeHW();
         
         if($PC_Name) {
             $Sys{"Name"} = $PC_Name; # fix PC name
         }
-        if(my $Distr = probeDistr())
+        
+        my ($Distr, $Rel) = probeDistr();
+        
+        if($Distr)
         { # fix system name
             $Sys{"System"} = $Distr;
         }
         
-        if(not $Sys{"System"}
-        and $Sys{"Kernel"}=~/\drosa\b/)
+        if($Rel)
+        { # fix system name
+            $Sys{"SystemRel"} = $Rel;
+        }
+        
+        if($Sys{"Kernel"}=~/\drosa\b/)
         {
-            if($Sys{"Kernel"}=~/\A3\.0\./) {
-                $Sys{"System"} = "rosa-2012lts";
-            }
-            elsif($Sys{"Kernel"}=~/\A3\.(8|10)\./) {
-                $Sys{"System"} = "rosa-2012.1";
-            }
-            elsif($Sys{"Kernel"}=~/\A3\.(14|17|18|19)\./) {
-                $Sys{"System"} = "rosa-2014.1";
-            }
-            elsif($Sys{"Kernel"}=~/\A4\./) {
-                $Sys{"System"} = "rosa-2014.1";
-            }
-            else
+            if(not $Sys{"System"})
             {
-                print STDERR "ERROR: failed to fix 'system' attribute (kernel is '".$Sys{"Kernel"}."')\n";
+                if($Sys{"Kernel"}=~/\A3\.0\./) {
+                    $Sys{"System"} = "rosa-2012lts";
+                }
+                elsif($Sys{"Kernel"}=~/\A3\.(8|10)\./) {
+                    $Sys{"System"} = "rosa-2012.1";
+                }
+                elsif($Sys{"Kernel"}=~/\A3\.(14|17|18|19)\./) {
+                    $Sys{"System"} = "rosa-2014.1";
+                }
+                elsif($Sys{"Kernel"}=~/\A4\./) {
+                    $Sys{"System"} = "rosa-2014.1";
+                }
+                else
+                {
+                    print STDERR "ERROR: failed to fix 'system' attribute (kernel is '".$Sys{"Kernel"}."')\n";
+                }
+            }
+            
+            if(not $Sys{"SystemRel"})
+            {
+                if($Sys{"System"} eq "rosa-2012.1")
+                {
+                    if($Sys{"Kernel"}=~/\A3\.10\.(3\d|4\d)\-/) {
+                        $Sys{"SystemRel"} = "rosafresh-r3";
+                    }
+                    elsif($Sys{"Kernel"}=~/\A3\.10\.19\-/) {
+                        $Sys{"SystemRel"} = "rosafresh-r2";
+                    }
+                    elsif($Sys{"Kernel"}=~/\A3\.8\.12\-/) {
+                        $Sys{"SystemRel"} = "rosafresh-r1";
+                    }
+                }
             }
         }
         
