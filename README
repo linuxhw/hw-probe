@@ -12,7 +12,7 @@ INSTALL:
 
 REQUIRES:
   Perl 5
-  hwinfo
+  hwinfo (https://github.com/openSUSE/hwinfo or http://linux-hardware.org/downloads/hwinfo/)
   curl
   dmidecode
   pciutils
