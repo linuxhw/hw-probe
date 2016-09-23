@@ -3,12 +3,12 @@
 # Hardware Probe Tool 1.1
 # A tool to probe for hardware and upload result to the Linux Hardware DB
 #
-# WWW: http://linux-hardware.org
+# WWW: https://linux-hardware.org
 #
 # Copyright (C) 2014-2016 Andrey Ponomarenko's Linux Hardware Project
 #
 # Written by Andrey Ponomarenko
-# LinkedIn: http://www.linkedin.com/pub/andrey-ponomarenko/67/366/818
+# LinkedIn: https://www.linkedin.com/in/andreyponomarenko
 #
 # PLATFORMS
 # =========
@@ -66,7 +66,7 @@ use strict;
 my $TOOL_VERSION = "1.1";
 my $CmdName = basename($0);
 
-my $URL = "http://linux-hardware.org";
+my $URL = "https://linux-hardware.org";
 
 my $PROBE_DIR = getProbeDir();
 my $DATA_DIR = $PROBE_DIR."/LATEST/hw.info";
@@ -472,10 +472,13 @@ sub uploadData()
             copy($Pkg, $NewProbe);
             
             my $ProbeUrl = "$URL/index.php?probe=$ID";
-            my $ProbeLog = "PROBE\n=====\n".localtime(time)."\nPublic URL: $ProbeUrl\n";
+            my $ProbeLog = "PROBE\n=====\n".localtime(time)."\n";
+            
             if($Token) {
                 $ProbeLog .= "Private URL: $ProbeUrl&token=$Token\n";
             }
+            $ProbeLog .= "Public URL: $ProbeUrl\n";
+            
             appendFile($PROBE_DIR."/LOG", $ProbeLog."\n");
         }
     }

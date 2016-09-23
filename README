@@ -1,9 +1,9 @@
 NAME:
-  Hardware Probe Tool (HW Probe) — a tool to probe for hardware, check its operability and upload result to the Linux hardware DB: http://linux-hardware.org
+  Hardware Probe Tool (HW Probe) — a tool to probe for hardware, check its operability and upload result to the Linux hardware DB: https://linux-hardware.org
   
   You'll get an URL to view the probe of the computer. Probe — is a snapshot of your computer's hardware state and system logs.
   
-  Sample probe: http://linux-hardware.org/index.php?probe=b394035f90
+  Sample probe: https://linux-hardware.org/index.php?probe=b394035f90
   
   Share your probes and logs with Linux developers in order to debug and fix problems on your computer. Simplify inventory of hardware and navigate over the computers in your company.
 
@@ -13,7 +13,7 @@ INSTALL:
 REQUIRES:
   Perl 5
   hwinfo (https://github.com/openSUSE/hwinfo or
-          http://linux-hardware.org/downloads/hwinfo/)
+          https://linux-hardware.org/downloads/hwinfo/)
   curl
   dmidecode
   pciutils
