@@ -72,6 +72,7 @@ my $PROBE_DIR = getProbeDir();
 my $DATA_DIR = $PROBE_DIR."/LATEST/hw.info";
 my $LOG_DIR = $DATA_DIR."/logs";
 my $TEST_DIR = $DATA_DIR."/tests";
+my $PROBE_LOG = $PROBE_DIR."/LOG";
 
 my $ORIG_DIR = cwd();
 
@@ -406,7 +407,7 @@ sub getGroup()
     {
         my $ID = $1;
         my $GroupLog = "GROUP\n=====\n".localtime(time)."\nGroup ID: $ID\n";
-        appendFile($PROBE_DIR."/LOG", $GroupLog."\n");
+        appendFile($PROBE_LOG, $GroupLog."\n");
     }
 }
 
@@ -475,11 +476,11 @@ sub uploadData()
             my $ProbeLog = "PROBE\n=====\n".localtime(time)."\n";
             
             if($Token) {
-                $ProbeLog .= "Private URL: $ProbeUrl&token=$Token\n";
+                $ProbeLog .= "Probe URL (Private): $ProbeUrl&token=$Token\n";
             }
-            $ProbeLog .= "Public URL: $ProbeUrl\n";
+            $ProbeLog .= "Probe URL (Public):  $ProbeUrl\n";
             
-            appendFile($PROBE_DIR."/LOG", $ProbeLog."\n");
+            appendFile($PROBE_LOG, $ProbeLog."\n");
         }
     }
 }
@@ -707,6 +708,7 @@ sub fmtVal($)
         return "";
     }
     
+    $Val=~s/\((R|TM)\)\-/-/ig;
     $Val=~s/\((R|TM)\)/ /ig;
     
     $Val=~s/\A[_\-\? ]//ig;
@@ -1116,6 +1118,9 @@ sub probeHW()
                         elsif($Device{$Key}=~/AMD/) {
                             $Device{$Key} = "AMD";
                         }
+                        elsif($Device{$Key}=~/ARM/) {
+                            $Device{$Key} = "ARM";
+                        }
                     }
                 }
                 
@@ -1260,14 +1265,25 @@ sub probeHW()
                 $Val=~s/(\d)\s+(MB|GB|KB)/$1$2/ig;
                 $Device{"Memory Size"} = $Val;
             }
+            elsif($Key eq "Platform"
+            and $Device{"Type"} eq "cpu")
+            { # ARM
+                if($Val=~/\"(.*)\"/) {
+                    $Device{"Platform"} = $1;
+                }
+            }
         }
         
         cleanValues(\%Device);
         
-        if(my $Model = $Device{"Model"})
+        if(not $Device{"Device"})
         {
-            if(not $Device{"Device"}) {
+            if(my $Model = $Device{"Model"}) {
                 $Device{"Device"} = $Device{"Model"};
+            }
+            elsif(my $Platform = $Device{"Platform"}
+            and $Device{"Type"} eq "cpu") {
+                $Device{"Device"} = $Platform." Processor";
             }
         }
         
@@ -1408,101 +1424,99 @@ sub probeHW()
                 next;
             }
             
-            if($Device{"Device"})
+            if(not $Device{"Device"}) {
+                next;
+            }
+            
+            if($Device{"Type"} eq "disk")
             {
-                if($Device{"Type"} eq "disk")
+                if(my $FsId = $Device{"FsId"})
                 {
-                    if(my $FsId = $Device{"FsId"})
+                    if(my $Serial = $Device{"Serial"})
                     {
-                        if(my $Serial = $Device{"Serial"})
+                        my $N = $Device{"Device"};
+                        $N=~s/ /_/g;
+                        
+                        if($FsId=~/\Q$N\E(.*?)_\Q$Serial\E/)
                         {
-                            my $N = $Device{"Device"};
-                            $N=~s/ /_/g;
-                            
-                            if($FsId=~/\Q$N\E(.*?)_\Q$Serial\E/)
-                            {
-                                my $Suffix = $1;
-                                $Suffix=~s/[_]+/ /g;
-                                $Device{"Device"} .= $Suffix;
-                            }
+                            my $Suffix = $1;
+                            $Suffix=~s/[_]+/ /g;
+                            $Device{"Device"} .= $Suffix;
                         }
                     }
                 }
+            }
+            
+            if($Device{"Type"} eq "monitor")
+            {
+                if(lc($Device{"Device"}) eq lc($Device{"Vendor"})) {
+                    $Device{"Device"} = $Device{"GeneralType"};
+                }
                 
-                if($Device{"Type"} eq "monitor")
+                if($V)
                 {
-                    if(lc($Device{"Device"}) eq lc($Device{"Vendor"})) {
-                        $Device{"Device"} = $Device{"GeneralType"};
-                    }
-                    
-                    if($V)
+                    if(my $Vendor = getPnpVendor($V))
                     {
-                        if(my $Vendor = getPnpVendor($V))
-                        {
-                            $Device{"Vendor"} = $Vendor;
-                            $Device{"Device"}=~s/\A\Q$Vendor\E(\s+|\-)//ig;
-                        }
-                        elsif(not $Device{"Vendor"}) {
-                            $Device{"Vendor"} = $V;
-                        }
+                        $Device{"Vendor"} = $Vendor;
+                        $Device{"Device"}=~s/\A\Q$Vendor\E(\s+|\-)//ig;
+                    }
+                    elsif(not $Device{"Vendor"}) {
+                        $Device{"Vendor"} = $V;
                     }
                 }
-                
-                if($Device{"Type"} eq "framebuffer")
-                {
-                    if($Device{"Vendor"} eq $Device{"Device"}) {
-                        $Device{"Vendor"} = "";
-                    }
+            }
+            
+            if($Device{"Type"} eq "framebuffer")
+            {
+                if($Device{"Vendor"} eq $Device{"Device"}) {
+                    $Device{"Vendor"} = "";
                 }
-                
-                # create id
-                if($Device{"Type"} eq "monitor" and $V)
-                { 
-                    #if(nameID($Device{"Vendor"}) ne $V)
-                    #{ # do not add vendor name to id
-                        $ID = devID(nameID($Device{"Vendor"}));
-                    #}
-                    $ID = devID($ID, $V.$D);
+            }
+            
+            # create id
+            if($Device{"Type"} eq "monitor" and $V)
+            { 
+                #if(nameID($Device{"Vendor"}) ne $V)
+                #{ # do not add vendor name to id
+                    $ID = devID(nameID($Device{"Vendor"}));
+                #}
+                $ID = devID($ID, $V.$D);
+            }
+            else
+            {
+                if(my $Vendor = $Device{"Vendor"}) {
+                    $ID = devID(nameID($Vendor));
                 }
                 else
                 {
-                    if(my $Vendor = $Device{"Vendor"}) {
-                        $ID = devID(nameID($Vendor));
-                    }
-                    else
-                    {
-                        $ID = devID($V);
-                    }
-                    $ID = devID($ID, $D, devSuffix(\%Device));
+                    $ID = devID($V);
+                }
+                $ID = devID($ID, $D, devSuffix(\%Device));
+            }
+            
+            # additionals to device attributes
+            if($Device{"Type"} eq "monitor")
+            {
+                if($D) {
+                    $Device{"Device"} .= " ".uc($V.$D);
                 }
                 
-                # additionals to device attributes
-                if($Device{"Type"} eq "monitor")
-                {
-                    if($D) {
-                        $Device{"Device"} .= " ".uc($V.$D);
-                    }
-                    
-                    if($Device{"Resolution"}) {
-                        $Device{"Device"} .= " ".$Device{"Resolution"};
-                    }
-                    
-                    if($Device{"Size"}) {
-                        $Device{"Device"} .= " ".$Device{"Size"};
-                    }
+                if($Device{"Resolution"}) {
+                    $Device{"Device"} .= " ".$Device{"Resolution"};
                 }
-                elsif($Device{"Type"} eq "disk") {
-                    $Device{"Device"} .= addCapacity($Device{"Device"}, $Device{"Capacity"});
-                }
-                elsif($Device{"Type"} eq "cpu") {
-                    $Device{"Status"} = "works";
-                }
-                elsif($Device{"Type"} eq "framebuffer") {
-                    $Device{"Device"} .= " ".$Device{"Memory Size"};
+                
+                if($Device{"Size"}) {
+                    $Device{"Device"} .= " ".$Device{"Size"};
                 }
             }
-            else {
-                next;
+            elsif($Device{"Type"} eq "disk") {
+                $Device{"Device"} .= addCapacity($Device{"Device"}, $Device{"Capacity"});
+            }
+            elsif($Device{"Type"} eq "cpu") {
+                $Device{"Status"} = "works";
+            }
+            elsif($Device{"Type"} eq "framebuffer") {
+                $Device{"Device"} .= " ".$Device{"Memory Size"};
             }
         }
         
@@ -3138,6 +3152,12 @@ sub devSuffix($)
         elsif($Device->{"Vendor"} eq "AMD") {
             $Suffix=~s/X2 Dual Core Processor/X2/;
         }
+        elsif($Device->{"Vendor"} eq "ARM")
+        {
+            if($Device->{"Device"}=~/(.+)\s+Processor/) {
+                $Suffix = $1;
+            }
+        }
     }
     elsif($Device->{"Type"} eq "memory"
     or $Device->{"Type"} eq "disk")
@@ -3910,7 +3930,20 @@ sub writeLogs()
         {
             listProbe("logs", "rpms");
             my $Rpms = `rpm -qa 2>/dev/null`; # default sorting - by date
-            writeLog($LOG_DIR."/rpms", $Rpms);
+            
+            if($Rpms) {
+                writeLog($LOG_DIR."/rpms", $Rpms);
+            }
+        }
+        
+        if(check_Cmd("dpkg"))
+        {
+            listProbe("logs", "debs");
+            my $Dpkgs = `dpkg -l 2>/dev/null`;
+            
+            if($Dpkgs) {
+                writeLog($LOG_DIR."/debs", $Dpkgs);
+            }
         }
         
         if(check_Cmd("rfkill"))
