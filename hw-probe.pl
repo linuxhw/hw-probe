@@ -475,10 +475,10 @@ sub uploadData()
             my $ProbeUrl = "$URL/index.php?probe=$ID";
             my $ProbeLog = "PROBE\n=====\n".localtime(time)."\n";
             
+            $ProbeLog .= "Probe URL:  $ProbeUrl\n";
             if($Token) {
-                $ProbeLog .= "Probe URL (Private): $ProbeUrl&token=$Token\n";
+                $ProbeLog .= "Private access: $ProbeUrl&token=$Token\n";
             }
-            $ProbeLog .= "Probe URL (Public):  $ProbeUrl\n";
             
             appendFile($PROBE_LOG, $ProbeLog."\n");
         }
