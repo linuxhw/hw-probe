@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #########################################################################
-# Hardware Probe Tool 1.1
+# Hardware Probe Tool 1.1.1
 # A tool to probe for hardware and upload result to the Linux Hardware DB
 #
 # WWW: https://linux-hardware.org
@@ -63,7 +63,7 @@ use Config;
 
 use strict;
 
-my $TOOL_VERSION = "1.1";
+my $TOOL_VERSION = "1.1.1";
 my $CmdName = basename($0);
 
 my $URL = "https://linux-hardware.org";
@@ -244,7 +244,7 @@ OTHER OPTIONS
       Get group id.
 
 DATA LOCATION:
-  You can find created probes in the \"<HOME>/HW_PROBE\" directory.
+  You can find created probes in the \"<ROOT_HOME>/HW_PROBE\" directory.
 
 ";
 
@@ -1013,7 +1013,7 @@ sub probeHW()
         framebuffer gfxcard hub ide isapnp isdn joystick keyboard
         modem monitor mouse netcard network pci
         pcmcia scanner scsi smp sound
-        tape tv usb usb-ctrl vbe wlan zip);
+        tape tv usb usb-ctrl wlan zip);
         
         my $Items = "--".join(" --", @Items);
         
@@ -3939,7 +3939,7 @@ sub writeLogs()
         if(check_Cmd("dpkg"))
         {
             listProbe("logs", "debs");
-            my $Dpkgs = `dpkg -l 2>/dev/null`;
+            my $Dpkgs = `dpkg -l |awk '/^[hi]i/{print \$2,\$3,\$4}' 2>/dev/null`;
             
             if($Dpkgs) {
                 writeLog($LOG_DIR."/debs", $Dpkgs);
