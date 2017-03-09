@@ -5,14 +5,14 @@
 #
 # WWW: https://linux-hardware.org
 #
-# Copyright (C) 2014-2016 Andrey Ponomarenko's Linux Hardware Project
+# Copyright (C) 2014-2017 Andrey Ponomarenko's Linux Hardware Project
 #
 # Written by Andrey Ponomarenko
 # LinkedIn: https://www.linkedin.com/in/andreyponomarenko
 #
 # PLATFORMS
 # =========
-#  Linux (Fedora, Ubuntu, Debian, ROSA, Gentoo, Mandriva ...)
+#  Linux (Fedora, Ubuntu, Debian, Arch, Gentoo, ROSA, Mandriva ...)
 #
 # REQUIREMENTS
 # ============
@@ -522,7 +522,7 @@ sub createPackage()
             {
                 $Pkg = $Source;
                 
-                system("tar", "--directory", $TMP_DIR, "-xf", $Pkg);
+                system("tar", "--directory", $TMP_DIR, "-xJf", $Pkg);
                 if($?)
                 {
                     print STDERR "ERROR: failed to extract package (".$?.")\n";
@@ -1542,8 +1542,11 @@ sub probeHW()
         if($Device{"Type"} eq "monitor") {
             $Mon{uc($V.$D)} = $ID;
         }
-        elsif($Device{"Type"} eq "disk") {
-            $HDD{$Device{"File"}} = $Bus.":".$ID;
+        elsif($Device{"Type"} eq "disk")
+        {
+            if(my $File = $Device{"File"}) {
+                $HDD{$File} = $Bus.":".$ID;
+            }
         }
         
         if($Device{"Type"}=~/touchpad/
@@ -3418,13 +3421,39 @@ sub probeSys()
     }
 }
 
+sub ipAddr2ifConfig($)
+{
+    my $IPaddr = $_[0];
+    
+    my $IFConfig = "";
+    
+    foreach my $Line (split(/\n/, $IPaddr))
+    {
+        if($Line=~s/\A\d+:\s+//) {
+            $IFConfig .= "\n".$Line."\n";
+        }
+        else {
+            $IFConfig .= $Line."\n";
+        }
+    }
+    
+    return $IFConfig;
+}
+
 sub probeHWaddr()
 {
-    my $IFConfig = undef;
-    
     if($FixProbe)
     {
-        if($IFConfig = readFile($FixProbe_Logs."/ifconfig"))
+        my $IFConfig = readFile($FixProbe_Logs."/ifconfig");
+        
+        if(not $IFConfig)
+        {
+            if(my $IPaddr = readFile($FixProbe_Logs."/ip_addr")) {
+                $IFConfig = ipAddr2ifConfig($IPaddr);
+            }
+        }
+        
+        if($IFConfig)
         { # fix HWaddr
             my $EthtoolP = readFile($FixProbe_Logs."/ethtool_p");
             
@@ -3451,19 +3480,37 @@ sub probeHWaddr()
     }
     else
     {
-        listProbe("logs", "ifconfig");
-        if(not check_Cmd("ifconfig"))
-        {
-            print STDERR "ERROR: can't find 'ifconfig'\n";
-            exit(1);
-        }
+        my $IFConfig = undef;
         
-        if($IFConfig = `ifconfig -a 2>&1`)
+        if(check_Cmd("ifconfig"))
         {
+            listProbe("logs", "ifconfig");
+            $IFConfig = `ifconfig -a 2>&1`;
+            
             if($HWLogs) {
                 writeLog($LOG_DIR."/ifconfig", $IFConfig);
             }
-            
+        }
+        elsif(check_Cmd("ip"))
+        {
+            listProbe("logs", "ip_addr");
+            if(my $IPaddr = `ip addr 2>&1`)
+            {
+                $IFConfig = ipAddr2ifConfig($IPaddr);
+                
+                if($HWLogs) {
+                    writeLog($LOG_DIR."/ip_addr", $IPaddr);
+                }
+            }
+        }
+        else
+        {
+            print STDERR "ERROR: can't find 'ifconfig' or 'ip'\n";
+            exit(1);
+        }
+        
+        if($IFConfig)
+        {
             $Sys{"HWaddr"} = detectHWaddr($IFConfig);
             
             if(not $Sys{"HWaddr"})
@@ -3505,7 +3552,8 @@ sub detectHWaddr($)
             $Addr = lc($1);
         }
         
-        if($Addr and $Addr ne "00:00:00:00:00:00")
+        if($Addr and $Addr ne "00:00:00:00:00:00"
+        and $Addr ne "FF:FF:FF:FF:FF:FF")
         {
             my $NetDev = undef;
             
@@ -3532,7 +3580,8 @@ sub detectHWaddr($)
                 push(@Other, $Addr);
             }
             elsif($Addr=~tr!00!!>=5
-            or $Addr=~tr!88!!>=5)
+            or $Addr=~tr!88!!>=5
+            or $Addr=~tr!ff!!>=5)
             { # 00-DD-00-00-00-00
               # 88-88-88-88-87-88
                 push(@Other, $Addr);
@@ -3989,8 +4038,9 @@ sub writeLogs()
         }
         
         listProbe("logs", "xdpyinfo");
-        my $Xdpyinfo = `xdpyinfo 2>&1`;
-        writeLog($LOG_DIR."/xdpyinfo", clearLog_X11($Xdpyinfo));
+        if(my $Xdpyinfo = clearLog_X11(`xdpyinfo 2>&1`)) {
+            writeLog($LOG_DIR."/xdpyinfo", $Xdpyinfo);
+        }
         
         if(check_Cmd("xinput"))
         {
@@ -4567,7 +4617,7 @@ sub showInfo()
             {
                 my $Pkg = abs_path($Source);
                 chdir($TMP_DIR);
-                system("tar", "-m", "-xf", $Pkg);
+                system("tar", "-m", "-xJf", $Pkg);
                 chdir($ORIG_DIR);
                 
                 if($?)
@@ -5202,7 +5252,7 @@ sub scenario()
             
             copy($FixProbe, $TMP_DIR."/".$PName);
             chdir($TMP_DIR);
-            system("tar", "-m", "-xf", $PName);
+            system("tar", "-m", "-xJf", $PName);
             chdir($ORIG_DIR);
             
             $FixProbe = $TMP_DIR."/hw.info";
@@ -5228,6 +5278,29 @@ sub scenario()
         {
             print STDERR "ERROR: can't access \'$FixProbe\'\n";
             exit(1);
+        }
+        
+        if(-f $FixProbe_Logs."/media_urls")
+        { # support for old probes
+            foreach my $File ("journalctl", "journalctl.1", "lib_modules",
+            "ld.so.cache", "sys_module", "media_active", "media_urls",
+            "lspcidrake", "cpuinfo", "lpstat", "lpinfo", "systemctl_status",
+            "ps", "cups_access_log", "cups_error_log", "sane-find-scanner",
+            "scanimage", "codec", "sys_class", "lsinitrd", "xmodmap",
+            "avahi", "dmesg.old", "asound_modules", "syslog", "lib",
+            "parted", "gdisk")
+            {
+                unlink($FixProbe_Logs."/".$File);
+            }
+            
+            my $Udevadm = $FixProbe_Logs."/udevadm";
+            
+            if(-f $Udevadm)
+            {
+                if(readFile($Udevadm)!~/sdio/i) {
+                    unlink($Udevadm);
+                }
+            }
         }
         
         $Logs = 0;
