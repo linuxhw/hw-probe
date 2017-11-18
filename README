@@ -16,14 +16,21 @@ REQUIRES:
           https://linux-hardware.org/downloads/hwinfo/)
   curl
   dmidecode
-  pciutils
-  usbutils
+  pciutils (lspci)
+  usbutils (lsusb)
 
 SUGGESTS:
+  smartmontools (smartctl)
+  systemd-tools (systemd-analyze)
   hdparm
-  smartmontools
+  sysstat (iostat)
   inxi
-  pnputils
+  edid-decode
+  rfkill
+  xinput
+  hplip (hp-probe)
+  i2c-tools (i2cdetect)
+  pnputils (lspnp)
 
 USAGE:
   hw-probe -all -upload -id PC_NAME
