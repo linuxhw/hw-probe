@@ -29,6 +29,7 @@
 #  systemd-tools (systemd-analyze)
 #  hdparm
 #  sysstat
+#  memtester
 #  inxi
 #  edid-decode
 #  rfkill
@@ -55,7 +56,6 @@
 # and the GNU Lesser General Public License along with this program.
 # If not, see <http://www.gnu.org/licenses/>.
 #########################################################################
-use strict;
 use Getopt::Long;
 Getopt::Long::Configure ("posix_default", "no_ignore_case");
 use File::Path qw(mkpath rmtree);
@@ -63,6 +63,8 @@ use File::Temp qw(tempdir);
 use File::Copy qw(copy move);
 use File::Basename qw(basename dirname);
 use Cwd qw(abs_path cwd);
+use POSIX qw(strftime);
+use Data::Dumper;
 use Config;
 
 my $TOOL_VERSION = "1.3";
@@ -82,7 +84,8 @@ my $ORIG_DIR = cwd();
 my ($Help, $ShowVersion, $Probe, $Check, $Logs, $Show, $Compact, $Verbose,
 $All, $PC_Name, $Key, $Upload, $FixProbe, $Printers, $DumpVersion, $Source,
 $Debug, $PciIDs, $UsbIDs, $SdioIDs, $LogLevel, $ListProbes, $DumpACPI,
-$DecodeACPI, $Clean, $Scanners, $Group, $GetGroup, $PnpIDs, $LowCompress);
+$DecodeACPI, $Clean, $Scanners, $Group, $GetGroup, $PnpIDs, $LowCompress,
+$ImportProbes);
 
 my $HWLogs = 0;
 my $TMP_DIR = tempdir(CLEANUP=>1);
@@ -128,6 +131,7 @@ GetOptions("h|help!" => \$Help,
   "list!" => \$ListProbes,
   "clean!" => \$Clean,
   "debug|d!" => \$Debug,
+  "import=s" => \$ImportProbes,
   "group|g=s" => \$Group,
   "get-group!" => \$GetGroup,
 # private
@@ -241,6 +245,9 @@ OTHER OPTIONS
   
   -debug|-d
       The probe is for debugging purposes only.
+  
+  -import DIR
+      Import probes from the database to DIR for offline use.
   
   -group|-g GROUP
       Set group id of the probe. You can get this id
@@ -4355,6 +4362,10 @@ sub writeLogs()
         my $Lscpu = runCmd("lscpu 2>&1");
         writeLog($LOG_DIR."/lscpu", $Lscpu);
         
+        listProbe("logs", "cpuinfo");
+        my $Cpuinfo = readFile("/proc/cpuinfo");
+        writeLog($LOG_DIR."/cpuinfo", $Cpuinfo);
+        
         listProbe("logs", "ioports");
         my $IOports = readFile("/proc/ioports");
         writeLog($LOG_DIR."/ioports", $IOports);
@@ -4411,6 +4422,14 @@ sub writeLogs()
             if($Numactl) {
                 writeLog($LOG_DIR."/numactl", $Numactl);
             }
+        }
+        
+        if(check_Cmd("memtester"))
+        {
+            listProbe("logs", "memtester");
+            my $Memtester = runCmd("memtester 8 1");
+            $Memtester=~s/\A(.|\n)*(Loop)/$2/g;
+            writeLog($LOG_DIR."/memtester", $Memtester);
         }
         
         listProbe("logs", "modprobe.d");
@@ -4611,9 +4630,9 @@ sub decodeACPI($$)
         return;
     }
     
-    my $Dir = $TMP_DIR."/acpi";
-    mkpath($Dir);
-    chdir($Dir);
+    my $TmpDir = $TMP_DIR."/acpi";
+    mkpath($TmpDir);
+    chdir($TmpDir);
     
     # list data
     my $DSL = runCmd("acpixtract -l \"$Dump\" 2>&1");
@@ -4664,6 +4683,8 @@ sub decodeACPI($$)
     if($DSL) {
         unlink($Dump);
     }
+    
+    rmtree($TmpDir);
 }
 
 sub clearLog_X11($)
@@ -5183,8 +5204,286 @@ sub readSdioIds($$$)
     }
 }
 
+sub downloadProbe($$)
+{
+    my ($ID, $Dir) = @_;
+    
+    my $Page = downloadFileContent("$URL/index.php?probe=$ID");
+    
+    if(index($Page, "ERROR(3):")!=-1) {
+        return -1;
+    }
+    elsif(index($Page, "ERROR(1):")!=-1)
+    {
+        print STDERR "ERROR: You are not allowed temporarily to download probes\n";
+        rmtree($Dir."/logs");
+        exit(1);
+    }
+    elsif(not $Page)
+    {
+        print STDERR "ERROR: Internet connection is required\n";
+        exit(1);
+    }
+    
+    print "Importing probe $ID\n";
+    
+    my %LogDir = ("log"=>$Dir."/logs", "test"=>$Dir."/tests");
+    mkpath($LogDir{"log"});
+    mkpath($LogDir{"test"});
+    
+    my $NPage = "";
+    foreach my $Line (split(/\n/, $Page))
+    {
+        if($Line=~/((href|src)=['"]([^"']+?)['"])/)
+        {
+            my $Href = $1;
+            my $Url = $3;
+            
+            if($Url=~/((css|js|images)\/[^?]+)/)
+            {
+                my ($SPath, $Subj) = ($1, $2);
+                my $Content = downloadFileContent($URL."/".$Url);
+                writeFile($Dir."/".$SPath, $Content);
+                
+                if($Subj eq "css")
+                {
+                    while($Content=~s!url\(['"]([^'"]+)['"]\)!!)
+                    {
+                        my $FPath = dirname($SPath)."/".$1;
+                        mkpath($Dir."/".dirname($FPath));
+                        downloadFile($URL."/".$FPath, $Dir."/".$FPath);
+                    }
+                }
+            }
+            elsif($Url=~/(log|test)\=([^&?]+)/)
+            {
+                my ($LogType, $LogName) = ($1, $2);
+                my $LogPath = $LogDir{$LogType}."/".$LogName.".html";
+                my $Log = downloadFileContent($URL."/".$Url);
+                
+                if(index($Log, "ERROR(1):")!=-1)
+                {
+                    print STDERR "ERROR: You are not allowed temporarily to download probes\n";
+                    rmtree($Dir."/logs");
+                    exit(1);
+                }
+                
+                $Log = preparePage($Log);
+                $Log=~s!(['"])(css|js|images)\/!$1../$2\/!g;
+                $Log=~s!index.php\?probe=$ID!../index.html!;
+                
+                writeFile($LogPath, $Log);
+                
+                my $LogD = basename($LogDir{$LogType});
+                $Line=~s/\Q$Url\E/$LogD\/$LogName.html/;
+            }
+            elsif($Url eq "index.php\?probe=$ID") {
+                $Line=~s/\Q$Url\E/index.html/;
+            }
+            else {
+                $Line=~s/\Q$Url\E/$URL\/$Url/g;
+            }
+        }
+        
+        $NPage .= $Line."\n";
+    }
+    $NPage=~s&\Q<!-- descr -->\E(.|\n)+\Q<!-- descr end -->\E\n&This probe is available online by <a href=\'$URL/?probe=$ID\'>this URL</a> in the <a href=\'$URL\'>Hardware Database</a>.<p/>&;
+    writeFile($Dir."/index.html", preparePage($NPage));
+    
+    return 0;
+}
+
+sub preparePage($)
+{
+    my $Content = $_[0];
+    $Content=~s&\Q<!-- meta -->\E(.|\n)+\Q<!-- meta end -->\E\n&&;
+    $Content=~s&\Q<!-- menu -->\E(.|\n)+\Q<!-- menu end -->\E\n&&;
+    $Content=~s&\Q<!-- sign -->\E(.|\n)+\Q<!-- sign end -->\E\n&\n<hr/>\n<div align='right'><a class='sign' title='Linux Hardware Project' href=\'$URL\'>Linux Hardware Project</a></div><br/>\n&;
+    return $Content;
+}
+
+sub downloadFileContent($)
+{
+    my $Url = $_[0];
+    $Url=~s/&amp;/&/g;
+    my $Cmd = getCurlCmd($Url);
+    return `$Cmd`;
+}
+
+sub downloadFile($$)
+{
+    my ($Url, $Output) = @_;
+    $Url=~s/&amp;/&/g;
+    my $Cmd = getCurlCmd($Url)." --output \"$Output\"";
+    return `$Cmd`;
+}
+
+sub getCurlCmd($)
+{
+    my $Url = $_[0];
+    my $Cmd = "curl -s -L \"$Url\"";
+    $Cmd .= " --connect-timeout 5";
+    $Cmd .= " --retry 1";
+    $Cmd .= " -A \"Mozilla/5.0 (X11; Linux x86_64; rv:50.0) Gecko/20100101 Firefox/50.123\"";
+    return $Cmd;
+}
+
+sub importProbes($)
+{
+    my $Dir = $_[0];
+    
+    mkpath($Dir);
+    
+    my ($Imported, $OneProbe) = (undef, undef);
+    
+    my $IndexInfo = eval(readFile($Dir."/index.info"));
+    if(not $IndexInfo) {
+        $IndexInfo = {};
+    }
+    
+    my @Probes = listDir($PROBE_DIR);
+    
+    foreach my $P (sort @Probes)
+    {
+        if($P eq "LATEST" or not -d $PROBE_DIR."/".$P) {
+            next;
+        }
+        
+        if(defined $IndexInfo->{"SkipProbes"}{$P}) {
+            next;
+        }
+        
+        my $D = $PROBE_DIR."/".$P;
+        if(-d $D)
+        {
+            my $To = $Dir."/".$P;
+            if(not -e $To or not -e $To."/logs")
+            {
+                if(downloadProbe($P, $To)!=-1)
+                {
+                    my @DStat = stat($D);
+                    my $Host = `tar -xOf $D/* hw.info/host`;
+                    
+                    my %Prop = ();
+                    foreach my $Line (split(/\n/, $Host))
+                    {
+                        if($Line=~/(\w+):(.*)/) {
+                            $Prop{$1} = $2;
+                        }
+                    }
+                    $Prop{"date"} = $DStat[9];
+                    writeFile($To."/probe.info", Dumper(\%Prop));
+                    $Imported = $P;
+                }
+                else {
+                    $IndexInfo->{"SkipProbes"}{$P} = 1;
+                }
+            }
+        }
+    }
+    
+    writeFile($Dir."/index.info", Dumper($IndexInfo));
+    
+    if(not $Imported) {
+        print "No probes to import\n";
+    }
+    
+    my %Indexed = ();
+    foreach my $P (listDir($Dir))
+    {
+        if(not -d $Dir."/".$P) {
+            next;
+        }
+        my $D = $Dir."/".$P;
+        my $Prop = eval(readFile($D."/probe.info"));
+        $Indexed{$Prop->{"hwaddr"}}{$P} = $Prop;
+        $OneProbe = $P;
+    }
+    
+    if(not $OneProbe) {
+        return -1;
+    }
+    
+    my $LIST = "";
+    foreach my $HWaddr (sort keys(%Indexed))
+    {
+        my @Probes = sort {$Indexed{$HWaddr}{$b}->{"date"} cmp $Indexed{$HWaddr}{$a}->{"date"}} keys(%{$Indexed{$HWaddr}});
+        my $Hw = $Indexed{$HWaddr}{$Probes[0]};
+        my $Title = undef;
+        if($Hw->{"vendor"} and $Hw->{"model"}) {
+            $Title = join(" ", $Hw->{"vendor"}, $Hw->{"model"});
+        }
+        elsif($Hw->{"type"}) {
+            $Title = ucfirst($Hw->{"type"})." (".$Hw->{"hwaddr"}.")";
+        }
+        else {
+            $Title = "Computer (".$Hw->{"hwaddr"}.")";
+        }
+        
+        $LIST .= "<h2>$Title</h2>\n";
+        $LIST .= "<table class='tbl highlight local_timeline'>\n";
+        $LIST .= "<tr>\n";
+        $LIST .= "<th>Probe</th><th>Arch</th><th>System</th><th>Date</th><th>ID</th>\n";
+        $LIST .= "</tr>\n";
+        foreach my $P (@Probes)
+        {
+            my $System = $Indexed{$HWaddr}{$P}->{"system"};
+            my $SystemClass = $System;
+            if($System=~s/\A(\w+)-/$1 /) {
+                $SystemClass = $1;
+            }
+            
+            $LIST .= "<tr class='pointer' onclick=\"document.location='$P/index.html'\">\n";
+            
+            $LIST .= "<td>\n";
+            $LIST .= "<a href=\'$P/index.html\'>$P</a>\n";
+            $LIST .= "</td>\n";
+            
+            $LIST .= "<td>\n";
+            $LIST .= $Indexed{$HWaddr}{$P}->{"arch"};
+            $LIST .= "</td>\n";
+            
+            $LIST .= "<td>\n";
+            $LIST .= "<span class=\'$SystemClass\'>&nbsp;</span> ".ucfirst($System);
+            $LIST .= "</td>\n";
+            
+            $LIST .= "<td title='".getTimeStamp($Indexed{$HWaddr}{$P}->{"date"})."'>\n";
+            $LIST .= getDateStamp($Indexed{$HWaddr}{$P}->{"date"});
+            $LIST .= "</td>\n";
+            
+            $LIST .= "<td>\n";
+            $LIST .= $Indexed{$HWaddr}{$P}->{"id"};
+            $LIST .= "</td>\n";
+            
+            $LIST .= "</tr>\n";
+        }
+        $LIST .= "</table>\n";
+        $LIST .= "<br/>\n";
+    }
+    
+    my $Descr = "This is your collection of probes. See more probes and computers online in the <a href=\'$URL\'>Hardware Database</a>.";
+    my $INDEX = readFile($Dir."/".$OneProbe."/index.html");
+    $INDEX=~s&\Q<!-- body -->\E(.|\n)+\Q<!-- body end -->\E\n&<h1>Probes Timeline</h1>\n$Descr\n$LIST\n&;
+    $INDEX=~s&(\Q<title>\E)(.|\n)+(\Q</title>\E)&$1 Probes Timeline $3&;
+    $INDEX=~s!(['"])(css|js|images)\/!$1$OneProbe/$2\/!g;
+    
+    writeFile($Dir."/index.html", $INDEX);
+    
+    print "Created index: $Dir/index.html\n";
+}
+
+sub getDateStamp($) {
+    return strftime('%b %d, %Y', localtime($_[0]));
+}
+
+sub getTimeStamp($) {
+    return strftime('%H:%M', localtime($_[0]));
+}
+
 sub scenario()
 {
+    $Data::Dumper::Sortkeys = 1;
+    
     if($Help)
     {
         helpMsg();
@@ -5365,7 +5664,7 @@ sub scenario()
         { # support for old probes
             foreach my $File ("journalctl", "journalctl.1", "lib_modules",
             "ld.so.cache", "sys_module", "media_active", "media_urls",
-            "lspcidrake", "cpuinfo", "lpstat", "lpinfo", "systemctl_status",
+            "lspcidrake", "lpstat", "lpinfo", "systemctl_status",
             "ps", "cups_access_log", "cups_error_log", "sane-find-scanner",
             "scanimage", "codec", "sys_class", "lsinitrd", "xmodmap",
             "avahi", "dmesg.old", "asound_modules", "syslog", "lib",
@@ -5524,9 +5823,23 @@ sub scenario()
         cleanData();
     }
     
-    if($GetGroup)
-    {
+    if($GetGroup) {
         getGroup();
+    }
+    
+    if($ImportProbes)
+    {
+        if(not $Admin)
+        {
+            print STDERR "ERROR: you should run as root\n";
+            exit(1);
+        }
+        importProbes($ImportProbes);
+        
+        system("chmod", "775", "-R", $ImportProbes);
+        if($ENV{"SUDO_USER"}) {
+            system("chown", $ENV{"SUDO_USER"}.":".$ENV{"SUDO_USER"}, "-R", $ImportProbes);
+        }
     }
     
     exit(0);

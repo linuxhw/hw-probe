@@ -1,3 +1,6 @@
+HW PROBE 1.3
+============
+
 NAME:
   Hardware Probe Tool (HW Probe) — a tool to probe for hardware, check its operability and upload result to the Linux hardware DB: https://linux-hardware.org
   
@@ -9,6 +12,10 @@ NAME:
 
 INSTALL:
   sudo make install prefix=/usr
+  
+  If you have troubles with installing the tool or its dependencies, try this Linux ISO in Live mode with pre-installed hw-probe program on your computer:
+  
+    https://mirror.yandex.ru/rosa/rosa2016.1/iso/ROSA.Fresh.R9/
 
 REQUIRES:
   Perl 5
@@ -24,12 +31,13 @@ SUGGESTS:
   systemd-tools (systemd-analyze)
   hdparm
   sysstat (iostat)
+  memtester
   inxi
   edid-decode
   rfkill
   xinput
-  hplip (hp-probe)
   i2c-tools (i2cdetect)
+  hplip (hp-probe)
   pnputils (lspnp)
 
 USAGE:
@@ -40,3 +48,8 @@ USAGE:
 GROUP COMPUTERS (INVENTORY):
   hw-probe -get-group
   hw-probe -all -upload -id PC_NAME -group ID
+
+YOUR COLLECTION:
+  Create your collection of probes for offline use:
+  
+  sudo hw-probe -import DIR
