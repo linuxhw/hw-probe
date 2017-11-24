@@ -12,10 +12,23 @@ NAME:
 
 INSTALL:
   sudo make install prefix=/usr
+
+USAGE:
+  hw-probe -all -upload -id PC_NAME
+
+  Run as root, PC_NAME — any name of the computer.
+
+ADV. USAGE:
+  If the tool is not pre-installed in your system or you have troubles with installing the tool or its dependencies (e.g. hwinfo is not available in the repository):
   
-  If you have troubles with installing the tool or its dependencies, try this Linux ISO in Live mode with pre-installed hw-probe program on your computer:
+  1. Live ISO with hw-probe installed:
   
-    https://mirror.yandex.ru/rosa/rosa2016.1/iso/ROSA.Fresh.R9/
+     Boot this Linux ISO in Live mode on your computer: https://mirror.yandex.ru/rosa/rosa2016.1/iso/ROSA.Fresh.R9/
+  
+  2. Docker image:
+  
+     docker pull linuxhw/hw-probe
+     docker run -it -v /dev:/dev:ro -v /lib/modules:/lib/modules:ro -v /etc/os-release:/etc/os-release:ro --privileged --net=host --pid=host linuxhw/hw-probe -all -upload -id PC_NAME
 
 REQUIRES:
   Perl 5
@@ -32,19 +45,9 @@ SUGGESTS:
   hdparm
   sysstat (iostat)
   memtester
-  inxi
-  edid-decode
-  rfkill
-  xinput
-  i2c-tools (i2cdetect)
-  hplip (hp-probe)
-  pnputils (lspnp)
-  acpica
-
-USAGE:
-  hw-probe -all -upload -id PC_NAME
-
-  Run as root, PC_NAME — any name of the computer.
+  ...
+  
+  See full list of suggested packages in the INSTALL file.
 
 GROUP COMPUTERS (INVENTORY):
   hw-probe -get-group
