@@ -39,6 +39,7 @@ SUGGESTS:
   i2c-tools (i2cdetect)
   hplip (hp-probe)
   pnputils (lspnp)
+  acpica
 
 USAGE:
   hw-probe -all -upload -id PC_NAME

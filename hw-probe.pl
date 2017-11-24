@@ -12,7 +12,8 @@
 #
 # PLATFORMS
 # =========
-#  Linux (Fedora, Ubuntu, Debian, Arch, Gentoo, ROSA, Mandriva ...)
+#  Linux (Fedora, Ubuntu, Debian, Arch,
+#         Gentoo, ROSA, Mandriva, Alpine ...)
 #
 # REQUIREMENTS
 # ============
@@ -34,6 +35,7 @@
 #  edid-decode
 #  rfkill
 #  xinput
+#  acpica
 #
 # SUGGESTIONS (MORE)
 # ==================
@@ -71,6 +73,7 @@ my $TOOL_VERSION = "1.3";
 my $CmdName = basename($0);
 
 my $URL = "https://linux-hardware.org";
+my $GITHUB = "https://github.com/linuxhw/hw-probe";
 
 my $PROBE_DIR = getProbeDir();
 my $DATA_DIR = $PROBE_DIR."/LATEST/hw.info";
@@ -85,7 +88,7 @@ my ($Help, $ShowVersion, $Probe, $Check, $Logs, $Show, $Compact, $Verbose,
 $All, $PC_Name, $Key, $Upload, $FixProbe, $Printers, $DumpVersion, $Source,
 $Debug, $PciIDs, $UsbIDs, $SdioIDs, $LogLevel, $ListProbes, $DumpACPI,
 $DecodeACPI, $Clean, $Scanners, $Group, $GetGroup, $PnpIDs, $LowCompress,
-$ImportProbes);
+$ImportProbes, $Docker);
 
 my $HWLogs = 0;
 my $TMP_DIR = tempdir(CLEANUP=>1);
@@ -131,12 +134,13 @@ GetOptions("h|help!" => \$Help,
   "list!" => \$ListProbes,
   "clean!" => \$Clean,
   "debug|d!" => \$Debug,
+  "dump-acpi!" => \$DumpACPI,
+  "decode-acpi!" => \$DecodeACPI,
   "import=s" => \$ImportProbes,
   "group|g=s" => \$Group,
   "get-group!" => \$GetGroup,
 # private
-  "dump-acpi!" => \$DumpACPI,
-  "decode-acpi!" => \$DecodeACPI,
+  "docker!" => \$Docker,
   "low-compress!" => \$LowCompress,
 # security
   "key=s" => \$Key
@@ -245,6 +249,12 @@ OTHER OPTIONS
   
   -debug|-d
       The probe is for debugging purposes only.
+  
+  -dump-acpi
+      Probe for ACPI table.
+  
+  -decode-acpi
+      Decode ACPI table.
   
   -import DIR
       Import probes from the database to DIR for offline use.
@@ -447,6 +457,10 @@ sub uploadData()
         
         if($Debug) {
             @Cmd = (@Cmd, "-F debug=1");
+        }
+        
+        if($Docker) {
+            @Cmd = (@Cmd, "-F docker=1");
         }
         
         if($PC_Name) {
@@ -1271,10 +1285,11 @@ sub probeHW()
             elsif($Key eq "Device File")
             {
                 if($Device{"Type"} eq "disk"
-                and $Bus eq "ide")
+                and ($Bus eq "ide" or $Val=~/nvme/i))
                 {
                     $Val=~s/\s*\(.*\)//g;
                     $Device{"File"} = $Val;
+                    $HDD{$Val} = 0;
                 }
             }
             elsif($Key eq "Serial ID")
@@ -2777,7 +2792,7 @@ sub probeHW()
             $Edid = "";
         }
         
-        if($HWLogs) {
+        if($HWLogs and $Edid) {
             writeLog($LOG_DIR."/edid", $Edid);
         }
     }
@@ -2947,7 +2962,7 @@ sub probeHW()
     {
         listProbe("logs", "upower");
         $Upower = runCmd("upower -d 2>/dev/null");
-        if($HWLogs) {
+        if($HWLogs and $Upower) {
             writeLog($LOG_DIR."/upower", $Upower);
         }
     }
@@ -3106,6 +3121,8 @@ sub probeHW()
                     $Output=~s/\A.*?(\=\=\=)/$1/sg;
                     $Smartctl .= $Dev."\n".$Output."\n";
                     
+                    # TODO: detect ID of NVMe drives
+                    
                     if(my $Id = $HDD{$Dev})
                     {
                         if($Output=~/result:\s*PASSED/i) {
@@ -3129,7 +3146,9 @@ sub probeHW()
         
         listProbe("logs", "xorg.log");
         my $XLog = readFile("/var/log/Xorg.0.log");
-        writeLog($LOG_DIR."/xorg.log", $XLog);
+        if(not $Docker or $XLog) {
+            writeLog($LOG_DIR."/xorg.log", $XLog);
+        }
     }
     
     print "Ok\n";
@@ -3580,6 +3599,10 @@ sub detectHWaddr($)
     {
         my $Addr = undef;
         
+        if($Block=~/\Adocker\d*:?\s+/) {
+            next;
+        }
+        
         if($Block=~/ether\s+([^\s]+)/)
         { # Fresh
             $Addr = lc($1);
@@ -3594,7 +3617,7 @@ sub detectHWaddr($)
         {
             my $NetDev = undef;
             
-            if($Block=~/\A([^:]+):/) {
+            if($Block=~/\A([^:]+):?\s/) {
                 $NetDev = $1;
             }
             else {
@@ -3698,13 +3721,16 @@ sub probeDistr()
     }
     else
     {
-        if(check_Cmd("lsb_release"))
+        if(not $Docker)
         {
-            listProbe("logs", "lsb_release");
-            $LSB_Rel = runCmd("lsb_release -i -d -r -c 2>/dev/null");
-            
-            if($HWLogs) {
-                writeLog($LOG_DIR."/lsb_release", $LSB_Rel);
+            if(check_Cmd("lsb_release"))
+            {
+                listProbe("logs", "lsb_release");
+                $LSB_Rel = runCmd("lsb_release -i -d -r -c 2>/dev/null");
+                
+                if($HWLogs) {
+                    writeLog($LOG_DIR."/lsb_release", $LSB_Rel);
+                }
             }
         }
     }
@@ -3971,19 +3997,27 @@ sub writeLogs()
     # level=minimal
     if($Admin)
     {
-        listProbe("logs", "dmesg.1");
-        my $Dmesg_Old = runCmd("journalctl -a -k -b -1 -o short-monotonic 2>/dev/null | grep -v systemd");
-        $Dmesg_Old=~s/\]\s+.*?\s+kernel:/]/g;
-        writeLog($LOG_DIR."/dmesg.1", $Dmesg_Old);
+        if(not $Docker)
+        {
+            listProbe("logs", "dmesg.1");
+            my $Dmesg_Old = runCmd("journalctl -a -k -b -1 -o short-monotonic 2>/dev/null | grep -v systemd");
+            $Dmesg_Old=~s/\]\s+.*?\s+kernel:/]/g;
+            writeLog($LOG_DIR."/dmesg.1", $Dmesg_Old);
+        }
     }
     
-    listProbe("logs", "xorg.log.1");
-    my $XLog_Old = readFile("/var/log/Xorg.0.log.old");
-    writeLog($LOG_DIR."/xorg.log.1", $XLog_Old);
+    if(not $Docker)
+    {
+        listProbe("logs", "xorg.log.1");
+        my $XLog_Old = readFile("/var/log/Xorg.0.log.old");
+        writeLog($LOG_DIR."/xorg.log.1", $XLog_Old);
+    }
     
     listProbe("logs", "xorg.conf");
     my $XorgConf = readFile("/etc/X11/xorg.conf");
-    writeLog($LOG_DIR."/xorg.conf", $XorgConf);
+    if(not $Docker or $XorgConf) {
+        writeLog($LOG_DIR."/xorg.conf", $XorgConf);
+    }
     
     my $MonConf = "/etc/X11/xorg.conf.d/10-monitor.conf";
     if(-f $MonConf)
@@ -4000,39 +4034,47 @@ sub writeLogs()
         writeLog($LOG_DIR."/grub", $Grub);
     }
     
-    if(-f "/boot/grub2/grub.cfg")
+    if(not $Docker)
     {
-        listProbe("logs", "grub.cfg");
-        my $GrubCfg = readFile("/boot/grub2/grub.cfg");
-        writeLog($LOG_DIR."/grub.cfg", $GrubCfg);
+        if(-f "/boot/grub2/grub.cfg")
+        {
+            listProbe("logs", "grub.cfg");
+            my $GrubCfg = readFile("/boot/grub2/grub.cfg");
+            writeLog($LOG_DIR."/grub.cfg", $GrubCfg);
+        }
     }
     
-    if(-f "/var/log/boot.log")
+    if(not $Docker)
     {
-        listProbe("logs", "boot.log");
-        my $BootLog = clearLog(readFile("/var/log/boot.log"));
-        writeLog($LOG_DIR."/boot.log", $BootLog);
+        if(-f "/var/log/boot.log")
+        {
+            listProbe("logs", "boot.log");
+            my $BootLog = clearLog(readFile("/var/log/boot.log"));
+            writeLog($LOG_DIR."/boot.log", $BootLog);
+        }
     }
     
-    listProbe("logs", "xrandr");
-    my $XRandr = runCmd("xrandr --verbose 2>&1");
-    writeLog($LOG_DIR."/xrandr", clearLog_X11($XRandr));
+    if(check_Cmd("xrandr"))
+    {
+        listProbe("logs", "xrandr");
+        my $XRandr = runCmd("xrandr --verbose 2>&1");
+        writeLog($LOG_DIR."/xrandr", clearLog_X11($XRandr));
+        
+        listProbe("logs", "xrandr_providers");
+        my $XRandrProviders = runCmd("xrandr --listproviders 2>&1");
+        writeLog($LOG_DIR."/xrandr_providers", clearLog_X11($XRandrProviders));
+    }
     
-    listProbe("logs", "xrandr_providers");
-    my $XRandrProviders = runCmd("xrandr --listproviders 2>&1");
-    writeLog($LOG_DIR."/xrandr_providers", clearLog_X11($XRandrProviders));
-    
-    listProbe("logs", "glxinfo");
-    my $Glxinfo = runCmd("glxinfo 2>&1");
-    writeLog($LOG_DIR."/glxinfo", clearLog_X11($Glxinfo));
+    if(check_Cmd("glxinfo"))
+    {
+        listProbe("logs", "glxinfo");
+        my $Glxinfo = runCmd("glxinfo 2>&1");
+        writeLog($LOG_DIR."/glxinfo", clearLog_X11($Glxinfo));
+    }
     
     listProbe("logs", "uname");
     my $Uname = runCmd("uname -a 2>&1");
     writeLog($LOG_DIR."/uname", $Uname);
-    
-    listProbe("logs", "uptime");
-    my $Uptime = runCmd("uptime");
-    writeLog($LOG_DIR."/uptime", $Uptime);
     
     listProbe("logs", "biosdecode");
     my $BiosDecode = "";
@@ -4041,9 +4083,12 @@ sub writeLogs()
     }
     writeLog($LOG_DIR."/biosdecode", $BiosDecode);
     
-    listProbe("logs", "df");
-    my $Df = runCmd("df -h 2>&1");
-    writeLog($LOG_DIR."/df", $Df);
+    if(not $Docker)
+    {
+        listProbe("logs", "df");
+        my $Df = runCmd("df -h 2>&1");
+        writeLog($LOG_DIR."/df", $Df);
+    }
     
     listProbe("logs", "meminfo");
     my $Meminfo = readFile("/proc/meminfo");
@@ -4056,6 +4101,10 @@ sub writeLogs()
         listProbe("logs", "sensors");
         my $Sensors = runCmd("sensors 2>/dev/null");
         writeLog($LOG_DIR."/sensors", $Sensors);
+        
+        listProbe("logs", "uptime");
+        my $Uptime = runCmd("uptime");
+        writeLog($LOG_DIR."/uptime", $Uptime);
         
         if(check_Cmd("cpupower"))
         {
@@ -4111,18 +4160,33 @@ sub writeLogs()
             }
         }
         
-        if(check_Cmd("rfkill"))
+        if(check_Cmd("apk") and $Sys{"System"}=~/alpine/i)
         {
-            listProbe("logs", "rfkill");
-            my $Rfkill = runCmd("rfkill list 2>&1");
-            writeLog($LOG_DIR."/rfkill", $Rfkill);
+            listProbe("logs", "apk");
+            my $Apk = runCmd("apk info 2>/dev/null");
+            
+            if($Apk) {
+                writeLog($LOG_DIR."/apk", $Apk);
+            }
+        }
+        
+        if(not $Docker)
+        {
+            if(check_Cmd("rfkill"))
+            {
+                listProbe("logs", "rfkill");
+                my $Rfkill = runCmd("rfkill list 2>&1");
+                writeLog($LOG_DIR."/rfkill", $Rfkill);
+            }
         }
         
         if(check_Cmd("iw"))
         {
             listProbe("logs", "iw_list");
-            my $Iw = runCmd("iw list 2>&1");
-            writeLog($LOG_DIR."/iw_list", $Iw);
+            my $IwList = runCmd("iw list 2>&1");
+            if($IwList) {
+                writeLog($LOG_DIR."/iw_list", $IwList);
+            }
         }
         
         if(check_Cmd("iwconfig"))
@@ -4152,7 +4216,9 @@ sub writeLogs()
         {
             listProbe("logs", "nmcli");
             my $NmCli = runCmd("nmcli c 2>&1");
-            writeLog($LOG_DIR."/nmcli", $NmCli);
+            if($NmCli) {
+                writeLog($LOG_DIR."/nmcli", $NmCli);
+            }
         }
         
         if(check_Cmd("mmcli"))
@@ -4179,16 +4245,21 @@ sub writeLogs()
                 $MmCli .= "\n";
             }
             
-            writeLog($LOG_DIR."/mmcli", $MmCli);
+            if($MmCli) {
+                writeLog($LOG_DIR."/mmcli", $MmCli);
+            }
         }
         
-        listProbe("logs", "mount");
-        my $Mount = runCmd("mount -v 2>&1");
-        writeLog($LOG_DIR."/mount", $Mount);
-        
-        listProbe("logs", "findmnt");
-        my $Findmnt = runCmd("findmnt 2>&1");
-        writeLog($LOG_DIR."/findmnt", $Findmnt);
+        if(not $Docker)
+        {
+            listProbe("logs", "mount");
+            my $Mount = runCmd("mount -v 2>&1");
+            writeLog($LOG_DIR."/mount", $Mount);
+            
+            listProbe("logs", "findmnt");
+            my $Findmnt = runCmd("findmnt 2>&1");
+            writeLog($LOG_DIR."/findmnt", $Findmnt);
+        }
         
         if($Admin)
         {
@@ -4262,13 +4333,19 @@ sub writeLogs()
         my $Pstree = runCmd("pstree 2>&1");
         writeLog($LOG_DIR."/pstree", $Pstree);
         
-        listProbe("logs", "systemctl");
-        my $Sctl = runCmd("systemctl 2>/dev/null");
-        my $SessUser = undef;
-        if($Sctl=~s/( of user) (.+)/$1 USER/) {
-            $SessUser = $2;
+        my $SessUser = $ENV{"USER"};
+        if(not $Docker)
+        {
+            if(check_Cmd("systemctl"))
+            {
+                listProbe("logs", "systemctl");
+                my $Sctl = runCmd("systemctl 2>/dev/null");
+                if($Sctl=~s/( of user) (.+)/$1 USER/) {
+                    $SessUser = $2;
+                }
+                writeLog($LOG_DIR."/systemctl", $Sctl);
+            }
         }
-        writeLog($LOG_DIR."/systemctl", $Sctl);
         
         listProbe("logs", "top");
         my $TopInfo = runCmd("top -n 1 -b 2>&1");
@@ -4283,8 +4360,18 @@ sub writeLogs()
         
         listProbe("logs", "dev");
         my $DevFiles = runCmd("find /dev -ls 2>/dev/null");
-        $DevFiles=~s/(\A|\n).*?\d+ \//$1\//g;
-        writeLog($LOG_DIR."/dev", join("\n", sort split(/\n/, $DevFiles)));
+        if($DevFiles)
+        {
+            $DevFiles=~s/(\A|\n).*?\d+ \//$1\//g;
+            writeLog($LOG_DIR."/dev", join("\n", sort split(/\n/, $DevFiles)));
+        }
+        else
+        { # Alpine
+            $DevFiles = runCmd("ls -lR /dev");
+            $DevFiles=~s/total \d+\n//g;
+            $DevFiles=~s/(\A|\n).*?\s+\d+\s+\d\d:\d\d\s+/$1/g;
+            writeLog($LOG_DIR."/dev", $DevFiles);
+        }
         
         if(check_Cmd("acpi"))
         {
@@ -4358,6 +4445,13 @@ sub writeLogs()
         my $Blkid = runCmd("blkid 2>&1");
         writeLog($LOG_DIR."/blkid", $Blkid);
         
+        if(not $Docker)
+        {
+            listProbe("logs", "fstab");
+            my $Fstab = readFile("/etc/fstab");
+            writeLog($LOG_DIR."/fstab", $Fstab);
+        }
+        
         listProbe("logs", "lscpu");
         my $Lscpu = runCmd("lscpu 2>&1");
         writeLog($LOG_DIR."/lscpu", $Lscpu);
@@ -4373,10 +4467,6 @@ sub writeLogs()
         listProbe("logs", "interrupts");
         my $Interrupts = readFile("/proc/interrupts");
         writeLog($LOG_DIR."/interrupts", $Interrupts);
-        
-        listProbe("logs", "fstab");
-        my $Fstab = readFile("/etc/fstab");
-        writeLog($LOG_DIR."/fstab", $Fstab);
         
         listProbe("logs", "aplay");
         my $Aplay = runCmd("aplay -l 2>&1");
@@ -4432,28 +4522,31 @@ sub writeLogs()
             writeLog($LOG_DIR."/memtester", $Memtester);
         }
         
-        listProbe("logs", "modprobe.d");
-        my @Modprobe = listDir("/etc/modprobe.d/");
-        my $Mprobe = "";
-        foreach my $Mp (sort @Modprobe)
+        if(not $Docker)
         {
-            if($Mp eq "00_modprobe.conf"
-            or $Mp eq "01_mandriva.conf") {
-                next;
+            listProbe("logs", "modprobe.d");
+            my @Modprobe = listDir("/etc/modprobe.d/");
+            my $Mprobe = "";
+            foreach my $Mp (sort @Modprobe)
+            {
+                if($Mp eq "00_modprobe.conf"
+                or $Mp eq "01_mandriva.conf") {
+                    next;
+                }
+                $Mprobe .= $Mp."\n";
+                foreach (1 .. length($Mp)) {
+                    $Mprobe .= "-";
+                }
+                $Mprobe .= "\n";
+                my $Content = readFile("/etc/modprobe.d/".$Mp);
+                
+                $Content=~s&http(s|)://[^ ]+&&g;
+                
+                $Mprobe .= $Content;
+                $Mprobe .= "\n\n";
             }
-            $Mprobe .= $Mp."\n";
-            foreach (1 .. length($Mp)) {
-                $Mprobe .= "-";
-            }
-            $Mprobe .= "\n";
-            my $Content = readFile("/etc/modprobe.d/".$Mp);
-            
-            $Content=~s&http(s|)://[^ ]+&&g;
-            
-            $Mprobe .= $Content;
-            $Mprobe .= "\n\n";
+            writeLog($LOG_DIR."/modprobe.d", $Mprobe);
         }
-        writeLog($LOG_DIR."/modprobe.d", $Mprobe);
         
         listProbe("logs", "xorg.conf.d");
         my @XorgConfD = listDir("/etc/X11/xorg.conf.d/");
@@ -4471,7 +4564,9 @@ sub writeLogs()
             $XConfig .= readFile("/etc/X11/xorg.conf.d/".$Xc);
             $XConfig .= "\n\n";
         }
-        writeLog($LOG_DIR."/xorg.conf.d", $XConfig);
+        if(not $Docker or $XConfig) {
+            writeLog($LOG_DIR."/xorg.conf.d", $XConfig);
+        }
         
         if($Scanners)
         {
@@ -4545,7 +4640,7 @@ sub writeLogs()
         
         if($Printers)
         {
-            if($Admin)
+            if($Admin and not $Docker)
             {
                 my $ELog = "/var/log/cups/error_log";
                 if(-e $ELog)
@@ -4576,7 +4671,7 @@ sub writeLogs()
     if($DumpACPI)
     {
         listProbe("logs", "acpidump");
-        my $AcpiDump = ""; # pmtools
+        my $AcpiDump = "";
         
         # To decode acpidump:
         #  1. acpixtract -a acpidump
@@ -4991,16 +5086,8 @@ sub alignStr($$)
     return $Align;
 }
 
-sub checkHW()
+sub checkGlx()
 {
-    # TODO: test operability, set status to "works", "malfunc" or "failed"
-    
-    print "Run tests ... ";
-    
-    if($ListProbes) {
-        print "\n";
-    }
-    
     my $Glxgears = getGears("glxgears", "glxgears");
     
     if($KernMod{"nvidia"}!=0 or $KernMod{"nouveau"}!=0
@@ -5043,6 +5130,21 @@ sub checkHW()
         $Out_D=~s/(\d+ frames)/\n$1/;
         $Out_D=~s/GL_EXTENSIONS =.*?\n//;
         writeLog($TEST_DIR."/glxgears_discrete", $Out_D);
+    }
+}
+
+sub checkHW()
+{
+    # TODO: test operability, set status to "works", "malfunc" or "failed"
+    
+    print "Run tests ... ";
+    
+    if($ListProbes) {
+        print "\n";
+    }
+    
+    if(check_Cmd("glxgears")) {
+        checkGlx();
     }
     
     print "Ok\n";
@@ -5298,7 +5400,7 @@ sub preparePage($)
     my $Content = $_[0];
     $Content=~s&\Q<!-- meta -->\E(.|\n)+\Q<!-- meta end -->\E\n&&;
     $Content=~s&\Q<!-- menu -->\E(.|\n)+\Q<!-- menu end -->\E\n&&;
-    $Content=~s&\Q<!-- sign -->\E(.|\n)+\Q<!-- sign end -->\E\n&\n<hr/>\n<div align='right'><a class='sign' title='Linux Hardware Project' href=\'$URL\'>Linux Hardware Project</a></div><br/>\n&;
+    $Content=~s&\Q<!-- sign -->\E(.|\n)+\Q<!-- sign end -->\E\n&\n<hr/>\n<div align='right'><a class='sign' href=\'$GITHUB\'>Linux Hardware Project</a></div><br/>\n&;
     return $Content;
 }
 
@@ -5413,11 +5515,23 @@ sub importProbes($)
         if($Hw->{"vendor"} and $Hw->{"model"}) {
             $Title = join(" ", $Hw->{"vendor"}, $Hw->{"model"});
         }
-        elsif($Hw->{"type"}) {
-            $Title = ucfirst($Hw->{"type"})." (".$Hw->{"hwaddr"}.")";
+        elsif($Hw->{"type"})
+        {
+            if($Hw->{"vendor"}) {
+                $Title = $Hw->{"vendor"}." ".ucfirst($Hw->{"type"})." (".get_short_hwid($Hw->{"hwaddr"}).")";
+            }
+            else {
+                $Title = ucfirst($Hw->{"type"})." (".get_short_hwid($Hw->{"hwaddr"}).")";
+            }
         }
-        else {
-            $Title = "Computer (".$Hw->{"hwaddr"}.")";
+        else
+        {
+            if($Hw->{"vendor"}) {
+                $Title = $Hw->{"vendor"}." Computer (".get_short_hwid($Hw->{"hwaddr"}).")";
+            }
+            else {
+                $Title = "Computer (".get_short_hwid($Hw->{"hwaddr"}).")";
+            }
         }
         
         $LIST .= "<h2>$Title</h2>\n";
@@ -5470,6 +5584,13 @@ sub importProbes($)
     writeFile($Dir."/index.html", $INDEX);
     
     print "Created index: $Dir/index.html\n";
+}
+
+sub get_short_hwid($)
+{
+    my $HWid = $_[0];
+    $HWid=~s/\A(\w+\-\w+).+\-(\w+)\Z/$1...$2/;
+    return $HWid;
 }
 
 sub getDateStamp($) {
@@ -5551,7 +5672,7 @@ sub scenario()
     {
         if(not $Admin)
         {
-            print STDERR "ERROR: you should run as root (su)\n";
+            print STDERR "ERROR: you should run as root (type 'su')\n";
             exit(1);
         }
         else
