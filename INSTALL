@@ -7,7 +7,7 @@ RELEASE INFORMATION
 
 Project:           HW Probe
 Version:           1.3
-Date:              November 24, 2017
+Date:              November 26, 2017
 
 
 This file explains how to install and setup environment
@@ -19,6 +19,8 @@ Content:
    1. Requirements for Linux
    2. Configure and Install
    3. Usage
+   4. Live ISO
+   5. Docker
 
 
 1. REQUIREMENTS FOR LINUX
@@ -70,6 +72,28 @@ Content:
    PC_NAME — any name of the computer):
 
      hw-probe -all -upload -id PC_NAME
+
+
+
+4. LIVE ISO
+===========
+
+   The Live ISO with hw-probe installed: https://mirror.yandex.ru/rosa/rosa2016.1/iso/ROSA.Fresh.R9/
+   
+   Boot this Linux ISO in Live mode on your computer and make a probe (see USAGE).
+
+
+
+5. DOCKER
+=========
+
+   You can easily make a probe on any Linux distribution
+   without installing the tool with the help of the Docker image:
+   
+      docker pull linuxhw/hw-probe
+      docker run -it -v /dev:/dev:ro -v /lib/modules:/lib/modules:ro -v /etc/os-release:/etc/os-release:ro --privileged --net=host --pid=host linuxhw/hw-probe -all -upload -id PC_NAME
+     
+      You may need to run 'xhost +local:' before docker run to collect X11 info (xrandr, xinput, etc.).
 
 
 

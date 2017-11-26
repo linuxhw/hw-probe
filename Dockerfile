@@ -5,6 +5,12 @@ RUN apk update \
     smartmontools hdparm sysstat util-linux lm_sensors acpi iw wireless-tools \
     alsa-utils xrandr xdpyinfo xinput acpica iasl \
     && apk add --no-cache --virtual build-deps git gcc make libc-dev flex linux-headers \
+    && git clone https://anongit.freedesktop.org/git/xorg/app/edid-decode.git \
+    && cd edid-decode \
+    && make \
+    && make install \
+    && cd .. \
+    && rm -fr edid-decode \
     && git clone https://github.com/wfeldt/libx86emu.git \
     && cd libx86emu \
     && make \

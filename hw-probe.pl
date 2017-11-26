@@ -974,6 +974,51 @@ sub probeHW()
         }
     }
     
+    # Dev listing
+    my $DevFiles = "";
+    
+    if($FixProbe) {
+        $DevFiles = readFile($FixProbe_Logs."/dev");
+    }
+    else
+    {
+        listProbe("logs", "dev");
+        my $DevFiles = runCmd("find /dev -ls 2>/dev/null");
+        if($DevFiles)
+        {
+            $DevFiles=~s/(\A|\n).*?\d+ \//$1\//g;
+            writeLog($LOG_DIR."/dev", join("\n", sort split(/\n/, $DevFiles)));
+        }
+        else
+        { # Alpine
+            $DevFiles = runCmd("ls -lR /dev");
+            $DevFiles=~s/total \d+\n//g;
+            $DevFiles=~s/(\A|\n).*?\s+\d+\s+\d\d:\d\d\s+/$1/g;
+            writeLog($LOG_DIR."/dev", $DevFiles);
+        }
+    }
+    
+    my %DevIdByName = ();
+    my $InDevById = 0;
+    foreach my $Line (split(/\n/, $DevFiles))
+    {
+        if(index($Line, "/dev/disk/by-id")!=-1) {
+            $InDevById = 1;
+        }
+        
+        if($InDevById and not $Line) {
+            last;
+        }
+        
+        if($InDevById)
+        {
+            if($Line=~/\A((ata|usb|nmve)\-[^\/]+)\s+\-\>\s+.*?(\w+)\Z/)
+            {
+                $DevIdByName{$3} = $1;
+            }
+        }
+    }
+    
     # Loaded modules
     my $Lsmod = "";
     
@@ -1468,7 +1513,14 @@ sub probeHW()
             
             if($Device{"Type"} eq "disk")
             {
-                if(my $FsId = $Device{"FsId"})
+                my $FsId = $Device{"FsId"};
+                
+                if(not $FsId and $Device{"File"})
+                { # Docker
+                    $FsId = $DevIdByName{basename($Device{"File"})};
+                }
+                
+                if($FsId)
                 {
                     if(my $Serial = $Device{"Serial"})
                     {
@@ -2960,10 +3012,13 @@ sub probeHW()
     }
     else
     {
-        listProbe("logs", "upower");
-        $Upower = runCmd("upower -d 2>/dev/null");
-        if($HWLogs and $Upower) {
-            writeLog($LOG_DIR."/upower", $Upower);
+        if(check_Cmd("upower"))
+        {
+            listProbe("logs", "upower");
+            $Upower = runCmd("upower -d 2>/dev/null");
+            if($HWLogs and $Upower) {
+                writeLog($LOG_DIR."/upower", $Upower);
+            }
         }
     }
     
@@ -2985,6 +3040,10 @@ sub probeHW()
                     
                     if($Line=~/model:[ ]*(.+?)[ ]*\Z/) {
                         $Device{"Device"} = fmtVal($1);
+                    }
+                    
+                    if($Line=~/serial:[ ]*(.+?)[ ]*\Z/) {
+                        $Device{"Serial"} = $1;
                     }
                     
                     if($Line=~/energy-full-design:[ ]*(.+?)[ ]*\Z/)
@@ -3012,9 +3071,100 @@ sub probeHW()
                     $Device{"Device"} = ""; # model0
                 }
                 
-                if($Device{"Vendor"} and $Device{"Device"} and $Device{"Size"})
+                if($Device{"Vendor"} and $Device{"Device"})
                 {
-                    my $ID = devID(nameID($Device{"Vendor"}), $Device{"Device"});
+                    my $ID = devID(nameID($Device{"Vendor"}), devSuffix(\%Device));
+                    $ID = fmtID($ID);
+                    
+                    $Device{"Device"} = "Battery ".$Device{"Device"};
+                    
+                    if($Device{"Technology"}) {
+                        $Device{"Device"} .= " ".$Device{"Technology"};
+                    }
+                    
+                    if($Device{"Size"}) {
+                        $Device{"Device"} .= " ".$Device{"Size"};
+                    }
+                    
+                    if($ID) {
+                        $HW{"bat:".$ID} = \%Device;
+                    }
+                }
+            }
+        }
+    }
+    
+    my $PSDir = "/sys/class/power_supply";
+    my $PowerSupply = "";
+    
+    if($FixProbe) {
+        $PowerSupply = readFile($FixProbe_Logs."/power_supply");
+    }
+    else
+    {
+        listProbe("logs", "power_supply");
+        foreach my $Bat (listDir($PSDir))
+        {
+            my $PSPath = $PSDir."/".$Bat;
+            $PowerSupply .= $PSPath.":\n";
+            $PowerSupply .= readFile($PSPath."/uevent");
+            $PowerSupply .= "\n";
+        }
+        
+        if($HWLogs and $PowerSupply) {
+            writeLog($LOG_DIR."/power_supply", $PowerSupply);
+        }
+    }
+    
+    if(not $Upower and $PowerSupply)
+    {
+        my $PSPath = undef;
+        foreach my $Block (split(/\n\n/, $PowerSupply))
+        {
+            if($Block=~/$PSDir\/BAT/i)
+            {
+                my %Device = ();
+                
+                $Device{"Type"} = "battery";
+                
+                if($Block=~/POWER_SUPPLY_MODEL_NAME=(.+)/i) {
+                    $Device{"Device"} = $1;
+                }
+                
+                if($Block=~/POWER_SUPPLY_MANUFACTURER=(.+)/i) {
+                    $Device{"Vendor"} = $1;
+                }
+                
+                if($Block=~/POWER_SUPPLY_TECHNOLOGY=(.+)/i) {
+                    $Device{"Technology"} = $1;
+                }
+                
+                if($Block=~/POWER_SUPPLY_ENERGY_FULL_DESIGN=(.+)/i) {
+                    $Device{"Size"} = ($1/1000000)."Wh";
+                }
+                
+                if($Block=~/POWER_SUPPLY_CHARGE_FULL_DESIGN=(.+)/i) {
+                    $Device{"Change"} = $1;
+                }
+                
+                if($Block=~/POWER_SUPPLY_SERIAL_NUMBER=(.+)/i) {
+                    $Device{"Serial"} = $1;
+                }
+                
+                if($Block=~/POWER_SUPPLY_VOLTAGE_MIN_DESIGN=(.+)/i) {
+                    $Device{"Voltage"} = $1;
+                }
+                
+                if(not $Device{"Size"})
+                {
+                    if($Device{"Voltage"} and $Device{"Change"}) {
+                        $Device{"Size"} = (($Device{"Change"}/1000000)*($Device{"Voltage"}/1000000))."Wh";
+                    }
+                }
+                
+                if($Device{"Vendor"} and $Device{"Device"})
+                {
+                    my $ID = devID(nameID($Device{"Vendor"}), devSuffix(\%Device));
                     $ID = fmtID($ID);
                     
                     $Device{"Device"} = "Battery ".$Device{"Device"};
@@ -3277,7 +3427,8 @@ sub devSuffix($)
         }
     }
     elsif($Device->{"Type"} eq "memory"
-    or $Device->{"Type"} eq "disk")
+    or $Device->{"Type"} eq "disk"
+    or $Device->{"Type"} eq "battery")
     {
         if($Device->{"Serial"}) {
             $Suffix .= "-serial-".$Device->{"Serial"};
@@ -4128,8 +4279,10 @@ sub writeLogs()
             writeLog($LOG_DIR."/dkms_status", $DkmsStatus);
         }
         
-        listProbe("logs", "xdpyinfo");
-        if(my $Xdpyinfo = runCmd("xdpyinfo 2>&1")) {
+        if(check_Cmd("xdpyinfo"))
+        {
+            listProbe("logs", "xdpyinfo");
+            my $Xdpyinfo = runCmd("xdpyinfo 2>&1");
             writeLog($LOG_DIR."/xdpyinfo", clearLog_X11($Xdpyinfo));
         }
         
@@ -4199,17 +4352,19 @@ sub writeLogs()
         if(check_Cmd("hciconfig"))
         {
             listProbe("logs", "hciconfig");
-            my $HciConfig = "";
-            
-            $HciConfig = runCmd("hciconfig -a 2>&1");
-            writeLog($LOG_DIR."/hciconfig", $HciConfig);
+            my $HciConfig = runCmd("hciconfig -a 2>&1");
+            if($HciConfig) {
+                writeLog($LOG_DIR."/hciconfig", $HciConfig);
+            }
         }
         
         if(check_Cmd("nm-tool"))
         {
             listProbe("logs", "nm-tool");
             my $NmTool = runCmd("nm-tool 2>&1");
-            writeLog($LOG_DIR."/nm-tool", $NmTool);
+            if($NmTool) {
+                writeLog($LOG_DIR."/nm-tool", $NmTool);
+            }
         }
         
         if(check_Cmd("nmcli"))
@@ -4357,21 +4512,6 @@ sub writeLogs()
         listProbe("logs", "iostat");
         my $Iostat = runCmd("iostat -Nx 2>&1");
         writeLog($LOG_DIR."/iostat", $Iostat);
-        
-        listProbe("logs", "dev");
-        my $DevFiles = runCmd("find /dev -ls 2>/dev/null");
-        if($DevFiles)
-        {
-            $DevFiles=~s/(\A|\n).*?\d+ \//$1\//g;
-            writeLog($LOG_DIR."/dev", join("\n", sort split(/\n/, $DevFiles)));
-        }
-        else
-        { # Alpine
-            $DevFiles = runCmd("ls -lR /dev");
-            $DevFiles=~s/total \d+\n//g;
-            $DevFiles=~s/(\A|\n).*?\s+\d+\s+\d\d:\d\d\s+/$1/g;
-            writeLog($LOG_DIR."/dev", $DevFiles);
-        }
         
         if(check_Cmd("acpi"))
         {
@@ -4593,43 +4733,57 @@ sub writeLogs()
     if($LogLevel eq "maximal")
     {
         # scan for available WiFi networks
-        listProbe("logs", "iw_scan");
-        my $IwScan = "";
-        if($Admin)
+        if(check_Cmd("iw"))
         {
-            foreach my $I (sort keys(%WLanInterface))
+            listProbe("logs", "iw_scan");
+            my $IwScan = "";
+            if($Admin)
             {
-                $IwScan .= $I."\n";
-                foreach (1 .. length($I)) {
-                    $IwScan .= "-";
+                foreach my $I (sort keys(%WLanInterface))
+                {
+                    $IwScan .= $I."\n";
+                    foreach (1 .. length($I)) {
+                        $IwScan .= "-";
+                    }
+                    $IwScan .= "\n";
+                    $IwScan .= runCmd("iw dev $I scan 2>&1");
+                    $IwScan .= "\n";
                 }
-                $IwScan .= "\n";
-                $IwScan .= runCmd("iw dev $I scan 2>&1");
-                $IwScan .= "\n";
             }
+            writeLog($LOG_DIR."/iw_scan", $IwScan);
         }
-        writeLog($LOG_DIR."/iw_scan", $IwScan);
         
         # scan for available bluetooth connections
-        listProbe("logs", "hcitool_scan");
-        my $HciScan = "";
-        if(-s $LOG_DIR."/hciconfig") {
-            $HciScan = runCmd("hcitool scan --class 2>&1");
+        if(check_Cmd("hcitool"))
+        {
+            listProbe("logs", "hcitool_scan");
+            my $HciScan = runCmd("hcitool scan --class 2>&1");
+            if($HciScan=~/No such device/i) {
+                $HciScan = "";
+            }
+            if($HciScan) {
+                writeLog($LOG_DIR."/hcitool_scan", $HciScan);
+            }
         }
-        writeLog($LOG_DIR."/hcitool_scan", $HciScan);
         
         listProbe("logs", "route");
         my $Route = runCmd("route 2>&1");
         writeLog($LOG_DIR."/route", $Route);
         
-        listProbe("logs", "xvinfo");
-        my $XVInfo = runCmd("xvinfo 2>&1");
-        writeLog($LOG_DIR."/xvinfo", clearLog_X11($XVInfo));
+        if(check_Cmd("xvinfo"))
+        {
+            listProbe("logs", "xvinfo");
+            my $XVInfo = runCmd("xvinfo 2>&1");
+            writeLog($LOG_DIR."/xvinfo", clearLog_X11($XVInfo));
+        }
         
-        listProbe("logs", "lsinitrd");
-        my $Lsinitrd = runCmd("lsinitrd 2>&1");
-        $Lsinitrd=~s/.*?(\w+\s+\d+\s+\d\d\d\d\s+)/$1/g;
-        writeLog($LOG_DIR."/lsinitrd", $Lsinitrd);
+        if(check_Cmd("lsinitrd"))
+        {
+            listProbe("logs", "lsinitrd");
+            my $Lsinitrd = runCmd("lsinitrd 2>&1");
+            $Lsinitrd=~s/.*?(\w+\s+\d+\s+\d\d\d\d\s+)/$1/g;
+            writeLog($LOG_DIR."/lsinitrd", $Lsinitrd);
+        }
         
         if(check_Cmd("update-alternatives"))
         {
@@ -4699,9 +4853,8 @@ sub writeLogs()
 sub check_Cmd($)
 {
     my $Cmd = $_[0];
-    return "" if(not $Cmd);
     
-    if(-x $Cmd)
+    if(index($Cmd, "/")!=-1 and -x $Cmd)
     { # relative or absolute path
         return 1;
     }
