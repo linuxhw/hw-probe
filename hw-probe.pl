@@ -3585,6 +3585,7 @@ sub probeSys()
         }
         
         my $Value = readFile($DmiDir."/".$File);
+        $Value=~s/\s+\Z//g;
         
         if($File eq "sys_vendor")
         {
