@@ -91,7 +91,7 @@ Content:
    without installing the tool with the help of the Docker image:
    
       docker pull linuxhw/hw-probe
-      docker run -it -v /dev:/dev:ro -v /lib/modules:/lib/modules:ro -v /etc/os-release:/etc/os-release:ro --privileged --net=host --pid=host linuxhw/hw-probe -all -upload -id PC_NAME
+      docker run -it -v /dev:/dev:ro -v /lib/modules:/lib/modules:ro -v /etc/os-release:/etc/os-release:ro -v /var/log:/var/log:ro --privileged --net=host --pid=host linuxhw/hw-probe -all -upload -id PC_NAME
      
       You may need to run 'xhost +local:' before docker run to collect X11 info (xrandr, xinput, etc.).
 

@@ -4157,12 +4157,9 @@ sub writeLogs()
         }
     }
     
-    if(not $Docker)
-    {
-        listProbe("logs", "xorg.log.1");
-        my $XLog_Old = readFile("/var/log/Xorg.0.log.old");
-        writeLog($LOG_DIR."/xorg.log.1", $XLog_Old);
-    }
+    listProbe("logs", "xorg.log.1");
+    my $XLog_Old = readFile("/var/log/Xorg.0.log.old");
+    writeLog($LOG_DIR."/xorg.log.1", $XLog_Old);
     
     listProbe("logs", "xorg.conf");
     my $XorgConf = readFile("/etc/X11/xorg.conf");
@@ -4195,14 +4192,11 @@ sub writeLogs()
         }
     }
     
-    if(not $Docker)
+    if(-f "/var/log/boot.log")
     {
-        if(-f "/var/log/boot.log")
-        {
-            listProbe("logs", "boot.log");
-            my $BootLog = clearLog(readFile("/var/log/boot.log"));
-            writeLog($LOG_DIR."/boot.log", $BootLog);
-        }
+        listProbe("logs", "boot.log");
+        my $BootLog = clearLog(readFile("/var/log/boot.log"));
+        writeLog($LOG_DIR."/boot.log", $BootLog);
     }
     
     if(check_Cmd("xrandr"))
@@ -4794,7 +4788,7 @@ sub writeLogs()
         
         if($Printers)
         {
-            if($Admin and not $Docker)
+            if($Admin)
             {
                 my $ELog = "/var/log/cups/error_log";
                 if(-e $ELog)
