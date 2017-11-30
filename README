@@ -28,8 +28,8 @@ LIVE ISO:
 DOCKER:
   You can easily make a probe on any Linux distribution without installing the tool with the help of the Docker image:
   
-    docker pull linuxhw/hw-probe
-    docker run -it -v /dev:/dev:ro -v /lib/modules:/lib/modules:ro -v /etc/os-release:/etc/os-release:ro -v /var/log:/var/log:ro --privileged --net=host --pid=host linuxhw/hw-probe -all -upload -id PC_NAME
+    sudo docker pull linuxhw/hw-probe
+    sudo docker run -it -v /dev:/dev:ro -v /lib/modules:/lib/modules:ro -v /etc/os-release:/etc/os-release:ro -v /var/log:/var/log:ro --privileged --net=host --pid=host linuxhw/hw-probe -all -upload -id PC_NAME
      
   You may need to run 'xhost +local:' before docker run to collect X11 info (xrandr, xinput, etc.).
 
@@ -41,9 +41,9 @@ REQUIRES:
   dmidecode
   pciutils (lspci)
   usbutils (lsusb)
+  smartmontools (smartctl)
 
 SUGGESTS:
-  smartmontools (smartctl)
   systemd-tools (systemd-analyze)
   hdparm
   sysstat (iostat)

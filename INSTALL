@@ -7,7 +7,7 @@ RELEASE INFORMATION
 
 Project:           HW Probe
 Version:           1.3
-Date:              November 26, 2017
+Date:              November 30, 2017
 
 
 This file explains how to install and setup environment
@@ -32,22 +32,22 @@ Content:
    4. dmidecode
    5. pciutils
    6. usbutils
+   7. smartmontools
 
 1.1 Suggestions
 
-   1. smartmontools
-   2. systemd-tools
-   3. hdparm
-   4. sysstat
-   5. memtester
-   6. inxi
-   7. edid-decode
-   8. rfkill
-   9. xinput
-   10. i2c-tools
-   11. hplip
-   12. pnputils
-   13. acpica
+   1. systemd-tools
+   2. hdparm
+   3. sysstat
+   4. memtester
+   5. inxi
+   6. edid-decode
+   7. rfkill
+   8. xinput
+   9. i2c-tools
+   10. hplip
+   11. pnputils
+   12. acpica
 
 
 
@@ -90,8 +90,8 @@ Content:
    You can easily make a probe on any Linux distribution
    without installing the tool with the help of the Docker image:
    
-      docker pull linuxhw/hw-probe
-      docker run -it -v /dev:/dev:ro -v /lib/modules:/lib/modules:ro -v /etc/os-release:/etc/os-release:ro -v /var/log:/var/log:ro --privileged --net=host --pid=host linuxhw/hw-probe -all -upload -id PC_NAME
+      sudo docker pull linuxhw/hw-probe
+      sudo docker run -it -v /dev:/dev:ro -v /lib/modules:/lib/modules:ro -v /etc/os-release:/etc/os-release:ro -v /var/log:/var/log:ro --privileged --net=host --pid=host linuxhw/hw-probe -all -upload -id PC_NAME
      
       You may need to run 'xhost +local:' before docker run to collect X11 info (xrandr, xinput, etc.).
 
