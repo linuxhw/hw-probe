@@ -18,7 +18,7 @@ INSTALL:
 USAGE:
   hw-probe -all -upload -id PC_NAME
 
-  Run as root, PC_NAME — any name of the computer.
+  Run as root, PC_NAME — any description of the probe.
 
 LIVE ISO:
   If the tool is not pre-installed in your system or you have troubles with installing the tool or its dependencies (e.g. hwinfo is not available in the repository) then try this Linux ISO with hw-probe installed: https://mirror.yandex.ru/rosa/rosa2016.1/iso/ROSA.Fresh.R9/

@@ -36,6 +36,7 @@
 #  rfkill
 #  xinput
 #  acpica
+#  mesa-demos
 #
 # SUGGESTIONS (MORE)
 # ==================
@@ -267,7 +268,7 @@ OTHER OPTIONS
       Get group id.
 
 DATA LOCATION:
-  You can find created probes in the \"<ROOT_HOME>/HW_PROBE\" directory.
+  Probes are saved in the /root/HW_PROBE directory.
 
 ";
 
@@ -282,6 +283,8 @@ my %WLanInterface = ();
 my %PermanentAddr = ();
 my %HDD = ();
 my %HDD_Info = ();
+
+my $PCI_DISK_BUS = "nvme";
 
 # Tests
 my %TestRes;
@@ -1202,7 +1205,7 @@ sub probeHW()
         }
         elsif($Device{"Type"} eq "disk"
         and $Bus eq "pci") {
-            $Bus = "ide";
+            $Bus = $PCI_DISK_BUS;
         }
         
         $Info=~s/[ ]{2,}/ /g;
@@ -1217,7 +1220,7 @@ sub probeHW()
             {
                 $Key=~s/\ASub/S/; # name mapping
                 
-                if($Bus ne "ide")
+                if($Bus ne "ide" and $Bus ne $PCI_DISK_BUS)
                 {
                     if($Val=~s/\A(\w+) 0x/0x/) {
                         $Bus = $1;
@@ -1367,7 +1370,7 @@ sub probeHW()
             elsif($Key eq "Attached to")
             {
                 $Device{"Attached"} = $Val;
-                if($Bus eq "ide")
+                if($Bus eq "ide" or $Bus eq $PCI_DISK_BUS)
                 {
                     # FIXME: check for PATA
                     # if($Val=~/SATA/)
@@ -1385,7 +1388,8 @@ sub probeHW()
             elsif($Key eq "Device File")
             {
                 if($Device{"Type"} eq "disk"
-                and ($Bus eq "ide" or index($Val, "nvme")!=-1))
+                and ($Bus eq "ide" or $Bus eq $PCI_DISK_BUS
+                or index($Val, "nvme")!=-1))
                 {
                     $Val=~s/\s*\(.*\)//g;
                     $Device{"File"} = $Val;
@@ -1444,13 +1448,23 @@ sub probeHW()
         if($Device{"Type"} eq "disk")
         {
             if(index($Device{"File"}, "nvme")!=-1
-            and ($Device{"Device"} eq "Disk" or not $Device{"Vendor"}))
+            and (not $Device{"Device"} or $Device{"Device"} eq "Disk"
+            or not $Device{"Vendor"} or not $Device{"Serial"}))
             { # empty info for NVMe drives
+                if($Device{"Model"})
+                {
+                    if(index($Device{"Model"}, $Device{"Device"})!=-1) {
+                        $Device{"Model"} = undef;
+                    }
+                    elsif($Device{"Model"}=~/controller/i) {
+                        $Device{"Model"} = undef;
+                    }
+                }
                 $HDD_Info{$Device{"File"}} = \%Device;
                 next;
             }
             
-            if(not $Device{"Attached"} or not $Device{"Serial"}) {
+            if(not $Device{"Attached"}) {
                 next;
             }
         }
@@ -3380,6 +3394,37 @@ sub probeHW()
         }
     }
     
+    foreach my $Dev (keys(%HDD))
+    {
+        if(not $HDD{$Dev})
+        {
+            if(index($Dev, "nvme")!=-1)
+            {
+                my %Drv = ( "Type"=>"disk" );
+                if(defined $HDD_Info{$Dev})
+                {
+                    foreach ("Capacity", "Driver", "Model") {
+                        $Drv{$_} = $HDD_Info{$Dev}{$_};
+                    }
+                }
+                
+                if($Drv{"Model"} and $Drv{"Model"}=~s/\A(Lite-On|OCZ|Samsung Electronics) //i) {
+                    $Drv{"Vendor"} = $1;
+                }
+                
+                if($Drv{"Model"} and $Drv{"Model"} ne "Disk") {
+                    $Drv{"Device"} = $Drv{"Model"};
+                }
+                else {
+                    $Drv{"Device"} = "NVMe SSD Drive";
+                }
+                
+                $Drv{"Device"} .= addCapacity($Drv{"Device"}, $Drv{"Capacity"});
+                $HW{$PCI_DISK_BUS.":solid-state-drive"} = \%Drv;
+            }
+        }
+    }
+    
     if($HWLogs)
     {
         listProbe("logs", "dmesg");
@@ -3399,6 +3444,12 @@ sub probeHW()
 sub detectDrive($$)
 {
     my ($Dev, $Desc) = @_;
+    
+    my $Bus = "ide"; # SATA, PATA, M.2, mSATA, etc.
+    if(index($Dev, "nvme")!=-1) {
+        $Bus = $PCI_DISK_BUS;
+    }
+    
     my $Device = { "Type"=>"disk" };
     
     if(defined $HDD_Info{$Dev})
@@ -3429,8 +3480,11 @@ sub detectDrive($$)
     $ID = devID($ID, devSuffix($Device));
     $Device->{"Device"} .= addCapacity($Device->{"Device"}, $Device->{"Capacity"});
     
-    my $HWId = "ide:".$ID;
+    my $HWId = $Bus.":".$ID;
     $HW{$HWId} = $Device;
+    
+    $HDD{$Dev} = $HWId;
+    
     return $HWId;
 }
 
@@ -3743,7 +3797,7 @@ sub probeSys()
         }
         
         if($Value ne "" and $Value=~/[A-Z0-9]/i) {
-            $Dmi .= $File.": "  .$Value;
+            $Dmi .= $File.": ".$Value."\n";
         }
     }
     
@@ -3871,6 +3925,17 @@ sub probeHWaddr()
     }
 }
 
+sub countStr($$)
+{
+    my ($Str, $Target) = @_;
+    
+    my $Count = 0;
+    while($Str=~s/$Target//) {
+        $Count += 1;
+    }
+    return $Count;
+}
+
 sub detectHWaddr($)
 {
     my $IFConfig = $_[0];
@@ -3921,9 +3986,9 @@ sub detectHWaddr($)
             { # enp0s20f0u3, enp0s29u1u5, enp0s20u1, etc.
                 push(@Other, $Addr);
             }
-            elsif($Addr=~tr!00!!>=5
-            or $Addr=~tr!88!!>=5
-            or $Addr=~tr!ff!!>=5)
+            elsif(countStr($Addr, "00")>=5
+            or countStr($Addr, "88")>=5
+            or countStr($Addr, "ff")>=5)
             { # 00-DD-00-00-00-00
               # 88-88-88-88-87-88
                 push(@Other, $Addr);
