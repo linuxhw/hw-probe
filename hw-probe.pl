@@ -3741,7 +3741,9 @@ sub listDir($)
     my @Contents = grep { $_ ne "." && $_ ne ".." } readdir($DH);
     closedir($DH);
     
-    return sort @Contents;
+    @Contents = sort @Contents;
+    
+    return @Contents;
 }
 
 sub probeSys()
@@ -5767,7 +5769,6 @@ sub preparePage($)
     $Content=~s&\Q<!-- meta -->\E(.|\n)+\Q<!-- meta end -->\E\n&&;
     $Content=~s&\Q<!-- menu -->\E(.|\n)+\Q<!-- menu end -->\E\n&&;
     $Content=~s&\Q<!-- sign -->\E(.|\n)+\Q<!-- sign end -->\E\n&<hr/>\n<div align='right'><a class='sign' href=\'$GITHUB\'>Linux Hardware Project</a></div><br/>\n&;
-    $Content=~s&[ ]*\<\!\-\-[\w\s]+?\-\-\>\n&&g;
     return $Content;
 }
 
@@ -5801,7 +5802,11 @@ sub importProbes($)
 {
     my $Dir = $_[0];
     
-    mkpath($Dir);
+    if(not -d $Dir)
+    {
+        mkpath($Dir);
+        setPublic($Dir);
+    }
     
     my ($Imported, $OneProbe) = (undef, undef);
     
@@ -5829,7 +5834,7 @@ sub importProbes($)
     foreach my $D (@Paths)
     {
         my $P = basename($D);
-        if($P eq "LATEST" or not -d $D) {
+        if($P eq "LATEST" or not -d $D or not listDir($D)) {
             next;
         }
         
@@ -5842,19 +5847,23 @@ sub importProbes($)
         {
             if(downloadProbe($P, $To)!=-1)
             {
-                my @DStat = stat($D);
-                my $Host = `tar -xOf $D/* hw.info/host`;
+                my $TmpDir = $TMP_DIR."/hw.info";
+                system("tar -xf $D/* -C $TMP_DIR");
                 
                 my %Prop = ();
-                foreach my $Line (split(/\n/, $Host))
+                foreach my $Line (split(/\n/, readFile($TmpDir."/host")))
                 {
                     if($Line=~/(\w+):(.*)/) {
                         $Prop{$1} = $2;
                     }
                 }
+                
+                my @DStat = stat($TmpDir);
                 $Prop{"date"} = $DStat[9]; # last modify time
                 writeFile($To."/probe.info", Dumper(\%Prop));
                 $Imported = $P;
+                setPublic($To, "-R");
+                rmtree($TmpDir);
             }
             else {
                 $IndexInfo->{"SkipProbes"}{$P} = 1;
@@ -5863,6 +5872,7 @@ sub importProbes($)
     }
     
     writeFile($Dir."/index.info", Dumper($IndexInfo));
+    setPublic($Dir."/index.info");
     
     if(not $Imported) {
         print "No probes to import\n";
@@ -5960,6 +5970,7 @@ sub importProbes($)
     $INDEX=~s!(['"])(css|js|images)\/!$1$OneProbe/$2\/!g;
     
     writeFile($Dir."/index.html", $INDEX);
+    setPublic($Dir."/index.html");
     
     print "Created index: $Dir/index.html\n";
 }
@@ -5977,6 +5988,33 @@ sub getDateStamp($) {
 
 sub getTimeStamp($) {
     return strftime('%H:%M', localtime($_[0]));
+}
+
+sub setPublic($)
+{
+    my $Path = shift(@_);
+    my $R = undef;
+    if(@_) {
+        $R = shift(@_);
+    }
+    
+    my @Chmod = ("chmod", "775");
+    if($R) {
+        push(@Chmod, $R);
+    }
+    push(@Chmod, $Path);
+    system(@Chmod);
+    
+    if(defined $ENV{"SUDO_USER"}
+    and $ENV{"SUDO_USER"} ne "root")
+    {
+        my @Chown = ("chown", $ENV{"SUDO_USER"}.":".$ENV{"SUDO_USER"});
+        if($R) {
+            push(@Chown, $R);
+        }
+        push(@Chown, $Path);
+        system(@Chown);
+    }
 }
 
 sub scenario()
@@ -6334,11 +6372,6 @@ sub scenario()
             exit(1);
         }
         importProbes($ImportProbes);
-        
-        system("chmod", "775", "-R", $ImportProbes);
-        if($ENV{"SUDO_USER"}) {
-            system("chown", $ENV{"SUDO_USER"}.":".$ENV{"SUDO_USER"}, "-R", $ImportProbes);
-        }
     }
     
     exit(0);
