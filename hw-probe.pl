@@ -76,7 +76,7 @@ my $CmdName = basename($0);
 my $URL = "https://linux-hardware.org";
 my $GITHUB = "https://github.com/linuxhw/hw-probe";
 
-my $PROBE_DIR = getProbeDir();
+my $PROBE_DIR = "/root/HW_PROBE";
 my $DATA_DIR = $PROBE_DIR."/LATEST/hw.info";
 my $LOG_DIR = $DATA_DIR."/logs";
 my $TEST_DIR = $DATA_DIR."/tests";
@@ -268,7 +268,7 @@ OTHER OPTIONS
       Get group id.
 
 DATA LOCATION:
-  Probes are saved in the /root/HW_PROBE directory.
+  Probes are saved in the $PROBE_DIR directory.
 
 ";
 
@@ -431,12 +431,23 @@ sub runCmd($)
     return `LANG=$LOCALE $Cmd`;
 }
 
-sub getProbeDir()
+sub getOldProbeDir()
 {
-    my $Dir = "HW_PROBE";
+    my $SubDir = "HW_PROBE";
+    my $Dir = undef;
     
     if(my $Home = $ENV{"HOME"}) {
-        $Dir = $Home."/".$Dir;
+        $Dir = $Home."/".$SubDir;
+    }
+    
+    if($Dir and $Dir eq $PROBE_DIR)
+    {
+        $Dir = undef;
+        
+        if(defined $ENV{"SUDO_USER"}
+        and $ENV{"SUDO_USER"} ne "root") {
+            $Dir = "/home/".$ENV{"SUDO_USER"}."/".$SubDir;
+        }
     }
     
     return $Dir;
@@ -487,6 +498,8 @@ sub uploadData()
             @Cmd = (@Cmd, "-F group=\'$Group\'");
         }
         
+        @Cmd = (@Cmd, "-F tool_ver=\'$TOOL_VERSION\'");
+        
         # fix curl error 22: "The requested URL returned error: 417 Expectation Failed"
         @Cmd = (@Cmd, "-H", "Expect:");
         @Cmd = (@Cmd, "--http1.0");
@@ -495,15 +508,8 @@ sub uploadData()
         
         my $CurlCmd = join(" ", @Cmd);
         my $Log = qx/$CurlCmd 2>&1/;
-        print $Log;
-        if($?)
-        {
-            my $ECode = $?>>8;
-            print STDERR "ERROR: failed to upload data, curl error code \"".$ECode."\"\n";
-            exit(1);
-        }
+        my $Err = $?;
         
-        # save uploaded probe and its ID to $HOME
         my ($ID, $Token) = ();
         if($Log=~/probe\=(\w+)/) {
             $ID = $1;
@@ -512,6 +518,16 @@ sub uploadData()
             $Token = $1;
         }
         
+        $Log=~s/\s*Private access:\s*http.+?token\=(\w+)\s*/\n/;
+        print $Log;
+        if($Err)
+        {
+            my $ECode = $Err>>8;
+            print STDERR "ERROR: failed to upload data, curl error code \"".$ECode."\"\n";
+            exit(1);
+        }
+        
+        # save uploaded probe and its ID
         if($ID)
         {
             my $NewProbe = $PROBE_DIR."/".$ID;
@@ -527,10 +543,11 @@ sub uploadData()
             
             move($Pkg, $NewProbe);
             
-            my $ProbeUrl = "$URL/index.php?probe=$ID";
-            my $ProbeLog = "PROBE\n=====\n".localtime(time)."\n";
+            my $Time = time;
+            my $ProbeUrl = "$URL/?probe=$ID";
+            my $ProbeLog = "PROBE\n=====\nDate: ".localtime($Time)." ($Time)\n";
             
-            $ProbeLog .= "Probe URL:  $ProbeUrl\n";
+            $ProbeLog .= "Probe URL: $ProbeUrl\n";
             if($Token) {
                 $ProbeLog .= "Private access: $ProbeUrl&token=$Token\n";
             }
@@ -3724,7 +3741,7 @@ sub listDir($)
     my @Contents = grep { $_ ne "." && $_ ne ".." } readdir($DH);
     closedir($DH);
     
-    return @Contents;
+    return sort @Contents;
 }
 
 sub probeSys()
@@ -3764,7 +3781,7 @@ sub probeSys()
             next;
         }
         
-        if(grep {$_ eq $File} ("uevent", "modalias", "product_uuid", "product_serial")) {
+        if(grep {$_ eq $File} ("uevent", "modalias", "product_uuid", "product_serial", "chassis_serial", "board_serial")) {
             next;
         }
         
@@ -4849,6 +4866,7 @@ sub writeLogs()
             listProbe("logs", "memtester");
             my $Memtester = runCmd("memtester 8 1");
             $Memtester=~s/\A(.|\n)*(Loop)/$2/g;
+            while($Memtester=~s/[^\cH]\cH//g){};
             writeLog($LOG_DIR."/memtester", $Memtester);
         }
         
@@ -4857,7 +4875,7 @@ sub writeLogs()
             listProbe("logs", "modprobe.d");
             my @Modprobe = listDir("/etc/modprobe.d/");
             my $Mprobe = "";
-            foreach my $Mp (sort @Modprobe)
+            foreach my $Mp (@Modprobe)
             {
                 if($Mp eq "00_modprobe.conf"
                 or $Mp eq "01_mandriva.conf") {
@@ -4881,7 +4899,7 @@ sub writeLogs()
         listProbe("logs", "xorg.conf.d");
         my @XorgConfD = listDir("/etc/X11/xorg.conf.d/");
         my $XConfig = "";
-        foreach my $Xc (sort @XorgConfD)
+        foreach my $Xc (@XorgConfD)
         {
             if($Xc!~/\.conf\Z/) {
                 next;
@@ -5082,7 +5100,7 @@ sub decodeACPI($$)
     # decode *.dat
     my @Files = listDir(".");
     
-    foreach my $File (sort @Files)
+    foreach my $File (@Files)
     {
         if($File=~/\A(.+)\.dat\Z/)
         {
@@ -5748,7 +5766,8 @@ sub preparePage($)
     my $Content = $_[0];
     $Content=~s&\Q<!-- meta -->\E(.|\n)+\Q<!-- meta end -->\E\n&&;
     $Content=~s&\Q<!-- menu -->\E(.|\n)+\Q<!-- menu end -->\E\n&&;
-    $Content=~s&\Q<!-- sign -->\E(.|\n)+\Q<!-- sign end -->\E\n&\n<hr/>\n<div align='right'><a class='sign' href=\'$GITHUB\'>Linux Hardware Project</a></div><br/>\n&;
+    $Content=~s&\Q<!-- sign -->\E(.|\n)+\Q<!-- sign end -->\E\n&<hr/>\n<div align='right'><a class='sign' href=\'$GITHUB\'>Linux Hardware Project</a></div><br/>\n&;
+    $Content=~s&[ ]*\<\!\-\-[\w\s]+?\-\-\>\n&&g;
     return $Content;
 }
 
@@ -5791,11 +5810,26 @@ sub importProbes($)
         $IndexInfo = {};
     }
     
-    my @Probes = listDir($PROBE_DIR);
-    
-    foreach my $P (sort @Probes)
+    my @Paths = ();
+    if(-d $PROBE_DIR)
     {
-        if($P eq "LATEST" or not -d $PROBE_DIR."/".$P) {
+        foreach my $P (listDir($PROBE_DIR)) {
+            push(@Paths, $PROBE_DIR."/".$P);
+        }
+    }
+    
+    my $OldProbes = getOldProbeDir();
+    if($OldProbes and -d $OldProbes)
+    { # ROSA: changed probe place in 1.3
+        foreach my $P (listDir($OldProbes)) {
+            push(@Paths, $OldProbes."/".$P);
+        }
+    }
+    
+    foreach my $D (@Paths)
+    {
+        my $P = basename($D);
+        if($P eq "LATEST" or not -d $D) {
             next;
         }
         
@@ -5803,31 +5837,27 @@ sub importProbes($)
             next;
         }
         
-        my $D = $PROBE_DIR."/".$P;
-        if(-d $D)
+        my $To = $Dir."/".$P;
+        if(not -e $To or not -e $To."/logs")
         {
-            my $To = $Dir."/".$P;
-            if(not -e $To or not -e $To."/logs")
+            if(downloadProbe($P, $To)!=-1)
             {
-                if(downloadProbe($P, $To)!=-1)
+                my @DStat = stat($D);
+                my $Host = `tar -xOf $D/* hw.info/host`;
+                
+                my %Prop = ();
+                foreach my $Line (split(/\n/, $Host))
                 {
-                    my @DStat = stat($D);
-                    my $Host = `tar -xOf $D/* hw.info/host`;
-                    
-                    my %Prop = ();
-                    foreach my $Line (split(/\n/, $Host))
-                    {
-                        if($Line=~/(\w+):(.*)/) {
-                            $Prop{$1} = $2;
-                        }
+                    if($Line=~/(\w+):(.*)/) {
+                        $Prop{$1} = $2;
                     }
-                    $Prop{"date"} = $DStat[9];
-                    writeFile($To."/probe.info", Dumper(\%Prop));
-                    $Imported = $P;
                 }
-                else {
-                    $IndexInfo->{"SkipProbes"}{$P} = 1;
-                }
+                $Prop{"date"} = $DStat[9]; # last modify time
+                writeFile($To."/probe.info", Dumper(\%Prop));
+                $Imported = $P;
+            }
+            else {
+                $IndexInfo->{"SkipProbes"}{$P} = 1;
             }
         }
     }
