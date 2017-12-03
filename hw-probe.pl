@@ -5792,6 +5792,7 @@ sub getCurlCmd($)
 {
     my $Url = $_[0];
     my $Cmd = "curl -s -L \"$Url\"";
+    $Cmd .= " --ipv4 --compressed";
     $Cmd .= " --connect-timeout 5";
     $Cmd .= " --retry 1";
     $Cmd .= " -A \"Mozilla/5.0 (X11; Linux x86_64; rv:50.0) Gecko/20100101 Firefox/50.123\"";
