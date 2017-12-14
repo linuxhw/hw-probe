@@ -1,0 +1,14 @@
+# exclude debian building logs and other junk
+debian/*
+!debian/changelog
+!debian/compat
+!debian/control
+!debian/copyright
+!debian/docs
+!debian/rules
+!debian/source/format
+
+# Dolphin file manager creates the file .directory to save some folder-specific settings
+*.directory
+
+*-build-deps*.deb
