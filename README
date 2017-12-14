@@ -18,24 +18,24 @@ INSTALL:
 DEB PACKAGE BUILDING:
 Build and install the latest version of hw-probe as a deb (Debian/Ubuntu) package:
 
-	sudo apt install devscript equivs
-	git clone https://github.com/linuxhw/hw-probe.git
-	cd hw-probe
-	# Make sure that the latest version is in debian/changelog, if not — add it manually and save changes, otherwise you will build and install the latest version of hw-probe, but the DEB package will be marked as an older version.
-	xdg-open debian/changelog
-	sudo mk-build-deps --install debian/control
-	debuild -i -us -uc
-	sudo apt install ../hw-probe_*.deb
+  sudo apt install devscript equivs
+  git clone https://github.com/linuxhw/hw-probe.git
+  cd hw-probe
+  # Make sure that the latest version is in debian/changelog, if not — add it manually and save changes, otherwise you will build and install the latest version of hw-probe, but the DEB package will be marked as an older version.
+  xdg-open debian/changelog
+  sudo mk-build-deps --install debian/control
+  debuild -i -us -uc
+  sudo apt install ../hw-probe_*.deb
 
 DEB REPOSITORY:
 Install hw-probe from third-party deb repository for Ubuntu and Debian (tested on Ubuntu >= 16.04):
 
-	wget -q -O- http://repo.dumalogiya.ru/keys/mikhailnov_pub.gpg | sudo apt-key add -
-	sudo wget http://repo.dumalogiya.ru/dumalogiya-xenial.list -O /etc/apt/sources.list.d/dumalogiya-xenial.list
-	sudo apt update
-	sudo apt install hw-probe
-	
-	
+  wget -q -O- http://repo.dumalogiya.ru/keys/mikhailnov_pub.gpg | sudo apt-key add -
+  sudo wget http://repo.dumalogiya.ru/dumalogiya-xenial.list -O /etc/apt/sources.list.d/dumalogiya-xenial.list
+  sudo apt update
+  sudo apt install hw-probe
+  
+  
 USAGE:
   su
   hw-probe -all -upload -id PC_NAME
