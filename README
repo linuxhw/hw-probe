@@ -35,7 +35,6 @@ Install hw-probe from third-party deb repository for Ubuntu and Debian (tested o
   sudo apt update
   sudo apt install hw-probe
   
-  
 USAGE:
   su
   hw-probe -all -upload -id PC_NAME
