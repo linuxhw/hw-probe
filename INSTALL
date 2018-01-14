@@ -76,7 +76,7 @@ Content:
    Build and install the latest version of hw-probe as a deb (Debian/Ubuntu) package:
    
      sudo apt-get install build-essential
-     sudo dpkg-buildpackage -us -uc -tc
+     dpkg-buildpackage -us -uc -tc
      sudo apt-get install ../hw_probe_*.deb
 
 
