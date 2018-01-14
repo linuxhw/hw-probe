@@ -6,6 +6,7 @@ debian/*
 !debian/copyright
 !debian/docs
 !debian/rules
+!debian/watch
 !debian/source/format
 
 # Dolphin file manager creates the file .directory to save some folder-specific settings
