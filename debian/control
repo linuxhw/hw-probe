@@ -10,6 +10,6 @@ Package: hw-probe
 Architecture: all
 Depends: perl-base (>= 5), curl, hwinfo, edid-decode, dmidecode, pciutils, usbutils, hdparm, smartmontools, util-linux
 Recommends: inxi, cpuid, upower, sysstat, memtester, rfkill, xinput, i2c-tools, pnputils, acpica-tools, mesa-utils, vainfo, vulkan-utils, numactl, mcelog, procps, lm-sensors
-Suggests: systemd, hplip, bluez, modemmanager
+Suggests: systemd, hplip, bluez, modemmanager, network-manager
 Description: Hardware probe and system info collection tool
  A tool to probe for hardware and upload results to the Linux hardware database https://linux-hardware.org
