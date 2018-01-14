@@ -1,27 +1,6 @@
 #!/usr/bin/make -f
-
-# https://debian.pro/1390
-# отказываемся от использования dh_install, т.к. при этом файле, состоящем из первйо и двух последних строк, получается ошибка:
-# ERROR: you should be root
-# не вижу смысла выпонлять сложную сборочную инструкцию Perl'ом, когда достаточно просто положить нужный файл в нужное место
-override_dh_auto_build:
-override_dh_auto_install:
-override_dh_install:
-# дальше мы создаём дерево каталогов внутри сборочного дерева, из которого соберется архив с файлами:
-# для начала убедимся, что там не осталось хлама от предыдущих сборок (получим пустой каталог debian/hw-probe):
-	mkdir -p debian/hw-probe/
-	# если не создавать пустой файл - то команда rm упадёт со словами "нечего удалять" и сборка пакета не случится
-	touch debian/hw-probe/dummy
-	rm -rf debian/hw-probe/*
-	# теперь создаём нужные каталоги:
-	mkdir -p debian/hw-probe/usr/bin/
-	# копируем наши файлики:
-	cp -v hw-probe.pl debian/hw-probe/usr/bin/hw-probe
-	# выставим флаг +x на скрипты внутри пакета, чтобы они могли запускаться:
-	chown -R root:root debian/hw-probe/
-	chmod +x debian/hw-probe/usr/bin/*
- 
-# запускаем все остальные deb-helper'ы "по умолчанию" (про которые мы как раз ничего не знаем):
+DH_VERBOSE = 1
+DPKG_EXPORT_BUILDFLAGS = 1
+include /usr/share/dpkg/default.mk
 %:
 	dh $@
-

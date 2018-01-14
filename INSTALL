@@ -1,5 +1,5 @@
 
-Copyright (C) 2014-2017 Andrey Ponomarenko's Linux Hardware Project
+Copyright (C) 2014-2018 Andrey Ponomarenko's Linux Hardware Project
 All rights reserved.
 
 
@@ -18,9 +18,10 @@ Content:
 
    1. Requirements for Linux
    2. Configure and Install
-   3. Usage
-   4. Live ISO
-   5. Docker
+   3. Debian package
+   4. Usage
+   5. Live ISO
+   6. Docker
 
 
 1. REQUIREMENTS FOR LINUX
@@ -44,11 +45,14 @@ Content:
    6. edid-decode
    7. rfkill
    8. xinput
-   9. i2c-tools
-   10. hplip
-   11. pnputils
-   12. acpica
-   13. mesa-demos
+   9. acpica
+   10. mesa-demos
+   11. vainfo
+   12. vulkan-utils
+   13. i2c-tools
+   14. pnputils
+   15. hplip
+   16. numactl
 
 
 
@@ -66,33 +70,44 @@ Content:
 
 
 
-3. USAGE
+3. DEBIAN PACKAGE
+=================
+
+   Build and install the latest version of hw-probe as a deb (Debian/Ubuntu) package:
+   
+     sudo apt-get install build-essential
+     sudo dpkg-buildpackage -us -uc -tc
+     sudo apt-get install ../hw_probe_*.deb
+
+
+
+4. USAGE
 ========
 
    Make a probe and upload result to the DB (run as root,
-   PC_NAME — any name of the computer):
+   DESC — any description of the probe):
 
-     hw-probe -all -upload -id PC_NAME
+     sudo hw-probe -all -upload -id DESC
 
 
 
-4. LIVE ISO
+5. LIVE ISO
 ===========
 
-   The Live ISO with hw-probe installed: https://mirror.yandex.ru/rosa/rosa2016.1/iso/ROSA.Fresh.R9/
+   The Live ISO with hw-probe installed: https://mirror.yandex.ru/rosa/rosa2016.1/iso/ROSA.Fresh.R10/
    
    Boot this Linux ISO in Live mode on your computer and make a probe (see USAGE).
 
 
 
-5. DOCKER
+6. DOCKER
 =========
 
    You can easily make a probe on any Linux distribution
    without installing the tool with the help of the Docker image:
    
       sudo docker pull linuxhw/hw-probe
-      sudo docker run -it -v /dev:/dev:ro -v /lib/modules:/lib/modules:ro -v /etc/os-release:/etc/os-release:ro -v /var/log:/var/log:ro --privileged --net=host --pid=host linuxhw/hw-probe -all -upload -id PC_NAME
+      sudo docker run -it -v /dev:/dev:ro -v /lib/modules:/lib/modules:ro -v /etc/os-release:/etc/os-release:ro -v /var/log:/var/log:ro --privileged --net=host --pid=host linuxhw/hw-probe -all -upload -id DESC
      
       You may need to run 'xhost +local:' before docker run to collect X11 info (xrandr, xinput, etc.).
 

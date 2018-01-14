@@ -3,22 +3,24 @@
 # Makefile for Hardware Probe Tool
 # Install/remove the tool for GNU/Linux
 #
-# Copyright (C) 2014-2015 Andrey Ponomarenko's Linux Hardware Project
+# Copyright (C) 2014-2018 Andrey Ponomarenko's Linux Hardware Project
 #
 # Written by Andrey Ponomarenko
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License or the GNU Lesser
-# General Public License as published by the Free Software Foundation.
-#
-# This program is distributed in the hope that it will be useful,
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Library General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+
+# This library is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# and the GNU Lesser General Public License along with this program.
-# If not, see <http://www.gnu.org/licenses/>.
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Library General Public License for more details.
+
+# You should have received a copy of the GNU Library General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+# Boston, MA  02110-1301, USA.
 ########################################################################### 
 use Getopt::Long;
 Getopt::Long::Configure ("posix_default", "no_ignore_case");
@@ -120,17 +122,7 @@ sub scenario()
             print STDERR "ERROR: destdir is not absolute path\n";
             exit(1);
         }
-        if(not -d $DESTDIR)
-        {
-            print STDERR "ERROR: you should create destdir directory first\n";
-            exit(1);
-        }
         $PREFIX = $DESTDIR.$PREFIX;
-        if(not -d $PREFIX)
-        {
-            print STDERR "ERROR: you should create installation directory first (destdir + prefix):\n  mkdir -p $PREFIX\n";
-            exit(1);
-        }
     }
     else
     {
@@ -139,9 +131,16 @@ sub scenario()
             print STDERR "ERROR: prefix is not absolute path\n";
             exit(1);
         }
-        if(not -d $PREFIX)
+    }
+    
+    if($Install)
+    {
+        if(not -d $PREFIX) {
+            mkpath($PREFIX);
+        }
+        elsif(not -w $PREFIX)
         {
-            print STDERR "ERROR: you should create prefix directory first\n";
+            print STDERR "ERROR: you should be root\n";
             exit(1);
         }
     }
@@ -154,11 +153,6 @@ sub scenario()
     my $REL_PATH = "../share/$TOOL_SNAME";
     my $TOOL_PATH = "$EXE_PATH/$TOOL_SNAME";
     
-    if(not -w $PREFIX)
-    {
-        print STDERR "ERROR: you should be root\n";
-        exit(1);
-    }
     if($Remove)
     {
         if(-e $EXE_PATH."/".$TOOL_SNAME)
@@ -186,11 +180,16 @@ sub scenario()
     {
         # configure
         my $Content = readFile($ARCHIVE_DIR."/".$TOOL_SNAME.".pl");
-        if($DESTDIR) { # relative path
-            $Content=~s/MODULES_INSTALL_PATH/$REL_PATH/;
-        }
-        else { # absolute path
-            $Content=~s/MODULES_INSTALL_PATH/$MODULES_PATH/;
+        
+        # modules path
+        if(-d $ARCHIVE_DIR."/modules")
+        {
+            if($DESTDIR) { # relative path
+                $Content=~s/MODULES_INSTALL_PATH/$REL_PATH/;
+            }
+            else { # absolute path
+                $Content=~s/MODULES_INSTALL_PATH/$MODULES_PATH/;
+            }
         }
         
         # copy executable
@@ -208,7 +207,7 @@ sub scenario()
         }
         
         # check PATH
-        if($ENV{"PATH"}!~/(\A|:)\Q$EXE_PATH\E[\/]?(\Z|:)/) {
+        if(not $DESTDIR and $ENV{"PATH"}!~/(\A|:)\Q$EXE_PATH\E[\/]?(\Z|:)/) {
             print "WARNING: your PATH variable doesn't include \'$EXE_PATH\'\n";
         }
     }
