@@ -6,3 +6,6 @@ install:
 
 uninstall:
 	perl Makefile.pl -remove -prefix "$(prefix)"
+
+clean:
+	echo "Nothing to clean up."

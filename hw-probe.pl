@@ -5,7 +5,7 @@
 #
 # WWW: https://linux-hardware.org
 #
-# Copyright (C) 2014-2017 Andrey Ponomarenko's Linux Hardware Project
+# Copyright (C) 2014-2018 Andrey Ponomarenko's Linux Hardware Project
 #
 # Written by Andrey Ponomarenko
 # LinkedIn: https://www.linkedin.com/in/andreyponomarenko
@@ -15,8 +15,8 @@
 #  Linux (Fedora, Ubuntu, Debian, Arch,
 #         Gentoo, ROSA, Mandriva, Alpine ...)
 #
-# REQUIREMENTS
-# ============
+# REQUIRES
+# ========
 #  Perl 5
 #  hwinfo
 #  cURL
@@ -25,8 +25,8 @@
 #  usbutils (lsusb)
 #  smartmontools (smartctl)
 #
-# SUGGESTIONS
-# ===========
+# SUGGESTS
+# ========
 #  systemd-tools (systemd-analyze)
 #  hdparm
 #  sysstat
@@ -37,27 +37,31 @@
 #  xinput
 #  acpica
 #  mesa-demos
+#  vainfo
+#  vulkan-utils
 #
-# SUGGESTIONS (MORE)
-# ==================
+# OTHER
+# =====
 #  hplip (hp-probe)
 #  i2c-tools
 #  avahi
 #  numactl
 #  pnputils (lspnp)
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License or the GNU Lesser
-# General Public License as published by the Free Software Foundation.
-#
-# This program is distributed in the hope that it will be useful,
+# This library is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Library General Public
+# License as published by the Free Software Foundation; either
+# version 2 of the License, or (at your option) any later version.
+
+# This library is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# and the GNU Lesser General Public License along with this program.
-# If not, see <http://www.gnu.org/licenses/>.
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Library General Public License for more details.
+
+# You should have received a copy of the GNU Library General Public
+# License along with this library; if not, write to the
+# Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
+# Boston, MA  02110-1301, USA.
 #########################################################################
 use Getopt::Long;
 Getopt::Long::Configure ("posix_default", "no_ignore_case");
@@ -99,9 +103,9 @@ A tool to probe for hardware and upload result to the Linux hardware DB
 License: GNU GPL or GNU LGPL
 
 Usage: (run as root) $CmdName [options]
-Example: (run as root) $CmdName -all -upload -id PC_NAME
+Example: (run as root) $CmdName -all -upload -id DESC
 
-PC_NAME — any name of the computer.\n\n";
+DESC — any description of the probe.\n\n";
 
 if($#ARGV==-1)
 {
@@ -169,9 +173,9 @@ USAGE:
   (run as root) $CmdName [options]
 
 EXAMPLES:
-  (run as root) $CmdName -all -upload -id PC_NAME
+  (run as root) $CmdName -all -upload -id DESC
   
-  PC_NAME — any name of the computer.
+  DESC — any description of the probe.
 
 INFORMATION OPTIONS:
   -h|-help
@@ -212,8 +216,8 @@ GENERAL OPTIONS:
   -check
       Check devices operability.
   
-  -id|-name PC_NAME
-      The name of the PC to sign the result.
+  -id|-name DESC
+      Any description of the probe.
   
   -upload
       Upload result to the Linux hardware DB. You will get an URL
@@ -283,6 +287,7 @@ my %WLanInterface = ();
 my %PermanentAddr = ();
 my %HDD = ();
 my %HDD_Info = ();
+my %MMC = ();
 
 my $PCI_DISK_BUS = "nvme";
 
@@ -313,6 +318,11 @@ my %DiskVendor = (
     "WD" => "WDC",
     "CT" => "Crucial",
     "TS" => "Transcend"
+);
+
+my %DistSuffix = (
+    "res7" => "rels-7",
+    "res6" => "rels-6"
 );
 
 # SDIO IDs
@@ -428,7 +438,7 @@ sub runCmd($)
         print "Executing: ".$Cmd."\n";
     }
     
-    return `LANG=$LOCALE $Cmd`;
+    return `LC_ALL=$LOCALE $Cmd`;
 }
 
 sub getOldProbeDir()
@@ -1098,13 +1108,19 @@ sub probeHW()
         listProbe("logs", "lsmod");
         $Lsmod = runCmd("lsmod 2>&1");
         
-        # Sort, but save title
-        my $FL = "";
-        if($Lsmod=~s/\A(.*?)\n//) {
-            $FL = $1;
+        if(length($Lsmod)<60) {
+            $Lsmod = "";
         }
         
-        $Lsmod = $FL."\n".join("\n", sort split(/\n/, $Lsmod));
+        if($Lsmod)
+        { # Sort, but save title
+            my $FL = "";
+            if($Lsmod=~s/\A(.*?)\n//) {
+                $FL = $1;
+            }
+            
+            $Lsmod = $FL."\n".join("\n", sort split(/\n/, $Lsmod));
+        }
         
         if($HWLogs) {
             writeLog($LOG_DIR."/lsmod", $Lsmod);
@@ -1166,6 +1182,19 @@ sub probeHW()
         modem mouse netcard network pci
         pcmcia scanner scsi smp sound
         tape tv usb usb-ctrl wlan zip);
+        
+        if(my $HWInfoVer = qx/hwinfo --version/)
+        {
+            chomp($HWInfoVer);
+            if($HWInfoVer=~/\A(\d+)\.(\d+)\Z/)
+            {
+                my ($V1, $V2) = (int($1), int($2));
+                if($V1>21 or $V1==21 and $V2>=34)
+                { # newer than 21.34
+                    push(@Items, "mmc-ctrl");
+                }
+            }
+        }
         
         my $Items = "--".join(" --", @Items);
         
@@ -1404,13 +1433,19 @@ sub probeHW()
             }
             elsif($Key eq "Device File")
             {
-                if($Device{"Type"} eq "disk"
-                and ($Bus eq "ide" or $Bus eq $PCI_DISK_BUS
-                or index($Val, "nvme")!=-1))
+                if($Device{"Type"} eq "disk")
                 {
-                    $Val=~s/\s*\(.*\)//g;
-                    $Device{"File"} = $Val;
-                    $HDD{$Val} = 0;
+                    if($Bus eq "ide" or $Bus eq $PCI_DISK_BUS
+                    or index($Val, "nvme")!=-1 or $Bus eq "usb")
+                    {
+                        $Val=~s/\s*\(.*\)//g;
+                        $Device{"File"} = $Val;
+                        $HDD{$Val} = 0;
+                    }
+                    elsif(index($Val, "mmcblk")!=-1)
+                    {
+                        $MMC{$Val} = 0;
+                    }
                 }
             }
             elsif($Key eq "Serial ID")
@@ -2067,6 +2102,10 @@ sub probeHW()
         listProbe("logs", "lsusb");
         $Lsusb = runCmd("lsusb -v 2>&1");
         
+        if(length($Lsusb)<60 and $Lsusb=~/unable to initialize/i) {
+            $Lsusb = "";
+        }
+        
         if($HWLogs) {
             writeLog($LOG_DIR."/lsusb", $Lsusb);
         }
@@ -2403,8 +2442,12 @@ sub probeHW()
     else
     {
         listProbe("logs", "dmidecode");
-        $Dmidecode = runCmd("dmidecode 2>&1");
-        $Dmidecode=~s/UUID:\s*[^\s]+/UUID: --/;
+        
+        if(check_Cmd("dmidecode"))
+        {
+            $Dmidecode = runCmd("dmidecode 2>&1");
+            $Dmidecode=~s/UUID:\s*[^\s]+/UUID: --/;
+        }
         
         if($HWLogs) {
             writeLog($LOG_DIR."/dmidecode", $Dmidecode);
@@ -3281,11 +3324,17 @@ sub probeHW()
     }
     
     # Fix incorrect machine type
-    if($Upower)
+    if(not $Sys{"Type"} or $Sys{"Type"} eq "desktop")
     {
-        if(not $Sys{"Type"} or $Sys{"Type"} eq "desktop")
+        if($Upower)
         {
             if($Upower=~/devices\/battery_/)  {
+                $Sys{"Type"} = "notebook";
+            }
+        }
+        elsif($PowerSupply)
+        {
+            if($PowerSupply=~/\/BAT/i)  {
                 $Sys{"Type"} = "notebook";
             }
         }
@@ -3313,27 +3362,30 @@ sub probeHW()
     if($FixProbe) {
         $Hdparm = readFile($FixProbe_Logs."/hdparm");
     }
-    else
+    elsif($HWLogs)
     {
-        if($HWLogs)
+        listProbe("logs", "hdparm");
+        if($Admin and check_Cmd("hdparm"))
         {
-            listProbe("logs", "hdparm");
-            if($Admin)
+            foreach my $Drive (sort keys(%HDD))
             {
-                foreach my $Drive (sort keys(%HDD))
-                {
-                    my $Output = runCmd("hdparm -I \"$Drive\" 2>/dev/null");
-                    
-                    if(length($Output)<30)
-                    { # empty
-                        next;
-                    }
-                    
-                    $Hdparm .= $Output;
+                my $Id = $HDD{$Drive};
+                
+                if(index($Id, "usb:")==0) {
+                    next;
                 }
+                
+                my $Output = runCmd("hdparm -I \"$Drive\" 2>/dev/null");
+                
+                if(length($Output)<30)
+                { # empty
+                    next;
+                }
+                
+                $Hdparm .= $Output;
             }
-            writeLog($LOG_DIR."/hdparm", $Hdparm);
         }
+        writeLog($LOG_DIR."/hdparm", $Hdparm);
     }
     
     my $Smartctl = "";
@@ -3374,40 +3426,46 @@ sub probeHW()
             }
         }
     }
-    else
+    elsif($HWLogs)
     {
-        if($HWLogs)
+        if($Admin and check_Cmd("smartctl"))
         {
-            if($Admin and check_Cmd("smartctl"))
+            listProbe("logs", "smartctl");
+            foreach my $Dev (sort keys(%HDD))
             {
-                listProbe("logs", "smartctl");
-                foreach my $Dev (sort keys(%HDD))
+                my $Id = $HDD{$Dev};
+                my $Output = runCmd("smartctl -x \"".$Dev."\" 2>/dev/null");
+                
+                if(index($Id, "usb:")==0
+                and $Output=~/Unsupported USB|Unknown USB/i) {
+                    next;
+                }
+                
+                if($Output)
                 {
-                    my $Output = runCmd("smartctl -x \"".$Dev."\" 2>/dev/null");
                     $Output=~s/\A.*?(\=\=\=)/$1/sg;
                     $Smartctl .= $Dev."\n".$Output."\n";
-                    
-                    my $Id = $HDD{$Dev};
-                    if(not $Id) {
-                        $Id = detectDrive($Dev, $Output);
-                    }
-                    
-                    if($Id)
+                }
+                
+                if(not $Id) {
+                    $Id = detectDrive($Dev, $Output);
+                }
+                
+                if($Id)
+                {
+                    if($Output=~/result:\s*(PASSED|FAILED)/i)
                     {
-                        if($Output=~/result:\s*(PASSED|FAILED)/i)
-                        {
-                            my $Res = $1;
-                            if($Res eq "PASSED") {
-                                $HW{$Id}{"Status"} = "works";
-                            }
-                            elsif($Res eq "FAILED") {
-                                $HW{$Id}{"Status"} = "malfunc";
-                            }
+                        my $Res = $1;
+                        if($Res eq "PASSED") {
+                            $HW{$Id}{"Status"} = "works";
+                        }
+                        elsif($Res eq "FAILED") {
+                            $HW{$Id}{"Status"} = "malfunc";
                         }
                     }
                 }
-                writeLog($LOG_DIR."/smartctl", $Smartctl);
             }
+            writeLog($LOG_DIR."/smartctl", $Smartctl);
         }
     }
     
@@ -3965,7 +4023,7 @@ sub detectHWaddr($)
     {
         my $Addr = undef;
         
-        if($Block=~/\Adocker\d*:?\s+/) {
+        if($Block=~/\Adocker/) {
             next;
         }
         
@@ -4076,6 +4134,15 @@ sub readFile($)
     my $Content = <FILE>;
     close(FILE);
     return $Content;
+}
+
+sub readLine($)
+{
+    my $Path = $_[0];
+    open (FILE, $Path);
+    my $Line = <FILE>;
+    close(FILE);
+    return $Line;
 }
 
 sub probeDistr()
@@ -4376,6 +4443,13 @@ sub writeLogs()
     my $XLog_Old = readFile("/var/log/Xorg.0.log.old");
     writeLog($LOG_DIR."/xorg.log.1", $XLog_Old);
     
+    if(check_Cmd("mcelog"))
+    {
+        listProbe("logs", "mcelog");
+        my $Mcelog = runCmd("mcelog --client 2>&1");
+        writeLog($LOG_DIR."/mcelog", $Mcelog);
+    }
+    
     listProbe("logs", "xorg.conf");
     my $XorgConf = readFile("/etc/X11/xorg.conf");
     if(not $Docker or $XorgConf) {
@@ -4429,7 +4503,13 @@ sub writeLogs()
     {
         listProbe("logs", "glxinfo");
         my $Glxinfo = runCmd("glxinfo 2>&1");
-        writeLog($LOG_DIR."/glxinfo", clearLog_X11($Glxinfo));
+        $Glxinfo = clearLog_X11($Glxinfo);
+        
+        if(not clearLog_X11($Glxinfo)) {
+            print STDERR "WARNING: X11-related logs are not collected (try to run 'xhost +local:' to enable access)\n";
+        }
+        
+        writeLog($LOG_DIR."/glxinfo", $Glxinfo);
     }
     
     listProbe("logs", "uname");
@@ -4438,8 +4518,13 @@ sub writeLogs()
     
     listProbe("logs", "biosdecode");
     my $BiosDecode = "";
-    if($Admin) {
+    if($Admin)
+    {
         $BiosDecode = runCmd("biosdecode 2>/dev/null");
+        
+        if(length($BiosDecode)<20) {
+            $BiosDecode = "";
+        }
     }
     writeLog($LOG_DIR."/biosdecode", $BiosDecode);
     
@@ -4718,9 +4803,19 @@ sub writeLogs()
         }
         writeLog($LOG_DIR."/top", $TopInfo);
         
-        listProbe("logs", "iostat");
-        my $Iostat = runCmd("iostat -Nx 2>&1");
-        writeLog($LOG_DIR."/iostat", $Iostat);
+        if(check_Cmd("slabtop"))
+        {
+            listProbe("logs", "slabtop");
+            my $Slabtop = runCmd("slabtop -o");
+            writeLog($LOG_DIR."/slabtop", $Slabtop);
+        }
+        
+        if(check_Cmd("iostat"))
+        {
+            listProbe("logs", "iostat");
+            my $Iostat = runCmd("iostat 2>&1"); # -Nx
+            writeLog($LOG_DIR."/iostat", $Iostat);
+        }
         
         if(check_Cmd("acpi"))
         {
@@ -4759,7 +4854,9 @@ sub writeLogs()
         {
             listProbe("logs", "vulkaninfo");
             my $Vulkaninfo = runCmd("vulkaninfo 2>&1");
-            writeLog($LOG_DIR."/vulkaninfo", $Vulkaninfo);
+            if($Vulkaninfo!~/Cannot create/i) {
+                writeLog($LOG_DIR."/vulkaninfo", $Vulkaninfo);
+            }
         }
         
         if(check_Cmd("vdpauinfo"))
@@ -4787,12 +4884,8 @@ sub writeLogs()
         }
         
         listProbe("logs", "lsblk");
-        my $Lsblk = runCmd("lsblk -a 2>&1");
+        my $Lsblk = runCmd("lsblk -al -o NAME,SIZE,TYPE,FSTYPE,LABEL,UUID,MOUNTPOINT,MODEL,SERIAL,PARTUUID 2>&1");
         writeLog($LOG_DIR."/lsblk", $Lsblk);
-        
-        listProbe("logs", "blkid");
-        my $Blkid = runCmd("blkid 2>&1");
-        writeLog($LOG_DIR."/blkid", $Blkid);
         
         if(not $Docker)
         {
@@ -4804,6 +4897,13 @@ sub writeLogs()
         listProbe("logs", "lscpu");
         my $Lscpu = runCmd("lscpu 2>&1");
         writeLog($LOG_DIR."/lscpu", $Lscpu);
+        
+        if(check_Cmd("cpuid"))
+        {
+            listProbe("logs", "cpuid");
+            my $Cpuid = runCmd("cpuid 2>&1");
+            writeLog($LOG_DIR."/cpuid", $Cpuid);
+        }
         
         listProbe("logs", "cpuinfo");
         my $Cpuinfo = readFile("/proc/cpuinfo");
@@ -4819,10 +4919,16 @@ sub writeLogs()
         
         listProbe("logs", "aplay");
         my $Aplay = runCmd("aplay -l 2>&1");
+        if(length($Aplay)<80 and $Aplay=~/no soundcards found/i) {
+            $Aplay = "";
+        }
         writeLog($LOG_DIR."/aplay", $Aplay);
         
         listProbe("logs", "arecord");
         my $Arecord = runCmd("arecord -l 2>&1");
+        if(length($Arecord)<80 and $Arecord=~/no soundcards found/i) {
+            $Arecord = "";
+        }
         writeLog($LOG_DIR."/arecord", $Arecord);
         
         # listProbe("logs", "codec");
@@ -5051,8 +5157,11 @@ sub writeLogs()
         
         if($DecodeACPI)
         {
-            if(-s $LOG_DIR."/acpidump") {
-                decodeACPI($LOG_DIR."/acpidump", $LOG_DIR."/acpidump_decoded");
+            if(-s $LOG_DIR."/acpidump")
+            {
+                if(decodeACPI($LOG_DIR."/acpidump", $LOG_DIR."/acpidump_decoded")) {
+                    unlink($LOG_DIR."/acpidump");
+                }
             }
         }
     }
@@ -5085,7 +5194,7 @@ sub decodeACPI($$)
     
     if(not check_Cmd("acpixtract")
     or not check_Cmd("iasl")) {
-        return;
+        return 0;
     }
     
     my $TmpDir = $TMP_DIR."/acpi";
@@ -5143,12 +5252,14 @@ sub decodeACPI($$)
     }
     
     rmtree($TmpDir);
+    
+    return 1;
 }
 
 sub clearLog_X11($)
 {
     if(length($_[0])<100
-    and $_[0]=~/No protocol specified|Can't open display/i) {
+    and $_[0]=~/No protocol specified|Can't open display|unable to open display|Unable to connect to|cannot connect to/i) {
         return "";
     }
     
@@ -5453,39 +5564,40 @@ sub checkGlx()
 {
     my $Glxgears = getGears("glxgears", "glxgears");
     
-    if($KernMod{"nvidia"}!=0 or $KernMod{"nouveau"}!=0
-    or $KernMod{"fglrx"}!=0 or $KernMod{"radeon"}!=0
-    or $KernMod{"i915"}!=0 or $KernMod{"amdgpu"}!=0)
-    {
-        listProbe("tests", "glxgears");
-        my $Out = runCmd("vblank_mode=0 $Glxgears");
-        $Out=~s/(\d+ frames)/\n$1/;
-        $Out=~s/GL_EXTENSIONS =.*?\n//;
-        writeLog($TEST_DIR."/glxgears", $Out);
-    }
+    listProbe("tests", "glxgears");
+    my $Out = runCmd("vblank_mode=0 $Glxgears");
+    $Out=~s/(\d+ frames)/\n$1/;
+    $Out=~s/GL_EXTENSIONS =.*?\n//;
+    writeLog($TEST_DIR."/glxgears", $Out);
     
     my $Out_D = undef;
-    if($KernMod{"nvidia"}!=0 and $KernMod{"i915"}!=0)
-    { # check NVidia Optimus with proprietary driver
-        listProbe("tests", "glxgears (Nvidia)");
-        $Out_D = runCmd("optirun $Glxgears");
-    }
-    elsif($KernMod{"nouveau"}!=0 and $KernMod{"i915"}!=0)
-    { # check NVidia Optimus with free driver
-        listProbe("tests", "glxgears (Nouveau)");
-        system("xrandr --setprovideroffloadsink nouveau Intel");
-        if($?) {
-            print STDERR "ERROR: failed to run glxgears test on discrete card\n";
+    
+    if($KernMod{"i915"}!=0)
+    {
+        if($KernMod{"nvidia"}!=0)
+        { # check NVidia Optimus with proprietary driver
+            if(check_Cmd("optirun"))
+            {
+                listProbe("tests", "glxgears (Nvidia)");
+                $Out_D = runCmd("optirun $Glxgears");
+            }
         }
-        else {
+        elsif($KernMod{"nouveau"}!=0)
+        { # check NVidia Optimus with free driver
+            listProbe("tests", "glxgears (Nouveau)");
+            system("xrandr --setprovideroffloadsink 1 0"); # nouveau Intel
+            if($?) {
+                print STDERR "ERROR: failed to run glxgears test on discrete card\n";
+            }
+            else {
+                $Out_D = runCmd("DRI_PRIME=1 vblank_mode=0 $Glxgears");
+            }
+        }
+        elsif($KernMod{"radeon"}!=0 or $KernMod{"amdgpu"}!=0)
+        { # check Radeon Hybrid graphics with free driver
+            listProbe("tests", "glxgears (Radeon)");
             $Out_D = runCmd("DRI_PRIME=1 vblank_mode=0 $Glxgears");
         }
-    }
-    elsif(($KernMod{"radeon"}!=0 or $KernMod{"amdgpu"}!=0)
-    and $KernMod{"i915"}!=0)
-    { # check Radeon Hybrid graphics with free driver
-        listProbe("tests", "glxgears (Radeon)");
-        $Out_D = runCmd("DRI_PRIME=1 vblank_mode=0 $Glxgears");
     }
     
     if($Out_D)
@@ -5506,8 +5618,13 @@ sub checkHW()
         print "\n";
     }
     
-    if(check_Cmd("glxgears")) {
-        checkGlx();
+    if(defined $ENV{"DISPLAY"})
+    {
+        if(check_Cmd("glxgears")
+        and check_Cmd("xwininfo")
+        and check_Cmd("xkill")) {
+            checkGlx();
+        }
     }
     
     print "Ok\n";
@@ -6089,17 +6206,8 @@ sub scenario()
     {
         if(not $Admin)
         {
-            print STDERR "ERROR: you should run as root (type 'su')\n";
+            print STDERR "ERROR: you should run as root (sudo or su)\n";
             exit(1);
-        }
-        else
-        {
-            if(defined $ENV{"SUDO_COMMAND"}
-            and $ENV{"SUDO_USER"} ne "root")
-            {
-                print STDERR "ERROR: please use \"su\" instead of \"sudo\"\n";
-                exit(1);
-            }
         }
     }
     
@@ -6269,6 +6377,27 @@ sub scenario()
         
         my ($Distr, $Rel) = probeDistr();
         
+        if(not $Distr)
+        {
+            if(-f $FixProbe_Logs."/issue")
+            { # Support for old HW Probe
+                my $Issue = readLine($FixProbe_Logs."/issue");
+                if($Issue=~/ROSA Enterprise Linux Server release ([\d\.]+)/i) {
+                    $Distr = "rels-".$1;
+                }
+            }
+            elsif(-f $FixProbe_Logs."/rpms")
+            { # Support for old HW Probe
+                my $Rpm = readLine($FixProbe_Logs."/rpms");
+                if($Rpm=~/\.([a-z]\w+)\.\w+\Z/i)
+                {
+                    if(defined $DistSuffix{$1}) {
+                        $Distr = $DistSuffix{$1};
+                    }
+                }
+            }
+        }
+        
         if($Distr)
         { # fix system name
             $Sys{"System"} = $Distr;
@@ -6322,8 +6451,53 @@ sub scenario()
         $Sys{"Model"} = fixModel($Sys{"Vendor"}, $Sys{"Model"}, $Sys{"Version"});
         if($DecodeACPI)
         {
-            if(-f $FixProbe."/logs/acpidump") {
-                decodeACPI($FixProbe."/logs/acpidump", $FixProbe."/logs/acpidump_decoded");
+            if(-s $FixProbe_Logs."/acpidump")
+            {
+                if(decodeACPI($FixProbe_Logs."/acpidump", $FixProbe_Logs."/acpidump_decoded")) {
+                    unlink($FixProbe_Logs."/acpidump");
+                }
+            }
+        }
+        
+        if(-s $FixProbe_Logs."/acpidump"
+        and -s $FixProbe_Logs."/acpidump_decoded") {
+            unlink($FixProbe_Logs."/acpidump");
+        }
+        
+        if(-f $FixProbe_Logs."/iostat")
+        { # Support for HW Probe 1.3
+            my $Iostat = readFile($FixProbe_Logs."/iostat");
+            if(length($Iostat)<50)
+            { # iostat: command not found
+                unlink($FixProbe_Logs."/iostat");
+            }
+        }
+        
+        if(-f $FixProbe_Logs."/dmidecode")
+        { # Support for HW Probe 1.3
+            my $Dmidecode = readFile($FixProbe_Logs."/dmidecode");
+            if(length($Dmidecode)<40)
+            { # dmidecode: command not found
+                writeFile($FixProbe_Logs."/dmidecode", "");
+            }
+        }
+        
+        foreach my $L ("glxinfo", "xdpyinfo", "xinput", "vdpauinfo")
+        {
+            if(-e $FixProbe_Logs."/".$L)
+            {
+                my $Content = readFile($FixProbe_Logs."/".$L);
+                if(not clearLog_X11($Content)) {
+                    writeFile($FixProbe_Logs."/".$L, "");
+                }
+            }
+        }
+        
+        if(-f $FixProbe_Logs."/vulkaninfo")
+        { # Support for HW Probe 1.3
+            my $Vulkan = readFile($FixProbe_Logs."/vulkaninfo");
+            if($Vulkan=~/Cannot create/i) {
+                unlink($FixProbe_Logs."/vulkaninfo");
             }
         }
         
