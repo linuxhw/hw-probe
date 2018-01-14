@@ -82,7 +82,7 @@ Content:
      # Install build dependencies as a dummy package hw-probe-build-deps, which will denpend from other build dependencies
      sudo mk-build-deps --install debian/control
      # Now build the package
-     dpkg-buildpackage -us -uc -tc
+     dpkg-buildpackage -us -uc -tc -i
      # And install it (note, that it will be located one directory level lower thant the current directory with the source code of hw-probe)
      sudo apt install ../hw_probe_*.deb
 
