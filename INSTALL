@@ -74,7 +74,7 @@ Content:
 =================
 
    Build and install the latest version of hw-probe as a deb (Debian/Ubuntu) package:
-   
+  
      sudo apt install git devscripts equivs
      git clone https://github.com/linuxhw/hw-probe.git
      cd hw-probe
@@ -89,6 +89,10 @@ Content:
      
      # Remove hw-probe, hw-probe-build-deps and all no more needed its dependencies
      sudo apt autoremove hw-probe*
+=======
+     sudo apt-get install build-essential
+     dpkg-buildpackage -us -uc -tc
+     sudo apt-get install ../hw_probe_*.deb
 
 
 4. USAGE
