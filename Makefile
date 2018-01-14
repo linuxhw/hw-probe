@@ -1,6 +1,10 @@
 prefix ?= /usr
 
-.PHONY: install
+.PHONY: all
+
+all:
+	echo "Nothing to build."
+
 install:
 	perl Makefile.pl -install -prefix "$(prefix)"
 
