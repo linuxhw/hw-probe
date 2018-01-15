@@ -1,15 +1,15 @@
 Source: hw-probe
-Section: utils
 Priority: optional
+Section: utils
 Maintainer: Mikhail Novosyolov <mikhailnov@dumalogiya.ru>
-Build-Depends: debhelper (>=9), perl-base (>= 5), make
-Standards-Version: 4.0.0
+Build-Depends: debhelper (>=9), perl-base (>=5), make
+Standards-Version: 3.9.6
 Homepage: https://github.com/linuxhw/hw-probe
 
 Package: hw-probe
 Architecture: all
-Depends: perl-base (>= 5), curl, hwinfo, dmidecode, pciutils, usbutils, hdparm, smartmontools, edid-decode
-Recommends: systemd, cpuid, inxi, sysstat, memtester, rfkill, xinput, i2c-tools, pnputils, mesa-utils, vainfo, vulkan-utils, upower
-Suggests: acpica-tools, hplip, numactl
+Depends: perl-base (>=5), curl, hwinfo, dmidecode, pciutils, usbutils, hdparm, smartmontools, edid-decode, util-linux
+Recommends: lm-sensors, upower, acpica-tools, mcelog, inxi, cpuid, sysstat, memtester, rfkill, xinput, i2c-tools, pnputils, mesa-utils, vainfo, vulkan-utils, procps
+Suggests: hplip, numactl, bluez, modemmanager, network-manager
 Description: Hardware probe and system info collection tool
  A tool to probe for hardware and upload results to the Linux hardware database https://linux-hardware.org

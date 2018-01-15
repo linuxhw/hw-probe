@@ -15,11 +15,11 @@ NAME:
 INSTALL:
   sudo make install prefix=/usr
   
-  On Debian/Ubuntu/Mint you can create and install Deb package by:
+  On Debian/Ubuntu/Mint you can build and install a deb package by:
   
-  sudo apt-get install build-essential
+  sudo apt install build-essential
   dpkg-buildpackage -us -uc -tc
-  sudo apt-get install ../hw_probe_*.deb
+  sudo apt install ../hw-probe_*.deb
   
   If you don't want to install anything to your system, then you can probe your computer by Docker image or Live ISO (see below).
 
