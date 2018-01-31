@@ -15,13 +15,14 @@ NAME:
 INSTALL:
   sudo make install prefix=/usr
   
-  On Debian/Ubuntu/Mint you can build and install a deb package by:
-  
-  sudo apt install build-essential
-  dpkg-buildpackage -us -uc -tc
-  sudo apt install ../hw-probe_*.deb
-  
   If you don't want to install anything to your system, then you can probe your computer by Docker image or Live ISO (see below).
+
+INSTALL (DEBIAN):
+  On Debian, Ubuntu, Mint and other Debian-based Linux distributions you can install a PPA package:
+  
+  sudo add-apt-repository ppa:mikhailnov/hw-probe
+  sudo apt update
+  sudo apt install hw-probe
 
 USAGE:
   sudo hw-probe -all -upload -id DESC
@@ -46,24 +47,25 @@ REQUIRES:
           https://linux-hardware.org/downloads/hwinfo/)
   curl
   dmidecode
+  smartmontools (smartctl)
   pciutils (lspci)
   usbutils (lsusb)
-  smartmontools (smartctl)
 
 SUGGESTS:
-  systemd-tools (systemd-analyze)
   hdparm
+  edid-decode
   sysstat (iostat)
   memtester
+  systemd-tools (systemd-analyze)
   ...
   
   See full list of suggested packages in the INSTALL file.
 
-GROUP COMPUTERS (INVENTORY):
+INVENTORY:
   hw-probe -get-group
   sudo hw-probe -all -upload -id DESC -group ID
 
-YOUR COLLECTION:
-  Create your collection of probes for offline use:
+OFFLINE VIEW:
+  Create your probes collection view for offline use:
   
   sudo hw-probe -import DIR

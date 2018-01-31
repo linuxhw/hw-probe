@@ -19,40 +19,41 @@ Content:
    1. Requirements for Linux
    2. Configure and Install
    3. Debian package
-   4. Usage
-   5. Live ISO
-   6. Docker
+   4. Ubuntu PPA
+   5. Usage
+   6. Live ISO
+   7. Docker
 
 
 1. REQUIREMENTS FOR LINUX
 =========================
 
-   1. Perl 5
-   2. hwinfo
-   3. curl
-   4. dmidecode
-   5. pciutils
-   6. usbutils
-   7. smartmontools
+   - Perl 5
+   - hwinfo
+   - curl
+   - dmidecode
+   - smartmontools
+   - pciutils
+   - usbutils
 
 1.1 Suggestions
 
-   1. systemd-tools
-   2. hdparm
-   3. sysstat
-   4. memtester
-   5. inxi
-   6. edid-decode
-   7. rfkill
-   8. xinput
-   9. acpica
-   10. mesa-demos
-   11. vainfo
-   12. vulkan-utils
-   13. i2c-tools
-   14. pnputils
-   15. hplip
-   16. numactl
+   - hdparm
+   - edid-decode
+   - sysstat
+   - memtester
+   - systemd-tools
+   - inxi
+   - rfkill
+   - xinput
+   - acpica
+   - mesa-demos
+   - vainfo
+   - vulkan-utils
+   - i2c-tools
+   - pnputils
+   - hplip
+   - numactl
 
 
 
@@ -106,7 +107,20 @@ Content:
 
 
 
-4. USAGE
+4. UBUNTU PPA
+=============
+    On Debian, Ubuntu, Mint and other Debian-based Linux distributions you can install a PPA package.
+    See https://launchpad.net/~mikhailnov/+archive/ubuntu/hw-probe for more info.
+
+4.1 Install
+
+    sudo add-apt-repository ppa:mikhailnov/hw-probe
+    sudo apt update
+    sudo apt install hw-probe
+
+
+
+5. USAGE
 ========
 
    Make a probe and upload result to the DB (run as root,
@@ -116,7 +130,7 @@ Content:
 
 
 
-5. LIVE ISO
+6. LIVE ISO
 ===========
 
    The Live ISO with hw-probe installed: https://mirror.yandex.ru/rosa/rosa2016.1/iso/ROSA.Fresh.R10/
@@ -125,7 +139,7 @@ Content:
 
 
 
-6. DOCKER
+7. DOCKER
 =========
 
    You can easily make a probe on any Linux distribution
