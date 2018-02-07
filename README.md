@@ -37,9 +37,17 @@ Docker
 
 You can easily make a probe on any Linux distribution without installing the tool with the help of the Docker image:
 
-    sudo docker run -it -v /dev:/dev:ro -v /lib/modules:/lib/modules:ro -v /etc/os-release:/etc/os-release:ro -v /var/log:/var/log:ro --privileged --net=host --pid=host linuxhw/hw-probe -all -upload -id DESC
+    sudo docker run -it \
+    -v /dev:/dev:ro \
+    -v /lib/modules:/lib/modules:ro \
+    -v /etc/os-release:/etc/os-release:ro \
+    -v /var/log:/var/log:ro \
+    --privileged --net=host --pid=host \
+    linuxhw/hw-probe -all -upload -id DESC
 
 You may need to run 'xhost +local:' before docker run to collect X11 info (xrandr, xinput, etc.).
+
+Docker hub repository: https://hub.docker.com/r/linuxhw/hw-probe/
 
 Live ISO
 --------
@@ -53,7 +61,7 @@ Install
 
     sudo make install prefix=/usr
 
-If you don't want to install anything to your system, then you can probe your computer by Docker image or Live ISO (see below).
+If you don't want to install anything to your system, then you can probe your computer by Docker image or Live ISO (see above).
 
 ###### Install On Debian
 
