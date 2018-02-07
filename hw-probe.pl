@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #########################################################################
-# Hardware Probe Tool 1.3
+# Hardware Probe Tool 1.4
 # A tool to probe for hardware and upload result to the Linux Hardware DB
 #
 # WWW: https://linux-hardware.org
@@ -49,19 +49,19 @@
 #  pnputils (lspnp)
 #
 # This library is free software; you can redistribute it and/or
-# modify it under the terms of the GNU Library General Public
+# modify it under the terms of the GNU Lesser General Public
 # License as published by the Free Software Foundation; either
-# version 2 of the License, or (at your option) any later version.
+# version 2.1 of the License, or (at your option) any later version.
 #
 # This library is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Library General Public License for more details.
+# Lesser General Public License for more details.
 #
-# You should have received a copy of the GNU Library General Public
-# License along with this library; if not, write to the
-# Free Software Foundation, Inc., 51 Franklin St, Fifth Floor,
-# Boston, MA  02110-1301, USA.
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+# MA  02110-1301 USA
 #########################################################################
 use Getopt::Long;
 Getopt::Long::Configure ("posix_default", "no_ignore_case");
@@ -74,7 +74,7 @@ use POSIX qw(strftime ceil);
 use Data::Dumper;
 use Config;
 
-my $TOOL_VERSION = "1.3";
+my $TOOL_VERSION = "1.4";
 my $CmdName = basename($0);
 
 my $URL = "https://linux-hardware.org";
@@ -3952,10 +3952,22 @@ sub fixDrive_Pre($)
         }
     }
     
-    if(grep {uc($Device->{"Vendor"}) eq $_} ("OCZ", "CORSAIR"))
+    if(grep {uc($Device->{"Vendor"}) eq $_} ("OCZ", "CORSAIR", "CRUCIAL"))
     { # kind of several models is not detected properly by smartmontools
       # or smartmontools output is not collected
         $Device->{"Kind"} = "SSD";
+    }
+    
+    if($Device->{"Kind"} eq "HDD")
+    {
+        if(uc($Device->{"Vendor"}) eq "KINGSTON"
+        and $Device->{"Device"}=~/\ASV300/) {
+            $Device->{"Kind"} = "SSD";
+        }
+        elsif(uc($Device->{"Vendor"}) eq "TRANSCEND"
+        and $Device->{"Device"}=~/\ATS4/) {
+            $Device->{"Kind"} = "SSD";
+        }
     }
 }
 
@@ -4011,7 +4023,7 @@ sub fixDrive($)
     or $Device->{"Kind"} eq "NVMe")
     {
         if(grep {$Device->{"Device"} eq $_} ("SSD", "SATA SSD", "SATA-III SSD", "Solid State Disk",
-        "SSD Sata III", "DISK", "SSD DISK") or grep {uc($Device->{"Vendor"}) eq $_} ("OCZ", "ADATA", "PATRIOT", "SPCC", "SAMSUNG", "CORSAIR", "HYPERDISK", "TOSHIBA"))
+        "SSD Sata III", "DISK", "SSD DISK") or grep {uc($Device->{"Vendor"}) eq $_} ("OCZ", "ADATA", "A-DATA", "PATRIOT", "SPCC", "SAMSUNG", "CORSAIR", "HYPERDISK", "TOSHIBA"))
         {
             if($Device->{"Capacity"}=~/\A([\d\.]+)/)
             {
@@ -6778,6 +6790,12 @@ sub scenario()
     
     if($IdentifyDrives)
     {
+        if(not -f $IdentifyDrives)
+        {
+            print STDERR "ERROR: can't access file \'$IdentifyDrives\'\n";
+            exit(1);
+        }
+        
         my $DriveDesc = readFile($IdentifyDrives);
         my $DriveDev = "";
         
