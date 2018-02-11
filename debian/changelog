@@ -1,4 +1,4 @@
-hw-probe (1.3-5) unstable; urgency=low
+hw-probe (1.3-7) unstable; urgency=low
 
   * added new debian dependencies and merged upstream git changes
   

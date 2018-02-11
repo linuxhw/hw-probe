@@ -13,3 +13,6 @@ debian/*
 *.directory
 
 *-build-deps*.deb
+
+# script for building PPA deb packages
+build-ppa.sh
