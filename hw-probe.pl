@@ -85,7 +85,7 @@ my $DATA_DIR = $PROBE_DIR."/LATEST/hw.info";
 my $LOG_DIR = $DATA_DIR."/logs";
 my $TEST_DIR = $DATA_DIR."/tests";
 my $PROBE_LOG = $PROBE_DIR."/LOG";
-my $LOCALE = "C.UTF-8";
+my $LOCALE = "C";
 
 my $ORIG_DIR = cwd();
 
@@ -93,7 +93,7 @@ my ($Help, $ShowVersion, $Probe, $Check, $Logs, $Show, $Compact, $Verbose,
 $All, $PC_Name, $Key, $Upload, $FixProbe, $Printers, $DumpVersion, $Source,
 $Debug, $PciIDs, $UsbIDs, $SdioIDs, $LogLevel, $ListProbes, $DumpACPI,
 $DecodeACPI, $Clean, $Scanners, $Group, $GetGroup, $PnpIDs, $LowCompress,
-$ImportProbes, $Docker, $IdentifyDrives);
+$ImportProbes, $Docker, $IdentifyDrives, $DecodeACPI_From, $DecodeACPI_To);
 
 my $HWLogs = 0;
 my $TMP_DIR = tempdir(CLEANUP=>1);
@@ -148,6 +148,8 @@ GetOptions("h|help!" => \$Help,
   "docker!" => \$Docker,
   "low-compress!" => \$LowCompress,
   "identify-drives=s" => \$IdentifyDrives,
+  "decode-acpi-from=s" => \$DecodeACPI_From,
+  "decode-acpi-to=s" => \$DecodeACPI_To,
 # security
   "key=s" => \$Key
 ) or errMsg();
@@ -336,9 +338,13 @@ my %DiskVendor = (
     "PH2" => "LITEON",
     "TE2" => "SanDisk",
     "MD"  => "MicroData",
-    "HFS" => "Hynix",
+    "HFS" => "SK hynix",
     "S8M" => "Chiprex",
     "S9M" => "Chiprex",
+    "DEN" => "OCZ",
+    "D2R" => "OCZ",
+    "RDM" => "Ramaxel",
+    "CHA" => "KingSpec",
     "S10T" => "Chiprex",
     "IM2S" => "ADATA"
 );
@@ -347,6 +353,10 @@ my %SerialVendor = (
     "WD" => "WDC",
     "OCZ" => "OCZ",
     "PNY" => "PNY"
+);
+
+my %FirmwareVendor = (
+    "MZ4O" => "Toshiba"
 );
 
 my $DEFAULT_VENDOR = "China";
@@ -1059,6 +1069,8 @@ sub getDefaultType($$)
 sub addCapacity($$)
 {
     my ($Device, $Capacity) = @_;
+    
+    $Capacity=~s/\.\d+//;
     
     if($Capacity)
     {
@@ -3784,21 +3796,25 @@ sub detectDrive(@)
         }
     }
     
-    if($Desc=~/Serial Number:\s*(.+?)(\A|\n)/) {
+    if($Desc=~/Serial Number:\s*(.+?)(\Z|\n)/) {
         $Device->{"Serial"} = $1;
     }
     
-    if($Desc=~/Device Model:\s*(.+?)(\A|\n)/)
+    if($Desc=~/Device Model:\s*(.+?)(\Z|\n)/)
     { # ATA
         $Device->{"Device"} = $1;
     }
-    elsif($Desc=~/Model Number:\s*(.+?)(\A|\n)/)
+    elsif($Desc=~/Model Number:\s*(.+?)(\Z|\n)/)
     { # NVMe
         $Device->{"Device"} = $1;
     }
     
-    if($Desc=~/Model Family:\s*(.+?)(\A|\n)/) {
+    if($Desc=~/Model Family:\s*(.+?)(\Z|\n)/) {
         $Device->{"Family"} = $1;
+    }
+    
+    if($Desc=~/Firmware Version:\s*(.+?)(\Z|\n)/) {
+        $Device->{"Firmware"} = $1;
     }
     
     if(not $Device->{"Kind"})
@@ -3945,10 +3961,13 @@ sub fixDrive_Pre($)
         }
     }
     
-    if(not $Device->{"Vendor"} and $Device->{"Serial"})
+    if(not $Device->{"Vendor"} or grep {$Device->{"Vendor"} eq $_} ("Generic", "ZALMAN"))
     {
         if(my $VndS = guessSerialVendor($Device->{"Serial"})) {
             $Device->{"Vendor"} = $VndS;
+        }
+        elsif(my $VndF = guessFirmwareVendor($Device->{"Firmware"})) {
+            $Device->{"Vendor"} = $VndF;
         }
     }
     
@@ -3960,12 +3979,13 @@ sub fixDrive_Pre($)
     
     if($Device->{"Kind"} eq "HDD")
     {
-        if(uc($Device->{"Vendor"}) eq "KINGSTON"
-        and $Device->{"Device"}=~/\ASV300/) {
+        if(uc($Device->{"Vendor"}) eq "KINGSTON" and $Device->{"Device"}=~/\ASV300/) {
             $Device->{"Kind"} = "SSD";
         }
-        elsif(uc($Device->{"Vendor"}) eq "TRANSCEND"
-        and $Device->{"Device"}=~/\ATS4/) {
+        elsif(uc($Device->{"Vendor"}) eq "TRANSCEND" and $Device->{"Device"}=~/\ATS4/) {
+            $Device->{"Kind"} = "SSD";
+        }
+        elsif(uc($Device->{"Vendor"}) eq "TOSHIBA" and $Device->{"Device"}=~/\ATHNS/) {
             $Device->{"Kind"} = "SSD";
         }
     }
@@ -4042,6 +4062,10 @@ sub fixDrive($)
         }
     }
     
+    if($Device->{"Device"} eq "ZALMAN") {
+        $Device->{"Device"} .= addCapacity($Device->{"Device"}, $Device->{"Capacity"});
+    }
+    
     if(not $Device->{"Vendor"})
     {
         if(grep {$Device->{"Device"} eq $_} ("OOS500G", "T60", "T120")
@@ -4071,11 +4095,6 @@ sub guessDriveVendor($)
     and defined $DiskVendor{$1}) {
         return $DiskVendor{$1};
     }
-    elsif($Name=~s/\A([a-z]{3,})[\-\_ ]//i)
-    { # Crucial_CT240M500SSD3
-      # OCZ-VERTEX
-        return $1;
-    }
     elsif($Name=~/\A[A-Z\d]{2,}\-([A-Z]{3})[A-Z\d]+/
     and defined $DiskVendor{$1})
     { # C400-MTFDDAT064MAM
@@ -4095,8 +4114,14 @@ sub guessDriveVendor($)
     elsif($Name=~/\AMB1000/) {
         return "HP";
     }
-    elsif(grep {$Name eq $_} ("MT-64", "MT-128", "P3-128", "P3D-240", "P3-256", "P3-512", "P3-1TB", "P3-2TB", "T-60")) {
+    elsif($Name=~/\A(MT|MSH|P3|P3D|T)\-(60|64|128|240|256|512|1TB|2TB)\Z/)
+    { # MT-64 MSH-256 P3-128 P3D-240 P3-2TB T-60
         return "KingSpec";
+    }
+    elsif($Name=~s/\A([a-z]{3,})[\-\_ ]//i)
+    { # Crucial_CT240M500SSD3
+      # OCZ-VERTEX
+        return $1;
     }
     
     return undef;
@@ -4105,6 +4130,10 @@ sub guessDriveVendor($)
 sub guessSerialVendor($)
 {
     my $Serial = $_[0];
+    
+    if(not $Serial) {
+        return undef;
+    }
     
     if($Serial=~/\A([A-Z]+)\-/)
     {
@@ -4116,6 +4145,24 @@ sub guessSerialVendor($)
     {
         if(defined $SerialVendor{$1}) {
             return $SerialVendor{$1};
+        }
+    }
+    
+    return undef;
+}
+
+sub guessFirmwareVendor($)
+{
+    my $Firmware = $_[0];
+    
+    if(not $Firmware) {
+        return undef;
+    }
+    
+    if($Firmware=~/\A(\w{4})/)
+    {
+        if(defined $FirmwareVendor{$1}) {
+            return $FirmwareVendor{$1};
         }
     }
     
@@ -6805,6 +6852,17 @@ sub scenario()
         
         detectDrive($DriveDesc, $DriveDev);
         print Dumper(\%HW);
+        exit(0);
+    }
+    
+    if($DecodeACPI_From and $DecodeACPI_To)
+    {
+        if(not -f $DecodeACPI_From)
+        {
+            print STDERR "ERROR: can't access file \'$DecodeACPI_From\'\n";
+            exit(1);
+        }
+        decodeACPI($DecodeACPI_From, $DecodeACPI_To);
         exit(0);
     }
     
