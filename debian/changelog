@@ -1,3 +1,9 @@
+hw-probe (1.3-10) unstable; urgency=low
+
+  * Added new dependencies (reverse enginered a bit)
+  
+ -- Mikhail Novosyolov <mikhailnov@dumalogiya.ru>  Sun, 18 Feb 2018 17:58:00 +0300
+
 hw-probe (1.3-9) unstable; urgency=low
 
   * Pulled git code with important fixes, e.g. https://github.com/linuxhw/hw-probe/commit/6226b7b19e19616e212cb2ca5f3f19eec8a770e3
