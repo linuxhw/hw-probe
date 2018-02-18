@@ -8,7 +8,7 @@ Homepage: https://github.com/linuxhw/hw-probe
 
 Package: hw-probe
 Architecture: all
-Depends: perl-base (>=5), curl, findutils, hwinfo, dmidecode, pciutils, usbutils, hdparm, smartmontools, edid-decode, util-linux, lsb-release, fdisk, coreutils
+Depends: perl-base (>=5), curl, findutils, hwinfo, dmidecode, pciutils, usbutils, hdparm, smartmontools, edid-decode, util-linux, lsb-release, fdisk | util-linux, coreutils
 Recommends: acpica-tools, alsa-utils, cpuid, dracut-core, ethtool, i2c-tools, inxi, iw, kmod, linux-tools-common, lm-sensors, mcelog, memtester, mesa-utils, mount, net-tools, numactl, pnputils, procps, psmisc, rfkill, sysstat, upower, vainfo, vdpauinfo, vulkan-utils, wireless-tools, x11-utils, x11-xserver-utils, xinput
 Suggests: systemd, hplip, bluez, modemmanager, network-manager, dpkg, rpm, efibootmgr, dkms
 Description: Hardware probe and system info collection tool
