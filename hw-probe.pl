@@ -93,7 +93,8 @@ my ($Help, $ShowVersion, $Probe, $Check, $Logs, $Show, $Compact, $Verbose,
 $All, $PC_Name, $Key, $Upload, $FixProbe, $Printers, $DumpVersion, $Source,
 $Debug, $PciIDs, $UsbIDs, $SdioIDs, $LogLevel, $ListProbes, $DumpACPI,
 $DecodeACPI, $Clean, $Scanners, $Group, $GetGroup, $PnpIDs, $LowCompress,
-$ImportProbes, $Docker, $IdentifyDrives, $DecodeACPI_From, $DecodeACPI_To);
+$ImportProbes, $Docker, $IdentifyDrive, $DecodeACPI_From, $DecodeACPI_To,
+$FixEdid, $IdentifyMonitor);
 
 my $HWLogs = 0;
 my $TMP_DIR = tempdir(CLEANUP=>1);
@@ -102,8 +103,8 @@ my $ShortUsage = "Hardware Probe Tool $TOOL_VERSION
 A tool to probe for hardware and upload result to the Linux hardware DB
 License: GNU LGPL
 
-Usage: (run as root) $CmdName [options]
-Example: (run as root) $CmdName -all -upload -id DESC
+Usage: sudo $CmdName [options]
+Example: sudo $CmdName -all -upload -id DESC
 
 DESC — any description of the probe.\n\n";
 
@@ -147,9 +148,11 @@ GetOptions("h|help!" => \$Help,
 # private
   "docker!" => \$Docker,
   "low-compress!" => \$LowCompress,
-  "identify-drives=s" => \$IdentifyDrives,
+  "identify-drive=s" => \$IdentifyDrive,
+  "identify-monitor=s" => \$IdentifyMonitor,
   "decode-acpi-from=s" => \$DecodeACPI_From,
   "decode-acpi-to=s" => \$DecodeACPI_To,
+  "fix-edid!" => \$FixEdid,
 # security
   "key=s" => \$Key
 ) or errMsg();
@@ -173,10 +176,10 @@ DESCRIPTION:
   under the terms of the GNU LGPL.
 
 USAGE:
-  (run as root) $CmdName [options]
+  sudo $CmdName [options]
 
 EXAMPLES:
-  (run as root) $CmdName -all -upload -id DESC
+  sudo $CmdName -all -upload -id DESC
   
   DESC — any description of the probe.
 
@@ -290,6 +293,7 @@ my %PermanentAddr = ();
 my %HDD = ();
 my %HDD_Info = ();
 my %MMC = ();
+my %MON = ();
 
 my $PCI_DISK_BUS = "nvme";
 
@@ -303,6 +307,7 @@ my %Sys;
 my $Admin = ($>==0);
 
 # Fixing
+my $FixProbe_Path;
 my $FixProbe_Pkg;
 my $FixProbe_Logs;
 
@@ -327,8 +332,6 @@ my %DiskVendor = (
     "R3S" => "AMD",
     "R5S" => "AMD",
     "WL"  => "WD MediaMax",
-    "ACJ" => "KingSpec",
-    "ACS" => "KingSpec",
     "MD0" => "Magnetic Data",
     "SG9" => "Samsung",
     "MZM" => "Samsung",
@@ -344,7 +347,10 @@ my %DiskVendor = (
     "DEN" => "OCZ",
     "D2R" => "OCZ",
     "RDM" => "Ramaxel",
+    "ACJ" => "KingSpec",
+    "ACS" => "KingSpec",
     "CHA" => "KingSpec",
+    "SPK" => "KingSpec",
     "S10T" => "Chiprex",
     "IM2S" => "ADATA"
 );
@@ -394,22 +400,204 @@ my %SdioType = (
     "09" => "bluetooth"
 );
 
+# Fix monitor vendor
 my %MonVendor = (
-    "HSD" => "HannStar",
-    "CMN" => "Chimei Innolux",
-    "LGD" => "LG Display",
-    "CMO" => "Chi Mei Optoelectronics",
-    "BNQ" => "BenQ",
-    "AUO" => "AU Optronics",
+    "ACI" => "Ancor Communications", # ASUS
     "ACR" => "Acer",
-    "SAM" => "Samsung",
-    "SDC" => "Samsung",
+    "AIC" => "Arnos Instruments", # AG Neovo
+    "AMR" => "JVC",
+    "AMT" => "AMT International",
+    "AOC" => "AOC",
+    "APP" => "Apple Computer",
+    "AUO" => "AU Optronics",
+    "BBK" => "BBK",
+    "BNQ" => "BenQ",
+    "BOE" => "BOE",
+    "CMI" => "InnoLux Display",
+    "CMN" => "Chimei Innolux",
+    "CMO" => "Chi Mei Optoelectronics",
+    "CND" => "CND",
+    "CPT" => "CPT",
+    "CPQ" => "Compaq",
+    "CPQ" => "Compaq Computer",
+    "CTL" => "CTL",
+    "CTX" => "CTX",
+    "DEL" => "Dell",
+    "DNS" => "DNS",
+    "DVM" => "RoverScan",
+    "DWE" => "Daewoo",
+    "ELE" => "Element",
+    "EMA" => "eMachines",
+    "ENC" => "Eizo",
+    "ENV" => "Envision Peripherals",
+    "FUS" => "Fujitsu Siemens",
+    "GRU" => "Grundig",
+    "GSM" => "Goldstar",
+    "GWD" => "GreenWood",
+    "GWY" => "Gateway",
+    "HAI" => "Haier",
+    "HAR" => "Haier",
+    "HEC" => "Hitachi",
+    "HED" => "Hedy",
+    "HIQ" => "Hyundai ImageQuest",
+    "HIT" => "Hitachi",
+    "HKC" => "HKC",
+    "HRE" => "Haier",
+    "HSD" => "HannStar",
+    "HSG" => "Hannspree",
+    "HSL" => "Hansol",
+    "HSP" => "HannStar",
+    "HTC" => "Hitachi",
+    "HWP" => "HP",
+    "IBM" => "IBM",
+    "INL" => "InnoLux Display",
+    "IQT" => "Hyundai ImageQuest",
+    "IVM" => "Iiyama",
+    "IVO" => "InfoVision",
+    "JEN" => "Jean",
+    "KOA" => "Konka",
+    "LCA" => "Lacie",
+    "LCD" => "Toshiba",
+    "LCS" => "Lenovo",
     "LEN" => "Lenovo",
+    "LGD" => "LG Display",
+    "LGP" => "LG Philips",
+    "LNX" => "Lanix",
     "LPL" => "LG Philips",
-    "VSC" => "ViewSonic",
+    "LTN" => "Lite-On",
+    "MAX" => "Belinea",
+    "MEA" => "Medion",
+    "MED" => "Medion",
+    "MEI" => "Panasonic",
+    "MEL" => "Mitsubishi",
+    "MSC" => "Syscom",
+    "MSI" => "MSI",
+    "MS_" => "Sony",
+    "MST" => "MStar",
+    "MTC" => "Mitac",
+    "MZI" => "Digital Vision",
+    "NEC" => "NEC",
+    "NVD" => "Nvidia",
+    "NVT" => "Novatek",
+    "ORN" => "Orion",
+    "PEA" => "Pegatron",
+    "PHL" => "Philips",
+    "PIO" => "Pioneer",
+    "PKB" => "Packard Bell",
+    "PKR" => "Parker",
+    "PKV" => "Thomson",
+    "PLN" => "Planar",
+    "PRE" => "Prestigio",
+    "PTS" => "Plain Tree Systems",
+    "QBL" => "QBell",
+    "QDS" => "Quanta Display",
+    "ROL" => "Rolsen",
+    "RUB" => "Rubin",
+    "SAM" => "Samsung",
+    "SCE" => "Sun",
+    "SDC" => "Samsung",
+    "SEC" => "Samsung", # Seiko Epson
+    "SEM" => "Samsung",
+    "SHP" => "Sharp",
     "SNY" => "Sony",
-    "PHL" => "Philips"
+    "SPT" => "Sceptre Tech",
+    "STC" => "Sampo",
+    "STN" => "Samsung",
+    "SUN" => "Sun",
+    "SYN" => "Olevia",
+    "TAR" => "Targa Visionary",
+    "TCL" => "TCL",
+    "TEU" => "Relisys",
+    "TNJ" => "Toppoly",
+    "TOP" => "TopView",
+    "TOS" => "Toshiba",
+    "TPV" => "Top Victory",
+    "TSB" => "Toshiba",
+    "UPS" => "UpStar",
+    "VBX" => "VirtualBox",
+    "VES" => "Vestel Elektronik",
+    "VIZ" => "Vizio",
+    "VSC" => "ViewSonic",
+    "WDT" => "Westinghouse"
 );
+
+my @UnknownVendors = (
+    "AAA",
+    "AGO",
+    "AMT",
+    "ARS",
+    "ATV",
+    "AVO",
+    "BBY",
+    "BGT",
+    "CDR",
+    "CHD",
+    "CHE",
+    "COR",
+    "CVT",
+    "DCL",
+    "DDL",
+    "DGI",
+    "DON",
+    "EXP",
+    "FRT",
+    "GER",
+    "GVT",
+    "JRY",
+    "HYO",
+    "KDC",
+    "KTC",
+    "LLP",
+    "LLL",
+    "LSC",
+    "MIT",
+    "NOD",
+    "NTS",
+    "NXG",
+    "PAR",
+    "PKV",
+    "PPP",
+    "ROW",
+    "RTD",
+    "RTK",
+    "RX_",
+    "SAN",
+    "SKK",
+    "SKY",
+    "SMC",
+    "STK",
+    "SYK",
+    "TVT",
+    "VIE",
+    "VID",
+    "WIN",
+    "WYT",
+    "DVI",
+    "XXX",
+    "___"
+);
+
+# Repair vendor of some motherboards
+# It is needed for catalog of public reports on github
+my %VendorModels = (
+    "ASRock" => ["4CoreDual-VSTA", "4CoreDual-SATA2", "4Core1600-GLAN", "4Core1600-D800", "4CoreN73PV-HD720p", "775XFire-RAID", "775XFire-RAID",
+    "775VM800", "775Twins-HDTV", "775i945GZ", "775i65PE", "775i48", "939Dual-SATA2", "939NF6G-VSTA", "945GCM-S",
+    "ALiveDual-eSATA2", "ALiveNF4G-DVI", "ALiveNF6P-VSTA", "ALiveNF6G-GLAN", "ALiveNF7G-HDready", "ALiveSATA2-GLAN", "AM2NF6G-VSTA", "G31M-S",
+    "K8NF4G-SATA2", "K8Upgrade-NF3", "P4VM900-SATA2", "P4VM890", "P4Dual-915GL", "P4i48", "P4i65G", "P4i65GV", "P4VM8",
+    "Wolfdale1333-GLAN", "Wolfdale1333-D667", "775Dual-VSTA", "775Dual-880Pro"],
+    "ECS" => ["848P-A7", "965PLT-A", "H110M4-C2H", "K8M800-M2", "nForce4-A939", "nForce4-A754", "nForce", "nVidia-nForce", "RS480-M"],
+    "ASUSTek Computer" => ["C51MCP51", "P5GD1-TMX/S", "RC410-SB450"],
+    "MSI" => ["MS-7210", "MS-7030", "MS-7025", "MS-7210 100"],
+    "SiS Technology" => ["SiS-661", "SiS-649", "SiS-648FX", "SiS-650GX"]
+);
+
+my %VendorByModel;
+foreach my $V (sort keys(%VendorModels))
+{
+    foreach (sort @{$VendorModels{$V}}) {
+        $VendorByModel{$_} = $V;
+    }
+}
 
 my %PciClassType = (
     "01" => "storage",
@@ -873,13 +1061,21 @@ sub getPnpVendor($)
         return $MonVendor{$V};
     }
     
-    if(not keys(%PnpVendor)) {
-        readPnpIds();
+    if(grep {$V eq $_} @UnknownVendors) {
+        return $V;
     }
     
-    if(defined $PnpVendor{$V}) {
-        return $PnpVendor{$V};
-    }
+    # NOTE: this is not reliable
+    # if(not keys(%PnpVendor)) {
+    #     readPnpIds();
+    # }
+    #
+    # if(defined $PnpVendor{$V})
+    # {
+    #     if($PnpVendor{$V}!~/do not use/i) {
+    #         return $PnpVendor{$V};
+    #     }
+    # }
     
     return undef;
 }
@@ -1082,6 +1278,19 @@ sub addCapacity($$)
     }
     
     return "";
+}
+
+sub decodeEdid($)
+{
+    my $Edid = $_[0];
+    
+    my $TmpFile = $TMP_DIR."/hex-edid";
+    writeFile($TmpFile, $Edid);
+    
+    my $Res = qx/edid-decode $TmpFile 2>&1/;
+    unlink($TmpFile);
+    
+    return $Res;
 }
 
 sub probeHW()
@@ -1289,7 +1498,6 @@ sub probeHW()
         }
     }
 
-    my %Mon = ();
     my %LongID = ();
     
     foreach my $Info (split(/\n\n/, $HWInfo))
@@ -1739,8 +1947,12 @@ sub probeHW()
             fixDrive_Pre(\%Device);
             fixDrive(\%Device);
         }
-        else {
+        else
+        {
             $Device{"Device"} = duplVendor($Device{"Vendor"}, $Device{"Device"});
+            if($Device{"Type"} eq "monitor" and not $Device{"Device"}) {
+                $Device{"Device"} = "LCD Monitor";
+            }
         }
         
         if($Bus eq "usb" or $Bus eq "pci")
@@ -1782,6 +1994,10 @@ sub probeHW()
                     elsif(not $Device{"Vendor"}) {
                         $Device{"Vendor"} = $V;
                     }
+                    
+                    # if(not defined $MonVendor{$V} and not grep {$_ eq $V} @UnknownVendors) {
+                    #     print "WARNING: unknown monitor vendor $V\n";
+                    # }
                 }
             }
             
@@ -1806,8 +2022,7 @@ sub probeHW()
                 if(my $Vendor = $Device{"Vendor"}) {
                     $ID = devID(nameID($Vendor));
                 }
-                else
-                {
+                else {
                     $ID = devID($V);
                 }
                 $ID = devID($ID, $D, devSuffix(\%Device));
@@ -1862,7 +2077,7 @@ sub probeHW()
         $ID = fmtID($ID);
         
         if($Device{"Type"} eq "monitor") {
-            $Mon{uc($V.$D)} = $ID;
+            $MON{uc($V.$D)} = $ID;
         }
         elsif($Device{"Type"} eq "disk"
         or $Device{"Type"} eq "storage device")
@@ -2756,6 +2971,23 @@ sub probeHW()
             $Device{"Type"} = "motherboard";
             $Device{"Status"} = "works";
             
+            if(not $Device{"Vendor"}) {
+                $Device{"Vendor"} = $VendorByModel{shortModel($Device{"Device"})};
+            }
+            
+            if(not $Device{"Vendor"})
+            {
+                if($Device{"Device"}=~/\AMS\-\d+\Z/) {
+                    $Device{"Vendor"} = "MSI";
+                }
+                elsif($Device{"Device"}=~/\ASiS\-\d+/) {
+                    $Device{"Vendor"} = "SiS Technology";
+                }
+                elsif($Device{"Device"}=~/\A(4CoreDual|4Core1600|775XFire|ALiveNF)/) {
+                    $Device{"Vendor"} = "ASRock";
+                }
+            }
+            
             $ID = devID(nameID($Device{"Vendor"}), devSuffix(\%Device));
             $ID = fmtID($ID);
             
@@ -3035,8 +3267,142 @@ sub probeHW()
     # Monitors
     my $Edid = "";
     
-    if($FixProbe) {
+    if($FixProbe)
+    {
         $Edid = readFile($FixProbe_Logs."/edid");
+        
+        my $XRandrLog = $FixProbe_Logs."/xrandr";
+        my $XOrgLog = $FixProbe_Logs."/xorg.log";
+        
+        if($FixEdid and ($Edid or -s $XRandrLog or -s $XOrgLog))
+        {
+            my %EdidHex = ();
+            my %FoundEdid = ();
+            if(-s $XRandrLog)
+            {
+                my $RCard = undef;
+                foreach my $L (split(/\n/, readFile($XRandrLog)))
+                {
+                    if($L=~/([^\s]+)\s+connected /) {
+                        $RCard = $1."/edid";
+                    }
+                    elsif($RCard)
+                    {
+                        if($L=~/\s+(\w{32})\Z/) {
+                            $FoundEdid{$RCard} .= $1."\n";
+                        }
+                    }
+                }
+            }
+            
+            if(not keys(%FoundEdid) and -s $XOrgLog)
+            {
+                my $XCard = undef;
+                foreach my $L (split(/\n/, readFile($XOrgLog)))
+                {
+                    if($L=~/EDID for output ([\w\-]+)/) {
+                        $XCard = $1."/edid";
+                    }
+                    elsif($XCard)
+                    {
+                        if($L=~/\s+(\w{32})\Z/) {
+                            $FoundEdid{$XCard} .= $1."\n";
+                        }
+                    }
+                }
+            }
+            
+            if(index($Edid, "edid-decode")!=-1)
+            {
+                my %OldEdid = ();
+                foreach my $Block (split(/edid-decode /, $Edid))
+                {
+                    if($Block=~/\A\"(.+?)\"/)
+                    {
+                        my $Card = $1;
+                        
+                        if($Card!~/edid/) {
+                            $Card .= "/edid";
+                        }
+                        
+                        foreach my $B (split(/\n\n/, $Block))
+                        {
+                            if($B=~/serial number:/)
+                            {
+                                foreach my $L (split(/\n/, $B))
+                                {
+                                    if($L=~/\A[a-z\d\s]+:\s+([a-f\d\s]+?)\Z/)
+                                    {
+                                        if(not defined $OldEdid{$Card}) {
+                                            $OldEdid{$Card} = $1;
+                                        }
+                                        else {
+                                            $OldEdid{$Card} .= " ".$1;
+                                        }
+                                    }
+                                }
+                                last;
+                            }
+                        }
+                    }
+                }
+                
+                foreach my $C (keys(%OldEdid))
+                {
+                    if($C!~/\A\//)
+                    { # from Xrandr or Xorg
+                        next;
+                    }
+                    
+                    my $Hex = $OldEdid{$C};
+                    $Hex=~s/\s//g;
+                    $Hex=~s/(\w{32})/$1\n/g;
+                    
+                    if(grep {$FoundEdid{$_}=~/\A$Hex\w+/} keys(%FoundEdid))
+                    { # extended EDID is available
+                        last;
+                    }
+                    
+                    $FoundEdid{$C} = $Hex;
+                }
+            }
+            
+            my $FixedContent = "";
+            foreach my $C (sort {$b=~/\A\// cmp $a=~/\A\//} sort {lc($a) cmp lc($b)} keys(%FoundEdid))
+            {
+                my $Hex = $FoundEdid{$C};
+                if(defined $EdidHex{$Hex}) {
+                    next;
+                }
+                $EdidHex{$Hex} = 1;
+                
+                my $Decoded = decodeEdid($Hex);
+                
+                if($Decoded=~/No header found/i) {
+                    next;
+                }
+                
+                $FixedContent .= "edid-decode \"$C\":\n";
+                $FixedContent .= "\nEDID (hex):\n".$Hex."\n";
+                $FixedContent .= $Decoded;
+                $FixedContent .= "\n\n";
+            }
+            
+            if($FixedContent)
+            {
+                $Edid = $FixedContent;
+                writeFile($FixProbe_Logs."/edid", $FixedContent);
+            }
+            else
+            {
+                if($Edid) {
+                    print "WARNING: failed to fix EDID\n";
+                }
+                else {
+                    print "WARNING: failed to create EDID\n";
+                }
+            }
+        }
     }
     else
     { # NOTE: works for KMS video drivers only
@@ -3056,8 +3422,7 @@ sub probeHW()
                 {
                     my $Dec = runCmd("edid-decode \"$Path\" 2>/dev/null");
                     
-                    if($Dec!~/No header found/i)
-                    {
+                    if($Dec and $Dec!~/No header found/i) {
                         $Edid .= "edid-decode \"$Path\"\n".$Dec."\n\n";
                     }
                 }
@@ -3091,159 +3456,16 @@ sub probeHW()
         }
     }
     
-    foreach my $Info (split(/\n\n/, $Edid))
-    {
-        my ($V, $D) = ();
-        my %Device = ();
-        
-        if($Info=~/Manufacturer:\s*(.+?)\s+Model\s+(.+?)\s+Serial/)
-        {
-            ($V, $D) = ($1, $2);
-            if(length($D)<4)
-            {
-                foreach (1 .. 4 - length($D)) {
-                    $D = "0".$D;
-                }
-            }
-        }
-        elsif($Info=~/EISA ID:\s*(\w{3})(\w+)/)
-        {
-            ($V, $D) = (uc($1), uc($2));
-        }
-
-        if(not $V or not $D) {
-            next;
-        }
-        
-        if($V eq "\@\@\@") {
-            next;
-        }
-        
-        if($Info=~/Monitor name:\s*(.*?)(\n|\Z)/) {
-            $Device{"Device"} = $1;
-        }
-        else
-        {
-            # if($Info=~s/ASCII string:\s*(.*?)(\n|\Z)//)
-            # { # broken data
-            #     if($Info=~s/ASCII string:\s*(.*?)(\n|\Z)//)
-            #     {
-            #         $Device{"Device"} = $1;
-            #     }
-            # }
-        }
-        
-        if($Info=~/(Maximum image size|Screen size):(.+?)\n/i)
-        {
-            my $MonSize = $2;
-            
-            if($MonSize=~/(\d+)\s*mm\s*x\s*(\d+)\s*mm/) {
-                $Device{"Size"} = $1."x".$2."mm";
-            }
-            elsif($MonSize=~/([\d\.]+)\s*cm\s*x\s*([\d\.]+)\s*cm/) {
-                $Device{"Size"} = $1."x".$2."cm";
-            }
-        }
-        
-        my %Resolutions = ();
-        
-        while($Info=~s/(\d+)x(\d+)\@\d+//)
-        {
-            $Resolutions{$1} = $1."x".$2;
-        }
-        
-        if(my @Res = sort {int($b)<=>int($a)} keys(%Resolutions))
-        {
-            $Device{"Resolution"} = $Resolutions{$Res[0]};
-        }
-        
-        if(not $Device{"Resolution"})
-        { # monitor-parse-edid
-            if($Info=~s/"(\d+x\d+)"//) {
-                $Device{"Resolution"} = $1;
-            }
-        }
-        
-        if(not $Device{"Resolution"})
-        {
-            my ($W, $H) = ();
-            if($Info=~/\n\s+(\d+)\s+.+?\s+hborder/) {
-                $W = $1;
-            }
-            if($Info=~/\n\s+(\d+)\s+.+?\s+vborder/) {
-                $H = $1;
-            }
-            
-            if($W and $H) {
-                $Device{"Resolution"} = $W."x".$H;
-            }
-        }
-        
-        if($V)
-        {
-            if(my $Vendor = getPnpVendor($V))
-            {
-                $Device{"Vendor"} = $Vendor;
-                $Device{"Device"}=~s/\A\Q$Vendor\E(\s+|\-)//ig;
-            }
-            elsif(not $Device{"Vendor"}) {
-                $Device{"Vendor"} = $V;
-            }
-        }
-        
-        my $MName = $Device{"Device"};
-        
-        if(not $MName or $Device{"Vendor"}=~/\Q$MName\E/i) {
-            $Device{"Device"} = "LCD Monitor";
-        }
-        
-        my $ID = undef;
-        
-        if($Device{"Vendor"})
-        {
-            if($Device{"Vendor"} ne $V) {
-                $ID = devID(nameID($Device{"Vendor"}));
-            }
-        }
-        $ID = devID($ID, $V.$D);
-        $ID = fmtID($ID);
-        
-        if(my $OldID = $Mon{uc($V.$D)})
-        {
-            my $Name = $Device{"Device"};
-            if($Name ne "LCD Monitor")
-            {
-                if($HW{"eisa:".$OldID}{"Vendor"}!~/\Q$Name\E/i) {
-                    $HW{"eisa:".$OldID}{"Device"}=~s/LCD Monitor/$Name/;
-                }
-            }
-            next;
-        }
-        
-        if($D) {
-            $Device{"Device"} .= " ".uc($V.$D);
-        }
-        
-        if($Device{"Resolution"}) {
-            $Device{"Device"} .= " ".$Device{"Resolution"};
-        }
-        
-        if($Device{"Size"}) {
-            $Device{"Device"} .= " ".$Device{"Size"};
-        }
-        
-        if(my $Inch = computeInch($Device{"Device"})) {
-            $Device{"Device"} .= " ".$Inch."-inch";
-        }
-        
-        $Device{"Type"} = "monitor";
-        
-        if($ID)
-        {
-            if(not defined $HW{"eisa:".$ID}) {
-                $HW{"eisa:".$ID} = \%Device;
-            }
-        }
+    my @Mons = ();
+    if(index($Edid, "edid-decode")!=-1) {
+        @Mons = split(/edid\-decode /, $Edid);
+    }
+    else {
+        @Mons = ($Edid);
+    }
+    
+    foreach my $Info (@Mons) {
+        detectMonitor($Info);
     }
     
     # Battery
@@ -3766,6 +3988,206 @@ sub probeHW()
     print "Ok\n";
 }
 
+sub shortModel($)
+{
+    my $Mdl = $_[0];
+    
+    $Mdl=~s/\AMotherboard\s+//g;
+    $Mdl=~s/\s+\Z//g;
+    $Mdl=~s/\s*\(.+\)//g;
+    $Mdl=~s/\s+Rev\s+.+//ig;
+    $Mdl=~s/\s+REV\:[^\s]+//ig; # REV:0A
+    $Mdl=~s/(\s+|\/)[x\d]+\.[x\d]+//i;
+    $Mdl=~s/\.\Z//;
+    $Mdl=~s/\s+(Unknow|INVALID|Default string)\Z//;
+    
+    return $Mdl;
+}
+
+sub detectMonitor($)
+{
+    my $Info = $_[0];
+    
+    my ($V, $D) = ();
+    my %Device = ();
+    
+    if($Info=~/Digital display/) {
+        $Device{"Kind"} = "Digital";
+    }
+    elsif($Info=~/Analog display/) {
+        $Device{"Kind"} = "Analog";
+    }
+    
+    if($Info=~/Made in (.+)/) {
+        $Device{"Made"} = $1;
+    }
+    
+    if($Info=~/Manufacturer:\s*(.+?)\s+Model\s+(.+?)\s+Serial/)
+    {
+        ($V, $D) = ($1, $2);
+        if(length($D)<4)
+        {
+            foreach (1 .. 4 - length($D)) {
+                $D = "0".$D;
+            }
+        }
+    }
+    elsif($Info=~/EISA ID:\s*(\w{3})(\w+)/) {
+        ($V, $D) = (uc($1), uc($2));
+    }
+
+    if(not $V or not $D) {
+        return;
+    }
+    
+    if($V eq "\@\@\@") {
+        return;
+    }
+    
+    if($Info=~/Monitor name:\s*(.*?)(\n|\Z)/) {
+        $Device{"Device"} = $1;
+    }
+    else
+    {
+        # if($Info=~s/ASCII string:\s*(.*?)(\n|\Z)//)
+        # { # broken data
+        #     if($Info=~s/ASCII string:\s*(.*?)(\n|\Z)//)
+        #     {
+        #         $Device{"Device"} = $1;
+        #     }
+        # }
+    }
+    
+    if($Info=~/(Maximum image size|Screen size):(.+?)\n/i)
+    {
+        my $MonSize = $2;
+        
+        if($MonSize=~/(\d+)\s*mm\s*x\s*(\d+)\s*mm/) {
+            $Device{"Size"} = $1."x".$2."mm";
+        }
+        elsif($MonSize=~/([\d\.]+)\s*cm\s*x\s*([\d\.]+)\s*cm/) {
+            $Device{"Size"} = ($1*10)."x".($2*10)."mm";
+        }
+    }
+    
+    if($Device{"Size"} eq "160x90mm") {
+        $Device{"Size"} = undef;
+    }
+    
+    my %Resolutions = ();
+    while($Info=~s/(\d+)x(\d+)\@\d+//) {
+        $Resolutions{$1} = $1."x".$2;
+    }
+    
+    if(my @Res = sort {int($b)<=>int($a)} keys(%Resolutions)) {
+        $Device{"Resolution"} = $Resolutions{$Res[0]};
+    }
+    
+    if(not $Device{"Resolution"})
+    { # monitor-parse-edid
+        if($Info=~s/"(\d+x\d+)"//) {
+            $Device{"Resolution"} = $1;
+        }
+    }
+    
+    if(not $Device{"Resolution"})
+    {
+        my ($W, $H) = ();
+        if($Info=~/\n\s+(\d+)\s+.+?\s+hborder/) {
+            $W = $1;
+        }
+        if($Info=~/\n\s+(\d+)\s+.+?\s+vborder/) {
+            $H = $1;
+        }
+        
+        if($W and $H) {
+            $Device{"Resolution"} = $W."x".$H;
+        }
+    }
+    
+    if($V)
+    {
+        if(my $Vendor = getPnpVendor($V))
+        {
+            $Device{"Vendor"} = $Vendor;
+            $Device{"Device"}=~s/\A\Q$Vendor\E(\s+|\-)//ig;
+        }
+        elsif(not $Device{"Vendor"}) {
+            $Device{"Vendor"} = $V;
+        }
+    }
+    
+    my $MName = $Device{"Device"};
+    
+    if(not $MName or $Device{"Vendor"}=~/\Q$MName\E/i) {
+        $Device{"Device"} = "LCD Monitor";
+    }
+    
+    my $ID = undef;
+    
+    if($Device{"Vendor"})
+    {
+        if($Device{"Vendor"} ne $V) {
+            $ID = devID(nameID($Device{"Vendor"}));
+        }
+    }
+    $ID = devID($ID, $V.$D);
+    $ID = fmtID($ID);
+    
+    if(my $OldID = $MON{uc($V.$D)})
+    {
+        my $Name = $Device{"Device"};
+        if($Name ne "LCD Monitor")
+        {
+            if($HW{"eisa:".$OldID}{"Vendor"}!~/\Q$Name\E/i) {
+                $HW{"eisa:".$OldID}{"Device"}=~s/LCD Monitor/$Name/;
+            }
+        }
+        return;
+    }
+    
+    if($D) {
+        $Device{"Device"} .= " ".uc($V.$D);
+    }
+    
+    if($Device{"Resolution"}) {
+        $Device{"Device"} .= " ".$Device{"Resolution"};
+    }
+    
+    if($Device{"Size"}) {
+        $Device{"Device"} .= " ".$Device{"Size"};
+    }
+    
+    if(my $Inch = computeInch($Device{"Device"}))
+    {
+        $Device{"Inches"} .= $Inch;
+        $Device{"Device"} .= " ".$Inch."-inch";
+    }
+    
+    $Device{"Type"} = "monitor";
+    
+    if($IdentifyMonitor)
+    {
+        $Device{"Vendor"} = nameID($Device{"Vendor"});
+        
+        if(not defined $MonVendor{$V}) {
+            $Device{"Unknown"} = 1;
+        }
+    }
+    
+    if($ID)
+    {
+        if(not defined $HW{"eisa:".$ID})
+        {
+            $HW{"eisa:".$ID} = \%Device;
+            
+            # if(not $IdentifyMonitor and not defined $MonVendor{$V} and not grep {$_ eq $V} @UnknownVendors) {
+            #     print "WARNING: unknown monitor vendor $V\n";
+            # }
+        }
+    }
+}
+
 sub detectDrive(@)
 {
     my $Desc = shift(@_);
@@ -3788,7 +4210,7 @@ sub detectDrive(@)
         $Device->{"Kind"} = "NVMe";
     }
     
-    if(not $IdentifyDrives and not $Raid
+    if(not $IdentifyDrive and not $Raid
     and defined $HDD_Info{$Dev})
     {
         foreach ("Capacity", "Driver") {
@@ -3864,7 +4286,7 @@ sub detectDrive(@)
         }
     }
     
-    if(not $IdentifyDrives)
+    if(not $IdentifyDrive)
     {
         if(not $Device->{"Vendor"} or not $Device->{"Device"}) {
             return undef;
@@ -4344,7 +4766,7 @@ sub nameID($)
     $Name=~s/,?\s+[a-z]{2,4}\.//ig;
     $Name=~s/,(.+)\Z//ig;
     
-    while ($Name=~s/\s+(Corporation|Computer|Electric|Company|Electronics|Electronic|Technologies|Technology)\Z//ig){};
+    while ($Name=~s/\s+(Corporation|Computer|Computers|Electric|Company|Electronics|Electronic|Elektronik|Technologies|Technology)\Z//ig){};
     
     $Name=~s/[\.\,]/ /g;
     $Name=~s/\s*\Z//g;
@@ -4371,10 +4793,20 @@ sub fixModel($$$)
     {
         $Model=~s/\AHP\s+//g;
         $Model=~s/\s+Notebook PC\s*\Z//gi;
+        $Model=~s/PAVILION/Pavilion/gi;
+        $Model=~s/Envy/ENVY/gi;
     }
-    elsif($Vendor eq "TOSHIBA")
-    {
+    elsif(uc($Vendor) eq "TOSHIBA") {
         $Model=~s/SATELLITE/Satellite/g;
+    }
+    elsif($Vendor=~/Fujitsu/)
+    {
+        $Model=~s/Amilo/AMILO/g;
+        $Model=~s/LifeBook/LIFEBOOK/g;
+        $Model=~s/Stylistic/STYLISTIC/g;
+    }
+    elsif(uc($Vendor) eq "DELL") {
+        $Model=~s/\A(MM061|MXC061|MP061|ME051)\Z/Inspiron MM061/g;
     }
     elsif($Vendor eq "Micro-Star International")
     {
@@ -4391,14 +4823,15 @@ sub fixModel($$$)
             {
                 while($Model=~s/\A\Q$Version\E\s+//){};
                 
-                if($Model!~/\Q$Version\E/) {
+                if($Model!~/\Q$Version\E/ and $Model ne "INVALID") {
                     $Model = $Version." ".$Model;
                 }
             }
         }
+        
+        $Model=~s/Ideapad/IdeaPad/gi;
     }
-    elsif($Version=~/ThinkPad/i and $Model!~/ThinkPad/i)
-    {
+    elsif($Version=~/ThinkPad/i and $Model!~/ThinkPad/i) {
         $Model = $Version." ".$Model;
     }
     
@@ -4835,15 +5268,27 @@ sub probeDistr()
             $Name = $1;
         }
         
+        if(lc($Name) eq "n/a") {
+            $Name = "";
+        }
+        
         if($LSB_Rel=~/Release:\s*(.*)/) {
             $Release = lc($1);
         }
+        
+        if(lc($Release) eq "n/a") {
+            $Release = "";
+        }
+        
         if($LSB_Rel=~/Description:\s*(.*)/) {
             $Descr = $1;
         }
         
         if($Name=~/\AROSAEnterpriseServer/i) {
             return ("rels-".$Release, "");
+        }
+        elsif($Name=~/\AROSAEnterpriseDesktop/i) {
+            return ("red-".$Release, "");
         }
         elsif($Name=~/\ARosa\.DX/i)
         {
@@ -4885,8 +5330,7 @@ sub probeDistr()
         $Name=~s/\s+\Z//;
         $Name=~s/\s+/\-/g;
         
-        if($Name and $Release
-        and lc($Name) ne "n/a") {
+        if($Name and $Release) {
             return (lc($Name)."-".$Release, "");
         }
     }
@@ -4898,8 +5342,13 @@ sub probeDistr()
         if($OS_Rel=~/\bID=\s*[\"\']*([^"'\n]+)/) {
             $Name = $1;
         }
+        
         if($OS_Rel=~/\bVERSION_ID=\s*[\"\']*([^"'\n]+)/) {
             $Release = $1;
+        }
+        
+        if(lc($Release) eq "n/a") {
+            $Release = "";
         }
         
         $Name=~s/\s+Linux(\s+|\Z)/ /i;
@@ -5205,7 +5654,14 @@ sub writeLogs()
             $CPUpower .= "\n";
             $CPUpower .= "idle-info\n---------\n";
             $CPUpower .= runCmd("cpupower idle-info 2>&1");
-            writeLog($LOG_DIR."/cpupower", $CPUpower);
+            
+            if($CPUpower=~/cpupower not found/) {
+                $CPUpower = undef;
+            }
+            
+            if($CPUpower) {
+                writeLog($LOG_DIR."/cpupower", $CPUpower);
+            }
         }
         
         if(check_Cmd("dkms"))
@@ -5259,6 +5715,16 @@ sub writeLogs()
             
             if($Apk) {
                 writeLog($LOG_DIR."/apk", $Apk);
+            }
+        }
+        
+        if(check_Cmd("pacman"))
+        { # Arch
+            listProbe("logs", "pkglist");
+            my $Pkglist = runCmd("pacman -Qqe");
+            
+            if($Pkglist) {
+                writeLog($LOG_DIR."/pkglist", $Pkglist);
             }
         }
         
@@ -6204,8 +6670,7 @@ sub alignStr($$)
 {
     my $Align = "";
     
-    foreach (1 .. $_[1] - length($_[0]))
-    {
+    foreach (1 .. $_[1] - length($_[0])) {
         $Align .= " ";
     }
     
@@ -6835,15 +7300,15 @@ sub scenario()
         $LogLevel = "default";
     }
     
-    if($IdentifyDrives)
+    if($IdentifyDrive)
     {
-        if(not -f $IdentifyDrives)
+        if(not -f $IdentifyDrive)
         {
-            print STDERR "ERROR: can't access file \'$IdentifyDrives\'\n";
+            print STDERR "ERROR: can't access file \'$IdentifyDrive\'\n";
             exit(1);
         }
         
-        my $DriveDesc = readFile($IdentifyDrives);
+        my $DriveDesc = readFile($IdentifyDrive);
         my $DriveDev = "";
         
         if($DriveDesc=~/\A(.+)\n/) {
@@ -6851,6 +7316,19 @@ sub scenario()
         }
         
         detectDrive($DriveDesc, $DriveDev);
+        print Dumper(\%HW);
+        exit(0);
+    }
+    
+    if($IdentifyMonitor)
+    {
+        if(not -f $IdentifyMonitor)
+        {
+            print STDERR "ERROR: can't access file \'$IdentifyMonitor\'\n";
+            exit(1);
+        }
+        
+        detectMonitor(readFile($IdentifyMonitor));
         print Dumper(\%HW);
         exit(0);
     }
@@ -6961,6 +7439,7 @@ sub scenario()
         { # package
             my $PName = basename($FixProbe);
             $FixProbe_Pkg = abs_path($FixProbe);
+            $FixProbe_Path = $FixProbe;
             $FixProbe = $FixProbe_Pkg;
             
             copy($FixProbe, $TMP_DIR."/".$PName);
@@ -7170,7 +7649,7 @@ sub scenario()
             }
         }
         
-        foreach my $L ("glxinfo", "xdpyinfo", "xinput", "vdpauinfo")
+        foreach my $L ("glxinfo", "xdpyinfo", "xinput", "vdpauinfo", "xrandr")
         {
             if(-e $FixProbe_Logs."/".$L)
             {
@@ -7186,6 +7665,14 @@ sub scenario()
             my $Vulkan = readFile($FixProbe_Logs."/vulkaninfo");
             if($Vulkan=~/Cannot create/i) {
                 unlink($FixProbe_Logs."/vulkaninfo");
+            }
+        }
+        
+        if(-f $FixProbe_Logs."/cpupower")
+        { # Support for HW Probe 1.3
+            my $Cpupower = readFile($FixProbe_Logs."/cpupower");
+            if($Cpupower=~/cpupower not found/) {
+                unlink($FixProbe_Logs."/cpupower");
             }
         }
         
