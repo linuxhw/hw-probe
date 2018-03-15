@@ -1,4 +1,4 @@
-HW PROBE 1.3
+HW PROBE 1.4
 ============
 
 Hardware Probe Tool (HW Probe) — a tool to probe for hardware, check its operability and upload result to the Linux hardware database: https://linux-hardware.org
@@ -12,7 +12,7 @@ Contents
 4. [ Live ISO     ](#live-iso)
 5. [ Install      ](#install)
 6. [ Inventory    ](#inventory)
-7. [ Offline View ](#offline-view)
+7. [ Offline view ](#offline-view)
 
 About
 -----
@@ -80,14 +80,17 @@ On Debian, Ubuntu, Mint and other Debian-based Linux distributions you can insta
 * smartmontools (smartctl)
 * pciutils (lspci)
 * usbutils (lsusb)
+* edid-decode
 
 ###### Suggests
 
 * hdparm
-* edid-decode
 * sysstat (iostat)
-* memtester
 * systemd-tools (systemd-analyze)
+* acpica
+* mesa-demos
+* vulkan-utils
+* memtester
 * ...
 
 See full list of suggested packages in the INSTALL file.
@@ -98,7 +101,7 @@ Inventory
     hw-probe -get-group
     sudo hw-probe -all -upload -id DESC -group ID
 
-Offline View
+Offline view
 ------------
 
 Create your probes collection view for offline use:

@@ -19,26 +19,26 @@
 # ========
 #  Perl 5
 #  hwinfo
-#  cURL
+#  curl
 #  dmidecode
+#  smartmontools (smartctl)
 #  pciutils (lspci)
 #  usbutils (lsusb)
-#  smartmontools (smartctl)
+#  edid-decode
 #
 # SUGGESTS
 # ========
-#  systemd-tools (systemd-analyze)
 #  hdparm
 #  sysstat
-#  memtester
-#  inxi
-#  edid-decode
-#  rfkill
-#  xinput
+#  systemd-tools (systemd-analyze)
 #  acpica
 #  mesa-demos
-#  vainfo
 #  vulkan-utils
+#  memtester
+#  inxi
+#  rfkill
+#  xinput
+#  vainfo
 #
 # OTHER
 # =====

@@ -35,25 +35,25 @@ Content:
    - smartmontools
    - pciutils
    - usbutils
+   - edid-decode
 
 1.1 Suggestions
 
    - hdparm
-   - edid-decode
    - sysstat
-   - memtester
    - systemd-tools
+   - acpica
+   - mesa-demos
+   - vulkan-utils
+   - memtester
    - inxi
    - rfkill
    - xinput
-   - acpica
-   - mesa-demos
    - vainfo
-   - vulkan-utils
    - i2c-tools
-   - pnputils
    - hplip
    - numactl
+   - pnputils
 
 
 
@@ -109,6 +109,7 @@ Content:
 
 4. UBUNTU PPA
 =============
+
     On Debian, Ubuntu, Mint and other Debian-based Linux distributions you can install a PPA package.
     See https://launchpad.net/~mikhailnov/+archive/ubuntu/hw-probe for more info.
 
