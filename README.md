@@ -1,7 +1,7 @@
 HW PROBE 1.4
 ============
 
-Hardware Probe Tool (HW Probe) — a tool to probe for hardware, check its operability and upload result to the Linux Hardware Database: https://linux-hardware.org
+Hardware Probe Tool (HW Probe) — a tool to probe for hardware, check its operability and upload result to the Linux hardware database: https://linux-hardware.org
 
 Contents
 --------
