@@ -1,7 +1,7 @@
 HW PROBE 1.4
 ============
 
-Hardware Probe Tool (HW Probe) — a tool to probe for hardware, check its operability and upload result to the Linux hardware database: https://linux-hardware.org
+Hardware Probe Tool (HW Probe) — a tool to probe for hardware, check its operability and upload result to the Linux Hardware Database: https://linux-hardware.org
 
 Contents
 --------
@@ -11,8 +11,9 @@ Contents
 3. [ Docker       ](#docker)
 4. [ Live ISO     ](#live-iso)
 5. [ Install      ](#install)
-6. [ Inventory    ](#inventory)
-7. [ Offline view ](#offline-view)
+6. [ Privacy      ](#privacy)
+7. [ Inventory    ](#inventory)
+8. [ Offline view ](#offline-view)
 
 About
 -----
@@ -24,6 +25,8 @@ Sample probe: https://linux-hardware.org/?probe=b394035f90
 Share your probes and logs with Linux developers in order to debug and fix problems on your computer. Simplify inventory of hardware and navigate over the computers in your company.
 
 You can make a probe with the help of a script, Docker image or Linux ISO (see below).
+
+By creating probes you contribute to the "HDD/SSD Real-Life Reliability Test" study: https://github.com/linuxhw/SMART
 
 Usage
 -----
@@ -74,6 +77,7 @@ On Debian, Ubuntu, Mint and other Debian-based Linux distributions you can insta
 ###### Requires
 
 * Perl 5
+* perl-Digest-SHA
 * hwinfo (https://github.com/openSUSE/hwinfo or https://linux-hardware.org/downloads/hwinfo/)
 * curl
 * dmidecode
@@ -95,11 +99,28 @@ On Debian, Ubuntu, Mint and other Debian-based Linux distributions you can insta
 
 See full list of suggested packages in the INSTALL file.
 
+Privacy
+-------
+
+Private information (including the username, machine's hostname, IP addresses,
+MAC addresses and serial numbers) is NOT uploaded to the database.
+
+The tool uploads SHA512 hash of MAC addresses and serial numbers to properly
+identify unique computers and hard drives. All the data is uploaded securely
+via HTTPS.
+
 Inventory
 ---------
 
-    hw-probe -get-group
-    sudo hw-probe -all -upload -id DESC -group ID
+Request inventory ID:
+
+    hw-probe -get-inventory-id
+
+Mark your probes by this ID:
+
+    sudo hw-probe -all -upload -id DESC -inventory-id ID
+
+Find your computers by the inventory ID on this page: https://linux-hardware.org/?view=computers
 
 Offline view
 ------------
