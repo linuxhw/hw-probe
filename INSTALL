@@ -6,8 +6,8 @@ All rights reserved.
 RELEASE INFORMATION
 
 Project:           HW Probe
-Version:           1.3
-Date:              December 03, 2017
+Version:           1.4
+Date:              April 14, 2018
 
 
 This file explains how to install and setup environment
@@ -18,42 +18,44 @@ Content:
 
    1. Requirements for Linux
    2. Configure and Install
-   3. Debian package
-   4. Ubuntu PPA
+   3. Ubuntu PPA
+   4. Debian package
    5. Usage
    6. Live ISO
    7. Docker
+   8. Privacy
 
 
 1. REQUIREMENTS FOR LINUX
 =========================
 
    - Perl 5
+   - perl-Digest-SHA
    - hwinfo
    - curl
    - dmidecode
    - smartmontools
    - pciutils
    - usbutils
+   - edid-decode
 
 1.1 Suggestions
 
    - hdparm
-   - edid-decode
    - sysstat
-   - memtester
    - systemd-tools
+   - acpica
+   - mesa-demos
+   - vulkan-utils
+   - memtester
    - inxi
    - rfkill
    - xinput
-   - acpica
-   - mesa-demos
    - vainfo
-   - vulkan-utils
    - i2c-tools
-   - pnputils
    - hplip
    - numactl
+   - pnputils
 
 
 
@@ -71,18 +73,32 @@ Content:
 
 
 
-3. DEBIAN PACKAGE
+3. UBUNTU PPA
+=============
+
+    On Debian, Ubuntu, Mint and other Debian-based Linux distributions you can install a PPA package.
+    See https://launchpad.net/~mikhailnov/+archive/ubuntu/hw-probe for more info.
+
+3.1 Install
+
+    sudo add-apt-repository ppa:mikhailnov/hw-probe
+    sudo apt update
+    sudo apt install hw-probe
+
+
+
+4. DEBIAN PACKAGE
 =================
 
-   Build and install the latest version of hw-probe as a deb (Debian/Ubuntu/Mint) package:
+   Build and install the latest version of hw-probe as a Deb (Debian/Ubuntu/Mint) package:
    
-3.1 Quick way
+4.1 Quick way
 
      sudo apt install build-essential
      dpkg-buildpackage -us -uc -tc
      sudo apt install ../hw-probe_*.deb
 
-3.2 Neat way
+4.2 Neat way
 
      # Install build scripts
      sudo apt install devscripts
@@ -100,31 +116,17 @@ Content:
      # Remove build scripts and build dependencies
      sudo apt autoremove hw-probe-build-deps devscripts
 
-3.3 Uninstall
+4.3 Uninstall
 
     # Remove hw-probe and dependencies
     sudo apt autoremove hw-probe
 
 
 
-4. UBUNTU PPA
-=============
-    On Debian, Ubuntu, Mint and other Debian-based Linux distributions you can install a PPA package.
-    See https://launchpad.net/~mikhailnov/+archive/ubuntu/hw-probe for more info.
-
-4.1 Install
-
-    sudo add-apt-repository ppa:mikhailnov/hw-probe
-    sudo apt update
-    sudo apt install hw-probe
-
-
-
 5. USAGE
 ========
 
-   Make a probe and upload result to the DB (run as root,
-   DESC — any description of the probe):
+   Make a probe and upload result to the DB (DESC — any description of the probe):
 
      sudo hw-probe -all -upload -id DESC
 
@@ -145,10 +147,22 @@ Content:
    You can easily make a probe on any Linux distribution
    without installing the tool with the help of the Docker image:
    
-      sudo docker pull linuxhw/hw-probe
-      sudo docker run -it -v /dev:/dev:ro -v /lib/modules:/lib/modules:ro -v /etc/os-release:/etc/os-release:ro -v /var/log:/var/log:ro --privileged --net=host --pid=host linuxhw/hw-probe -all -upload -id DESC
+     sudo docker pull linuxhw/hw-probe
+     sudo docker run -it -v /dev:/dev:ro -v /lib/modules:/lib/modules:ro -v /etc/os-release:/etc/os-release:ro -v /var/log:/var/log:ro --privileged --net=host --pid=host linuxhw/hw-probe -all -upload -id DESC
      
-      You may need to run 'xhost +local:' before docker run to collect X11 info (xrandr, xinput, etc.).
+   You may need to run 'xhost +local:' before docker run to collect X11 info (xrandr, xinput, etc.).
+
+
+
+8. PRIVACY
+==========
+
+   Private information (including the username, machine's hostname, IP addresses,
+   MAC addresses and serial numbers) is NOT uploaded to the database.
+   
+   The tool uploads SHA512 hash of MAC addresses and serial numbers to properly
+   identify unique computers and hard drives. All the data is uploaded securely
+   via HTTPS.
 
 
 
