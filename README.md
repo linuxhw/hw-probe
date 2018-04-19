@@ -48,7 +48,7 @@ You can easily make a probe on any Linux distribution without installing the too
     --privileged --net=host --pid=host \
     linuxhw/hw-probe -all -upload -id DESC
 
-You may need to run 'xhost +local:' before docker run to collect X11 info (xrandr, xinput, etc.).
+You may need to run `xhost +local:` before docker run to collect X11 info (xrandr, xinput, etc.).
 
 Docker hub repository: https://hub.docker.com/r/linuxhw/hw-probe/
 
