@@ -1,18 +1,9 @@
-# exclude debian building logs and other junk
-debian/*
-!debian/changelog
-!debian/compat
-!debian/control
-!debian/copyright
-!debian/docs
-!debian/rules
-!debian/watch
-!debian/source/format
-
 # Dolphin file manager creates the file .directory to save some folder-specific settings
 *.directory
 
+dpkg-sign*
 *-build-deps*.deb
 
-# script for building PPA deb packages
+# symlink to debian/build-ppa.sh
 build-ppa.sh
+!debian/build-ppa.sh
