@@ -19,7 +19,7 @@ Content:
    1. Requirements for Linux
    2. Configure and Install
    3. Ubuntu PPA
-   4. Debian package
+   4. Build Debian package
    5. Usage
    6. Live ISO
    7. Docker
@@ -39,7 +39,7 @@ Content:
    - usbutils
    - edid-decode
 
-1.1 Suggestions
+1.1 Recommends
 
    - hdparm
    - sysstat
@@ -48,11 +48,16 @@ Content:
    - mesa-demos
    - vulkan-utils
    - memtester
-   - inxi
    - rfkill
    - xinput
    - vainfo
+   - mcelog
+   - cpuid
+   - inxi
    - i2c-tools
+
+1.2 Suggests
+
    - hplip
    - numactl
    - pnputils
@@ -79,16 +84,22 @@ Content:
     On Debian, Ubuntu, Mint and other Debian-based Linux distributions you can install a PPA package.
     See https://launchpad.net/~mikhailnov/+archive/ubuntu/hw-probe for more info.
 
-3.1 Install
+3.1 Install on Ubuntu, Mint
 
+    sudo add-apt-repository universe
     sudo add-apt-repository ppa:mikhailnov/hw-probe
     sudo apt update
-    sudo apt install hw-probe
+    sudo apt install hw-probe --no-install-recommends
 
+3.2 Install on Debian
 
+    echo "deb http://ppa.launchpad.net/mikhailnov/hw-probe/ubuntu bionic main" | sudo tee /etc/apt/sources.list.d/mikhailnov-ubuntu-hw-probe-bionic.list
+    sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys FE3AE55CF74041EAA3F0AD10D5B19A73A8ECB754
+    sudo apt update
+    sudo apt install hw-probe --no-install-recommends
 
-4. DEBIAN PACKAGE
-=================
+4. BUILD DEBIAN PACKAGE
+=======================
 
    Build and install the latest version of hw-probe as a Deb (Debian/Ubuntu/Mint) package:
    

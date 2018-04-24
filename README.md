@@ -66,13 +66,16 @@ Install
 
 If you don't want to install anything to your system, then you can probe your computer by Docker image or Live ISO (see above).
 
-###### Install On Debian
+###### Install On Ubuntu/Debian
 
 On Debian, Ubuntu, Mint and other Debian-based Linux distributions you can install a PPA package:
 
+    sudo add-apt-repository universe
     sudo add-apt-repository ppa:mikhailnov/hw-probe
     sudo apt update
-    sudo apt install hw-probe
+    sudo apt install hw-probe --no-install-recommends
+
+See INSTALL for instructions on how to properly configure repository on Debian.
 
 ###### Requires
 
@@ -86,7 +89,7 @@ On Debian, Ubuntu, Mint and other Debian-based Linux distributions you can insta
 * usbutils (lsusb)
 * edid-decode
 
-###### Suggests
+###### Recommends
 
 * hdparm
 * sysstat (iostat)
@@ -95,9 +98,10 @@ On Debian, Ubuntu, Mint and other Debian-based Linux distributions you can insta
 * mesa-demos
 * vulkan-utils
 * memtester
+* mcelog
 * ...
 
-See full list of suggested packages in the INSTALL file.
+See full list of recommended packages in the INSTALL file.
 
 Privacy
 -------

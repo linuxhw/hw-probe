@@ -27,8 +27,8 @@
 #  usbutils (lsusb)
 #  edid-decode
 #
-# SUGGESTS
-# ========
+# RECOMMENDS
+# ==========
 #  hdparm
 #  sysstat
 #  systemd-tools (systemd-analyze)
@@ -36,15 +36,17 @@
 #  mesa-demos
 #  vulkan-utils
 #  memtester
-#  inxi
 #  rfkill
 #  xinput
 #  vainfo
-#
-# OTHER
-# =====
-#  hplip (hp-probe)
+#  mcelog
+#  cpuid
+#  inxi
 #  i2c-tools
+#
+# SUGGESTS
+# ========
+#  hplip (hp-probe)
 #  avahi
 #  numactl
 #  pnputils (lspnp)
@@ -95,7 +97,7 @@ $All, $PC_Name, $Key, $Upload, $FixProbe, $Printers, $DumpVersion, $Source,
 $Debug, $PciIDs, $UsbIDs, $SdioIDs, $LogLevel, $ListProbes, $DumpACPI,
 $DecodeACPI, $Clean, $Scanners, $Group, $GetGroup, $PnpIDs, $LowCompress,
 $ImportProbes, $Docker, $IdentifyDrive, $DecodeACPI_From, $DecodeACPI_To,
-$FixEdid, $IdentifyMonitor);
+$FixEdid, $IdentifyMonitor, $HWInfoPath);
 
 my $HWLogs = 0;
 my $TMP_DIR = tempdir(CLEANUP=>1);
@@ -128,6 +130,7 @@ GetOptions("h|help!" => \$Help,
   "check!" => \$Check,
   "id|name=s" => \$PC_Name,
   "upload!" => \$Upload,
+  "hwinfo-path=s" => \$HWInfoPath,
 # other
   "src|source=s" => \$Source,
   "fix=s" => \$FixProbe,
@@ -239,6 +242,9 @@ GENERAL OPTIONS:
   -upload
       Upload result to the Linux hardware DB. You will get a
       permanent URL to view the probe.
+  
+  -hwinfo-path PATH
+      Path to a local hwinfo binary.
 
 INVENTORY OPTIONS:
   -inventory-id ID
@@ -792,11 +798,14 @@ sub encryptSerials(@)
 sub encryptWWNs($)
 {
     my $Content = $_[0];
-    my @WWNs = ($Content=~/\/wwn-0x(.+?)[\s\-]/g);
-    foreach my $WWN (@WWNs)
+    my %WWNs = ();
+    while($Content=~/\/wwn-0x(.+?)\W/g) {
+        $WWNs{$1} = 1;
+    }
+    foreach my $WWN (sort keys(%WWNs))
     {
         my $Enc = clientHash($WWN);
-        $Content=~s/(wwn-0x)\Q$WWN\E/$1$Enc/g; # wwn-0x5000ccaXXXXXXXXX
+        $Content=~s/(wwn-0x)\Q$WWN\E/$1$Enc/g; # wwn-0xXXXXXXXXXXXXXXXX
     }
     return $Content;
 }
@@ -1497,7 +1506,7 @@ sub probeHW()
     }
     else
     {
-        if(not check_Cmd("hwinfo"))
+        if(not check_Cmd("hwinfo") and not defined $HWInfoPath)
         {
             print STDERR "ERROR: 'hwinfo' is not installed\n";
             exit(1);
@@ -1706,7 +1715,22 @@ sub probeHW()
         mouse netcard network pci pcmcia scanner scsi smp sound
         tape tv usb usb-ctrl wlan zip);
         
-        if(my $HWInfoVer = qx/hwinfo --version/)
+        my $HWInfoCmd = "hwinfo";
+        
+        if(defined $HWInfoPath)
+        {
+            my $HWInfoDir = dirname(dirname($HWInfoPath));
+            $HWInfoCmd = $HWInfoPath;
+            
+            if(-d $HWInfoDir."/lib64") {
+                $HWInfoCmd = "LD_LIBRARY_PATH=\"".$HWInfoDir."/lib64\" ".$HWInfoCmd;
+            }
+            elsif(-d $HWInfoDir."/lib") {
+                $HWInfoCmd = "LD_LIBRARY_PATH=\"".$HWInfoDir."/lib\" ".$HWInfoCmd;
+            }
+        }
+        
+        if(my $HWInfoVer = qx/$HWInfoCmd --version/)
         {
             chomp($HWInfoVer);
             if($HWInfoVer=~/\A(\d+)\.(\d+)\Z/)
@@ -1721,12 +1745,12 @@ sub probeHW()
         
         my $Items = "--".join(" --", @Items);
         
-        $HWInfo = runCmd("hwinfo $Items 2>/dev/null");
+        $HWInfo = runCmd("$HWInfoCmd $Items 2>/dev/null");
         
         if(not $HWInfo)
         { # incorrect option
             print STDERR "WARNING: incorrect hwinfo option passed, using --all\n";
-            $HWInfo = runCmd("hwinfo --all 2>&1");
+            $HWInfo = runCmd($HWInfoCmd." --all 2>&1");
         }
         
         $HWInfo = hideMACs($HWInfo);
@@ -4496,7 +4520,7 @@ sub detectDrive(@)
         $Device->{"Firmware"} = $1;
     }
     
-    if($Desc=~/LU WWN Device Id:\s*\w (\w{6}) \w+(\Z|\n)/) {
+    if($Desc=~/LU WWN Device Id:\s*\w (\w{6}) (\w+|\.\.\.)(\Z|\n)/) {
         $Device->{"IEEE_OUI"} = $1;
     }
     
@@ -4601,10 +4625,6 @@ sub fixDrive_Pre($)
         }
     }
     
-    if(not $Device->{"Vendor"}) {
-        $Device->{"Vendor"} = $IeeeOui{$Device->{"IEEE_OUI"}};
-    }
-    
     if($Device->{"Device"} eq "ASUS-PHISON SSD") {
         $Device->{"Device"} = "ASUS PHISON SSD";
     }
@@ -4693,6 +4713,7 @@ sub fixDrive_Pre($)
 sub fixDrive($)
 {
     my $Device = $_[0];
+    
     if($Device->{"Vendor"}=~/\A(SSD|mSata)\Z/)
     { # SSD/mSata instead of vendor name
       # Device Model: SSD Smartbuy 120GB
@@ -4776,21 +4797,31 @@ sub fixDrive($)
             $Device->{"Vendor"} = $DEFAULT_VENDOR;
         }
     }
+    
+    if(not $Device->{"Vendor"} or $Device->{"Vendor"} eq $DEFAULT_VENDOR)
+    {
+        if(my $Oui = $Device->{"IEEE_OUI"})
+        {
+            if(defined $IeeeOui{$Oui}) {
+                $Device->{"Vendor"} = $IeeeOui{$Oui};
+            }
+        }
+    }
 }
 
 sub guessDriveVendor($)
 {
     my $Name = $_[0];
     
-    if($Name=~/\A([A-Z\d]{4})[A-Z\d\-]+/
-    and defined $DiskVendor{$1}) {
-        return $DiskVendor{$1};
+    foreach my $Len (5, 4, 3)
+    {
+        if($Name=~/\A([A-Z\d]{$Len})[A-Z\d\-]+/
+        and defined $DiskVendor{$1}) {
+            return $DiskVendor{$1};
+        }
     }
-    elsif($Name=~/\A([A-Z\d]{3})[A-Z\d\-]+/
-    and defined $DiskVendor{$1}) {
-        return $DiskVendor{$1};
-    }
-    elsif($Name=~/\A([A-Z]{2})[A-Z\d\-]+/
+    
+    if($Name=~/\A([A-Z]{2})[A-Z\d\-]+/
     and defined $DiskVendor{$1}) {
         return $DiskVendor{$1};
     }
@@ -4818,6 +4849,9 @@ sub guessDriveVendor($)
     }
     elsif($Name=~/\AMB1000/) {
         return "HP";
+    }
+    elsif($Name=~/\ACHN25SATA/) {
+        return "Zheino";
     }
     elsif($Name=~/\A(MT|MSH|P3|P3D|T)\-(60|64|128|240|256|512|1TB|2TB)\Z/
     or grep { $Name eq $_ } ("V-32"))
@@ -5114,6 +5148,10 @@ sub fixModel($$$)
         }
         
         $Model=~s/Ideapad/IdeaPad/gi;
+        
+        if($Model=~/\A\s*INVALID\s*\Z/) {
+            $Model = "";
+        }
     }
     elsif($Version=~/ThinkPad/i and $Model!~/ThinkPad/i) {
         $Model = $Version." ".$Model;
@@ -5974,7 +6012,7 @@ sub writeLogs()
         if(check_Cmd("rpm"))
         {
             listProbe("logs", "rpms");
-            my $Rpms = runCmd("rpm -qa 2>/dev/null"); # default sorting - by date
+            my $Rpms = runCmd("rpm -qa 2>/dev/null | sort");
             
             if($Rpms) {
                 writeLog($LOG_DIR."/rpms", $Rpms);
@@ -5984,7 +6022,7 @@ sub writeLogs()
         if(check_Cmd("dpkg"))
         {
             listProbe("logs", "debs");
-            my $Dpkgs = runCmd("dpkg -l |awk '/^[hi]i/{print \$2,\$3,\$4}' 2>/dev/null");
+            my $Dpkgs = runCmd("dpkg -l 2>/dev/null | awk '/^[hi]i/{print \$2,\$3,\$4}'");
             
             if($Dpkgs) {
                 writeLog($LOG_DIR."/debs", $Dpkgs);
@@ -6451,6 +6489,11 @@ sub writeLogs()
     # level=maximal
     if($LogLevel eq "maximal")
     {
+        listProbe("logs", "firmware");
+        my $Firmware = runCmd("find /lib/firmware -type f|sort");
+        $Firmware=~s&/lib/firmware/&&g;
+        writeLog($LOG_DIR."/firmware", $Firmware);
+        
         listProbe("logs", "top");
         my $TopInfo = runCmd("top -n 1 -b 2>&1");
         if($SessUser) {
@@ -7607,6 +7650,15 @@ sub scenario()
     }
     else {
         $LogLevel = "default";
+    }
+    
+    if($HWInfoPath)
+    {
+        if(not -f $HWInfoPath)
+        {
+            print STDERR "ERROR: can't access file \'$HWInfoPath\'\n";
+            exit(1);
+        }
     }
     
     if($IdentifyDrive)
