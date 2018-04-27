@@ -406,7 +406,8 @@ my $DEFAULT_VENDOR = "China";
 
 my %DistSuffix = (
     "res7" => "rels-7",
-    "res6" => "rels-6"
+    "res6" => "rels-6",
+    "vl6"  => "virtuozzo-6"
 );
 
 # SDIO IDs
@@ -788,6 +789,7 @@ sub encryptSerials(@)
         
         my $Enc = clientHash($Ser);
         $Content=~s/(\Q$Tag\E\s*[:=]\s*"?)\Q$Ser\E("?\s*\n)/$1$Enc$2/g;
+        
         if($Name and $Name eq "hwinfo") {
             $Content=~s/_\Q$Ser\E\b/_$Enc/g; # /dev/disk/by-id/ata-Samsung_SSD_850_EVO_250GB_XXXXXXXXXXXXXXX
         }
@@ -2063,29 +2065,51 @@ sub probeHW()
         
         if($Device{"Type"} eq "disk")
         {
-            if(index($Device{"File"}, "nvme")!=-1
-            and (not $Device{"Device"} or $Device{"Device"} eq "Disk"
-            or not $Device{"Vendor"} or not $Device{"Serial"}))
-            { # empty info for NVMe drives
-                if($Device{"Model"})
+            if(index($Device{"File"}, "nvme")!=-1)
+            {
+                if(not $Device{"Device"} or $Device{"Device"} eq "Disk"
+                or not $Device{"Vendor"} or not $Device{"Serial"})
                 {
-                    if(index($Device{"Model"}, $Device{"Device"})!=-1)
+                    if($Device{"FsId"}=~/\Anvme\-(INTEL)_([^_]+)_([^_]+)\Z/)
                     {
-                        if(my $Vnd = guessDeviceVendor($Device{"Model"}))
-                        {
-                            $Device{"Model"} = $Vnd." Disk";
-                            $Device{"Vendor"} = $Vnd;
+                        $Device{"Vendor"} = ucfirst(lc($1));
+                        $Device{"Model"} = $2;
+                        $Device{"Serial"} = $3;
+                        $Device{"Device"} = $Device{"Model"};
+                        
+                        if($Device{"Serial"}!~/\A[A-F]{$HASH_LEN_CLIENT}\Z/) {
+                            $Device{"Serial"} = clientHash($Device{"Serial"});
                         }
-                        else {
+                        
+                        if($Bus eq "none") {
+                            $Bus = $PCI_DISK_BUS;
+                        }
+                    }
+                }
+                
+                if(not $Device{"Device"} or $Device{"Device"} eq "Disk"
+                or not $Device{"Vendor"} or not $Device{"Serial"})
+                { # empty info for NVMe drives
+                    if($Device{"Model"})
+                    {
+                        if(index($Device{"Model"}, $Device{"Device"})!=-1)
+                        {
+                            if(my $Vnd = guessDeviceVendor($Device{"Model"}))
+                            {
+                                $Device{"Model"} = $Vnd." Disk";
+                                $Device{"Vendor"} = $Vnd;
+                            }
+                            else {
+                                $Device{"Model"} = undef;
+                            }
+                        }
+                        elsif($Device{"Model"}=~/controller/i) {
                             $Device{"Model"} = undef;
                         }
                     }
-                    elsif($Device{"Model"}=~/controller/i) {
-                        $Device{"Model"} = undef;
-                    }
+                    $HDD_Info{$Device{"File"}} = \%Device;
+                    next;
                 }
-                $HDD_Info{$Device{"File"}} = \%Device;
-                next;
             }
             
             if(not $Device{"Attached"}) {
@@ -2686,8 +2710,12 @@ sub probeHW()
     else
     {
         listProbe("logs", "lsusb");
-        $Lsusb = runCmd("lsusb -v 2>&1");
-        $Lsusb=~s/(iSerial\s+\d+\s*)[^\s]+$/$1.../mg;
+        
+        if(check_Cmd("lsusb"))
+        {
+            $Lsusb = runCmd("lsusb -v 2>&1");
+            $Lsusb=~s/(iSerial\s+\d+\s*)[^\s]+$/$1.../mg;
+        }
         
         if(length($Lsusb)<60 and $Lsusb=~/unable to initialize/i) {
             $Lsusb = "";
@@ -2903,8 +2931,12 @@ sub probeHW()
     else
     {
         listProbe("logs", "usb-devices");
-        $Usb_devices = runCmd("usb-devices -v 2>&1");
-        $Usb_devices = encryptSerials($Usb_devices, "SerialNumber");
+        
+        if(check_Cmd("usb-devices"))
+        {
+            $Usb_devices = runCmd("usb-devices -v 2>&1");
+            $Usb_devices = encryptSerials($Usb_devices, "SerialNumber");
+        }
         
         if($HWLogs) {
             writeLog($LOG_DIR."/usb-devices", $Usb_devices);
@@ -3068,12 +3100,33 @@ sub probeHW()
         }
         elsif($Info=~/System Information\n/)
         {
+            if($Info=~/Manufacturer:[ ]*(.+?)[ ]*(\n|\Z)/) {
+                $Sys{"Vendor"} = $1;
+            }
+            
+            if($Info=~/Product Name:[ ]*(.+?)[ ]*(\n|\Z)/) {
+                $Sys{"Model"} = $1;
+            }
+            
             if($Info=~/Version:[ ]*(.+?)[ ]*(\n|\Z)/) {
                 $Sys{"Version"} = $1;
             }
             
             if($Info=~/Family:[ ]*(.+?)[ ]*(\n|\Z)/) {
                 $Sys{"Family"} = $1;
+            }
+            
+            # clear
+            if($Sys{"Vendor"}=~/\b(System manufacturer|to be filled)\b/i) {
+                $Sys{"Vendor"} = "";
+            }
+            
+            if($Sys{"Model"}=~/\b(Name|to be filled)\b/i) {
+                $Sys{"Model"} = "";
+            }
+            
+            if($Sys{"Version"}=~/\b(Version|to be filled)\b/i) {
+                $Sys{"Version"} = $Sys{"Version"};
             }
         }
         elsif($Info=~/Memory Device\n/) # $Info=~/Memory Module Information\n/
@@ -5139,15 +5192,19 @@ sub fixModel($$$)
             
             if($Version)
             {
-                while($Model=~s/\A\Q$Version\E\s+//){};
+                while($Model=~s/\A\Q$Version\E\s+//i){};
                 
-                if($Model!~/\Q$Version\E/ and $Model ne "INVALID") {
+                if($Model!~/\Q$Version\E/i and $Model ne "INVALID") {
                     $Model = $Version." ".$Model;
                 }
             }
         }
         
         $Model=~s/Ideapad/IdeaPad/gi;
+        $Model=~s/ideacentre/IdeaCentre/gi;
+        $Model=~s/\AProduct\s+Lenovo\s+//i;
+        $Model=~s/\AProduct\s+//i;
+        $Model=~s/\ALenovo\s+//i;
         
         if($Model=~/\A\s*INVALID\s*\Z/) {
             $Model = "";
@@ -5866,6 +5923,11 @@ sub writeLogs()
     {
         listProbe("logs", "mcelog");
         my $Mcelog = runCmd("mcelog --client 2>&1");
+        
+        if($Mcelog=~/No such file or directory/) {
+            $Mcelog = "";
+        }
+        
         writeLog($LOG_DIR."/mcelog", $Mcelog);
     }
     
@@ -6310,7 +6372,16 @@ sub writeLogs()
         }
         
         listProbe("logs", "lsblk");
-        my $Lsblk = runCmd("lsblk -al -o NAME,SIZE,TYPE,FSTYPE,LABEL,UUID,MOUNTPOINT,MODEL,PARTUUID 2>&1");
+        my $Lsblk = "";
+        if(check_Cmd("lsblk"))
+        {
+            $Lsblk = runCmd("lsblk -al -o NAME,SIZE,TYPE,FSTYPE,LABEL,UUID,MOUNTPOINT,MODEL,PARTUUID 2>&1");
+            
+            if($Lsblk=~/unknown column/)
+            { # CentOS 6: no PARTUUID column
+                $Lsblk = runCmd("lsblk -al -o NAME,SIZE,TYPE,FSTYPE,LABEL,UUID,MOUNTPOINT,MODEL 2>&1");
+            }
+        }
         writeLog($LOG_DIR."/lsblk", $Lsblk);
         
         if(not $Docker)
@@ -7920,9 +7991,12 @@ sub scenario()
                     $Distr = "rels-".$1;
                 }
             }
-            
-            if(not $Distr and -f $FixProbe_Logs."/rpms")
-            { # Support for old HW Probe
+        }
+        
+        if(not $Distr or grep {$Distr eq $_} ("virtuozzo-7"))
+        { # Support for old HW Probe
+            if(-f $FixProbe_Logs."/rpms")
+            {
                 my $Rpm = readLine($FixProbe_Logs."/rpms");
                 if($Rpm=~/\.([a-z]\w+)\.\w+\Z/i)
                 {
@@ -7984,6 +8058,7 @@ sub scenario()
         
         $Sys{"Vendor"} = fixVendor($Sys{"Vendor"});
         $Sys{"Model"} = fixModel($Sys{"Vendor"}, $Sys{"Model"}, $Sys{"Version"});
+        
         if($DecodeACPI)
         {
             if(-s $FixProbe_Logs."/acpidump")
@@ -7999,30 +8074,26 @@ sub scenario()
             unlink($FixProbe_Logs."/acpidump");
         }
         
-        if(-f $FixProbe_Logs."/iostat")
+        if(-f $FixProbe_Logs."/iostat"
+        and -s $FixProbe_Logs."/iostat" < 50)
         { # Support for HW Probe 1.3
-            my $Iostat = readFile($FixProbe_Logs."/iostat");
-            if(length($Iostat)<50)
-            { # iostat: command not found
-                unlink($FixProbe_Logs."/iostat");
-            }
+          # iostat: command not found
+            unlink($FixProbe_Logs."/iostat");
         }
         
-        if(-f $FixProbe_Logs."/dmidecode")
+        if(-f $FixProbe_Logs."/dmidecode"
+        and -s $FixProbe_Logs."/dmidecode" < 40)
         { # Support for HW Probe 1.3
-            my $Dmidecode = readFile($FixProbe_Logs."/dmidecode");
-            if(length($Dmidecode)<40)
-            { # dmidecode: command not found
-                writeFile($FixProbe_Logs."/dmidecode", "");
-            }
+          # dmidecode: command not found
+            writeFile($FixProbe_Logs."/dmidecode", "");
         }
         
         foreach my $L ("glxinfo", "xdpyinfo", "xinput", "vdpauinfo", "xrandr")
         {
-            if(-e $FixProbe_Logs."/".$L)
+            if(-e $FixProbe_Logs."/".$L
+            and -s $FixProbe_Logs."/".$L < 100)
             {
-                my $Content = readFile($FixProbe_Logs."/".$L);
-                if(not clearLog_X11($Content)) {
+                if(not clearLog_X11(readFile($FixProbe_Logs."/".$L))) {
                     writeFile($FixProbe_Logs."/".$L, "");
                 }
             }
@@ -8030,17 +8101,32 @@ sub scenario()
         
         if(-f $FixProbe_Logs."/vulkaninfo")
         { # Support for HW Probe 1.3
-            my $Vulkan = readFile($FixProbe_Logs."/vulkaninfo");
-            if($Vulkan=~/Cannot create/i) {
+            if(readFile($FixProbe_Logs."/vulkaninfo")=~/Cannot create/i) {
                 unlink($FixProbe_Logs."/vulkaninfo");
             }
         }
         
         if(-f $FixProbe_Logs."/cpupower")
         { # Support for HW Probe 1.3
-            my $Cpupower = readFile($FixProbe_Logs."/cpupower");
-            if($Cpupower=~/cpupower not found/) {
+            if(readFile($FixProbe_Logs."/cpupower")=~/cpupower not found/) {
                 unlink($FixProbe_Logs."/cpupower");
+            }
+        }
+        
+        if(-f $FixProbe_Logs."/mcelog")
+        { # Support for HW Probe 1.4
+            if(readFile($FixProbe_Logs."/mcelog")=~/No such file or directory/) {
+                writeFile($FixProbe_Logs."/mcelog", "");
+            }
+        }
+        
+        foreach my $L ("lsusb", "usb-devices")
+        {
+            if(-f $FixProbe_Logs."/".$L
+            and -s $FixProbe_Logs."/".$L < 50)
+            { # Support for HW Probe 1.4
+              # sh: XXX: command not found
+                writeFile($FixProbe_Logs."/".$L, "");
             }
         }
         
