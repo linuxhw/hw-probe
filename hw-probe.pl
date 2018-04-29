@@ -7518,7 +7518,7 @@ sub importProbes($)
                 
                 my @DStat = stat($TmpDir);
                 $Prop{"date"} = $DStat[9]; # last modify time
-                writeFile($To."/probe.info", Dumper(\%Prop));
+                writeFile($To."/probe.info", Data::Dumper::Dumper(\%Prop));
                 $Imported = $P;
                 setPublic($To, "-R");
                 rmtree($TmpDir);
@@ -7529,7 +7529,7 @@ sub importProbes($)
         }
     }
     
-    writeFile($Dir."/index.info", Dumper($IndexInfo));
+    writeFile($Dir."/index.info", Data::Dumper::Dumper($IndexInfo));
     setPublic($Dir."/index.info");
     
     if(not $Imported) {
@@ -7768,7 +7768,7 @@ sub scenario()
         }
         
         detectDrive($DriveDesc, $DriveDev);
-        print Dumper(\%HW);
+        print Data::Dumper::Dumper(\%HW);
         exit(0);
     }
     
@@ -7781,7 +7781,7 @@ sub scenario()
         }
         
         detectMonitor(readFile($Opt{"IdentifyMonitor"}));
-        print Dumper(\%HW);
+        print Data::Dumper::Dumper(\%HW);
         exit(0);
     }
     
