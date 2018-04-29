@@ -81,6 +81,7 @@ See INSTALL for instructions on how to properly configure repository on Debian.
 
 * Perl 5
 * perl-Digest-SHA
+* perl-Data-Dumper
 * hwinfo (https://github.com/openSUSE/hwinfo or https://linux-hardware.org/downloads/hwinfo/)
 * curl
 * dmidecode

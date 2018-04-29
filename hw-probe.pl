@@ -19,6 +19,7 @@
 # ========
 #  Perl 5
 #  perl-Digest-SHA
+#  perl-Data-Dumper
 #  hwinfo
 #  curl
 #  dmidecode
@@ -74,7 +75,6 @@ use File::Copy qw(copy move);
 use File::Basename qw(basename dirname);
 use Cwd qw(abs_path cwd);
 use POSIX qw(strftime ceil);
-use Data::Dumper;
 use Config;
 
 my $TOOL_VERSION = "1.4";
@@ -91,13 +91,6 @@ my $PROBE_LOG = $PROBE_DIR."/LOG";
 my $LOCALE = "C";
 
 my $ORIG_DIR = cwd();
-
-my ($Help, $ShowVersion, $Probe, $Check, $Logs, $Show, $Compact, $Verbose,
-$All, $PC_Name, $Key, $Upload, $FixProbe, $Printers, $DumpVersion, $Source,
-$Debug, $PciIDs, $UsbIDs, $SdioIDs, $LogLevel, $ListProbes, $DumpACPI,
-$DecodeACPI, $Clean, $Scanners, $Group, $GetGroup, $PnpIDs, $LowCompress,
-$ImportProbes, $Docker, $IdentifyDrive, $DecodeACPI_From, $DecodeACPI_To,
-$FixEdid, $IdentifyMonitor, $HWInfoPath);
 
 my $HWLogs = 0;
 my $TMP_DIR = tempdir(CLEANUP=>1);
@@ -117,48 +110,51 @@ if($#ARGV==-1)
     exit(0);
 }
 
-GetOptions("h|help!" => \$Help,
-  "v|version!" => \$ShowVersion,
-  "dumpversion!" => \$DumpVersion,
-# general options
-  "all!" => \$All,
-  "probe!" => \$Probe,
-  "logs!" => \$Logs,
-  "log-level=s" => \$LogLevel,
-  "printers!" => \$Printers,
-  "scanners!" => \$Scanners,
-  "check!" => \$Check,
-  "id|name=s" => \$PC_Name,
-  "upload!" => \$Upload,
-  "hwinfo-path=s" => \$HWInfoPath,
-# other
-  "src|source=s" => \$Source,
-  "fix=s" => \$FixProbe,
-  "show!" => \$Show,
-  "compact!" => \$Compact,
-  "verbose!" => \$Verbose,
-  "pci-ids=s" => \$PciIDs,
-  "usb-ids=s" => \$UsbIDs,
-  "sdio-ids=s" => \$SdioIDs,
-  "pnp-ids=s" => \$PnpIDs,
-  "list!" => \$ListProbes,
-  "clean!" => \$Clean,
-  "debug|d!" => \$Debug,
-  "dump-acpi!" => \$DumpACPI,
-  "decode-acpi!" => \$DecodeACPI,
-  "import=s" => \$ImportProbes,
-  "inventory-id|group|g=s" => \$Group,
-  "get-inventory-id|get-group!" => \$GetGroup,
-# private
-  "docker!" => \$Docker,
-  "low-compress!" => \$LowCompress,
-  "identify-drive=s" => \$IdentifyDrive,
-  "identify-monitor=s" => \$IdentifyMonitor,
-  "decode-acpi-from=s" => \$DecodeACPI_From,
-  "decode-acpi-to=s" => \$DecodeACPI_To,
-  "fix-edid!" => \$FixEdid,
-# security
-  "key=s" => \$Key
+my %Opt;
+
+GetOptions("h|help!" => \$Opt{"Help"},
+  "v|version!" => \$Opt{"ShowVersion"},
+  "dumpversion!" => \$Opt{"DumpVersion"},
+# Main options
+  "all!" => \$Opt{"All"},
+  "probe!" => \$Opt{"Probe"},
+  "logs!" => \$Opt{"Logs"},
+  "log-level=s" => \$Opt{"LogLevel"},
+  "printers!" => \$Opt{"Printers"},
+  "scanners!" => \$Opt{"Scanners"},
+  "check!" => \$Opt{"Check"},
+  "id|name=s" => \$Opt{"PC_Name"},
+  "upload!" => \$Opt{"Upload"},
+  "hwinfo-path=s" => \$Opt{"HWInfoPath"},
+# Other
+  "src|source=s" => \$Opt{"Source"},
+  "fix=s" => \$Opt{"FixProbe"},
+  "show!" => \$Opt{"Show"},
+  "compact!" => \$Opt{"Compact"},
+  "verbose!" => \$Opt{"Verbose"},
+  "pci-ids=s" => \$Opt{"PciIDs"},
+  "usb-ids=s" => \$Opt{"UsbIDs"},
+  "sdio-ids=s" => \$Opt{"SdioIDs"},
+  "pnp-ids=s" => \$Opt{"PnpIDs"},
+  "list!" => \$Opt{"ListProbes"},
+  "clean!" => \$Opt{"Clean"},
+  "debug|d!" => \$Opt{"Debug"},
+  "dump-acpi!" => \$Opt{"DumpACPI"},
+  "decode-acpi!" => \$Opt{"DecodeACPI"},
+  "import=s" => \$Opt{"ImportProbes"},
+  "inventory-id|group|g=s" => \$Opt{"Group"},
+  "get-inventory-id|get-group!" => \$Opt{"GetGroup"},
+# Private
+  "docker!" => \$Opt{"Docker"},
+  "low-compress!" => \$Opt{"LowCompress"},
+  "identify-drive=s" => \$Opt{"IdentifyDrive"},
+  "identify-monitor=s" => \$Opt{"IdentifyMonitor"},
+  "decode-acpi-from=s" => \$Opt{"DecodeACPI_From"},
+  "decode-acpi-to=s" => \$Opt{"DecodeACPI_To"},
+  "fix-edid!" => \$Opt{"FixEdid"},
+  "rm-log=s" => \$Opt{"RmLog"},
+# Security
+  "key=s" => \$Opt{"Key"}
 ) or errMsg();
 
 sub errMsg()
@@ -407,6 +403,7 @@ my $DEFAULT_VENDOR = "China";
 my %DistSuffix = (
     "res7" => "rels-7",
     "res6" => "rels-6",
+    "vl6"  => "virtuozzo-7",
     "vl6"  => "virtuozzo-6"
 );
 
@@ -739,6 +736,7 @@ my @WrongAddr = (
 );
 
 my $USE_DIGEST = 0;
+my $USE_DUMPER = 0;
 
 my $HASH_LEN_CLIENT = 32;
 my $SALT_CLIENT = "GN-4w?T]>r3FS/*_";
@@ -870,7 +868,7 @@ sub runCmd($)
 {
     my $Cmd = $_[0];
     
-    if($ListProbes) {
+    if($Opt{"ListProbes"}) {
         print "Executing: ".$Cmd."\n";
     }
     
@@ -928,20 +926,20 @@ sub uploadData()
         # upload package
         my @Cmd = ("curl", "-s", "-S", "-f", "-POST", "-F file=\@".$Pkg."", "-F hwaddr=$HWaddr");
         
-        if($Debug) {
+        if($Opt{"Debug"}) {
             @Cmd = (@Cmd, "-F debug=1");
         }
         
-        if($Docker) {
+        if($Opt{"Docker"}) {
             @Cmd = (@Cmd, "-F docker=1");
         }
         
-        if($PC_Name) {
-            @Cmd = (@Cmd, "-F id=\'$PC_Name\'");
+        if($Opt{"PC_Name"}) {
+            @Cmd = (@Cmd, "-F id=\'".$Opt{"PC_Name"}."\'");
         }
         
-        if($Group) {
-            @Cmd = (@Cmd, "-F group=\'$Group\'");
+        if($Opt{"Group"}) {
+            @Cmd = (@Cmd, "-F group=\'".$Opt{"Group"}."\'");
         }
         
         @Cmd = (@Cmd, "-F tool_ver=\'$TOOL_VERSION\'");
@@ -1006,7 +1004,7 @@ sub uploadData()
 
 sub cleanData()
 {
-    if($Clean)
+    if($Opt{"Clean"})
     {
         if(-d $DATA_DIR) {
             rmtree($DATA_DIR);
@@ -1030,13 +1028,13 @@ sub createPackage()
 {
     my ($Pkg, $HWaddr) = ();
     
-    if($Source)
+    if($Opt{"Source"})
     {
-        if(-f $Source)
+        if(-f $Opt{"Source"})
         {
-            if(isPkg($Source))
+            if(isPkg($Opt{"Source"}))
             {
-                $Pkg = $Source;
+                $Pkg = $Opt{"Source"};
                 
                 system("tar", "--directory", $TMP_DIR, "-xJf", $Pkg);
                 if($?)
@@ -1057,7 +1055,7 @@ sub createPackage()
                         $Chg = 1;
                     }
                     
-                    if(updateHost($TMP_DIR."/hw.info", "id", $PC_Name)) {
+                    if(updateHost($TMP_DIR."/hw.info", "id", $Opt{"PC_Name"})) {
                         $Chg = 1;
                     }
                     
@@ -1085,10 +1083,10 @@ sub createPackage()
                 exit(1);
             }
         }
-        elsif(-d $Source)
+        elsif(-d $Opt{"Source"})
         {
-            copyFiles($Source, $TMP_DIR."/hw.info");
-            updateHost($TMP_DIR."/hw.info", "id", $PC_Name);
+            copyFiles($Opt{"Source"}, $TMP_DIR."/hw.info");
+            updateHost($TMP_DIR."/hw.info", "id", $Opt{"PC_Name"});
             
             $HWaddr = readHostAttr($TMP_DIR."/hw.info", "hwaddr");
             
@@ -1106,7 +1104,7 @@ sub createPackage()
         }
         else
         {
-            print STDERR "ERROR: can't access \'$Source\'\n";
+            print STDERR "ERROR: can't access \'".$Opt{"Source"}."\'\n";
             exit(1);
         }
     }
@@ -1120,7 +1118,7 @@ sub createPackage()
                 exit(1);
             }
             
-            updateHost($DATA_DIR, "id", $PC_Name);
+            updateHost($DATA_DIR, "id", $Opt{"PC_Name"});
             $HWaddr = readHostAttr($DATA_DIR, "hwaddr");
             
             $Pkg = $TMP_DIR."/hw.info.txz";
@@ -1292,8 +1290,8 @@ sub readPnpIds()
 {
     my $Path = undef;
     
-    if($PnpIDs) {
-        $Path = $PnpIDs;
+    if($Opt{"PnpIDs"}) {
+        $Path = $Opt{"PnpIDs"};
     }
     else {
         $Path = "/usr/share/hwdata/pnp.ids"; # ROSA Fresh, RELS
@@ -1338,8 +1336,8 @@ sub readVendorIds()
 {
     my $Path = "/usr/share/hwdata/pci.ids";
     
-    if($PciIDs) {
-        $Path = $PciIDs;
+    if($Opt{"PciIDs"}) {
+        $Path = $Opt{"PciIDs"};
     }
     elsif(-e "ids/pci.ids") {
         $Path = "ids/pci.ids";
@@ -1503,12 +1501,12 @@ sub decodeEdid($)
 
 sub probeHW()
 {
-    if($FixProbe) {
+    if($Opt{"FixProbe"}) {
         print "Fixing probe ... ";
     }
     else
     {
-        if(not check_Cmd("hwinfo") and not defined $HWInfoPath)
+        if(not defined $Opt{"HWInfoPath"} and not check_Cmd("hwinfo"))
         {
             print STDERR "ERROR: 'hwinfo' is not installed\n";
             exit(1);
@@ -1538,7 +1536,7 @@ sub probeHW()
         
         print "Probe for hardware ... ";
         
-        if($ListProbes) {
+        if($Opt{"ListProbes"}) {
             print "\n";
         }
     }
@@ -1546,7 +1544,7 @@ sub probeHW()
     # Dev listing
     my $DevFiles = "";
     
-    if($FixProbe) {
+    if($Opt{"FixProbe"}) {
         $DevFiles = readFile($FixProbe_Logs."/dev");
     }
     else
@@ -1609,7 +1607,7 @@ sub probeHW()
     # Loaded modules
     my $Lsmod = "";
     
-    if($FixProbe) {
+    if($Opt{"FixProbe"}) {
         $Lsmod = readFile($FixProbe_Logs."/lsmod");
     }
     else
@@ -1643,7 +1641,7 @@ sub probeHW()
         }
     }
     
-    if(not $FixProbe)
+    if(not $Opt{"FixProbe"})
     {
         my $RpmLst = "/run/initramfs/live/rpm.lst";
         if(-f $RpmLst)
@@ -1654,7 +1652,7 @@ sub probeHW()
                 $Sys{"Build"} = $1;
             }
             
-            if($Logs) {
+            if($Opt{"Logs"}) {
                 writeLog($LOG_DIR."/build", $Build);
             }
         }
@@ -1669,7 +1667,7 @@ sub probeHW()
                     $Sys{"Build"} = $1;
                 }
                 
-                if($Logs) {
+                if($Opt{"Logs"}) {
                     writeLog($LOG_DIR."/revision.info", $Build);
                 }
             }
@@ -1678,7 +1676,7 @@ sub probeHW()
     
     my %DriveKind = ();
     
-    if($FixProbe)
+    if($Opt{"FixProbe"})
     { # Fix drive IDs after uploading
         my $Smart = readFile($FixProbe_Logs."/smartctl");
         
@@ -1704,7 +1702,7 @@ sub probeHW()
     # HW Info
     my $HWInfo = "";
     
-    if($FixProbe) {
+    if($Opt{"FixProbe"}) {
         $HWInfo = readFile($FixProbe_Logs."/hwinfo");
     }
     else
@@ -1719,10 +1717,10 @@ sub probeHW()
         
         my $HWInfoCmd = "hwinfo";
         
-        if(defined $HWInfoPath)
+        if(defined $Opt{"HWInfoPath"})
         {
-            my $HWInfoDir = dirname(dirname($HWInfoPath));
-            $HWInfoCmd = $HWInfoPath;
+            my $HWInfoDir = dirname(dirname($Opt{"HWInfoPath"}));
+            $HWInfoCmd = $Opt{"HWInfoPath"};
             
             if(-d $HWInfoDir."/lib64") {
                 $HWInfoCmd = "LD_LIBRARY_PATH=\"".$HWInfoDir."/lib64\" ".$HWInfoCmd;
@@ -2406,7 +2404,7 @@ sub probeHW()
     # UDEV
     my $Udevadm = "";
     
-    if($FixProbe)
+    if($Opt{"FixProbe"})
     {
         $Udevadm = readFile($FixProbe_Logs."/udev-db");
         if(not $Udevadm)
@@ -2416,13 +2414,13 @@ sub probeHW()
     }
     else
     {
-        if($LogLevel eq "maximal")
+        if($Opt{"LogLevel"} eq "maximal")
         {
             listProbe("logs", "udev-db");
             $Udevadm = runCmd("udevadm info --export-db 2>/dev/null");
             $Udevadm = hideTags($Udevadm, "ID_NET_NAME_MAC|ID_SERIAL|ID_SERIAL_SHORT|DEVLINKS|ID_WWN|ID_WWN_WITH_EXTENSION");
             $Udevadm=~s/(by\-id\/(ata|usb|nvme|wwn)\-).+/$1.../g;
-            if($Logs) {
+            if($Opt{"Logs"}) {
                 writeLog($LOG_DIR."/udev-db", $Udevadm);
             }
         }
@@ -2520,7 +2518,7 @@ sub probeHW()
     # PCI (all)
     my $Lspci_A = "";
     
-    if($FixProbe) {
+    if($Opt{"FixProbe"}) {
         $Lspci_A = readFile($FixProbe_Logs."/lspci_all");
     }
     else
@@ -2557,7 +2555,7 @@ sub probeHW()
     # PCI
     my $Lspci = "";
     
-    if($FixProbe) {
+    if($Opt{"FixProbe"}) {
         $Lspci = readFile($FixProbe_Logs."/lspci");
     }
     else
@@ -2602,7 +2600,7 @@ sub probeHW()
         
         cleanValues(\%Device);
         
-        if($PciIDs)
+        if($Opt{"PciIDs"})
         {
             if(not $Device{"Device"})
             { # get name of the device from local pci.ids file
@@ -2704,7 +2702,7 @@ sub probeHW()
     # USB
     my $Lsusb = "";
     
-    if($FixProbe) {
+    if($Opt{"FixProbe"}) {
         $Lsusb = readFile($FixProbe_Logs."/lsusb");
     }
     else
@@ -2793,7 +2791,7 @@ sub probeHW()
             }
         }
         
-        if($UsbIDs)
+        if($Opt{"UsbIDs"})
         {
             if(not $Device{"Device"})
             {
@@ -2925,7 +2923,7 @@ sub probeHW()
     
     my $Usb_devices = "";
     
-    if($FixProbe) {
+    if($Opt{"FixProbe"}) {
         $Usb_devices = readFile($FixProbe_Logs."/usb-devices");
     }
     else
@@ -3056,7 +3054,7 @@ sub probeHW()
     # DMI
     my $Dmidecode = "";
     
-    if($FixProbe) {
+    if($Opt{"FixProbe"}) {
         $Dmidecode = readFile($FixProbe_Logs."/dmidecode");
     }
     else
@@ -3441,10 +3439,10 @@ sub probeHW()
     
     my $HP_probe = "";
     
-    if($FixProbe) {
+    if($Opt{"FixProbe"}) {
         $HP_probe = readFile($FixProbe_Logs."/hp-probe");
     }
-    elsif($Printers)
+    elsif($Opt{"Printers"})
     {
         listProbe("logs", "hp-probe");
         
@@ -3522,14 +3520,14 @@ sub probeHW()
     
     my $Avahi = "";
     
-    if($FixProbe)
+    if($Opt{"FixProbe"})
     {
         if(-f $FixProbe_Logs."/hp-probe")
         { # i.e. executed with -printers option (-fix)
             $Avahi = readFile($FixProbe_Logs."/avahi");
         }
     }
-    elsif($Printers and $LogLevel eq "maximal")
+    elsif($Opt{"Printers"} and $Opt{"LogLevel"} eq "maximal")
     {
         if(check_Cmd("avahi-browse"))
         {
@@ -3584,14 +3582,14 @@ sub probeHW()
     # Monitors
     my $Edid = "";
     
-    if($FixProbe)
+    if($Opt{"FixProbe"})
     {
         $Edid = readFile($FixProbe_Logs."/edid");
         
         my $XRandrLog = $FixProbe_Logs."/xrandr";
         my $XOrgLog = $FixProbe_Logs."/xorg.log";
         
-        if($FixEdid and ($Edid or -s $XRandrLog or -s $XOrgLog))
+        if($Opt{"FixEdid"} and ($Edid or -s $XRandrLog or -s $XOrgLog))
         {
             my %EdidHex = ();
             my %FoundEdid = ();
@@ -3788,7 +3786,7 @@ sub probeHW()
     # Battery
     my $Upower = "";
     
-    if($FixProbe) {
+    if($Opt{"FixProbe"}) {
         $Upower = readFile($FixProbe_Logs."/upower");
     }
     else
@@ -3879,7 +3877,7 @@ sub probeHW()
     my $PSDir = "/sys/class/power_supply";
     my $PowerSupply = "";
     
-    if($FixProbe) {
+    if($Opt{"FixProbe"}) {
         $PowerSupply = readFile($FixProbe_Logs."/power_supply");
     }
     else
@@ -3988,7 +3986,7 @@ sub probeHW()
     
     # PNP
     my $Lspnp = "";
-    if($FixProbe) {
+    if($Opt{"FixProbe"}) {
         $Lspnp = readFile($FixProbe_Logs."/lspnp");
     }
     else
@@ -4005,7 +4003,7 @@ sub probeHW()
     
     # HDD
     my $Hdparm = "";
-    if($FixProbe) {
+    if($Opt{"FixProbe"}) {
         $Hdparm = readFile($FixProbe_Logs."/hdparm");
     }
     elsif($HWLogs)
@@ -4038,7 +4036,7 @@ sub probeHW()
     }
     
     my $Smartctl = "";
-    if($FixProbe)
+    if($Opt{"FixProbe"})
     {
         $Smartctl = readFile($FixProbe_Logs."/smartctl");
         
@@ -4174,7 +4172,7 @@ sub probeHW()
     }
     
     my $SmartctlMR = "";
-    if($FixProbe)
+    if($Opt{"FixProbe"})
     {
         $SmartctlMR = readFile($FixProbe_Logs."/smartctl_megaraid");
         
@@ -4300,7 +4298,7 @@ sub probeHW()
         }
     }
     
-    if(not $FixProbe and $HWLogs)
+    if(not $Opt{"FixProbe"} and $HWLogs)
     {
         listProbe("logs", "dmesg");
         my $Dmesg = runCmd("dmesg 2>&1");
@@ -4314,7 +4312,7 @@ sub probeHW()
         if(my $HostName = $ENV{"HOSTNAME"}) {
             $XLog=~s/ $HostName / NODE /g;
         }
-        if(not $Docker or $XLog) {
+        if(not $Opt{"Docker"} or $XLog) {
             writeLog($LOG_DIR."/xorg.log", $XLog);
         }
     }
@@ -4500,7 +4498,7 @@ sub detectMonitor($)
     
     $Device{"Type"} = "monitor";
     
-    if($IdentifyMonitor)
+    if($Opt{"IdentifyMonitor"})
     {
         $Device{"Vendor"} = nameID($Device{"Vendor"});
         
@@ -4515,7 +4513,7 @@ sub detectMonitor($)
         {
             $HW{"eisa:".$ID} = \%Device;
             
-            # if(not $IdentifyMonitor and not defined $MonVendor{$V} and not grep {$_ eq $V} @UnknownVendors) {
+            # if(not $Opt{"IdentifyMonitor"} and not defined $MonVendor{$V} and not grep {$_ eq $V} @UnknownVendors) {
             #     print "WARNING: unknown monitor vendor $V\n";
             # }
         }
@@ -4544,7 +4542,7 @@ sub detectDrive(@)
         $Device->{"Kind"} = "NVMe";
     }
     
-    if(not $IdentifyDrive and not $Raid
+    if(not $Opt{"IdentifyDrive"} and not $Raid
     and defined $HDD_Info{$Dev})
     {
         foreach ("Capacity", "Driver") {
@@ -4632,7 +4630,7 @@ sub detectDrive(@)
         
     }
     
-    if(not $IdentifyDrive)
+    if(not $Opt{"IdentifyDrive"})
     {
         if(not $Device->{"Vendor"} or not $Device->{"Device"}) {
             return undef;
@@ -5262,8 +5260,8 @@ sub probeSys()
     $Sys{"Node"} = "NODE";
     $Sys{"User"} = "USER";
     
-    if($PC_Name) {
-        $Sys{"Name"} = $PC_Name;
+    if($Opt{"PC_Name"}) {
+        $Sys{"Name"} = $Opt{"PC_Name"};
     }
     
     listProbe("logs", "dmi_id");
@@ -5308,7 +5306,7 @@ sub probeSys()
         }
     }
     
-    if($Logs) {
+    if($Opt{"Logs"}) {
         writeLog($LOG_DIR."/dmi_id", $Dmi);
     }
     
@@ -5343,7 +5341,7 @@ sub ipAddr2ifConfig($)
 
 sub probeHWaddr()
 {
-    if($FixProbe)
+    if($Opt{"FixProbe"})
     {
         my $IFConfig = readFile($FixProbe_Logs."/ifconfig");
         
@@ -5496,7 +5494,7 @@ sub detectHWaddr($)
                 next;
             }
             
-            if(not $FixProbe)
+            if(not $Opt{"FixProbe"})
             {
                 if(my $RealMac = getRealHWaddr($NetDev)) {
                     $PermanentAddr{$NetDev} = clientHash($RealMac);
@@ -5599,12 +5597,12 @@ sub probeDistr()
 {
     my $LSB_Rel = "";
     
-    if($FixProbe) {
+    if($Opt{"FixProbe"}) {
         $LSB_Rel = readFile($FixProbe_Logs."/lsb_release");
     }
     else
     {
-        if(not $Docker)
+        if(not $Opt{"Docker"})
         {
             if(check_Cmd("lsb_release"))
             {
@@ -5620,7 +5618,7 @@ sub probeDistr()
     
     my $OS_Rel = "";
     
-    if($FixProbe) {
+    if($Opt{"FixProbe"}) {
         $OS_Rel = readFile($FixProbe_Logs."/os-release");
     }
     else
@@ -5632,7 +5630,7 @@ sub probeDistr()
         }
     }
     
-    my ($Name, $Release) = ();
+    my ($Name, $FullName, $Release) = ();
     if($LSB_Rel)
     { # Desktop
         my $Descr = undef;
@@ -5713,11 +5711,19 @@ sub probeDistr()
             $Name = $1;
         }
         
+        if($OS_Rel=~/\bNAME=\s*[\"\']*([^"'\n]+)/) {
+            $FullName = $1;
+        }
+        
         if($OS_Rel=~/\bVERSION_ID=\s*[\"\']*([^"'\n]+)/) {
             $Release = $1;
         }
         
         if(lc($Release) eq "n/a") {
+            $Release = "";
+        }
+        
+        if($Name eq "virtuozzo" and $Name ne lc($FullName)) {
             $Release = "";
         }
         
@@ -5803,8 +5809,8 @@ sub writeDevs()
         $HWData .= join(";", @D)."\n";
     }
     
-    if($FixProbe) {
-        writeFile($FixProbe."/devices", $HWData);
+    if($Opt{"FixProbe"}) {
+        writeFile($Opt{"FixProbe"}."/devices", $HWData);
     }
     else {
         writeFile($DATA_DIR."/devices", $HWData);
@@ -5849,8 +5855,8 @@ sub writeHost()
     }
     
     # Host Info
-    if($FixProbe) {
-        writeFile($FixProbe."/host", $Host);
+    if($Opt{"FixProbe"}) {
+        writeFile($Opt{"FixProbe"}."/host", $Host);
     }
     else {
         writeFile($DATA_DIR."/host", $Host);
@@ -5886,7 +5892,7 @@ sub writeLogs()
 {
     print "Reading logs ... ";
     
-    if($ListProbes) {
+    if($Opt{"ListProbes"}) {
         print "\n";
     }
     
@@ -5900,7 +5906,7 @@ sub writeLogs()
     # level=minimal
     if($Admin)
     {
-        if(not $Docker)
+        if(not $Opt{"Docker"})
         {
             listProbe("logs", "dmesg.1");
             my $Dmesg_Old = runCmd("journalctl -a -k -b -1 -o short-monotonic 2>/dev/null | grep -v systemd");
@@ -5933,7 +5939,7 @@ sub writeLogs()
     
     listProbe("logs", "xorg.conf");
     my $XorgConf = readFile("/etc/X11/xorg.conf");
-    if(not $Docker or $XorgConf) {
+    if(not $Opt{"Docker"} or $XorgConf) {
         writeLog($LOG_DIR."/xorg.conf", $XorgConf);
     }
     
@@ -5952,7 +5958,7 @@ sub writeLogs()
         writeLog($LOG_DIR."/grub", $Grub);
     }
     
-    if(not $Docker)
+    if(not $Opt{"Docker"})
     {
         if(-f "/boot/grub2/grub.cfg")
         {
@@ -6005,7 +6011,7 @@ sub writeLogs()
     }
     writeLog($LOG_DIR."/biosdecode", $BiosDecode);
     
-    if(not $Docker)
+    if(not $Opt{"Docker"})
     {
         listProbe("logs", "df");
         my $Df = runCmd("df -h 2>&1");
@@ -6017,8 +6023,8 @@ sub writeLogs()
     writeLog($LOG_DIR."/meminfo", $Meminfo);
     
     # level=default
-    if($LogLevel eq "default"
-    or $LogLevel eq "maximal")
+    if($Opt{"LogLevel"} eq "default"
+    or $Opt{"LogLevel"} eq "maximal")
     {
         listProbe("logs", "sensors");
         my $Sensors = runCmd("sensors 2>/dev/null");
@@ -6111,7 +6117,7 @@ sub writeLogs()
             }
         }
         
-        if(not $Docker)
+        if(not $Opt{"Docker"})
         {
             if(check_Cmd("rfkill"))
             {
@@ -6198,7 +6204,7 @@ sub writeLogs()
             }
         }
         
-        if(not $Docker)
+        if(not $Opt{"Docker"})
         {
             listProbe("logs", "findmnt");
             my $Findmnt = runCmd("findmnt 2>&1");
@@ -6286,7 +6292,7 @@ sub writeLogs()
         my $Pstree = runCmd("pstree 2>&1");
         writeLog($LOG_DIR."/pstree", $Pstree);
         
-        if(not $Docker)
+        if(not $Opt{"Docker"})
         {
             if(check_Cmd("systemctl"))
             {
@@ -6384,7 +6390,7 @@ sub writeLogs()
         }
         writeLog($LOG_DIR."/lsblk", $Lsblk);
         
-        if(not $Docker)
+        if(not $Opt{"Docker"})
         {
             listProbe("logs", "fstab");
             my $Fstab = readFile("/etc/fstab");
@@ -6490,7 +6496,7 @@ sub writeLogs()
             writeLog($LOG_DIR."/memtester", $Memtester);
         }
         
-        if(not $Docker)
+        if(not $Opt{"Docker"})
         {
             listProbe("logs", "modprobe.d");
             my @Modprobe = listDir("/etc/modprobe.d/");
@@ -6532,11 +6538,11 @@ sub writeLogs()
             $XConfig .= readFile("/etc/X11/xorg.conf.d/".$Xc);
             $XConfig .= "\n\n";
         }
-        if(not $Docker or $XConfig) {
+        if(not $Opt{"Docker"} or $XConfig) {
             writeLog($LOG_DIR."/xorg.conf.d", $XConfig);
         }
         
-        if($Scanners)
+        if($Opt{"Scanners"})
         {
             if(check_Cmd("sane-find-scanner"))
             {
@@ -6558,7 +6564,7 @@ sub writeLogs()
     }
     
     # level=maximal
-    if($LogLevel eq "maximal")
+    if($Opt{"LogLevel"} eq "maximal")
     {
         listProbe("logs", "firmware");
         my $Firmware = runCmd("find /lib/firmware -type f|sort");
@@ -6643,7 +6649,7 @@ sub writeLogs()
             writeLog($LOG_DIR."/update-alternatives", $Alternatives);
         }
         
-        if($Printers)
+        if($Opt{"Printers"})
         {
             if($Admin)
             {
@@ -6673,7 +6679,7 @@ sub writeLogs()
         # writeLog($LOG_DIR."/superiotool", $SuperIO);
     }
     
-    if($DumpACPI)
+    if($Opt{"DumpACPI"})
     {
         listProbe("logs", "acpidump");
         my $AcpiDump = "";
@@ -6690,7 +6696,7 @@ sub writeLogs()
         }
         writeLog($LOG_DIR."/acpidump", $AcpiDump);
         
-        if($DecodeACPI)
+        if($Opt{"DecodeACPI"})
         {
             if(-s $LOG_DIR."/acpidump")
             {
@@ -6815,13 +6821,13 @@ sub showInfo()
 {
     my $ShowDir = $DATA_DIR;
     
-    if($Source)
+    if($Opt{"Source"})
     {
-        if(-f $Source)
+        if(-f $Opt{"Source"})
         {
-            if(isPkg($Source))
+            if(isPkg($Opt{"Source"}))
             {
-                my $Pkg = abs_path($Source);
+                my $Pkg = abs_path($Opt{"Source"});
                 chdir($TMP_DIR);
                 system("tar", "-m", "-xJf", $Pkg);
                 chdir($ORIG_DIR);
@@ -6847,13 +6853,13 @@ sub showInfo()
                 exit(1);
             }
         }
-        elsif(-d $Source)
+        elsif(-d $Opt{"Source"})
         {
-            $ShowDir = $Source;
+            $ShowDir = $Opt{"Source"};
         }
         else
         {
-            print STDERR "ERROR: can't access \'$Source\'\n";
+            print STDERR "ERROR: can't access \'".$Opt{"Source"}."\'\n";
             exit(1);
         }
     }
@@ -6900,7 +6906,7 @@ sub showInfo()
                 }
             }
             
-            if($Compact)
+            if($Opt{"Compact"})
             {
                 if($Attr eq "ID")
                 {
@@ -6942,7 +6948,7 @@ sub showInfo()
         {
             my ($Attr, $Val) = ($1, $2);
             
-            if($Compact)
+            if($Opt{"Compact"})
             {
                 if($Attr eq "id")
                 {
@@ -6961,7 +6967,7 @@ sub showInfo()
     print "\n";
     print "Total devices: ".($Rows + 1)."\n";
     
-    if(defined $Verbose) {
+    if(defined $Opt{"Verbose"}) {
         showTable(\%Tbl, $Rows, "ID", "Class", "Status", "Type", "Vendor", "Device");
     }
     else {
@@ -7148,7 +7154,7 @@ sub checkHW()
     
     print "Run tests ... ";
     
-    if($ListProbes) {
+    if($Opt{"ListProbes"}) {
         print "\n";
     }
     
@@ -7172,7 +7178,7 @@ sub getGears($$)
 
 sub listProbe($$)
 {
-    if($ListProbes) {
+    if($Opt{"ListProbes"}) {
         print $_[0]."/".$_[1]."\n";
     }
 }
@@ -7671,21 +7677,19 @@ sub setPublic($)
 
 sub scenario()
 {
-    $Data::Dumper::Sortkeys = 1;
-    
-    if($Help)
+    if($Opt{"Help"})
     {
         helpMsg();
         exit(0);
     }
     
-    if($DumpVersion)
+    if($Opt{"DumpVersion"})
     {
         print $TOOL_VERSION."\n";
         exit(0);
     }
     
-    if($ShowVersion)
+    if($Opt{"ShowVersion"})
     {
         print $ShortUsage;
         exit(0);
@@ -7697,50 +7701,66 @@ sub scenario()
         require Digest::SHA;
     }
     
-    if($DecodeACPI) {
-        $DumpACPI = 1;
+    if(checkModule("Data/Dumper.pm"))
+    {
+        $USE_DUMPER = 1;
+        require Data::Dumper;
+        $Data::Dumper::Sortkeys = 1;
     }
     
-    if($LogLevel)
+    if($Opt{"DecodeACPI"}) {
+        $Opt{"DumpACPI"} = 1;
+    }
+    
+    if($Opt{"LogLevel"})
     {
-        if($LogLevel=~/\A(min|mini|minimum)\Z/i) {
-            $LogLevel = "minimal";
+        if($Opt{"LogLevel"}=~/\A(min|mini|minimum)\Z/i) {
+            $Opt{"LogLevel"} = "minimal";
         }
-        elsif($LogLevel=~/\A(max|maxi|maximum)\Z/i) {
-            $LogLevel = "maximal";
+        elsif($Opt{"LogLevel"}=~/\A(max|maxi|maximum)\Z/i) {
+            $Opt{"LogLevel"} = "maximal";
         }
         
-        if($LogLevel!~/\A(minimal|default|maximal)\Z/i)
+        if($Opt{"LogLevel"}!~/\A(minimal|default|maximal)\Z/i)
         {
-            print STDERR "ERROR: unknown log level \'$LogLevel\'\n";
+            print STDERR "ERROR: unknown log level \'".$Opt{"LogLevel"}."\'\n";
             exit(1);
         }
         
-        $LogLevel = lc($LogLevel);
-        $Logs = 1;
+        $Opt{"LogLevel"} = lc($Opt{"LogLevel"});
+        $Opt{"Logs"} = 1;
     }
     else {
-        $LogLevel = "default";
+        $Opt{"LogLevel"} = "default";
     }
     
-    if($HWInfoPath)
+    if($Opt{"HWInfoPath"})
     {
-        if(not -f $HWInfoPath)
+        if(not -f $Opt{"HWInfoPath"})
         {
-            print STDERR "ERROR: can't access file \'$HWInfoPath\'\n";
+            print STDERR "ERROR: can't access file \'".$Opt{"HWInfoPath"}."\'\n";
             exit(1);
         }
     }
     
-    if($IdentifyDrive)
+    if($Opt{"IdentifyDrive"} or $Opt{"IdentifyMonitor"})
     {
-        if(not -f $IdentifyDrive)
+        if(not $USE_DUMPER)
         {
-            print STDERR "ERROR: can't access file \'$IdentifyDrive\'\n";
+            print STDERR "ERROR: requires perl-Data-Dumper module\n";
+            exit(1);
+        }
+    }
+    
+    if($Opt{"IdentifyDrive"})
+    {
+        if(not -f $Opt{"IdentifyDrive"})
+        {
+            print STDERR "ERROR: can't access file \'".$Opt{"IdentifyDrive"}."\'\n";
             exit(1);
         }
         
-        my $DriveDesc = readFile($IdentifyDrive);
+        my $DriveDesc = readFile($Opt{"IdentifyDrive"});
         my $DriveDev = "";
         
         if($DriveDesc=~/\A(.+)\n/) {
@@ -7752,41 +7772,41 @@ sub scenario()
         exit(0);
     }
     
-    if($IdentifyMonitor)
+    if($Opt{"IdentifyMonitor"})
     {
-        if(not -f $IdentifyMonitor)
+        if(not -f $Opt{"IdentifyMonitor"})
         {
-            print STDERR "ERROR: can't access file \'$IdentifyMonitor\'\n";
+            print STDERR "ERROR: can't access file \'".$Opt{"IdentifyMonitor"}."\'\n";
             exit(1);
         }
         
-        detectMonitor(readFile($IdentifyMonitor));
+        detectMonitor(readFile($Opt{"IdentifyMonitor"}));
         print Dumper(\%HW);
         exit(0);
     }
     
-    if($DecodeACPI_From and $DecodeACPI_To)
+    if($Opt{"DecodeACPI_From"} and $Opt{"DecodeACPI_To"})
     {
-        if(not -f $DecodeACPI_From)
+        if(not -f $Opt{"DecodeACPI_From"})
         {
-            print STDERR "ERROR: can't access file \'$DecodeACPI_From\'\n";
+            print STDERR "ERROR: can't access file \'".$Opt{"DecodeACPI_From"}."\'\n";
             exit(1);
         }
-        decodeACPI($DecodeACPI_From, $DecodeACPI_To);
+        decodeACPI($Opt{"DecodeACPI_From"}, $Opt{"DecodeACPI_To"});
         exit(0);
     }
     
-    if($All)
+    if($Opt{"All"})
     {
-        $Probe = 1;
-        $Logs = 1;
+        $Opt{"Probe"} = 1;
+        $Opt{"Logs"} = 1;
     }
     
-    if($Probe) {
+    if($Opt{"Probe"}) {
         $HWLogs = 1;
     }
     
-    if($Probe and not $FixProbe)
+    if($Opt{"Probe"} and not $Opt{"FixProbe"})
     {
         if(-d $DATA_DIR)
         {
@@ -7799,7 +7819,7 @@ sub scenario()
         }
     }
     
-    if($Probe)
+    if($Opt{"Probe"})
     {
         if(not $Admin)
         {
@@ -7808,106 +7828,106 @@ sub scenario()
         }
     }
     
-    if($FixProbe)
+    if($Opt{"FixProbe"})
     {
         $HWLogs = 0;
-        $Probe = 0;
-        $Logs = 0;
+        $Opt{"Probe"} = 0;
+        $Opt{"Logs"} = 0;
     }
     
-    if($PciIDs)
+    if($Opt{"PciIDs"})
     {
-        if(not -e $PciIDs)
+        if(not -e $Opt{"PciIDs"})
         {
-            print STDERR "ERROR: can't access \'$PciIDs\'\n";
+            print STDERR "ERROR: can't access \'".$Opt{"PciIDs"}."\'\n";
             exit(1);
         }
-        readPciIds($PciIDs, \%PciInfo, \%PciInfo_D);
+        readPciIds($Opt{"PciIDs"}, \%PciInfo, \%PciInfo_D);
         
-        if(-e $PciIDs.".add") {
-            readPciIds($PciIDs.".add", \%AddPciInfo, \%AddPciInfo_D);
+        if(-e $Opt{"PciIDs"}.".add") {
+            readPciIds($Opt{"PciIDs"}.".add", \%AddPciInfo, \%AddPciInfo_D);
         }
     }
     
-    if($UsbIDs)
+    if($Opt{"UsbIDs"})
     {
-        if(not -e $UsbIDs)
+        if(not -e $Opt{"UsbIDs"})
         {
-            print STDERR "ERROR: can't access \'$UsbIDs\'\n";
+            print STDERR "ERROR: can't access \'".$Opt{"UsbIDs"}."\'\n";
             exit(1);
         }
-        readUsbIds($UsbIDs, \%UsbInfo);
+        readUsbIds($Opt{"UsbIDs"}, \%UsbInfo);
         
-        if(-e $UsbIDs.".add") {
-            readUsbIds($UsbIDs.".add", \%AddUsbInfo);
+        if(-e $Opt{"UsbIDs"}.".add") {
+            readUsbIds($Opt{"UsbIDs"}.".add", \%AddUsbInfo);
         }
     }
     
-    if($SdioIDs)
+    if($Opt{"SdioIDs"})
     {
-        if(not -e $SdioIDs)
+        if(not -e $Opt{"SdioIDs"})
         {
-            print STDERR "ERROR: can't access \'$SdioIDs\'\n";
+            print STDERR "ERROR: can't access \'".$Opt{"SdioIDs"}."\'\n";
             exit(1);
         }
-        readSdioIds($SdioIDs, \%SdioInfo, \%SdioVendor);
+        readSdioIds($Opt{"SdioIDs"}, \%SdioInfo, \%SdioVendor);
         
-        if(-e $SdioIDs.".add") {
-            readSdioIds($SdioIDs.".add", \%AddSdioInfo, \%AddSdioVendor);
+        if(-e $Opt{"SdioIDs"}.".add") {
+            readSdioIds($Opt{"SdioIDs"}.".add", \%AddSdioInfo, \%AddSdioVendor);
         }
     }
     
-    if($PnpIDs)
+    if($Opt{"PnpIDs"})
     {
-        if(not -e $PnpIDs)
+        if(not -e $Opt{"PnpIDs"})
         {
-            print STDERR "ERROR: can't access \'$PnpIDs\'\n";
+            print STDERR "ERROR: can't access \'".$Opt{"PnpIDs"}."\'\n";
             exit(1);
         }
     }
     
-    if($FixProbe)
+    if($Opt{"FixProbe"})
     {
-        if(not -e $FixProbe)
+        if(not -e $Opt{"FixProbe"})
         {
-            print STDERR "ERROR: can't access \'$FixProbe\'\n";
+            print STDERR "ERROR: can't access \'".$Opt{"FixProbe"}."\'\n";
             exit(1);
         }
         
-        if($FixProbe=~/\.(tar\.xz|txz)\Z/)
+        if($Opt{"FixProbe"}=~/\.(tar\.xz|txz)\Z/)
         { # package
-            my $PName = basename($FixProbe);
-            $FixProbe_Pkg = abs_path($FixProbe);
-            $FixProbe_Path = $FixProbe;
-            $FixProbe = $FixProbe_Pkg;
+            my $PName = basename($Opt{"FixProbe"});
+            $FixProbe_Pkg = abs_path($Opt{"FixProbe"});
+            $FixProbe_Path = $Opt{"FixProbe"};
+            $Opt{"FixProbe"} = $FixProbe_Pkg;
             
-            copy($FixProbe, $TMP_DIR."/".$PName);
+            copy($Opt{"FixProbe"}, $TMP_DIR."/".$PName);
             chdir($TMP_DIR);
             system("tar", "-m", "-xJf", $PName);
             chdir($ORIG_DIR);
             
-            $FixProbe = $TMP_DIR."/hw.info";
+            $Opt{"FixProbe"} = $TMP_DIR."/hw.info";
         }
-        elsif(-f $FixProbe)
+        elsif(-f $Opt{"FixProbe"})
         {
-            print STDERR "ERROR: unsupported probe format \'$FixProbe\'\n";
+            print STDERR "ERROR: unsupported probe format \'".$Opt{"FixProbe"}."\'\n";
             exit(1);
         }
         
-        $FixProbe=~s/[\/]+\Z//g;
-        $FixProbe_Logs = $FixProbe."/logs";
+        $Opt{"FixProbe"}=~s/[\/]+\Z//g;
+        $FixProbe_Logs = $Opt{"FixProbe"}."/logs";
         
-        if(-d $FixProbe)
+        if(-d $Opt{"FixProbe"})
         {
             if(not -e $FixProbe_Logs."/hwinfo")
             {
-                print STDERR "ERROR: can't find logs in \'$FixProbe\'\n";
+                print STDERR "ERROR: can't find logs in \'".$Opt{"FixProbe"}."\'\n";
                 exit(1);
             }
         }
         else
         {
-            print STDERR "ERROR: can't access \'$FixProbe\'\n";
+            print STDERR "ERROR: can't access \'".$Opt{"FixProbe"}."\'\n";
             exit(1);
         }
         
@@ -7934,10 +7954,10 @@ sub scenario()
             }
         }
         
-        $Logs = 0;
+        $Opt{"Logs"} = 0;
     }
     
-    if($Probe or $Check)
+    if($Opt{"Probe"} or $Opt{"Check"})
     {
         probeSys();
         probeHWaddr();
@@ -7946,11 +7966,11 @@ sub scenario()
         writeDevs();
         writeHost();
         
-        if($Logs) {
+        if($Opt{"Logs"}) {
             writeLogs();
         }
         
-        if($Check)
+        if($Opt{"Check"})
         {
             checkHW();
             
@@ -7962,22 +7982,22 @@ sub scenario()
             }
         }
         
-        if($Key) {
-            writeFile($DATA_DIR."/key", $Key);
+        if($Opt{"Key"}) {
+            writeFile($DATA_DIR."/key", $Opt{"Key"});
         }
         
-        if(not $Upload and not $Show) {
+        if(not $Opt{"Upload"} and not $Opt{"Show"}) {
             print "Local probe path: $DATA_DIR\n";
         }
     }
-    elsif($FixProbe)
+    elsif($Opt{"FixProbe"})
     {
-        readHost($FixProbe); # instead of probeSys
+        readHost($Opt{"FixProbe"}); # instead of probeSys
         probeHWaddr();
         probeHW();
         
-        if($PC_Name) {
-            $Sys{"Name"} = $PC_Name; # fix PC name
+        if($Opt{"PC_Name"}) {
+            $Sys{"Name"} = $Opt{"PC_Name"}; # fix PC name
         }
         
         my ($Distr, $Rel) = probeDistr();
@@ -7993,7 +8013,7 @@ sub scenario()
             }
         }
         
-        if(not $Distr or grep {$Distr eq $_} ("virtuozzo-7"))
+        if(not $Distr or grep {$Distr eq $_} ("virtuozzo"))
         { # Support for old HW Probe
             if(-f $FixProbe_Logs."/rpms")
             {
@@ -8059,7 +8079,7 @@ sub scenario()
         $Sys{"Vendor"} = fixVendor($Sys{"Vendor"});
         $Sys{"Model"} = fixModel($Sys{"Vendor"}, $Sys{"Model"}, $Sys{"Version"});
         
-        if($DecodeACPI)
+        if($Opt{"DecodeACPI"})
         {
             if(-s $FixProbe_Logs."/acpidump")
             {
@@ -8138,7 +8158,7 @@ sub scenario()
             my $PName = basename($FixProbe_Pkg);
             chdir($TMP_DIR);
             my $Compress = "";
-            if($LowCompress) {
+            if($Opt{"LowCompress"}) {
                 $Compress .= "XZ_OPT=-0 ";
             }
             $Compress .= "tar -cJf ".$PName." hw.info";
@@ -8154,28 +8174,35 @@ sub scenario()
         }
     }
     
-    if($Show) {
+    if($Opt{"Show"}) {
         showInfo();
     }
     
-    if($Upload)
+    if($Opt{"Upload"})
     {
         uploadData();
         cleanData();
     }
     
-    if($GetGroup) {
+    if($Opt{"GetGroup"}) {
         getGroup();
     }
     
-    if($ImportProbes)
+    if($Opt{"ImportProbes"})
     {
         if(not $Admin)
         {
             print STDERR "ERROR: you should run as root (sudo or su)\n";
             exit(1);
         }
-        importProbes($ImportProbes);
+        
+        if(not $USE_DUMPER)
+        {
+            print STDERR "ERROR: requires perl-Data-Dumper module\n";
+            exit(1);
+        }
+        
+        importProbes($Opt{"ImportProbes"});
     }
     
     exit(0);
