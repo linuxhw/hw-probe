@@ -4395,7 +4395,7 @@ sub shortOS($)
 {
     my $Name = $_[0];
     $Name=~s/\s+(linux|project)\s+/ /i;
-    $Name=~s/(linux|project)\Z//i;
+    $Name=~s/\s*(linux|project)\Z//i;
     $Name=~s/\s+/\-/g;
     return $Name;
 }
@@ -5709,6 +5709,7 @@ sub probeDistr()
     }
     
     my ($Name, $Release) = ();
+    
     if($LSB_Rel)
     { # Desktop
         my $Descr = undef;
@@ -5775,7 +5776,7 @@ sub probeDistr()
         }
     }
     
-    if($OS_Rel)
+    if((not $Name or not $Release) and $OS_Rel)
     {
         if($OS_Rel=~/\bID=\s*[\"\']*([^"'\n]+)/) {
             $Name = $1;
@@ -5790,10 +5791,13 @@ sub probeDistr()
         }
     }
     
-    if($Sys_Rel and $Sys_Rel=~/\A(.+?)( release| )([\d\.]+)/)
+    if((not $Name or not $Release) and $Sys_Rel)
     {
-        $Name = $1;
-        $Release = lc($3);
+        if($Sys_Rel=~/\A(.+?)\s+release\s+([\d\.]+)/ or $Sys_Rel=~/\A(.+?)\s+([\d\.]+)/)
+        {
+            $Name = $1;
+            $Release = lc($2);
+        }
     }
     
     if($Name=~/virtuozzo/i and lc($Name) ne "virtuozzo")
@@ -8122,6 +8126,10 @@ sub scenario()
             }
         }
         
+        if($Opt{"RmLog"} and not grep {$Opt{"RmLog"} eq $_} ("hwinfo", "dmidecode", "smartctl", "lspci", "lspci_all", "lsusb", "ifconfig", "ip_addr", "os-release", "lsb_release", "system-release")) {
+            writeFile($FixProbe_Logs."/".$Opt{"RmLog"}, "");
+        }
+        
         $Opt{"Logs"} = 0;
     }
     
@@ -8181,7 +8189,7 @@ sub scenario()
             }
         }
         
-        if(not $Distr or grep {$Distr eq $_} ("virtuozzo"))
+        if(not $Distr or grep {$Distr eq $_} ("virtuozzo-7"))
         { # Support for old HW Probe
             if(-f $FixProbe_Logs."/rpms")
             {
