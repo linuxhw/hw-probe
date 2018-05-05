@@ -2524,8 +2524,12 @@ sub probeHW()
     else
     {
         listProbe("logs", "lspci_all");
-        $Lspci_A = runCmd("lspci -vvnn 2>&1");
-        $Lspci_A=~s/(Serial Number\s+).+/$1.../g;
+        
+        if(check_Cmd("lspci"))
+        {
+            $Lspci_A = runCmd("lspci -vvnn 2>&1");
+            $Lspci_A=~s/(Serial Number\s+).+/$1.../g;
+        }
         
         if($HWLogs) {
             writeLog($LOG_DIR."/lspci_all", $Lspci_A);
@@ -2561,7 +2565,11 @@ sub probeHW()
     else
     {
         listProbe("logs", "lspci");
-        $Lspci = runCmd("lspci -vmnnk 2>&1");
+        
+        if(check_Cmd("lspci"))
+        {
+            $Lspci = runCmd("lspci -vmnnk 2>&1");
+        }
         
         if($HWLogs) {
             writeLog($LOG_DIR."/lspci", $Lspci);
@@ -3075,6 +3083,7 @@ sub probeHW()
     
     my $MemIndex = 0;
     my %MemIDs = ();
+    my $MotherboardID = undef;
     
     foreach my $Info (split(/\n\n/, $Dmidecode))
     {
@@ -3314,8 +3323,10 @@ sub probeHW()
             
             $Device{"Device"} = "Motherboard ".$Device{"Device"};
             
-            if($ID) {
-                $HW{"board:".$ID} = \%Device;
+            if($ID)
+            {
+                $MotherboardID = "board:".$ID;
+                $HW{$MotherboardID} = \%Device;
             }
         }
         elsif($Info=~/BIOS Information\n/)
@@ -3428,6 +3439,44 @@ sub probeHW()
                     if($Val2
                     and not $Val1) {
                         $HW{"cpu:".$Cpu_ID}{$_} = $Val2;
+                    }
+                }
+            }
+        }
+    }
+    
+    if($MotherboardID)
+    {
+        if(not $Sys{"Vendor"} or not $Sys{"Model"})
+        {
+            if($Sys{"Type"}=~/desktop|server/)
+            {
+                my ($MVendor, $MModel) = ($HW{$MotherboardID}{"Vendor"}, shortModel($HW{$MotherboardID}{"Device"}));
+                
+                if($MVendor eq "NA"
+                or $MVendor=~/unkn|default|uknown/i) {
+                    $MVendor = undef;
+                }
+                
+                if($MModel eq "NA") {
+                    $MModel = undef;
+                }
+                
+                if(not $Sys{"Vendor"} and not $Sys{"Model"})
+                {
+                    $Sys{"Vendor"} = $MVendor;
+                    $Sys{"Model"} = $MModel;
+                }
+                elsif(not $Sys{"Vendor"})
+                {
+                    if($Sys{"Model"} eq $MModel) {
+                        $Sys{"Vendor"} = $MVendor;
+                    }
+                }
+                elsif(not $Sys{"Model"})
+                {
+                    if($Sys{"Vendor"} eq $MVendor) {
+                        $Sys{"Model"} = $MModel;
                     }
                 }
             }
@@ -4136,6 +4185,10 @@ sub probeHW()
             }
             writeLog($LOG_DIR."/smartctl", $Smartctl);
         }
+        else
+        { # write empty
+            writeLog($LOG_DIR."/smartctl", "");
+        }
     }
     
     foreach my $Dev (keys(%HDD))
@@ -4330,10 +4383,21 @@ sub shortModel($)
     $Mdl=~s/\s+Rev\s+.+//ig;
     $Mdl=~s/\s+REV\:[^\s]+//ig; # REV:0A
     $Mdl=~s/(\s+|\/)[x\d]+\.[x\d]+//i;
-    $Mdl=~s/\.\Z//;
+    $Mdl=~s/\s*[\.\*]\Z//;
+    $Mdl=~s/\s*\d\*.*//; # Motherboard C31 1*V1.*
     $Mdl=~s/\s+(Unknow|INVALID|Default string)\Z//;
+    $Mdl=~s/\s+R\d+\.\d+\Z//ig; # R2.0
     
     return $Mdl;
+}
+
+sub shortOS($)
+{
+    my $Name = $_[0];
+    $Name=~s/\s+(linux|project)\s+/ /i;
+    $Name=~s/(linux|project)\Z//i;
+    $Name=~s/\s+/\-/g;
+    return $Name;
 }
 
 sub detectMonitor($)
@@ -4905,7 +4969,7 @@ sub guessDriveVendor($)
         return "Zheino";
     }
     elsif($Name=~/\A(MT|MSH|P3|P3D|T)\-(60|64|128|240|256|512|1TB|2TB)\Z/
-    or grep { $Name eq $_ } ("V-32"))
+    or grep { $Name eq $_ } ("V-32", "NT-256"))
     { # MT-64 MSH-256 P3-128 P3D-240 P3-2TB T-60 V-32
         return "KingSpec";
     }
@@ -5045,7 +5109,7 @@ sub cleanValues($)
     {
         if(my $Val = $Hash->{$Key})
         {
-            if($Val=~/\A[\[\(]*(not specified|not defined|invalid|error|unknown|unknow|empty|none|default string)[\)\]]*\Z/i
+            if($Val=~/\A[\[\(]*(not specified|not defined|invalid|error|unknown|unknow|uknown|empty|none|default string)[\)\]]*\Z/i
             or $Val=~/(\A|\b|\d)(to be filled|unclassified device|not defined)(\b|\Z)/i) {
                 delete($Hash->{$Key});
             }
@@ -5630,7 +5694,21 @@ sub probeDistr()
         }
     }
     
-    my ($Name, $FullName, $Release) = ();
+    my $Sys_Rel = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Sys_Rel = readFile($FixProbe_Logs."/system-release");
+    }
+    else
+    {
+        listProbe("logs", "system-release");
+        $Sys_Rel = readFile("/etc/system-release");
+        if($HWLogs and $Sys_Rel) {
+            writeLog($LOG_DIR."/system-release", $Sys_Rel);
+        }
+    }
+    
+    my ($Name, $Release) = ();
     if($LSB_Rel)
     { # Desktop
         my $Descr = undef;
@@ -5646,7 +5724,7 @@ sub probeDistr()
             $Release = lc($1);
         }
         
-        if(lc($Release) eq "n/a") {
+        if($Release eq "n/a") {
             $Release = "";
         }
         
@@ -5695,14 +5773,6 @@ sub probeDistr()
         elsif($Descr=~/\AMaui/i) {
             $Name = $Descr;
         }
-        
-        $Name=~s/\s+(Linux|Project)(\s+|\Z)/ /i;
-        $Name=~s/\s+\Z//;
-        $Name=~s/\s+/\-/g;
-        
-        if($Name and $Release) {
-            return (lc($Name)."-".$Release, "");
-        }
     }
     
     if($OS_Rel)
@@ -5711,30 +5781,33 @@ sub probeDistr()
             $Name = $1;
         }
         
-        if($OS_Rel=~/\bNAME=\s*[\"\']*([^"'\n]+)/) {
-            $FullName = $1;
-        }
-        
         if($OS_Rel=~/\bVERSION_ID=\s*[\"\']*([^"'\n]+)/) {
-            $Release = $1;
+            $Release = lc($1);
         }
         
-        if(lc($Release) eq "n/a") {
+        if($Release eq "n/a") {
             $Release = "";
-        }
-        
-        if($Name eq "virtuozzo" and $Name ne lc($FullName)) {
-            $Release = "";
-        }
-        
-        $Name=~s/\s+Linux(\s+|\Z)/ /i;
-        
-        if($Name and $Release) {
-            return (lc($Name)."-".lc($Release), "");
         }
     }
     
-    if($Name) {
+    if($Sys_Rel and $Sys_Rel=~/\A(.+?)( release| )([\d\.]+)/)
+    {
+        $Name = $1;
+        $Release = lc($3);
+    }
+    
+    if($Name=~/virtuozzo/i and lc($Name) ne "virtuozzo")
+    {
+        $Release = undef;
+        $Name = "Virtuozzo";
+    }
+    
+    $Name = shortOS($Name);
+    
+    if($Name and $Release) {
+        return (lc($Name)."-".$Release, "");
+    }
+    elsif($Name) {
         return (lc($Name), "");
     }
     
@@ -6432,16 +6505,24 @@ sub writeLogs()
         writeLog($LOG_DIR."/interrupts", $Interrupts);
         
         listProbe("logs", "aplay");
-        my $Aplay = runCmd("aplay -l 2>&1");
-        if(length($Aplay)<80 and $Aplay=~/no soundcards found/i) {
-            $Aplay = "";
+        my $Aplay = "";
+        if(check_Cmd("aplay"))
+        {
+            $Aplay = runCmd("aplay -l 2>&1");
+            if(length($Aplay)<80 and $Aplay=~/no soundcards found/i) {
+                $Aplay = "";
+            }
         }
         writeLog($LOG_DIR."/aplay", $Aplay);
         
         listProbe("logs", "arecord");
-        my $Arecord = runCmd("arecord -l 2>&1");
-        if(length($Arecord)<80 and $Arecord=~/no soundcards found/i) {
-            $Arecord = "";
+        my $Arecord = "";
+        if(check_Cmd("arecord"))
+        {
+            $Arecord = runCmd("arecord -l 2>&1");
+            if(length($Arecord)<80 and $Arecord=~/no soundcards found/i) {
+                $Arecord = "";
+            }
         }
         writeLog($LOG_DIR."/arecord", $Arecord);
         
@@ -6901,8 +6982,10 @@ sub showInfo()
             
             if($Attr eq "ID")
             {
-                if(index($Val, "-serial-")!=-1) {
-                    $Val=~s/\-serial\-(.+?)\Z/ [$1]/;
+                if(index($Val, "-serial-")!=-1)
+                {
+                    # $Val=~s/\-serial\-(.+?)\Z/ [$1]/;
+                    $Val=~s/\-serial\-(.+?)\Z//;
                 }
             }
             
@@ -6976,7 +7059,7 @@ sub showInfo()
     
     print "\n";
     print "Host Info\n";
-    showHash(\%STbl, "system", "user", "node", "arch", "kernel", "vendor", "model", "year", "board", "hwaddr", "type", "id");
+    showHash(\%STbl, "system", "arch", "kernel", "vendor", "model", "year", "type", "id");
 }
 
 sub showTable(@)
@@ -7046,6 +7129,10 @@ sub showHash(@)
     
     foreach my $Key (sort keys(%{$Hash}))
     {
+        if(not grep {$Key eq $_} @_) {
+            next;
+        }
+        
         my $Val = $Hash->{$Key};
         if(length($Val) > $VMax) {
             $VMax = length($Val);
@@ -7675,6 +7762,87 @@ sub setPublic($)
     }
 }
 
+sub fixLogs($)
+{
+    my $Dir = $_[0];
+    
+    if(-f $Dir."/iostat"
+    and -s $Dir."/iostat" < 50)
+    { # Support for HW Probe 1.3
+        # iostat: command not found
+        unlink($Dir."/iostat");
+    }
+    
+    if(-f $Dir."/dmidecode"
+    and -s $Dir."/dmidecode" < 40)
+    { # Support for HW Probe 1.3
+        # dmidecode: command not found
+        writeFile($Dir."/dmidecode", "");
+    }
+    
+    foreach my $L ("glxinfo", "xdpyinfo", "xinput", "vdpauinfo", "xrandr")
+    {
+        if(-e $Dir."/".$L
+        and -s $Dir."/".$L < 100)
+        {
+            if(not clearLog_X11(readFile($Dir."/".$L))) {
+                writeFile($Dir."/".$L, "");
+            }
+        }
+    }
+    
+    if(-f $Dir."/vulkaninfo")
+    { # Support for HW Probe 1.3
+        if(readFile($Dir."/vulkaninfo")=~/Cannot create/i) {
+            unlink($Dir."/vulkaninfo");
+        }
+    }
+    
+    if(-f $Dir."/cpupower")
+    { # Support for HW Probe 1.3
+        if(readFile($Dir."/cpupower")=~/cpupower not found/) {
+            unlink($Dir."/cpupower");
+        }
+    }
+    
+    if(-f $Dir."/mcelog")
+    { # Support for HW Probe 1.4
+        if(readFile($Dir."/mcelog")=~/No such file or directory/) {
+            writeFile($Dir."/mcelog", "");
+        }
+    }
+    
+    if(-f $Dir."/rfkill"
+    and -s $Dir."/rfkill" < 70)
+    { # Support for HW Probe 1.4
+        # Can't open RFKILL control device: No such file or directory
+        if(readFile($Dir."/rfkill")=~/No such file or directory/) {
+            writeFile($Dir."/rfkill", "");
+        }
+    }
+    
+    foreach my $L ("aplay", "arecord")
+    {
+        if(-e $Dir."/".$L
+        and -s $Dir."/".$L < 50)
+        {
+            if(readFile($Dir."/".$L)=~/command not found/) {
+                writeFile($Dir."/".$L, "");
+            }
+        }
+    }
+    
+    foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all")
+    {
+        if(-f $Dir."/".$L
+        and -s $Dir."/".$L < 50)
+        { # Support for HW Probe 1.4
+            # sh: XXX: command not found
+            writeFile($Dir."/".$L, "");
+        }
+    }
+}
+
 sub scenario()
 {
     if($Opt{"Help"})
@@ -8094,61 +8262,7 @@ sub scenario()
             unlink($FixProbe_Logs."/acpidump");
         }
         
-        if(-f $FixProbe_Logs."/iostat"
-        and -s $FixProbe_Logs."/iostat" < 50)
-        { # Support for HW Probe 1.3
-          # iostat: command not found
-            unlink($FixProbe_Logs."/iostat");
-        }
-        
-        if(-f $FixProbe_Logs."/dmidecode"
-        and -s $FixProbe_Logs."/dmidecode" < 40)
-        { # Support for HW Probe 1.3
-          # dmidecode: command not found
-            writeFile($FixProbe_Logs."/dmidecode", "");
-        }
-        
-        foreach my $L ("glxinfo", "xdpyinfo", "xinput", "vdpauinfo", "xrandr")
-        {
-            if(-e $FixProbe_Logs."/".$L
-            and -s $FixProbe_Logs."/".$L < 100)
-            {
-                if(not clearLog_X11(readFile($FixProbe_Logs."/".$L))) {
-                    writeFile($FixProbe_Logs."/".$L, "");
-                }
-            }
-        }
-        
-        if(-f $FixProbe_Logs."/vulkaninfo")
-        { # Support for HW Probe 1.3
-            if(readFile($FixProbe_Logs."/vulkaninfo")=~/Cannot create/i) {
-                unlink($FixProbe_Logs."/vulkaninfo");
-            }
-        }
-        
-        if(-f $FixProbe_Logs."/cpupower")
-        { # Support for HW Probe 1.3
-            if(readFile($FixProbe_Logs."/cpupower")=~/cpupower not found/) {
-                unlink($FixProbe_Logs."/cpupower");
-            }
-        }
-        
-        if(-f $FixProbe_Logs."/mcelog")
-        { # Support for HW Probe 1.4
-            if(readFile($FixProbe_Logs."/mcelog")=~/No such file or directory/) {
-                writeFile($FixProbe_Logs."/mcelog", "");
-            }
-        }
-        
-        foreach my $L ("lsusb", "usb-devices")
-        {
-            if(-f $FixProbe_Logs."/".$L
-            and -s $FixProbe_Logs."/".$L < 50)
-            { # Support for HW Probe 1.4
-              # sh: XXX: command not found
-                writeFile($FixProbe_Logs."/".$L, "");
-            }
-        }
+        fixLogs($FixProbe_Logs);
         
         writeDevs();
         writeHost();
