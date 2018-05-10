@@ -123,6 +123,10 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "printers!" => \$Opt{"Printers"},
   "scanners!" => \$Opt{"Scanners"},
   "check!" => \$Opt{"Check"},
+  "check-graphics!" => \$Opt{"CheckGraphics"},
+  "check-hdd!" => \$Opt{"CheckHdd"},
+  "check-memory!" => \$Opt{"CheckMemory"},
+  "check-cpu!" => \$Opt{"CheckCpu"},
   "id|name=s" => \$Opt{"PC_Name"},
   "upload!" => \$Opt{"Upload"},
   "hwinfo-path=s" => \$Opt{"HWInfoPath"},
@@ -6143,8 +6147,9 @@ sub writeLogs()
         if(check_Cmd("xdpyinfo"))
         {
             listProbe("logs", "xdpyinfo");
-            my $Xdpyinfo = runCmd("xdpyinfo 2>&1");
-            writeLog($LOG_DIR."/xdpyinfo", clearLog_X11($Xdpyinfo));
+            if(my $Xdpyinfo = runCmd("xdpyinfo 2>&1")) {
+                writeLog($LOG_DIR."/xdpyinfo", clearLog_X11($Xdpyinfo));
+            }
         }
         
         if(check_Cmd("xinput"))
@@ -6572,13 +6577,12 @@ sub writeLogs()
             }
         }
         
-        if(check_Cmd("memtester"))
-        {
-            listProbe("logs", "memtester");
-            my $Memtester = runCmd("memtester 8 1");
-            $Memtester=~s/\A(.|\n)*(Loop)/$2/g;
-            while($Memtester=~s/[^\cH]\cH//g){};
-            writeLog($LOG_DIR."/memtester", $Memtester);
+        if(-f "/var/log/gpu-manager.log")
+        { # Ubuntu
+            listProbe("logs", "gpu-manager.log");
+            if(my $GpuManager = readFile("/var/log/gpu-manager.log")) {
+                writeLog($LOG_DIR."/gpu-manager.log", $GpuManager);
+            }
         }
         
         if(not $Opt{"Docker"})
@@ -7191,8 +7195,9 @@ sub alignStr($$)
     return $Align;
 }
 
-sub checkGlx()
+sub checkGraphics()
 {
+    print "Check graphics ... ";
     my $Glxgears = getGears("glxgears", "glxgears");
     
     listProbe("tests", "glxgears");
@@ -7237,34 +7242,90 @@ sub checkGlx()
         $Out_D=~s/GL_EXTENSIONS =.*?\n//;
         writeLog($TEST_DIR."/glxgears_discrete", $Out_D);
     }
+    
+    print "Ok\n";
 }
 
 sub checkHW()
-{
-    # TODO: test operability, set status to "works", "malfunc" or "failed"
-    
-    print "Run tests ... ";
-    
-    if($Opt{"ListProbes"}) {
-        print "\n";
-    }
-    
-    if(defined $ENV{"DISPLAY"})
+{ # TODO: test operability, set status to "works", "malfunc" or "failed"
+    if($Opt{"CheckGraphics"} and check_Cmd("glxgears"))
     {
-        if(check_Cmd("glxgears")
-        and check_Cmd("xwininfo")
-        and check_Cmd("xkill")) {
-            checkGlx();
+        if(defined $ENV{"DISPLAY"})
+        {
+            if(check_Cmd("xwininfo")
+            and check_Cmd("xkill")) {
+                checkGraphics();
+            }
+        }
+        elsif(defined $ENV{"WAYLAND_DISPLAY"}) {
+            checkGraphics();
         }
     }
     
-    print "Ok\n";
+    if($Opt{"CheckMemory"} and check_Cmd("memtester"))
+    {
+        print "Check memory ... ";
+        my $Memtester = runCmd("memtester 8 1");
+        $Memtester=~s/\A(.|\n)*(Loop)/$2/g;
+        while($Memtester=~s/[^\cH]\cH//g){};
+        writeLog($TEST_DIR."/memtester", $Memtester);
+        print "Ok\n";
+    }
+    
+    if($Opt{"CheckHdd"} and check_Cmd("hdparm"))
+    {
+        print "Check HDDs ... ";
+        my $HDD_Read = "";
+        my $HDD_Num = 0;
+        foreach my $Dr (sort keys(%HDD))
+        {
+            my $HDD_Info = $HW{$HDD{$Dr}};
+            my $Cmd = "hdparm -t $Dr";
+            my $Out = runCmd($Cmd);
+            $Out=~s/\A\n\Q$Dr\E\:\n//;
+            $HDD_Read .= $HDD_Info->{"Vendor"}." ".$HDD_Info->{"Device"}."\n";
+            $HDD_Read .= "$Cmd\n";
+            $HDD_Read .= $Out."\n";
+            if($HDD_Num++>=4)
+            { # 4 first drives max
+                last;
+            }
+        }
+        
+        if($HDD_Read) {
+            writeLog($TEST_DIR."/hdd_read", $HDD_Read);
+        }
+        print "Ok\n";
+    }
+    
+    if($Opt{"CheckCpu"} and check_Cmd("dd") and check_Cmd("md5sum"))
+    {
+        if(my @CPUs = grep {$_=~/\Acpu:/} keys(%HW))
+        {
+            print "Check CPU ... ";
+            my $CPU_Info = $HW{$CPUs[0]};
+            runCmd("dd if=/dev/zero bs=1M count=512 2>$TMP_DIR/cpu_perf | md5sum");
+            my $CPUPerf = $CPU_Info->{"Vendor"}." ".$CPU_Info->{"Device"}."\n";
+            $CPUPerf .= "dd if=/dev/zero bs=1M count=512 | md5sum\n";
+            $CPUPerf .= readFile("$TMP_DIR/cpu_perf");
+            writeLog($TEST_DIR."/cpu_perf", $CPUPerf);
+            print "Ok\n";
+        }
+    }
 }
 
 sub getGears($$)
 {
     my ($Cmd, $Win) = @_;
-    return $Cmd." -info 2>/dev/null & sleep 17 ; xwininfo -name \'$Win\' ; xkill -id \$(xwininfo -name \'$Win\' | grep \"Window id\" | cut -d' ' -f4) >/dev/null";
+    
+    if(defined $ENV{"DISPLAY"}) {
+        return $Cmd." -info 2>/dev/null & sleep 17 ; xwininfo -name \'$Win\' ; xkill -id \$(xwininfo -name \'$Win\' | grep \"Window id\" | cut -d' ' -f4) >/dev/null";
+    }
+    elsif(defined $ENV{"WAYLAND_DISPLAY"}) {
+        return $Cmd." -info 2>/dev/null & sleep 17 ; killall glxgears 2>/dev/null";
+    }
+    
+    return undef;
 }
 
 sub listProbe($$)
@@ -7974,6 +8035,12 @@ sub scenario()
         $Opt{"Logs"} = 1;
     }
     
+    if($Opt{"Check"})
+    {
+        $Opt{"Probe"} = 1;
+        $Opt{"Logs"} = 1;
+    }
+    
     if($Opt{"Probe"}) {
         $HWLogs = 1;
     }
@@ -8005,6 +8072,21 @@ sub scenario()
         $HWLogs = 0;
         $Opt{"Probe"} = 0;
         $Opt{"Logs"} = 0;
+    }
+    
+    if($Opt{"Check"})
+    {
+        $Opt{"CheckGraphics"} = 1;
+        $Opt{"CheckMemory"} = 1;
+        $Opt{"CheckHdd"} = 1;
+        $Opt{"CheckCpu"} = 1;
+    }
+    
+    if($Opt{"CheckGraphics"} or $Opt{"CheckMemory"}
+    or $Opt{"CheckHdd"} or $Opt{"CheckCpu"})
+    {
+        $Opt{"Check"} = 1;
+        $Opt{"Logs"} = 1;
     }
     
     if($Opt{"PciIDs"})
