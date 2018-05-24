@@ -10,8 +10,8 @@ Contents
 2. [ Usage        ](#usage)
 3. [ Docker       ](#docker)
 4. [ Live ISO     ](#live-iso)
-5. [ Install      ](#install)
-6. [ Privacy      ](#privacy)
+5. [ Privacy      ](#privacy)
+6. [ Install      ](#install)
 7. [ Inventory    ](#inventory)
 8. [ Offline view ](#offline-view)
 
@@ -59,6 +59,16 @@ If the tool is not pre-installed in your system or you have troubles with instal
 
 Boot this Linux ISO in Live mode on your computer and make a probe (see USAGE).
 
+Privacy
+-------
+
+Private information (including the username, machine's hostname, IP addresses,
+MAC addresses and serial numbers) is NOT uploaded to the database.
+
+The tool uploads SHA512 hash of MAC addresses and serial numbers to properly
+identify unique computers and hard drives. All the data is uploaded securely
+via HTTPS.
+
 Install
 -------
 
@@ -103,16 +113,6 @@ See INSTALL for instructions on how to properly configure repository on Debian.
 * ...
 
 See full list of recommended packages in the INSTALL file.
-
-Privacy
--------
-
-Private information (including the username, machine's hostname, IP addresses,
-MAC addresses and serial numbers) is NOT uploaded to the database.
-
-The tool uploads SHA512 hash of MAC addresses and serial numbers to properly
-identify unique computers and hard drives. All the data is uploaded securely
-via HTTPS.
 
 Inventory
 ---------
