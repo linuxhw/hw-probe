@@ -157,6 +157,7 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "decode-acpi-to=s" => \$Opt{"DecodeACPI_To"},
   "fix-edid!" => \$Opt{"FixEdid"},
   "rm-log=s" => \$Opt{"RmLog"},
+  "truncate-log=s" => \$Opt{"TruncateLog"},
 # Security
   "key=s" => \$Opt{"Key"}
 ) or errMsg();
@@ -326,7 +327,6 @@ my %Sys;
 my $Admin = ($>==0);
 
 # Fixing
-my $FixProbe_Path;
 my $FixProbe_Pkg;
 my $FixProbe_Logs;
 
@@ -738,6 +738,8 @@ my @WrongAddr = (
     "00-13-74-00-00-00",
     "E5A433E40C7D5C05E1F82A0C86983656"
 );
+
+my @ProtectedLogs = ("hwinfo", "biosdecode", "acpidump", "dmidecode", "smartctl", "lspci", "lspci_all", "lsusb", "ifconfig", "ip_addr", "os-release", "lsb_release", "system-release");
 
 my $USE_DIGEST = 0;
 my $USE_DUMPER = 0;
@@ -1170,8 +1172,10 @@ sub copyFiles($$)
     }
 }
 
-sub isPkg($) {
-    return ($_[0]=~/\.(tar\.xz|txz)\Z/);
+sub isPkg($)
+{
+    my $Path = $_[0];
+    return ($Path=~/\.(tar\.xz|txz)\Z/ or `file \"$Path\"`=~/XZ compressed data/);
 }
 
 sub updateHost($$$)
@@ -2119,6 +2123,13 @@ sub probeHW()
             }
         }
         
+        #if($Bus eq "none")
+        #{
+        #    if($Device{"Type"} eq "disk" and $Device{"File"}=~/\/dev\/vd/) {
+        #        $Bus = "ide";
+        #    }
+        #}
+        
         if($Bus eq "none") {
             next;
         }
@@ -2234,6 +2245,18 @@ sub probeHW()
             }
             
             $Device{"Device"} = duplVendor($Device{"Vendor"}, $Device{"Device"});
+            
+            # Fix incorrect vendor in hwinfo
+            if($Device{"Vendor"} eq "m.2")
+            {
+                $Device{"Device"} .= " ".$Device{"Vendor"};
+                $Device{"Vendor"} = undef;
+            }
+            elsif($Device{"Vendor"} eq "SK")
+            {
+                $Device{"Device"} = $Device{"Vendor"}." ".$Device{"Device"};
+                $Device{"Vendor"} = undef;
+            }
             
             fixDrive_Pre(\%Device);
             fixDrive(\%Device);
@@ -4401,6 +4424,7 @@ sub shortOS($)
     $Name=~s/\s+(linux|project)\s+/ /i;
     $Name=~s/\s*(linux|project)\Z//i;
     $Name=~s/\s+/\-/g;
+    $Name=~s/\.\Z//g;
     return $Name;
 }
 
@@ -4676,6 +4700,7 @@ sub detectDrive(@)
     $Device->{"Device"}=~s/\//-/g;
     $Device->{"Device"}=~s/"/-inch/g;
     $Device->{"Device"}=~s/\ASSD\s+//g;
+    $Device->{"Device"}=~s/\Am\.2\s+//g;
     $Device->{"Device"}=~s/\s{2,}/ /g;
     $Device->{"Device"}=~s/\.\Z//g;
     
@@ -4781,15 +4806,17 @@ sub fixDrive_Pre($)
         
         if(not $Device->{"Vendor"})
         {
-            if($Device->{"Device"}=~s/\A([A-Z]{5,})[\s_\-]+//i) {
-                $Device->{"Vendor"} = $1;
+            if(my $VndDr = guessDriveVendor($Device->{"Device"}))
+            {
+                $Device->{"Vendor"} = $VndDr;
+                $Device->{"Device"} = duplVendor($Device->{"Vendor"}, $Device->{"Device"});
             }
         }
         
         if(not $Device->{"Vendor"})
         {
-            if(my $VndDr = guessDriveVendor($Device->{"Device"})) {
-                $Device->{"Vendor"} = $VndDr;
+            if($Device->{"Device"}=~s/\A([A-Z]{5,})[\s_\-]+//i) {
+                $Device->{"Vendor"} = $1;
             }
         }
         
@@ -4972,6 +4999,9 @@ sub guessDriveVendor($)
     elsif($Name=~/\ACHN25SATA/) {
         return "Zheino";
     }
+    elsif($Name=~/\A(SSDPR_CX|IR_SSDPR)/) {
+        return "Goodram";
+    }
     elsif($Name=~/\A(MT|MSH|P3|P3D|T)\-(60|64|128|240|256|512|1TB|2TB)\Z/
     or grep { $Name eq $_ } ("V-32", "NT-256"))
     { # MT-64 MSH-256 P3-128 P3D-240 P3-2TB T-60 V-32
@@ -5079,12 +5109,12 @@ sub duplVendor($$)
     
     if($Vendor)
     { # do not duplicate vendor name
-        if(not $Device=~s/\A\Q$Vendor\E([\s\-]+|\Z)//ig)
+        if(not $Device=~s/\A\Q$Vendor\E([\s\-\_]+|\Z)//gi)
         {
             if(my $ShortVendor = nameID($Vendor))
             {
                 if($ShortVendor ne $Vendor) {
-                    $Device=~s/\A\Q$ShortVendor\E[\s\-]+//ig
+                    $Device=~s/\A\Q$ShortVendor\E[\s\-\_]+//gi;
                 }
             }
         }
@@ -5333,21 +5363,14 @@ sub probeSys()
     }
     
     listProbe("logs", "dmi_id");
-    my $DmiDir = "/sys/class/dmi/id/";
-    my @DmiFiles = listDir($DmiDir);
-    my $Dmi = "";
-    
-    foreach my $File (sort {$b cmp $a} @DmiFiles)
+    foreach my $File ("sys_vendor", "product_name", "product_version")
     {
-        if(not -f $DmiDir."/".$File) {
+        my $Value = readFile("/sys/class/dmi/id/".$File);
+        
+        if(not $Value) {
             next;
         }
         
-        if(grep {$_ eq $File} ("uevent", "modalias", "product_uuid", "product_serial", "chassis_serial", "board_serial")) {
-            next;
-        }
-        
-        my $Value = readFile($DmiDir."/".$File);
         $Value=~s/\s+\Z//g;
         
         if($File eq "sys_vendor")
@@ -5368,14 +5391,6 @@ sub probeSys()
                 $Sys{"Version"} = $Value;
             }
         }
-        
-        if($Value ne "" and $Value=~/[A-Z0-9]/i) {
-            $Dmi .= $File.": ".$Value."\n";
-        }
-    }
-    
-    if($Opt{"Logs"}) {
-        writeLog($LOG_DIR."/dmi_id", $Dmi);
     }
     
     $Sys{"Vendor"} = fixVendor($Sys{"Vendor"});
@@ -5712,7 +5727,7 @@ sub probeDistr()
         }
     }
     
-    my ($Name, $Release) = ();
+    my ($Name, $Release, $FName) = ();
     
     if($LSB_Rel)
     { # Desktop
@@ -5731,6 +5746,10 @@ sub probeDistr()
         
         if($Release eq "n/a") {
             $Release = "";
+        }
+        
+        if($LSB_Rel=~/NAME:\s*(.*)/) {
+            $FName = $1;
         }
         
         if($LSB_Rel=~/Description:\s*(.*)/) {
@@ -5804,7 +5823,8 @@ sub probeDistr()
         }
     }
     
-    if($Name=~/virtuozzo/i and lc($Name) ne "virtuozzo")
+    if($Name=~/virtuozzo/i and (lc($Name) ne "virtuozzo"
+    or not $FName or lc($FName) ne "virtuozzo"))
     {
         $Release = undef;
         $Name = "Virtuozzo";
@@ -7338,8 +7358,22 @@ sub listProbe($$)
 sub writeLog($$)
 {
     my ($Path, $Content) = @_;
+    my $Log = basename($Path);
     
-    writeFile(@_);
+    if(not grep {$Log eq $_} @ProtectedLogs)
+    {
+        my $MaxSize = 2*1048576; # 2M
+        
+        if(grep {$Log eq $_} ("xorg.log", "xorg.log.1", "dmesg", "dmesg.1")) {
+            $MaxSize = 1048576; # 1M
+        }
+        
+        if(length($Content)>$MaxSize) {
+            $Content = substr($Content, 0, $MaxSize)."...";
+        }
+    }
+    
+    writeFile($Path, $Content);
 }
 
 sub appendFile($$)
@@ -8148,11 +8182,10 @@ sub scenario()
             exit(1);
         }
         
-        if($Opt{"FixProbe"}=~/\.(tar\.xz|txz)\Z/)
+        if(isPkg($Opt{"FixProbe"}))
         { # package
             my $PName = basename($Opt{"FixProbe"});
             $FixProbe_Pkg = abs_path($Opt{"FixProbe"});
-            $FixProbe_Path = $Opt{"FixProbe"};
             $Opt{"FixProbe"} = $FixProbe_Pkg;
             
             copy($Opt{"FixProbe"}, $TMP_DIR."/".$PName);
@@ -8208,8 +8241,17 @@ sub scenario()
             }
         }
         
-        if($Opt{"RmLog"} and not grep {$Opt{"RmLog"} eq $_} ("hwinfo", "dmidecode", "smartctl", "lspci", "lspci_all", "lsusb", "ifconfig", "ip_addr", "os-release", "lsb_release", "system-release")) {
+        if($Opt{"RmLog"} and -f $FixProbe_Logs."/".$Opt{"RmLog"}
+        and not grep {$Opt{"RmLog"} eq $_} @ProtectedLogs) {
             writeFile($FixProbe_Logs."/".$Opt{"RmLog"}, "");
+        }
+        
+        if($Opt{"TruncateLog"} and -f $FixProbe_Logs."/".$Opt{"TruncateLog"}
+        and not grep {$Opt{"TruncateLog"} eq $_} @ProtectedLogs)
+        {
+            if(my $Content = readFile($FixProbe_Logs."/".$Opt{"TruncateLog"})) {
+                writeLog($FixProbe_Logs."/".$Opt{"TruncateLog"}, $Content);
+            }
         }
         
         $Opt{"Logs"} = 0;
