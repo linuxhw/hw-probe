@@ -96,6 +96,7 @@ Content:
 
     echo "deb http://ppa.launchpad.net/mikhailnov/hw-probe/ubuntu bionic main" | sudo tee /etc/apt/sources.list.d/mikhailnov-ubuntu-hw-probe-bionic.list
     sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys FE3AE55CF74041EAA3F0AD10D5B19A73A8ECB754
+    echo -e "Package: * \nPin: release o=LP-PPA-mikhailnov-hw-probe \nPin-Priority: 1" | sudo tee /etc/preferences.d/mikhailnov-ubuntu-hw-probe-ppa
     sudo apt update
     sudo apt install hw-probe --no-install-recommends
 

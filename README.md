@@ -76,14 +76,16 @@ Install
 
 If you don't want to install anything to your system, then you can probe your computer by Docker image or Live ISO (see above).
 
-###### Install On Ubuntu/Debian
+###### Install On Ubuntu
 
-On Debian, Ubuntu, Mint and other Debian-based Linux distributions you can install a PPA package:
+On Ubuntu-based Linux distributions (Ubuntu, Linux Mint, Elementary OS, etc.) you can install a PPA package:
 
     sudo add-apt-repository universe
     sudo add-apt-repository ppa:mikhailnov/hw-probe
     sudo apt update
     sudo apt install hw-probe --no-install-recommends
+
+###### Install On Debian
 
 See INSTALL for instructions on how to properly configure repository on Debian.
 

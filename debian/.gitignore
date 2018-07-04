@@ -1,7 +1,8 @@
 # exclude debian building logs
 files
 debhelper-build-stamp
-hw-probe
+hw-probe*
+.debhelper
 *.log
 *.substvars
 
