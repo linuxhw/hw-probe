@@ -14,6 +14,7 @@ Contents
 6. [ Install      ](#install)
 7. [ Inventory    ](#inventory)
 8. [ Offline view ](#offline-view)
+9. [ Decode ACPI  ](#decode-acpi)
 
 About
 -----
@@ -22,7 +23,7 @@ Probe — is a snapshot of your computer's hardware state and system logs. HW Pr
 
 Sample probe: https://linux-hardware.org/?probe=b394035f90
 
-Share your probes and logs with Linux developers in order to debug and fix problems on your computer. Simplify inventory of hardware and navigate over the computers in your company.
+Share your probes and logs with Linux developers in order to debug and fix problems on your computer. Simplify inventory of hardware in your company.
 
 You can make a probe with the help of a script, Docker image or Linux ISO (see below).
 
@@ -62,12 +63,9 @@ Boot this Linux ISO in Live mode on your computer and make a probe (see USAGE).
 Privacy
 -------
 
-Private information (including the username, machine's hostname, IP addresses,
-MAC addresses and serial numbers) is NOT uploaded to the database.
+Private information (including the username, machine's hostname, IP addresses, MAC addresses and serial numbers) is NOT uploaded to the database.
 
-The tool uploads SHA512 hash of MAC addresses and serial numbers to properly
-identify unique computers and hard drives. All the data is uploaded securely
-via HTTPS.
+The tool uploads SHA512 hash of MAC addresses and serial numbers to properly identify unique computers and hard drives. All the data is uploaded securely via HTTPS.
 
 Install
 -------
@@ -87,7 +85,16 @@ On Ubuntu-based Linux distributions (Ubuntu, Linux Mint, Elementary OS, etc.) yo
 
 ###### Install On Debian
 
-See INSTALL for instructions on how to properly configure repository on Debian.
+Install dependencies:
+
+    sudo apt install libdigest-sha-perl curl hwinfo dmidecode pciutils usbutils smartmontools edid-decode \
+    util-linux lsb-release lm-sensors mcelog wireless-tools x11-utils
+
+Then probe your computer by:
+
+    curl -s https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | sudo perl - -all -upload
+
+See INSTALL for instructions on how to properly configure necessary PPA repository on Debian if you want to install a package.
 
 ###### Requires
 
@@ -135,3 +142,12 @@ Offline view
 Create your probes collection view for offline use:
 
     sudo hw-probe -import DIR
+
+Decode ACPI
+-----------
+
+Dump and decode ACPI table:
+
+    sudo hw-probe -all -upload -dump-acpi -decode-acpi
+
+NOTE: "acpica-tools" package should be installed

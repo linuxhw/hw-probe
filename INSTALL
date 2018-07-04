@@ -82,15 +82,16 @@ Content:
 3. UBUNTU PPA
 =============
 
-    On Debian, Ubuntu, Mint and other Debian-based Linux distributions you can install a PPA package.
-    See https://launchpad.net/~mikhailnov/+archive/ubuntu/hw-probe for more info.
+    PPA: https://launchpad.net/~mikhailnov/+archive/ubuntu/hw-probe
 
 3.1 Install on Ubuntu, Mint
 
-    sudo add-apt-repository universe
-    sudo add-apt-repository ppa:mikhailnov/hw-probe
-    sudo apt update
-    sudo apt install hw-probe --no-install-recommends
+   On Ubuntu-based Linux distributions (Ubuntu, Linux Mint, Elementary OS, etc.) you can install a PPA package:
+
+     sudo add-apt-repository universe
+     sudo add-apt-repository ppa:mikhailnov/hw-probe
+     sudo apt update
+     sudo apt install hw-probe --no-install-recommends
 
 3.2 Install on Debian
 
@@ -99,6 +100,17 @@ Content:
     echo -e "Package: * \nPin: release o=LP-PPA-mikhailnov-hw-probe \nPin-Priority: 1" | sudo tee /etc/preferences.d/mikhailnov-ubuntu-hw-probe-ppa
     sudo apt update
     sudo apt install hw-probe --no-install-recommends
+
+3.3 Install on Debian (Easy)
+
+   Install dependencies:
+
+     sudo apt install libdigest-sha-perl curl hwinfo dmidecode pciutils usbutils smartmontools edid-decode \
+     util-linux lsb-release lm-sensors mcelog wireless-tools x11-utils
+
+   Then probe your computer by:
+
+     curl -s https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | sudo perl - -all -upload
 
 4. BUILD DEBIAN PACKAGE
 =======================
@@ -131,8 +143,8 @@ Content:
 
 4.3 Uninstall
 
-    # Remove hw-probe and dependencies
-    sudo apt autoremove hw-probe
+     # Remove hw-probe and dependencies
+     sudo apt autoremove hw-probe
 
 
 
