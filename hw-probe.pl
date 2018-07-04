@@ -488,6 +488,7 @@ my %MonVendor = (
     "HSP" => "HannStar",
     "HTC" => "Hitachi",
     "HWP" => "HP",
+    "HPN" => "HP",
     "IBM" => "IBM",
     "INL" => "InnoLux Display",
     "IQT" => "Hyundai ImageQuest",
@@ -530,6 +531,8 @@ my %MonVendor = (
     "PTS" => "Plain Tree Systems",
     "QBL" => "QBell",
     "QDS" => "Quanta Display",
+    "QMX" => "Gericom",
+    "QWA" => "Lenovo",
     "ROL" => "Rolsen",
     "RUB" => "Rubin",
     "SAM" => "Samsung",
@@ -596,6 +599,7 @@ my @UnknownVendors = (
     "PAR",
     "PKV",
     "PPP",
+    "PVS",
     "ROW",
     "RTD",
     "RTK",
@@ -604,15 +608,20 @@ my @UnknownVendors = (
     "SKK",
     "SKY",
     "SMC",
+    "STD",
     "STK",
     "SYK",
     "TVT",
+    "UME",
     "VIE",
     "VID",
+    "VMO",
+    "VST",
     "WIN",
     "WYT",
     "DVI",
     "XXX",
+    "XYY",
     "___"
 );
 
@@ -816,6 +825,14 @@ sub encryptWWNs($)
     return $Content;
 }
 
+sub hideWWNs($)
+{
+    my $Content = $_[0];
+    $Content=~s/(LU WWN Device Id:\s*\w \w{6} )\w+(\n|\Z)/$1...$2/;
+    $Content=~s/(IEEE EUI-64:\s*\w{6}\s)\w+(\n|\Z)/$1...$2/;
+    return $Content;
+}
+
 sub hideTags($$)
 {
     my ($Content, $Tags) = @_;
@@ -918,7 +935,7 @@ sub getGroup()
     if($Log=~/Group ID: (\w+)/)
     {
         my $ID = $1;
-        my $GroupLog = "GROUP\n=====\n".localtime(time)."\nGroup ID: $ID\n";
+        my $GroupLog = "INVENTORY\n=====\n".localtime(time)."\nInventory ID: $ID\n";
         appendFile($PROBE_LOG, $GroupLog."\n");
     }
 }
@@ -1642,10 +1659,26 @@ sub probeHW()
         }
     }
     
+    my @KernDrvs = ();
     foreach my $Line (split(/\n/, $Lsmod))
     {
-        if($Line=~/(\w+)\s+(\d+)\s+(\d+)/) {
+        if($Line=~/(\w+)\s+(\d+)\s+(\d+)/)
+        {
             $KernMod{$1} = $3;
+            push(@KernDrvs, $1);
+        }
+    }
+    
+    if(not $Opt{"FixProbe"} and $Opt{"Logs"})
+    {
+        if(check_Cmd("modinfo"))
+        {
+            listProbe("logs", "modinfo");
+            my $Modinfo = runCmd("modinfo ".join(" ", @KernDrvs)." 2>&1");
+            $Modinfo=~s/\n(filename:)/\n\n$1/g;
+            $Modinfo=~s/\n(author|signer|sig_key|sig_hashalgo):.+//g;
+            $Modinfo=~s/\ndepends:\s+\n/\n/g;
+            writeLog($LOG_DIR."/modinfo", $Modinfo);
         }
     }
     
@@ -1696,11 +1729,14 @@ sub probeHW()
                 $CurDev = $SL;
                 $DriveKind{$CurDev} = "HDD";
             }
-            elsif($CurDev and $SL=~/Rotation Rate:.*Solid State Device/) {
-                $DriveKind{$CurDev} = "SSD";
-            }
-            elsif($CurDev and index($SL, "NVM Commands")!=-1) {
-                $DriveKind{$CurDev} = "NVMe";
+            elsif($CurDev)
+            {
+                if($SL=~/Rotation Rate:.*Solid State Device|\bSSD/) {
+                    $DriveKind{$CurDev} = "SSD";
+                }
+                elsif(index($SL, "NVM Commands")!=-1 or index($SL, "NVMe Log")!=-1) {
+                    $DriveKind{$CurDev} = "NVMe";
+                }
             }
         }
     }
@@ -2438,17 +2474,33 @@ sub probeHW()
         { # support for old probes
             $Udevadm = readFile($FixProbe_Logs."/udevadm");
         }
+        if(not $Udevadm)
+        { # support for sdio
+            $Udevadm = readFile($FixProbe_Logs."/sdio");
+        }
     }
-    else
+    elsif(check_Cmd("udevadm") and $Opt{"Logs"})
     {
+        listProbe("logs", "udev-db");
+        $Udevadm = runCmd("udevadm info --export-db 2>/dev/null");
+        $Udevadm = hideTags($Udevadm, "ID_NET_NAME_MAC|ID_SERIAL|ID_SERIAL_SHORT|DEVLINKS|ID_WWN|ID_WWN_WITH_EXTENSION");
+        $Udevadm=~s/(by\-id\/(ata|usb|nvme|wwn)\-).+/$1.../g;
         if($Opt{"LogLevel"} eq "maximal")
         {
-            listProbe("logs", "udev-db");
-            $Udevadm = runCmd("udevadm info --export-db 2>/dev/null");
-            $Udevadm = hideTags($Udevadm, "ID_NET_NAME_MAC|ID_SERIAL|ID_SERIAL_SHORT|DEVLINKS|ID_WWN|ID_WWN_WITH_EXTENSION");
-            $Udevadm=~s/(by\-id\/(ata|usb|nvme|wwn)\-).+/$1.../g;
-            if($Opt{"Logs"}) {
-                writeLog($LOG_DIR."/udev-db", $Udevadm);
+            writeLog($LOG_DIR."/udev-db", $Udevadm);
+        }
+        else
+        {
+            my $ExtraDevs = "";
+            foreach my $UL (split(/\n\n/, $Udevadm))
+            {
+                if($UL=~/sdio/) {
+                    $ExtraDevs .= $UL."\n\n";
+                }
+            }
+            $Udevadm = $ExtraDevs;
+            if($ExtraDevs) {
+                writeLog($LOG_DIR."/sdio", $ExtraDevs);
             }
         }
     }
@@ -2555,7 +2607,7 @@ sub probeHW()
         if(check_Cmd("lspci"))
         {
             $Lspci_A = runCmd("lspci -vvnn 2>&1");
-            $Lspci_A=~s/(Serial Number\s+).+/$1.../g;
+            $Lspci_A=~s/(Serial Number:?\s+|Manufacture ID:\s+).+/$1.../gi;
         }
         
         if($HWLogs) {
@@ -3688,7 +3740,7 @@ sub probeHW()
             
             if(not keys(%FoundEdid) and -s $XOrgLog)
             {
-                my $XCard = undef;
+                my $XCard = "DEFAULT1";
                 foreach my $L (split(/\n/, readFile($XOrgLog)))
                 {
                     if($L=~/EDID for output ([\w\-]+)/) {
@@ -4160,7 +4212,7 @@ sub probeHW()
                 my $Id = $HDD{$Dev};
                 my $Output = runCmd("smartctl -x \"".$Dev."\" 2>/dev/null");
                 $Output = encryptSerials($Output, "Serial Number");
-                $Output=~s/(LU WWN Device Id:\s*\w \w{6} )\w+(\n|\Z)/$1...$2/;
+                $Output = hideWWNs($Output);
                 
                 if(index($Id, "usb:")==0
                 and $Output=~/Unsupported USB|Unknown USB/i)
@@ -4188,7 +4240,7 @@ sub probeHW()
                 
                 if($Output)
                 {
-                    $Output=~s/\A.*?(\=\=\=)/$1/sg;
+                    # $Output=~s/\A.*?(\=\=\=)/$1/sg;
                     $Smartctl .= $Dev."\n".$Output."\n";
                 }
                 
@@ -4351,11 +4403,11 @@ sub probeHW()
                     {
                         my $Output = runCmd("smartctl -x -d megaraid,$Did \"$Dev\" 2>/dev/null");
                         $Output = encryptSerials($Output, "Serial Number");
-                        $Output=~s/(LU WWN Device Id:\s*\w \w{6} )\w+(\n|\Z)/$1...$2/;
+                        $Output = hideWWNs($Output);
                         
                         if($Output)
                         {
-                            $Output=~s/\A.*?(\=\=\=)/$1/sg;
+                            # $Output=~s/\A.*?(\=\=\=)/$1/sg;
                             $Smartctl .= $Dev.",".$Did."\n".$Output."\n";
                         }
                         
@@ -4663,14 +4715,21 @@ sub detectDrive(@)
         $Device->{"Firmware"} = $1;
     }
     
-    if($Desc=~/LU WWN Device Id:\s*\w (\w{6}) (\w+|\.\.\.)(\Z|\n)/) {
+    if($Desc=~/LU WWN Device Id:\s*\w\s(\w{6})\s(\w+|\.\.\.)(\Z|\n)/) {
+        $Device->{"IEEE_OUI"} = $1;
+    }
+    elsif($Desc=~/IEEE OUI Identifier:\s*0x(\w+)/) {
+        $Device->{"IEEE_OUI"} = $1;
+    }
+    elsif($Desc=~/IEEE EUI-64:\s*(\w{6})\s(\w+|\.\.\.)(\Z|\n)/) {
         $Device->{"IEEE_OUI"} = $1;
     }
     
     if(not $Device->{"Kind"})
     {
         if($Desc=~/Rotation Rate:.*Solid State Device/
-        or $Device->{"Device"}=~/\bSSD\b/) {
+        or $Device->{"Device"}=~/\bSSD/
+        or $Device->{"Family"}=~/\bSSD/) {
             $Device->{"Kind"} = "SSD";
         }
         elsif($Desc=~/NVM Commands|NVMe Log/
@@ -4999,7 +5058,7 @@ sub guessDriveVendor($)
     elsif($Name=~/\ACHN25SATA/) {
         return "Zheino";
     }
-    elsif($Name=~/\A(SSDPR_CX|IR_SSDPR)/) {
+    elsif($Name=~/\A(SSDPR_CX|IR_SSDPR|IR\-SSDPR)/) {
         return "Goodram";
     }
     elsif($Name=~/\A(MT|MSH|P3|P3D|T)\-(60|64|128|240|256|512|1TB|2TB)\Z/
@@ -6390,10 +6449,6 @@ sub writeLogs()
         my $InputDevices = readFile("/proc/bus/input/devices");
         writeLog($LOG_DIR."/input_devices", $InputDevices);
         
-        listProbe("logs", "pstree");
-        my $Pstree = runCmd("pstree 2>&1");
-        writeLog($LOG_DIR."/pstree", $Pstree);
-        
         if(not $Opt{"Docker"})
         {
             if(check_Cmd("systemctl"))
@@ -6587,16 +6642,6 @@ sub writeLogs()
             writeLog($LOG_DIR."/systemd-analyze", $SystemdAnalyze);
         }
         
-        if(check_Cmd("numactl"))
-        {
-            listProbe("logs", "numactl");
-            my $Numactl = runCmd("numactl -H");
-            
-            if($Numactl) {
-                writeLog($LOG_DIR."/numactl", $Numactl);
-            }
-        }
-        
         if(-f "/var/log/gpu-manager.log")
         { # Ubuntu
             listProbe("logs", "gpu-manager.log");
@@ -6686,6 +6731,23 @@ sub writeLogs()
             $TopInfo=~s/ \Q$SessUser\E / USER /g;
         }
         writeLog($LOG_DIR."/top", $TopInfo);
+        
+        if(check_Cmd("pstree"))
+        {
+            listProbe("logs", "pstree");
+            my $Pstree = runCmd("pstree 2>&1");
+            writeLog($LOG_DIR."/pstree", $Pstree);
+        }
+        
+        if(check_Cmd("numactl"))
+        {
+            listProbe("logs", "numactl");
+            my $Numactl = runCmd("numactl -H");
+            
+            if($Numactl) {
+                writeLog($LOG_DIR."/numactl", $Numactl);
+            }
+        }
         
         if(check_Cmd("slabtop"))
         {
@@ -7270,15 +7332,15 @@ sub checkHW()
 { # TODO: test operability, set status to "works", "malfunc" or "failed"
     if($Opt{"CheckGraphics"} and check_Cmd("glxgears"))
     {
-        if(defined $ENV{"DISPLAY"})
-        {
+        if(defined $ENV{"WAYLAND_DISPLAY"} or $ENV{"XDG_SESSION_TYPE"} eq "wayland") {
+            checkGraphics();
+        }
+        elsif(defined $ENV{"DISPLAY"})
+        { # X11
             if(check_Cmd("xwininfo")
             and check_Cmd("xkill")) {
                 checkGraphics();
             }
-        }
-        elsif(defined $ENV{"WAYLAND_DISPLAY"}) {
-            checkGraphics();
         }
     }
     
@@ -7338,11 +7400,11 @@ sub getGears($$)
 {
     my ($Cmd, $Win) = @_;
     
-    if(defined $ENV{"DISPLAY"}) {
-        return $Cmd." -info 2>/dev/null & sleep 17 ; xwininfo -name \'$Win\' ; xkill -id \$(xwininfo -name \'$Win\' | grep \"Window id\" | cut -d' ' -f4) >/dev/null";
-    }
-    elsif(defined $ENV{"WAYLAND_DISPLAY"}) {
+    if(defined $ENV{"WAYLAND_DISPLAY"} or $ENV{"XDG_SESSION_TYPE"} eq "wayland") {
         return $Cmd." -info 2>/dev/null & sleep 17 ; killall glxgears 2>/dev/null";
+    }
+    elsif(defined $ENV{"DISPLAY"}) { # X11
+        return $Cmd." -info 2>/dev/null & sleep 17 ; xwininfo -name \'$Win\' ; xkill -id \$(xwininfo -name \'$Win\' | grep \"Window id\" | cut -d' ' -f4) >/dev/null";
     }
     
     return undef;
@@ -7868,14 +7930,15 @@ sub fixLogs($)
     if(-f $Dir."/iostat"
     and -s $Dir."/iostat" < 50)
     { # Support for HW Probe 1.3
-        # iostat: command not found
+      # iostat: command not found
         unlink($Dir."/iostat");
     }
     
     if(-f $Dir."/dmidecode"
-    and -s $Dir."/dmidecode" < 40)
+    and -s $Dir."/dmidecode" < 100)
     { # Support for HW Probe 1.3
-        # dmidecode: command not found
+      # dmidecode: command not found
+      # No SMBIOS nor DMI entry point found
         writeFile($Dir."/dmidecode", "");
     }
     
@@ -7897,6 +7960,15 @@ sub fixLogs($)
         }
     }
     
+    if(-f $Dir."/vainfo"
+    and -s $Dir."/vainfo" < 200)
+    { # Support for HW Probe 1.4
+      # error: failed to initialize display
+        if(readFile($Dir."/vainfo")=~/failed to initialize/) {
+            writeFile($Dir."/vainfo", "");
+        }
+    }
+    
     if(-f $Dir."/cpupower")
     { # Support for HW Probe 1.3
         if(readFile($Dir."/cpupower")=~/cpupower not found/) {
@@ -7914,7 +7986,7 @@ sub fixLogs($)
     if(-f $Dir."/rfkill"
     and -s $Dir."/rfkill" < 70)
     { # Support for HW Probe 1.4
-        # Can't open RFKILL control device: No such file or directory
+      # Can't open RFKILL control device: No such file or directory
         if(readFile($Dir."/rfkill")=~/No such file or directory/) {
             writeFile($Dir."/rfkill", "");
         }
@@ -7931,12 +8003,14 @@ sub fixLogs($)
         }
     }
     
-    foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all")
+    foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all", "pstree")
     {
         if(-f $Dir."/".$L
-        and -s $Dir."/".$L < 50)
+        and -s $Dir."/".$L < 100)
         { # Support for HW Probe 1.4
-            # sh: XXX: command not found
+          # sh: XXX: command not found
+          # pcilib: Cannot open /proc/bus/pci
+          # lspci: Cannot find any working access method.
             writeFile($Dir."/".$L, "");
         }
     }
