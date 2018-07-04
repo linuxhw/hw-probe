@@ -14,7 +14,7 @@ Contents
 6. [ Install      ](#install)
 7. [ Inventory    ](#inventory)
 8. [ Offline view ](#offline-view)
-9. [ Decode ACPI  ](#decode-acpi)
+9. [ ACPI dump    ](#acpi-dump)
 
 About
 -----
@@ -143,8 +143,8 @@ Create your probes collection view for offline use:
 
     sudo hw-probe -import DIR
 
-Decode ACPI
------------
+ACPI dump
+---------
 
 Dump and decode ACPI table:
 
