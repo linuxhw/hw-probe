@@ -151,6 +151,7 @@ GetOptions("h|help!" => \$Opt{"Help"},
 # Private
   "docker!" => \$Opt{"Docker"},
   "low-compress!" => \$Opt{"LowCompress"},
+  "high-compress!" => \$Opt{"HighCompress"},
   "identify-drive=s" => \$Opt{"IdentifyDrive"},
   "identify-monitor=s" => \$Opt{"IdentifyMonitor"},
   "decode-acpi-from=s" => \$Opt{"DecodeACPI_From"},
@@ -308,6 +309,7 @@ sub helpMsg() {
 # Hardware
 my %HW;
 my %KernMod = ();
+my %WorkMod = ();
 my %WLanInterface = ();
 my %PermanentAddr = ();
 my %HDD = ();
@@ -315,10 +317,24 @@ my %HDD_Info = ();
 my %MMC = ();
 my %MON = ();
 
-my $PCI_DISK_BUS = "nvme";
+my %DeviceIDByNum = ();
+my %DeviceNumByID = ();
+my %DeviceAttached = ();
+my %GraphicsCards = ();
+my %UsedNetworkDev = ();
 
-# Tests
-my %TestRes;
+my $MIN_BAT_CAPACITY = 30;
+
+my %DriverVendor = (
+    "i915"    => "8086",
+    "nouveau" => "10de",
+    "nvidia"  => "10de",
+    "radeon"  => "1002",
+    "amdgpu"  => "1002",
+    "fglrx"   => "1002"
+);
+
+my $PCI_DISK_BUS = "nvme";
 
 # System
 my %Sys;
@@ -329,6 +345,7 @@ my $Admin = ($>==0);
 # Fixing
 my $FixProbe_Pkg;
 my $FixProbe_Logs;
+my $FixProbe_Tests;
 
 # PCI and USB IDs
 my %PciInfo;
@@ -748,13 +765,16 @@ my @WrongAddr = (
     "E5A433E40C7D5C05E1F82A0C86983656"
 );
 
-my @ProtectedLogs = ("hwinfo", "biosdecode", "acpidump", "dmidecode", "smartctl", "lspci", "lspci_all", "lsusb", "ifconfig", "ip_addr", "os-release", "lsb_release", "system-release");
+my @ProtectedLogs = ("hwinfo", "biosdecode", "acpidump", "acpidump_decoded", "dmidecode", "smartctl", "smartctl_megaraid", "lspci", "lspci_all", "lsusb", "usb-devices", "ifconfig", "ip_addr", "hciconfig", "mmcli", "xrandr", "edid", "os-release", "lsb_release", "system-release");
 
 my $USE_DIGEST = 0;
 my $USE_DUMPER = 0;
 
 my $HASH_LEN_CLIENT = 32;
 my $SALT_CLIENT = "GN-4w?T]>r3FS/*_";
+
+my $MAX_LOG_SIZE = 1048576; # 1Mb
+my $LARGE_LOGS = ("xorg.log", "xorg.log.1", "dmesg", "dmesg.1");
 
 sub getSha512L($$)
 {
@@ -1441,7 +1461,7 @@ sub getDefaultType($$)
             elsif($Name=~/bluetooth/i) {
                 return "bluetooth";
             }
-            elsif($Name=~/(\A| )WLAN( |\Z)|Wireless Adapter/i) {
+            elsif($Name=~/(\A| )WLAN( |\Z)|Wireless Adapter|WiMAX|WiFi/i) {
                 return "network";
             }
             elsif($Name=~/converter/i) {
@@ -1664,8 +1684,13 @@ sub probeHW()
     {
         if($Line=~/(\w+)\s+(\d+)\s+(\d+)/)
         {
-            $KernMod{$1} = $3;
-            push(@KernDrvs, $1);
+            my ($Name, $Use) = ($1, $3);
+            $KernMod{$Name} = $Use;
+            push(@KernDrvs, $Name);
+            
+            if($Use) {
+                $WorkMod{$Name} = 1;
+            }
         }
     }
     
@@ -1812,13 +1837,13 @@ sub probeHW()
     foreach my $Info (split(/\n\n/, $HWInfo))
     {
         my %Device = ();
-        my ($Num, $Bus) = ();
+        my ($DevNum, $Bus) = ();
         
         my ($V, $D, $SV, $SD, $C) = ();
         
         if($Info=~s/(\d+):\s*([^ ]+)//)
         { # 37: PCI 700.0: 0200 Ethernet controller
-            $Num = $1;
+            $DevNum = $1;
             $Bus = lc($2);
         }
         
@@ -2020,6 +2045,10 @@ sub probeHW()
                     #     $Bus = "sata";
                     # }
                 }
+                
+                if($Val=~/#(\d+)/) {
+                    $DeviceAttached{$DevNum} = $1;
+                }
             }
             elsif($Key eq "Device Files")
             {
@@ -2044,6 +2073,9 @@ sub probeHW()
                     elsif(index($Val, "mmcblk")!=-1) {
                         $MMC{$Val} = 0;
                     }
+                }
+                elsif($Device{"Type"} eq "network") {
+                    $Device{"File"} = $Val;
                 }
             }
             elsif($Key eq "Serial ID")
@@ -2412,6 +2444,16 @@ sub probeHW()
             }
         }
         
+        if($Device{"Type"} eq "network")
+        {
+            if(my $F = $Device{"File"})
+            {
+                if(defined $UsedNetworkDev{$F}) {
+                    $Device{"Status"} = "works";
+                }
+            }
+        }
+        
         # delete unused fields
         delete($Device{"ActiveDriver_Common"});
         delete($Device{"ActiveDriver"});
@@ -2447,13 +2489,18 @@ sub probeHW()
             }
         }
         
-        if(not $HW{$Bus.":".$ID}) {
-            $HW{$Bus.":".$ID} = \%Device;
+        my $BusID = $Bus.":".$ID;
+        
+        $DeviceIDByNum{$DevNum} = $BusID;
+        $DeviceNumByID{$BusID} = $DevNum;
+        
+        if(not $HW{$BusID}) {
+            $HW{$BusID} = \%Device;
         }
         else
         { # double entry
-            if($Device{"Type"} and not $HW{$Bus.":".$ID}{"Type"}) {
-                $HW{$Bus.":".$ID} = \%Device;
+            if($Device{"Type"} and not $HW{$BusID}{"Type"}) {
+                $HW{$BusID} = \%Device;
             }
         }
         
@@ -3083,30 +3130,50 @@ sub probeHW()
             $Drivers{$Dr} = $Num++
         }
         
-        if(defined $Drivers{"radeon"}
-        and defined $Drivers{"fglrx"})
+        if(defined $Drivers{"nouveau"})
         {
-            if($KernMod{"radeon"}==0) {
-                delete($Drivers{"radeon"});
+            if(not defined $WorkMod{"nouveau"}) {
+                delete($Drivers{"nouveau"});
             }
-            elsif($KernMod{"fglrx"}==0) {
-                delete($Drivers{"fglrx"});
-            }
-        }
-        elsif(defined $Drivers{"nouveau"})
-        {
-            if($KernMod{"nouveau"}==0
-            and $KernMod{"nvidia"}!=0)
+            
+            if(defined $WorkMod{"nvidia"})
             {
                 delete($Drivers{"nouveau"});
                 $Drivers{"nvidia"} = 1;
             }
         }
-        elsif(defined $Drivers{"wl"}
-        and $Driver ne "wl")
+        
+        if(defined $Drivers{"nvidia"})
         {
-            if($KernMod{"wl"}==0)
-            {
+            if(not defined $WorkMod{"nvidia"}) {
+                delete($Drivers{"nvidia"});
+            }
+        }
+        
+        if(defined $Drivers{"radeon"})
+        {
+            if(not defined $WorkMod{"radeon"}) {
+                delete($Drivers{"radeon"});
+            }
+        }
+        
+        if(defined $Drivers{"amdgpu"})
+        {
+            if(not defined $WorkMod{"amdgpu"}) {
+                delete($Drivers{"amdgpu"});
+            }
+        }
+        
+        if(defined $Drivers{"fglrx"})
+        {
+            if(not defined $WorkMod{"fglrx"}) {
+                delete($Drivers{"fglrx"});
+            }
+        }
+        
+        if($Driver ne "wl" and defined $Drivers{"wl"})
+        {
+            if(not defined $WorkMod{"wl"}) {
                 delete($Drivers{"wl"});
             }
         }
@@ -3135,6 +3202,53 @@ sub probeHW()
         
         if(defined $Type_New) {
             $HW{$ID}{"Type"} = $Type_New;
+        }
+    }
+    
+    # Fix status of graphics cards and network devices
+    foreach my $ID (sort keys(%HW))
+    {
+        if($HW{$ID}{"Type"} eq "graphics card")
+        {
+            if($ID=~/\w+:(.+?)\-/) {
+                $GraphicsCards{$1}{$ID} = $HW{$ID}{"Driver"};
+            }
+        }
+        elsif(grep { $HW{$ID}{"Type"} eq $_ } ("network", "modem", "sound", "storage"))
+        {
+            if(not $HW{$ID}{"Driver"}) {
+                $HW{$ID}{"Status"} = "failed";
+            }
+            
+            if($HW{$ID}{"Status"} eq "works") {
+                setAttachedStatus($ID, "works");
+            }
+        }
+    }
+    
+    foreach my $V (sort keys(%GraphicsCards))
+    {
+        foreach my $ID (sort keys(%{$GraphicsCards{$V}}))
+        {
+            if(index($HW{$ID}{"Device"}, "Secondary")!=-1) {
+                next;
+            }
+            
+            if(grep {$V eq $_} ("1002", "8086"))
+            {
+                if(not $GraphicsCards{$V}{$ID}) {
+                    $HW{$ID}{"Status"} = "failed";
+                }
+            }
+            elsif($V eq "10de")
+            {
+                if(not defined $GraphicsCards{"8086"})
+                {
+                    if(not $GraphicsCards{$V}{$ID}) {
+                        $HW{$ID}{"Status"} = "failed";
+                    }
+                }
+            }
         }
     }
     
@@ -3963,6 +4077,10 @@ sub probeHW()
                     if($Line=~/technology:[ ]*(.+?)[ ]*\Z/) {
                         $Device{"Technology"} = $1;
                     }
+                    
+                    if($Line=~/capacity:[ ]*(.+?)[ ]*\Z/) {
+                        $Device{"Capacity"} = $1;
+                    }
                 }
                 
                 cleanValues(\%Device);
@@ -3992,6 +4110,16 @@ sub probeHW()
                     
                     if($Device{"Size"}) {
                         $Device{"Device"} .= " ".$Device{"Size"};
+                    }
+                    
+                    if($Device{"Capacity"}=~/\A(\d+)/)
+                    {
+                        if($1>$MIN_BAT_CAPACITY) {
+                            $Device{"Status"} = "works";
+                        }
+                        else {
+                            $Device{"Status"} = "malfunc";
+                        }
                     }
                     
                     if($ID) {
@@ -4049,12 +4177,23 @@ sub probeHW()
                     $Device{"Technology"} = $1;
                 }
                 
-                if($Block=~/POWER_SUPPLY_ENERGY_FULL_DESIGN=(.+)/i) {
-                    $Device{"Size"} = ($1/1000000)."Wh";
+                if($Block=~/POWER_SUPPLY_ENERGY_FULL_DESIGN=(.+)/i)
+                {
+                    my $EFullDesign = $1;
+                    $Device{"Size"} = ($EFullDesign/1000000)."Wh";
+                    
+                    if($Block=~/POWER_SUPPLY_ENERGY_FULL=(.+)/i) {
+                        $Device{"Capacity"} = $1*100/$EFullDesign;
+                    }
                 }
                 
-                if($Block=~/POWER_SUPPLY_CHARGE_FULL_DESIGN=(.+)/i) {
+                if($Block=~/POWER_SUPPLY_CHARGE_FULL_DESIGN=(.+)/i)
+                {
                     $Device{"Change"} = $1;
+                    
+                    if($Block=~/POWER_SUPPLY_CHARGE_FULL=(.+)/i) {
+                        $Device{"Capacity"} = $1*100/$Device{"Change"};
+                    }
                 }
                 
                 if($Block=~/POWER_SUPPLY_SERIAL_NUMBER=(.+)/i) {
@@ -4085,6 +4224,16 @@ sub probeHW()
                     
                     if($Device{"Size"}) {
                         $Device{"Device"} .= " ".$Device{"Size"};
+                    }
+                    
+                    if($Device{"Capacity"}=~/\A(\d+)/)
+                    {
+                        if($1>$MIN_BAT_CAPACITY) {
+                            $Device{"Status"} = "works";
+                        }
+                        else {
+                            $Device{"Status"} = "malfunc";
+                        }
                     }
                     
                     if($ID) {
@@ -4198,6 +4347,8 @@ sub probeHW()
                         $HW{$Id}{"Status"} = "malfunc";
                     }
                 }
+                
+                setAttachedStatus($Id, "works"); # got SMART
             }
         }
     }
@@ -4260,6 +4411,8 @@ sub probeHW()
                             $HW{$Id}{"Status"} = "malfunc";
                         }
                     }
+                    
+                    setAttachedStatus($Id, "works"); # got SMART
                 }
             }
             writeLog($LOG_DIR."/smartctl", $Smartctl);
@@ -4339,6 +4492,8 @@ sub probeHW()
                             $HW{$Id}{"Status"} = "malfunc";
                         }
                     }
+                    
+                    setAttachedStatus($Id, "works"); # got SMART
                 }
             }
         }
@@ -4423,6 +4578,8 @@ sub probeHW()
                                     $HW{$Id}{"Status"} = "malfunc";
                                 }
                             }
+                            
+                            setAttachedStatus($Id, "works"); # got SMART
                         }
                     }
                 }
@@ -4437,9 +4594,18 @@ sub probeHW()
         $Dmesg = hideTags($Dmesg, "SerialNumber");
         $Dmesg = hideMACs($Dmesg);
         writeLog($LOG_DIR."/dmesg", $Dmesg);
-        
+    }
+    
+    my $XLog = "";
+    
+    if($Opt{"FixProbe"})
+    {
+        $XLog = readFile($FixProbe_Logs."/xorg.log");
+    }
+    else
+    {
         listProbe("logs", "xorg.log");
-        my $XLog = readFile("/var/log/Xorg.0.log");
+        $XLog = readFile("/var/log/Xorg.0.log");
         $XLog = hideTags($XLog, "Serial#");
         if(my $HostName = $ENV{"HOSTNAME"}) {
             $XLog=~s/ $HostName / NODE /g;
@@ -4449,7 +4615,141 @@ sub probeHW()
         }
     }
     
+    if($XLog)
+    {
+        foreach my $D ("nvidia", "nouveau", "i915", "radeon", "amdgpu", "fglrx")
+        {
+            my $CheckMod = $D;
+            
+            if($D eq "i915") {
+                $CheckMod = "intel";
+            }
+            
+            if(defined $WorkMod{$D})
+            {
+                if(index($XLog, "LoadModule: \"$CheckMod\"")!=-1)
+                {
+                    my $Unloaded = (index($XLog, "UnloadModule: \"$CheckMod\"")!=-1);
+                    
+                    if($Unloaded) {
+                        setCardStatus($D, "failed");
+                    }
+                    else {
+                        setCardStatus($D, "works");
+                    }
+                }
+            }
+        }
+    }
+    
+    my $HciConfig = "";
+    
+    if($Opt{"FixProbe"})
+    {
+        $HciConfig = readFile($FixProbe_Logs."/hciconfig");
+    }
+    else
+    {
+        if(check_Cmd("hciconfig"))
+        {
+            listProbe("logs", "hciconfig");
+            my $HciConfig = runCmd("hciconfig -a 2>&1");
+            $HciConfig = hideMACs($HciConfig);
+            if($HciConfig) {
+                writeLog($LOG_DIR."/hciconfig", $HciConfig);
+            }
+        }
+    }
+    
+    if($HciConfig)
+    {
+        foreach my $HCI (split(/\n\n/, $HciConfig))
+        {
+            if(index($HCI, "UP RUNNING ")!=-1)
+            {
+                if($HCI=~/\A([^:]+):?\s/)
+                {
+                    my $F = $1;
+                    foreach my $ID (sort grep {defined $HW{$_}{"Type"} and $HW{$_}{"Type"} eq "bluetooth"} keys(%HW))
+                    { # TODO: identify particular bt devices by lsusb
+                        $HW{$ID}{"Status"} = "works";
+                        setAttachedStatus($ID, "works");
+                    }
+                }
+            }
+        }
+    }
+    
+    my $MmCli = "";
+    
+    if($Opt{"FixProbe"})
+    {
+        $MmCli = readFile($FixProbe_Logs."/mmcli");
+    }
+    else
+    {
+        if(check_Cmd("mmcli"))
+        {
+            listProbe("logs", "mmcli");
+            my $Modems = runCmd("mmcli -L 2>&1");
+            if($Modems=~/No modems were found/i) {
+                $Modems = "";
+            }
+            
+            my %MNums = ();
+            while($Modems=~s/Modem\/(\d+)//) {
+                $MNums{$1} = 1;
+            }
+            
+            foreach my $Modem (sort {int($a)<=>int($b)} keys(%MNums))
+            {
+                my $MInfo = runCmd("mmcli -m $Modem");
+                $MInfo = hideTags($MInfo, "own|imei|equipment id");
+                $MmCli .= $MInfo;
+                
+                $MmCli .= "\n";
+            }
+            
+            if($MmCli) {
+                writeLog($LOG_DIR."/mmcli", $MmCli);
+            }
+        }
+    }
+    
+    if($MmCli)
+    {
+        foreach my $MM (split(/\n\n/, $MmCli))
+        {
+            if($MM=~/model:.*\[(\w+):(\w+)\]/)
+            {
+                if(my $ID = "usb:".lc($1."-".$2))
+                {
+                    if(defined $HW{$ID})
+                    {
+                        $HW{$ID}{"Status"} = "works";
+                        setAttachedStatus($ID, "works");
+                    }
+                }
+            }
+        }
+    }
+    
     print "Ok\n";
+}
+
+sub setAttachedStatus($$)
+{
+    my ($Id, $Status) = @_;
+    if(my $DevNum = $DeviceNumByID{$Id})
+    {
+        if(my $AttachedTo = $DeviceAttached{$DevNum})
+        {
+            if(my $AttachedId = $DeviceIDByNum{$AttachedTo})
+            {
+                $HW{$AttachedId}{"Status"} = $Status;
+            }
+        }
+    }
 }
 
 sub shortModel($)
@@ -4619,6 +4919,7 @@ sub detectMonitor($)
                 $HW{"eisa:".$OldID}{"Device"}=~s/LCD Monitor/$Name/;
             }
         }
+        $HW{"eisa:".$OldID}{"Status"} = "works"; # got EDID
         return;
     }
     
@@ -4656,6 +4957,7 @@ sub detectMonitor($)
         if(not defined $HW{"eisa:".$ID})
         {
             $HW{"eisa:".$ID} = \%Device;
+            $HW{"eisa:".$ID}{"Status"} = "works"; # got EDID
             
             # if(not $Opt{"IdentifyMonitor"} and not defined $MonVendor{$V} and not grep {$_ eq $V} @UnknownVendors) {
             #     print "WARNING: unknown monitor vendor $V\n";
@@ -5483,9 +5785,11 @@ sub ipAddr2ifConfig($)
 
 sub probeHWaddr()
 {
+    my $IFConfig = undef;
+    
     if($Opt{"FixProbe"})
     {
-        my $IFConfig = readFile($FixProbe_Logs."/ifconfig");
+        $IFConfig = readFile($FixProbe_Logs."/ifconfig");
         
         if(not $IFConfig)
         {
@@ -5521,8 +5825,6 @@ sub probeHWaddr()
     }
     else
     {
-        my $IFConfig = undef;
-        
         if(check_Cmd("ifconfig"))
         {
             listProbe("logs", "ifconfig");
@@ -5572,6 +5874,21 @@ sub probeHWaddr()
                 }
                 if($EthtoolP) {
                     writeLog($LOG_DIR."/ethtool_p", $EthtoolP);
+                }
+            }
+        }
+    }
+    
+    if($IFConfig)
+    {
+        foreach my $I (split(/\n\n/, $IFConfig))
+        {
+            if($I=~/\A([^:\s]+):?\s/)
+            {
+                my $F = $1;
+                
+                if(($I=~/packets\s*:?\s*(\d+)/ and $1) or ($I=~/valid_lft\s+(\d+)/ and $1)) {
+                    $UsedNetworkDev{$F} = 1;
                 }
             }
         }
@@ -6306,16 +6623,6 @@ sub writeLogs()
             writeLog($LOG_DIR."/iwconfig", $IwConfig);
         }
         
-        if(check_Cmd("hciconfig"))
-        {
-            listProbe("logs", "hciconfig");
-            my $HciConfig = runCmd("hciconfig -a 2>&1");
-            $HciConfig = hideMACs($HciConfig);
-            if($HciConfig) {
-                writeLog($LOG_DIR."/hciconfig", $HciConfig);
-            }
-        }
-        
         if(check_Cmd("nm-tool"))
         {
             listProbe("logs", "nm-tool");
@@ -6333,35 +6640,6 @@ sub writeLogs()
             $NmCli=~s/\AXXX /NAME/g;
             if($NmCli) {
                 writeLog($LOG_DIR."/nmcli", $NmCli);
-            }
-        }
-        
-        if(check_Cmd("mmcli"))
-        {
-            listProbe("logs", "mmcli");
-            my $Modems = runCmd("mmcli -L 2>&1");
-            if($Modems=~/No modems were found/i) {
-                $Modems = "";
-            }
-            
-            my %MNums = ();
-            while($Modems=~s/Modem\/(\d+)//) {
-                $MNums{$1} = 1;
-            }
-            
-            my $MmCli = "";
-            
-            foreach my $Modem (sort {int($a)<=>int($b)} keys(%MNums))
-            {
-                my $MInfo = runCmd("mmcli -m $Modem");
-                $MInfo = hideTags($MInfo, "own|imei|equipment id");
-                $MmCli .= $MInfo;
-                
-                $MmCli .= "\n";
-            }
-            
-            if($MmCli) {
-                writeLog($LOG_DIR."/mmcli", $MmCli);
             }
         }
         
@@ -7283,16 +7561,16 @@ sub checkGraphics()
     my $Glxgears = getGears("glxgears", "glxgears");
     
     listProbe("tests", "glxgears");
-    my $Out = runCmd("vblank_mode=0 $Glxgears");
-    $Out=~s/(\d+ frames)/\n$1/;
-    $Out=~s/GL_EXTENSIONS =.*?\n//;
-    writeLog($TEST_DIR."/glxgears", $Out);
+    my $Out_I = runCmd("vblank_mode=0 $Glxgears");
+    $Out_I=~s/(\d+ frames)/\n$1/;
+    $Out_I=~s/GL_EXTENSIONS =.*?\n//;
+    writeLog($TEST_DIR."/glxgears", $Out_I);
     
     my $Out_D = undef;
     
-    if($KernMod{"i915"}!=0)
+    if(defined $WorkMod{"i915"})
     {
-        if($KernMod{"nvidia"}!=0)
+        if(defined $WorkMod{"nvidia"})
         { # check NVidia Optimus with proprietary driver
             if(check_Cmd("optirun"))
             {
@@ -7300,7 +7578,7 @@ sub checkGraphics()
                 $Out_D = runCmd("optirun $Glxgears");
             }
         }
-        elsif($KernMod{"nouveau"}!=0)
+        elsif(defined $WorkMod{"nouveau"})
         { # check NVidia Optimus with free driver
             listProbe("tests", "glxgears (Nouveau)");
             system("xrandr --setprovideroffloadsink 1 0"); # nouveau Intel
@@ -7311,7 +7589,7 @@ sub checkGraphics()
                 $Out_D = runCmd("DRI_PRIME=1 vblank_mode=0 $Glxgears");
             }
         }
-        elsif($KernMod{"radeon"}!=0 or $KernMod{"amdgpu"}!=0)
+        elsif(defined $WorkMod{"radeon"} or defined $WorkMod{"amdgpu"})
         { # check Radeon Hybrid graphics with free driver
             listProbe("tests", "glxgears (Radeon)");
             $Out_D = runCmd("DRI_PRIME=1 vblank_mode=0 $Glxgears");
@@ -7325,7 +7603,73 @@ sub checkGraphics()
         writeLog($TEST_DIR."/glxgears_discrete", $Out_D);
     }
     
+    checkGraphicsCardOutput($Out_I, $Out_D);
+    
     print "Ok\n";
+}
+
+sub checkGraphicsCardOutput($$)
+{
+    my ($Int, $Discrete) = @_;
+    
+    my $Success = "frames in";
+    
+    if(defined $WorkMod{"i915"})
+    {
+        if(defined $WorkMod{"nvidia"})
+        {
+            if($Discrete=~/$Success/) {
+                setCardStatus("nvidia", "works");
+            }
+        }
+        elsif(defined $WorkMod{"nouveau"})
+        {
+            if($Discrete=~/$Success/ and $Discrete=~/GL_VENDOR.+nouveau/i) {
+                setCardStatus("nouveau", "works");
+            }
+        }
+        elsif(defined $WorkMod{"radeon"} or defined $WorkMod{"amdgpu"})
+        {
+            if($Discrete=~/$Success/) {
+                setCardStatus("radeon", "works");
+            }
+        }
+        
+        if($Int=~/$Success/ and $Int=~/GL_VENDOR.+Intel/i) {
+            setCardStatus("i915", "works");
+        }
+    }
+    elsif(defined $WorkMod{"nouveau"} or defined $WorkMod{"nvidia"})
+    {
+        if($Int=~/$Success/) {
+            setCardStatus("nouveau", "works");
+        }
+    }
+    elsif(defined $WorkMod{"radeon"} or defined $WorkMod{"amdgpu"} or defined $WorkMod{"fglrx"})
+    {
+        if($Int=~/$Success/) {
+            setCardStatus("radeon", "works");
+        }
+    }
+}
+
+sub setCardStatus($$)
+{
+    my ($Dr, $Status) = @_;
+    
+    my $V = $DriverVendor{$Dr};
+    
+    if(defined $GraphicsCards{$V})
+    {
+        foreach my $ID (sort keys(%{$GraphicsCards{$V}}))
+        {
+            $HW{$ID}{"Status"} = $Status;
+            
+            if($Status eq "works") {
+                setAttachedStatus($ID, $Status);
+            }
+        }
+    }
 }
 
 sub checkHW()
@@ -7424,14 +7768,14 @@ sub writeLog($$)
     
     if(not grep {$Log eq $_} @ProtectedLogs)
     {
-        my $MaxSize = 2*1048576; # 2M
+        my $MaxSize = 2*$MAX_LOG_SIZE;
         
-        if(grep {$Log eq $_} ("xorg.log", "xorg.log.1", "dmesg", "dmesg.1")) {
-            $MaxSize = 1048576; # 1M
+        if(grep {$Log eq $_} $LARGE_LOGS) {
+            $MaxSize = $MAX_LOG_SIZE;
         }
         
         if(length($Content)>$MaxSize) {
-            $Content = substr($Content, 0, $MaxSize)."...";
+            $Content = substr($Content, 0, $MaxSize-3)."...";
         }
     }
     
@@ -7441,7 +7785,6 @@ sub writeLog($$)
 sub appendFile($$)
 {
     my ($Path, $Content) = @_;
-    return if(not $Path);
     if(my $Dir = dirname($Path)) {
         mkpath($Dir);
     }
@@ -8277,6 +8620,7 @@ sub scenario()
         
         $Opt{"FixProbe"}=~s/[\/]+\Z//g;
         $FixProbe_Logs = $Opt{"FixProbe"}."/logs";
+        $FixProbe_Tests = $Opt{"FixProbe"}."/tests";
         
         if(-d $Opt{"FixProbe"})
         {
@@ -8328,6 +8672,16 @@ sub scenario()
             }
         }
         
+        foreach my $L ($LARGE_LOGS)
+        {
+            if(-s $FixProbe_Logs."/".$L > $MAX_LOG_SIZE)
+            {
+                if(my $Content = readFile($FixProbe_Logs."/".$L)) {
+                    writeLog($FixProbe_Logs."/".$L, $Content);
+                }
+            }
+        }
+        
         $Opt{"Logs"} = 0;
     }
     
@@ -8348,12 +8702,8 @@ sub scenario()
         {
             checkHW();
             
-            if(keys(%TestRes))
-            {
-                # Update
-                writeDevs();
-                writeHost();
-            }
+            # Update
+            writeDevs();
         }
         
         if($Opt{"Key"}) {
@@ -8369,6 +8719,8 @@ sub scenario()
         readHost($Opt{"FixProbe"}); # instead of probeSys
         probeHWaddr();
         probeHW();
+        
+        checkGraphicsCardOutput(readFile($FixProbe_Tests."/glxgears"), readFile($FixProbe_Tests."/glxgears_discrete"));
         
         if($Opt{"PC_Name"}) {
             $Sys{"Name"} = $Opt{"PC_Name"}; # fix PC name
@@ -8477,9 +8829,13 @@ sub scenario()
         { # package
             my $PName = basename($FixProbe_Pkg);
             chdir($TMP_DIR);
-            my $Compress = "";
+            
+            my $Compress = ""; # default is XZ_OPT=-9
             if($Opt{"LowCompress"}) {
                 $Compress .= "XZ_OPT=-0 ";
+            }
+            elsif($Opt{"HighCompress"}) {
+                $Compress .= "XZ_OPT=-9e ";
             }
             $Compress .= "tar -cJf ".$PName." hw.info";
             qx/$Compress/;
