@@ -95,22 +95,26 @@ Content:
 
 3.2 Install on Debian
 
-    echo "deb http://ppa.launchpad.net/mikhailnov/hw-probe/ubuntu bionic main" | sudo tee /etc/apt/sources.list.d/mikhailnov-ubuntu-hw-probe-bionic.list
-    sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys FE3AE55CF74041EAA3F0AD10D5B19A73A8ECB754
-    echo -e "Package: * \nPin: release o=LP-PPA-mikhailnov-hw-probe \nPin-Priority: 1" | sudo tee /etc/preferences.d/mikhailnov-ubuntu-hw-probe-ppa
-    sudo apt update
-    sudo apt install hw-probe --no-install-recommends
+    su
+    apt install dirmngr
+    echo "deb http://ppa.launchpad.net/mikhailnov/hw-probe/ubuntu bionic main" | tee /etc/apt/sources.list.d/mikhailnov-ubuntu-hw-probe-bionic.list
+    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys FE3AE55CF74041EAA3F0AD10D5B19A73A8ECB754
+    echo -e "Package: * \nPin: release o=LP-PPA-mikhailnov-hw-probe \nPin-Priority: 1" | tee /etc/preferences.d/mikhailnov-ubuntu-hw-probe-ppa
+    apt update
+    apt install hw-probe --no-install-recommends
 
 3.3 Install on Debian (Easy)
 
    Install dependencies:
 
-     sudo apt install libdigest-sha-perl curl hwinfo dmidecode pciutils usbutils smartmontools edid-decode \
+     su
+     apt install libdigest-sha-perl curl hwinfo dmidecode pciutils usbutils smartmontools edid-decode \
      util-linux lsb-release lm-sensors mcelog wireless-tools x11-utils
 
    Then probe your computer by:
 
-     curl -s https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | sudo perl - -all -upload
+     su
+     curl -s https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | perl - -all -upload
 
 4. BUILD DEBIAN PACKAGE
 =======================

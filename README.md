@@ -87,12 +87,14 @@ On Ubuntu-based Linux distributions (Ubuntu, Linux Mint, Elementary OS, etc.) yo
 
 Install dependencies:
 
-    sudo apt install libdigest-sha-perl curl hwinfo dmidecode pciutils usbutils smartmontools edid-decode \
+    su
+    apt install libdigest-sha-perl curl hwinfo dmidecode pciutils usbutils smartmontools edid-decode \
     util-linux lsb-release lm-sensors mcelog wireless-tools x11-utils
 
 Then probe your computer by:
 
-    curl -s https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | sudo perl - -all -upload
+    su
+    curl -s https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | perl - -all -upload
 
 See INSTALL for instructions on how to properly configure necessary PPA repository on Debian if you want to install a package.
 
