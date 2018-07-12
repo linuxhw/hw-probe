@@ -5,6 +5,8 @@ HW Probe 1.4 (April 14, 2018)
 
 This file explains how to install and setup environment for the tool in your computer.
 
+See more info in the [README.md](https://github.com/linuxhw/hw-probe/blob/master/README.md).
+
 Contents
 --------
 
@@ -12,10 +14,6 @@ Contents
 2. [ Configure and Install  ](#configure-and-install)
 3. [ Ubuntu PPA             ](#ubuntu-ppa)
 4. [ Build Debian package   ](#build-debian-package)
-5. [ Usage                  ](#usage)
-6. [ Live ISO               ](#live-iso)
-7. [ Docker                 ](#docker)
-8. [ Privacy                ](#privacy)
 
 
 Requirements for Linux
@@ -24,36 +22,37 @@ Requirements for Linux
 * Perl 5
 * perl-Digest-SHA
 * perl-Data-Dumper
-* hwinfo
+* hwinfo (https://github.com/openSUSE/hwinfo or https://pkgs.org/download/hwinfo)
 * curl
 * dmidecode
-* smartmontools
-* pciutils
-* usbutils
+* smartmontools (smartctl)
+* pciutils (lspci)
+* usbutils (lsusb)
 * edid-decode
 
 ###### Recommends
 
+* mcelog
 * hdparm
-* sysstat
-* systemd-tools
-* acpica
+* systemd-tools (systemd-analyze)
+* acpica-tools
 * mesa-demos
 * vulkan-utils
 * memtester
+* vulkan-utils
 * rfkill
+* sysstat (iostat)
+* cpuid
 * xinput
 * vainfo
-* mcelog
-* cpuid
 * inxi
 * i2c-tools
 
 ###### Suggests
 
-* hplip
-* numactl
-* pnputils
+* hplip (hp-probe)
+* sane-backends (sane-find-scanner)
+* pnputils (lspnp)
 
 
 Configure and Install
@@ -145,46 +144,3 @@ Remove hw-probe and dependencies:
 
     sudo apt autoremove hw-probe
 
-
-Usage
------
-
-Make a probe and upload result to the DB (`DESC` — any description of the probe):
-
-    sudo hw-probe -all -upload -id "DESC"
-
-
-Live ISO
---------
-
-The Live ISO with hw-probe installed: https://mirror.yandex.ru/rosa/rosa2016.1/iso/ROSA.Fresh.R10/
-
-Boot this Linux ISO in Live mode on your computer and make a probe (see Usage).
-
-
-Docker
-------
-
-You can easily make a probe on any Linux distribution without installing the tool with the help of the Docker image:
-
-    sudo docker pull linuxhw/hw-probe
-    sudo docker run -it \
-    -v /dev:/dev:ro \
-    -v /lib/modules:/lib/modules:ro \
-    -v /etc/os-release:/etc/os-release:ro \
-    -v /var/log:/var/log:ro \
-    --privileged --net=host --pid=host \
-    linuxhw/hw-probe -all -upload -id DESC
-
-You may need to run `xhost +local:` before docker run to collect X11 info (xrandr, xinput, etc.).
-
-
-Privacy
--------
-
-Private information (including the username, machine's hostname, IP addresses, MAC addresses and serial numbers) is NOT uploaded to the database.
-
-The tool uploads SHA512 hash of MAC addresses and serial numbers to properly identify unique computers and hard drives. All the data is uploaded securely via HTTPS.
-
-
-Enjoy!
