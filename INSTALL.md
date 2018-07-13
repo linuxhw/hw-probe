@@ -5,15 +5,19 @@ HW Probe 1.4 (April 14, 2018)
 
 This file explains how to install and setup environment for the tool in your computer.
 
-See more info in the [README.md](https://github.com/linuxhw/hw-probe/blob/master/README.md).
+See more info in the [README.md](https://github.com/linuxhw/hw-probe/).
 
 Contents
 --------
 
-1. [ Requirements for Linux ](#requirements-for-linux)
-2. [ Configure and Install  ](#configure-and-install)
-3. [ Ubuntu PPA             ](#ubuntu-ppa)
-4. [ Build Debian package   ](#build-debian-package)
+1. [ Requirements for Linux  ](#requirements-for-linux)
+2. [ Install from Source     ](#install-from-source)
+3. [ Install on Ubuntu       ](#install-on-ubuntu)
+4. [ Install on Debian       ](#install-on-debian)
+5. [ Install on Debian (Easy)](#install-on-debian-easy)
+6. [ Install on CentOS 7     ](#install-on-centos-7)
+7. [ Install on CentOS 6     ](#install-on-centos-6)
+8. [ Build Debian package    ](#build-debian-package)
 
 
 Requirements for Linux
@@ -55,10 +59,10 @@ Requirements for Linux
 * pnputils (lspnp)
 
 
-Configure and Install
----------------------
+Install from Source
+-------------------
 
-This command will install a hw-probe program in the `PREFIX/bin` system directory:
+This command will install the `hw-probe` program in the `PREFIX/bin` system directory:
 
     sudo make install prefix=PREFIX [/usr, /usr/local, ...]
 
@@ -67,12 +71,10 @@ This command will install a hw-probe program in the `PREFIX/bin` system director
     sudo make uninstall prefix=PREFIX
 
 
-Ubuntu PPA
-----------
+Install on Ubuntu
+-----------------
 
 PPA: https://launchpad.net/~mikhailnov/+archive/ubuntu/hw-probe
-
-###### Install on Ubuntu
 
 On Ubuntu-based Linux distributions (Ubuntu, Linux Mint, Elementary OS, etc.) you can install a PPA package:
 
@@ -81,7 +83,11 @@ On Ubuntu-based Linux distributions (Ubuntu, Linux Mint, Elementary OS, etc.) yo
     sudo apt update
     sudo apt install hw-probe --no-install-recommends
 
-###### Install on Debian
+
+Install on Debian
+-----------------
+
+Setup a PPA repository and install the package:
 
     su
     apt install dirmngr
@@ -91,7 +97,9 @@ On Ubuntu-based Linux distributions (Ubuntu, Linux Mint, Elementary OS, etc.) yo
     apt update
     apt install hw-probe --no-install-recommends
 
-###### Install on Debian (Easy)
+
+Install on Debian (Easy)
+------------------------
 
 Install dependencies:
 
@@ -99,10 +107,46 @@ Install dependencies:
     apt install libdigest-sha-perl curl hwinfo dmidecode pciutils usbutils smartmontools edid-decode \
     util-linux lsb-release lm-sensors mcelog wireless-tools x11-utils
 
-Then probe your computer by:
+Make a probe:
 
     su
     curl -s https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | perl - -all -upload
+
+
+Install on CentOS 7
+-------------------
+
+Install dependencies:
+
+    sudo yum install perl-Digest-SHA curl dmidecode pciutils usbutils smartmontools \
+    lm_sensors mcelog xorg-x11-utils xorg-x11-server-utils
+
+Install `hwinfo` and `libx86emu`:
+
+    sudo yum install http://li.nux.ro/download/nux/dextop/el7/x86_64/hwinfo-20.2-5.3.x86_64.rpm \
+    http://li.nux.ro/download/nux/dextop/el7/x86_64/libx86emu-1.1-2.1.x86_64.rpm
+
+Make a probe:
+
+    curl -s https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | sudo perl - -all -upload
+
+
+Install on CentOS 6
+-------------------
+
+Install dependencies:
+
+    sudo yum install perl-Digest-SHA curl dmidecode pciutils usbutils smartmontools \
+    lm_sensors mcelog xorg-x11-utils xorg-x11-server-utils
+
+Install `hwinfo` and `libx86emu`:
+
+    sudo yum install http://mirror.ghettoforge.org/distributions/gf/el/6/gf/x86_64/hwinfo-20.2-1.gf.el6.x86_64.rpm \
+    http://mirror.ghettoforge.org/distributions/gf/el/6/gf/x86_64/libx86emu-1.1-1.gf.el6.x86_64.rpm
+
+Make a probe:
+
+    curl -s https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | sudo perl - -all -upload
 
 
 Build Debian package
