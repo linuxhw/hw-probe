@@ -6,15 +6,16 @@ Hardware Probe Tool (HW Probe) — a tool to probe for hardware, check its opera
 Contents
 --------
 
-1. [ About        ](#about)
-2. [ Install      ](#install)
-3. [ Usage        ](#usage)
-4. [ Docker       ](#docker)
-5. [ Live ISO     ](#live-iso)
-6. [ Inventory    ](#inventory)
-7. [ Offline view ](#offline-view)
-8. [ ACPI dump    ](#acpi-dump)
-9. [ Privacy      ](#privacy)
+1.  [ About        ](#about)
+2.  [ Install      ](#install)
+3.  [ Usage        ](#usage)
+4.  [ Docker       ](#docker)
+5.  [ Live ISO     ](#live-iso)
+6.  [ Inventory    ](#inventory)
+7.  [ Offline view ](#offline-view)
+8.  [ ACPI dump    ](#acpi-dump)
+9.  [ Operability  ](#operability)
+10. [ Privacy      ](#privacy)
 
 
 About
@@ -141,6 +142,23 @@ Dump and decode ACPI table:
     sudo hw-probe -all -upload -dump-acpi -decode-acpi
 
 NOTE: "acpica-tools" package should be installed
+
+
+Operability
+-----------
+
+The tool checks operability of devices on board by analysis of collected log files. You can perform additional operability sanity tests by the following command:
+
+    sudo hw-probe -all -check -upload
+
+The following tests are executed:
+
+* graphics test by `glxgears` (for both integrated and discrete graphics cards)
+* drive read speed test by `hdparm` (for all HDDs and SSDs)
+* CPU performance test by `dd` and `md5sum`
+* RAM memory test by `memtester`
+
+Execution time is about 1 min for average modern desktop hardware.
 
 
 Privacy
