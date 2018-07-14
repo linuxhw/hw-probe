@@ -20,7 +20,7 @@
 #  Perl 5
 #  perl-Digest-SHA
 #  perl-Data-Dumper
-#  hwinfo
+#  hwinfo (https://github.com/openSUSE/hwinfo or https://pkgs.org/download/hwinfo)
 #  curl
 #  dmidecode
 #  smartmontools (smartctl)
@@ -30,27 +30,28 @@
 #
 # RECOMMENDS
 # ==========
+#  mcelog
 #  hdparm
-#  sysstat
 #  systemd-tools (systemd-analyze)
-#  acpica
+#  acpica-tools
 #  mesa-demos
 #  vulkan-utils
 #  memtester
 #  rfkill
+#  sysstat (iostat)
+#  cpuid
 #  xinput
 #  vainfo
-#  mcelog
-#  cpuid
 #  inxi
 #  i2c-tools
 #
 # SUGGESTS
 # ========
 #  hplip (hp-probe)
+#  sane-backends (sane-find-scanner)
+#  pnputils (lspnp)
 #  avahi
 #  numactl
-#  pnputils (lspnp)
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -728,34 +729,34 @@ my @WrongAddr = (
     # MAC/clientHash(MAC)
     "00-00-00-00-00-00",
     "9B615E889BC3EDDF63600C8DAA6D56CC",
-    "ff-ff-ff-ff-ff-ff",
+    "FF-FF-FF-FF-FF-FF",
     "2F847FFB96ED2B0B7C2AB39815DC6545",
     # Huawei modem
-    "0c-5b-8f-27-9a-64",
+    "0C-5B-8F-27-9A-64",
     "F8AFE52EC893B5F610764246CE0EC5DD",
     # Qualcomm Atheros AR8151
     "00-20-07-01-16-06",
     "2698F3BD50B6E7317C050EABCBFCDD61",
     # Realtek RTL8111/8168/8411
-    "00-0b-0e-0f-00-ed",
+    "00-0B-0E-0F-00-ED",
     "B65E4A84BDF8C8FAF775D824E93895E5",
-    "ed-0b-00-00-e0-00",
+    "ED-0B-00-00-E0-00",
     "C8725A03752162516AC1D2736D4BCA7D",
     # NVIDIA Ethernet Controller
-    "04-4b-80-80-80-03",
+    "04-4B-80-80-80-03",
     "390043493F55307CC32EBD5A69443418",
-    "04-4b-80-80-80-04",
+    "04-4B-80-80-80-04",
     "5CEE6D893998E9F34E1452DFD0AD4127",
-    "04-4b-80-80-80-f0",
+    "04-4B-80-80-80-F0",
     "3EEAB05124DE1FB83AD0BEAD31CE981E",
     # Others
-    "00-dd-00-00-00-00",
+    "00-DD-00-00-00-00",
     "631A71585F7CE74AE0C6E575DD1F4B31",
     "88-88-88-88-87-88",
     "FD0368E31788DE08AEC3C0F414D65552",
     "00-00-00-00-00-05",
     "4291656957E4CF9952D94E3DEF386CBF",
-    "00-ff-00-00-00-00",
+    "00-FF-00-00-00-00",
     "779F2E940C240A44289BB71F86A99BE5",
     "00-00-00-00-00-30",
     "6A34F992175D0D2ACD794FB107791EBF",
@@ -931,9 +932,8 @@ sub getOldProbeDir()
     {
         $Dir = undef;
         
-        if(defined $ENV{"SUDO_USER"}
-        and $ENV{"SUDO_USER"} ne "root") {
-            $Dir = "/home/".$ENV{"SUDO_USER"}."/".$SubDir;
+        if(my $SessUser = getUser()) {
+            $Dir = "/home/".$SessUser."/".$SubDir;
         }
     }
     
@@ -2075,7 +2075,7 @@ sub probeHW()
                     }
                 }
                 elsif($Device{"Type"} eq "network") {
-                    $Device{"File"} = $Val;
+                    $Device{"Files"}{$Val} = 1;
                 }
             }
             elsif($Key eq "Serial ID")
@@ -2446,10 +2446,13 @@ sub probeHW()
         
         if($Device{"Type"} eq "network")
         {
-            if(my $F = $Device{"File"})
+            if(defined $Device{"Files"})
             {
-                if(defined $UsedNetworkDev{$F}) {
-                    $Device{"Status"} = "works";
+                foreach my $F (sort keys(%{$Device{"Files"}}))
+                {
+                    if(defined $UsedNetworkDev{$F}) {
+                        $Device{"Status"} = "works";
+                    }
                 }
             }
         }
@@ -3143,31 +3146,13 @@ sub probeHW()
             }
         }
         
-        if(defined $Drivers{"nvidia"})
+        foreach my $Dr ("nvidia", "radeon", "amdgpu", "fglrx", "i915")
         {
-            if(not defined $WorkMod{"nvidia"}) {
-                delete($Drivers{"nvidia"});
-            }
-        }
-        
-        if(defined $Drivers{"radeon"})
-        {
-            if(not defined $WorkMod{"radeon"}) {
-                delete($Drivers{"radeon"});
-            }
-        }
-        
-        if(defined $Drivers{"amdgpu"})
-        {
-            if(not defined $WorkMod{"amdgpu"}) {
-                delete($Drivers{"amdgpu"});
-            }
-        }
-        
-        if(defined $Drivers{"fglrx"})
-        {
-            if(not defined $WorkMod{"fglrx"}) {
-                delete($Drivers{"fglrx"});
+            if(defined $Drivers{$Dr})
+            {
+                if(not defined $WorkMod{$Dr}) {
+                    delete($Drivers{$Dr});
+                }
             }
         }
         
@@ -3205,7 +3190,7 @@ sub probeHW()
         }
     }
     
-    # Fix status of graphics cards and network devices
+    # Fix status of graphics cards, network devices, etc.
     foreach my $ID (sort keys(%HW))
     {
         if($HW{$ID}{"Type"} eq "graphics card")
@@ -4606,6 +4591,15 @@ sub probeHW()
     {
         listProbe("logs", "xorg.log");
         $XLog = readFile("/var/log/Xorg.0.log");
+        
+        if(not $XLog)
+        {
+            if(my $SessUser = getUser())
+            { # Xorg.0.log in XWayland (Ubuntu 18.04)
+                $XLog = readFile("/home/".$SessUser."/.local/share/xorg/Xorg.0.log");
+            }
+        }
+        
         $XLog = hideTags($XLog, "Serial#");
         if(my $HostName = $ENV{"HOSTNAME"}) {
             $XLog=~s/ $HostName / NODE /g;
@@ -4615,29 +4609,79 @@ sub probeHW()
         }
     }
     
+    my @GDr = ("nvidia", "nouveau", "i915", "radeon", "amdgpu", "fglrx");
+    
     if($XLog)
     {
-        foreach my $D ("nvidia", "nouveau", "i915", "radeon", "amdgpu", "fglrx")
+        foreach my $D (@GDr)
         {
-            my $CheckMod = $D;
-            
-            if($D eq "i915") {
-                $CheckMod = "intel";
-            }
-            
             if(defined $WorkMod{$D})
             {
-                if(index($XLog, "LoadModule: \"$CheckMod\"")!=-1)
+                my @Loaded = ();
+                
+                if($D eq "i915")
                 {
-                    my $Unloaded = (index($XLog, "UnloadModule: \"$CheckMod\"")!=-1);
+                    foreach my $Dr ("intel", "modesetting")
+                    {
+                        if(index($XLog, "LoadModule: \"$Dr\"")!=-1) {
+                            push(@Loaded, $Dr);
+                        }
+                    }
+                }
+                else
+                {
+                    if(index($XLog, "LoadModule: \"$D\"")!=-1) {
+                        @Loaded = ($D);
+                    }
+                }
+                
+                if(@Loaded)
+                {
+                    my @Unloaded = ();
                     
-                    if($Unloaded) {
+                    if($D eq "i915")
+                    {
+                        foreach my $Dr (@Loaded)
+                        {
+                            if(index($XLog, "UnloadModule: \"$Dr\"")!=-1) {
+                                push(@Unloaded, $Dr);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if(index($XLog, "UnloadModule: \"$D\"")!=-1) {
+                            @Unloaded = ($D);
+                        }
+                    }
+                    
+                    if($D eq "i915" and defined $GraphicsCards{"1002"}
+                    and defined $WorkMod{"fglrx"})
+                    { # fglrx by intel
+                        setCardStatus($D, "works");
+                        next;
+                    }
+                    
+                    if($#Unloaded==$#Loaded) {
                         setCardStatus($D, "failed");
                     }
                     else {
                         setCardStatus($D, "works");
                     }
                 }
+                elsif(grep {$D eq $_} ("nvidia") and defined $GraphicsCards{"8086"})
+                { # no entries in the Xorg.0.log
+                    setCardStatus($D, "works");
+                }
+            }
+        }
+    }
+    else
+    { # No info
+        foreach my $D (@GDr)
+        {
+            if(defined $WorkMod{$D}) {
+                setCardStatus($D, "works");
             }
         }
     }
@@ -5938,7 +5982,7 @@ sub detectHWaddr($)
             $Addr=~s/:/-/g;
         }
         
-        if(grep {$Addr eq $_} @WrongAddr)
+        if(grep {uc($Addr) eq $_} @WrongAddr)
         { # Different samples of some network controllers may have same HWaddr
             push(@Wrong, $Addr);
         }
@@ -5961,7 +6005,7 @@ sub detectHWaddr($)
             }
             
             if(defined $PermanentAddr{$NetDev}) {
-                $Addr = $PermanentAddr{$NetDev};
+                $Addr = lc($PermanentAddr{$NetDev});
             }
             
             if($NetDev=~/\Aenp\d+s\d+.*u\d+\Z/i)
@@ -6365,6 +6409,18 @@ sub readHost($)
     }
 }
 
+sub getUser()
+{
+    foreach my $Var ("SUDO_USER", "USERNAME", "USER")
+    {
+        if(defined $ENV{$Var} and $ENV{$Var} ne "root") {
+            return $ENV{$Var};
+        }
+    }
+    
+    return undef;
+}
+
 sub writeLogs()
 {
     print "Reading logs ... ";
@@ -6373,9 +6429,9 @@ sub writeLogs()
         print "\n";
     }
     
-    my $SessUser = $ENV{"USER"};
-    if($ENV{"SUDO_USER"} and $ENV{"SUDO_USER"} ne "root") {
-        $SessUser = $ENV{"SUDO_USER"};
+    my $SessUser = getUser();
+    if(not $SessUser) {
+        $SessUser = $ENV{"USER"};
     }
     
     my $KRel = $Sys{"Kernel"};
@@ -7663,10 +7719,13 @@ sub setCardStatus($$)
     {
         foreach my $ID (sort keys(%{$GraphicsCards{$V}}))
         {
-            $HW{$ID}{"Status"} = $Status;
-            
-            if($Status eq "works") {
-                setAttachedStatus($ID, $Status);
+            if($GraphicsCards{$V}{$ID} eq $Dr)
+            {
+                $HW{$ID}{"Status"} = $Status;
+                
+                if($Status eq "works") {
+                    setAttachedStatus($ID, $Status);
+                }
             }
         }
     }
@@ -8109,6 +8168,7 @@ sub importProbes($)
                 
                 my @DStat = stat($TmpDir);
                 $Prop{"date"} = $DStat[9]; # last modify time
+                $Prop{"hwaddr"} = lc($Prop{"hwaddr"});
                 writeFile($To."/probe.info", Data::Dumper::Dumper(\%Prop));
                 $Imported = $P;
                 setPublic($To, "-R");
@@ -8227,7 +8287,12 @@ sub importProbes($)
 sub getShortHWid($)
 {
     my $HWid = $_[0];
-    $HWid=~s/\A(\w+\-\w+).+\-(\w+)\Z/$1...$2/;
+    if(length($HWid) eq $HASH_LEN_CLIENT) {
+        $HWid = substr($HWid, 0, 5);
+    }
+    else {
+        $HWid=~s/\A(\w+\-\w+).+\-(\w+)\Z/$1...$2/;
+    }
     return $HWid;
 }
 
@@ -8254,10 +8319,9 @@ sub setPublic($)
     push(@Chmod, $Path);
     system(@Chmod);
     
-    if(defined $ENV{"SUDO_USER"}
-    and $ENV{"SUDO_USER"} ne "root")
+    if(my $SessUser = getUser())
     {
-        my @Chown = ("chown", $ENV{"SUDO_USER"}.":".$ENV{"SUDO_USER"});
+        my @Chown = ("chown", $SessUser.":".$SessUser);
         if($R) {
             push(@Chown, $R);
         }
@@ -8269,6 +8333,16 @@ sub setPublic($)
 sub fixLogs($)
 {
     my $Dir = $_[0];
+    
+    if(-f $Dir."/hwinfo"
+    and -s $Dir."/hwinfo" < 200)
+    { # Support for HW Probe 1.4
+        if(readFile($Dir."/hwinfo")=~/unrecognized arguments|error while loading shared libraries/)
+        { # hwinfo: error: unrecognized arguments: --all
+          # hwinfo: error while loading shared libraries: libhd.so.21: cannot open shared object file: No such file or directory
+            writeFile($Dir."/hwinfo", "");
+        }
+    }
     
     if(-f $Dir."/iostat"
     and -s $Dir."/iostat" < 50)
@@ -8624,7 +8698,7 @@ sub scenario()
         
         if(-d $Opt{"FixProbe"})
         {
-            if(not -e $FixProbe_Logs."/hwinfo")
+            if(not listDir($FixProbe_Logs))
             {
                 print STDERR "ERROR: can't find logs in \'".$Opt{"FixProbe"}."\'\n";
                 exit(1);
