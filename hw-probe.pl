@@ -126,6 +126,7 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "check!" => \$Opt{"Check"},
   "check-graphics!" => \$Opt{"CheckGraphics"},
   "check-hdd!" => \$Opt{"CheckHdd"},
+  "limit-check-hdd=s" => \$Opt{"LimitCheckHdd"},
   "check-memory!" => \$Opt{"CheckMemory"},
   "check-cpu!" => \$Opt{"CheckCpu"},
   "id|name=s" => \$Opt{"PC_Name"},
@@ -326,6 +327,9 @@ my %UsedNetworkDev = ();
 
 my $MIN_BAT_CAPACITY = 30;
 
+my @G_DRIVERS_INTEL = ("i915", "i915_bpo", "gma500_gfx");
+my @G_DRIVERS = ("nvidia", "nouveau", "radeon", "amdgpu", "fglrx", @G_DRIVERS_INTEL);
+
 my %DriverVendor = (
     "i915"    => "8086",
     "nouveau" => "10de",
@@ -334,6 +338,10 @@ my %DriverVendor = (
     "amdgpu"  => "1002",
     "fglrx"   => "1002"
 );
+
+foreach (@G_DRIVERS_INTEL) {
+    $DriverVendor{$_} = "8086";
+}
 
 my $PCI_DISK_BUS = "nvme";
 
@@ -2680,7 +2688,7 @@ sub probeHW()
         
         my $ID = devID($V, $D, @ID);
         
-        if($V and $D) {
+        if($V and $D and @ID) {
             $LongID{devID($V, $D)}{$ID} = 1;
         }
     }
@@ -2785,15 +2793,9 @@ sub probeHW()
             delete($Device{"Module"});
         }
         
-        if(my $Dr = $Device{"Driver"})
-        {
-            $Dr=~s/\-/_/g;
-            if(not defined $HW{"pci:".$ID}{"Driver"}) {
-                $HW{"pci:".$ID}{"Driver"} = $Dr;
-            }
-        }
+        my $NewDevice = (not defined $HW{"pci:".$ID});
         
-        if(not $HW{"pci:".$ID}{"Type"})
+        if(not $NewDevice and not $HW{"pci:".$ID}{"Type"})
         {
             $Device{"Type"} = getDefaultType("pci", \%Device);
             
@@ -2828,10 +2830,9 @@ sub probeHW()
         {
             if(my $Val = $Device{$_})
             {
-                if($_ eq "Driver") {
-                    next;
+                if($NewDevice or $_ ne "Driver") {
+                    $HW{"pci:".$ID}{$_} = $Val;
                 }
-                $HW{"pci:".$ID}{$_} = $Val;
             }
         }
     }
@@ -3133,33 +3134,60 @@ sub probeHW()
             $Drivers{$Dr} = $Num++
         }
         
-        if(defined $Drivers{"nouveau"})
-        {
-            if(not defined $WorkMod{"nouveau"}) {
-                delete($Drivers{"nouveau"});
-            }
-            
-            if(defined $WorkMod{"nvidia"})
+        if(keys(%WorkMod))
+        { # lsmod is collected
+            if(defined $Drivers{"nouveau"})
             {
-                delete($Drivers{"nouveau"});
-                $Drivers{"nvidia"} = 1;
-            }
-        }
-        
-        foreach my $Dr ("nvidia", "radeon", "amdgpu", "fglrx", "i915")
-        {
-            if(defined $Drivers{$Dr})
-            {
-                if(not defined $WorkMod{$Dr}) {
-                    delete($Drivers{$Dr});
+                if(defined $WorkMod{"nvidia"})
+                {
+                    delete($Drivers{"nouveau"});
+                    $Drivers{"nvidia"} = 1;
                 }
             }
-        }
-        
-        if($Driver ne "wl" and defined $Drivers{"wl"})
-        {
-            if(not defined $WorkMod{"wl"}) {
-                delete($Drivers{"wl"});
+            
+            if(defined $Drivers{"nvidia"} and defined $WorkMod{"nvidia"})
+            {
+                foreach ("nvidiafb", "nvidia_drm")
+                {
+                    if(defined $Drivers{$_}) {
+                        delete($Drivers{$_});
+                    }
+                }
+            }
+            
+            if(defined $Drivers{"radeon"})
+            {
+                if(defined $Drivers{"amdgpu"} and defined $WorkMod{"amdgpu"}) {
+                    delete($Drivers{"radeon"});
+                }
+            }
+            
+            foreach my $Dr (@G_DRIVERS)
+            {
+                if(defined $Drivers{$Dr})
+                {
+                    if(not defined $WorkMod{$Dr}) {
+                        delete($Drivers{$Dr});
+                    }
+                }
+            }
+            
+            foreach my $Dr (sort keys(%Drivers))
+            {
+                my $CheckDr = undef;
+                if($Dr=~/\Anvidia/)
+                { # nvidia346, nvidia_375, etc.
+                    if(not defined $WorkMod{"nvidia"}) {
+                        delete($Drivers{$Dr});
+                    }
+                }
+            }
+            
+            if($Driver ne "wl" and defined $Drivers{"wl"})
+            {
+                if(not defined $WorkMod{"wl"}) {
+                    delete($Drivers{"wl"});
+                }
             }
         }
         
@@ -4609,17 +4637,27 @@ sub probeHW()
         }
     }
     
-    my @GDr = ("nvidia", "nouveau", "i915", "radeon", "amdgpu", "fglrx");
-    
     if($XLog)
     {
-        foreach my $D (@GDr)
+        my $Nomodeset = (index($XLog, " nomodeset")!=-1);
+        my $ForceVESA = (index($XLog, "xdriver=vesa")!=-1);
+        
+        foreach my $D (@G_DRIVERS)
         {
+            if($Nomodeset or index($XLog, "$D.modeset=0")!=-1)
+            {
+                if($ForceVESA or isIntelDriver($D))
+                { # can't check
+                    setCardStatus($D, "detected");
+                    next;
+                }
+            }
+            
             if(defined $WorkMod{$D})
             {
                 my @Loaded = ();
                 
-                if($D eq "i915")
+                if(isIntelDriver($D))
                 {
                     foreach my $Dr ("intel", "modesetting")
                     {
@@ -4639,7 +4677,7 @@ sub probeHW()
                 {
                     my @Unloaded = ();
                     
-                    if($D eq "i915")
+                    if(isIntelDriver($D))
                     {
                         foreach my $Dr (@Loaded)
                         {
@@ -4655,9 +4693,9 @@ sub probeHW()
                         }
                     }
                     
-                    if($D eq "i915" and defined $GraphicsCards{"1002"}
+                    if(isIntelDriver($D) and defined $GraphicsCards{"1002"}
                     and defined $WorkMod{"fglrx"})
-                    { # fglrx by intel
+                    { # fglrx by intel, intel is unloaded
                         setCardStatus($D, "works");
                         next;
                     }
@@ -4678,7 +4716,7 @@ sub probeHW()
     }
     else
     { # No info
-        foreach my $D (@GDr)
+        foreach my $D (@G_DRIVERS)
         {
             if(defined $WorkMod{$D}) {
                 setCardStatus($D, "works");
@@ -4779,6 +4817,10 @@ sub probeHW()
     }
     
     print "Ok\n";
+}
+
+sub isIntelDriver($) {
+    return grep {$_[0] eq $_} @G_DRIVERS_INTEL;
 }
 
 sub setAttachedStatus($$)
@@ -7624,7 +7666,7 @@ sub checkGraphics()
     
     my $Out_D = undef;
     
-    if(defined $WorkMod{"i915"})
+    if(grep {defined $WorkMod{$_}} @G_DRIVERS_INTEL)
     {
         if(defined $WorkMod{"nvidia"})
         { # check NVidia Optimus with proprietary driver
@@ -7670,7 +7712,7 @@ sub checkGraphicsCardOutput($$)
     
     my $Success = "frames in";
     
-    if(defined $WorkMod{"i915"})
+    if(grep {defined $WorkMod{$_}} @G_DRIVERS_INTEL)
     {
         if(defined $WorkMod{"nvidia"})
         {
@@ -7691,8 +7733,11 @@ sub checkGraphicsCardOutput($$)
             }
         }
         
-        if($Int=~/$Success/ and $Int=~/GL_VENDOR.+Intel/i) {
-            setCardStatus("i915", "works");
+        if($Int=~/$Success/ and $Int=~/GL_VENDOR.+Intel/i)
+        {
+            foreach (@G_DRIVERS_INTEL) {
+                setCardStatus($_, "works");
+            }
         }
     }
     elsif(defined $WorkMod{"nouveau"} or defined $WorkMod{"nvidia"})
@@ -7719,7 +7764,7 @@ sub setCardStatus($$)
     {
         foreach my $ID (sort keys(%{$GraphicsCards{$V}}))
         {
-            if($GraphicsCards{$V}{$ID} eq $Dr)
+            if($GraphicsCards{$V}{$ID} eq $Dr or $Status eq "detected")
             {
                 $HW{$ID}{"Status"} = $Status;
                 
@@ -7771,8 +7816,10 @@ sub checkHW()
             $HDD_Read .= $HDD_Info->{"Vendor"}." ".$HDD_Info->{"Device"}."\n";
             $HDD_Read .= "$Cmd\n";
             $HDD_Read .= $Out."\n";
-            if($HDD_Num++>=4)
-            { # 4 first drives max
+            
+            if(defined $Opt{"LimitCheckHdd"}
+            and $HDD_Num++>=$Opt{"LimitCheckHdd"})
+            {
                 last;
             }
         }
