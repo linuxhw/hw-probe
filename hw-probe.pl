@@ -1702,6 +1702,11 @@ sub probeHW()
         }
     }
     
+    if($Sys{"System"}=~/Gentoo/i)
+    { # Gentoo
+        %WorkMod = ();
+    }
+    
     if(not $Opt{"FixProbe"} and $Opt{"Logs"})
     {
         if(check_Cmd("modinfo"))
@@ -1971,14 +1976,6 @@ sub probeHW()
                     $Dr=~s/\-/_/g;
                     $Device{"ActiveDriver_Common"}{$Dr} = keys(%{$Device{"ActiveDriver_Common"}});
                 }
-            }
-            elsif($Key eq "Driver Modules")
-            {
-                my @Dr = ();
-                while($Val=~s/\"([\w\-]+)\"//) {
-                    push(@Dr, $1);
-                }
-                # $Device{"Driver"} = join(",", @Dr);
             }
             elsif($Key eq "Driver Status")
             {
@@ -3227,7 +3224,7 @@ sub probeHW()
                 $GraphicsCards{$1}{$ID} = $HW{$ID}{"Driver"};
             }
         }
-        elsif(grep { $HW{$ID}{"Type"} eq $_ } ("network", "modem", "sound", "storage"))
+        elsif(grep { $HW{$ID}{"Type"} eq $_ } ("network", "modem", "sound", "storage", "camera"))
         {
             if(not $HW{$ID}{"Driver"}) {
                 $HW{$ID}{"Status"} = "failed";
@@ -3244,6 +3241,11 @@ sub probeHW()
         foreach my $ID (sort keys(%{$GraphicsCards{$V}}))
         {
             if(index($HW{$ID}{"Device"}, "Secondary")!=-1) {
+                next;
+            }
+            
+            if($HW{$ID}{"Class"} eq "03-80"
+            and keys(%{$GraphicsCards{$V}})>=2) {
                 next;
             }
             
@@ -4600,10 +4602,16 @@ sub probeHW()
         }
     }
     
-    if(not $Opt{"FixProbe"} and $HWLogs)
+    my $Dmesg = "";
+    
+    if($Opt{"FixProbe"})
+    {
+        $Dmesg = readFile($FixProbe_Logs."/dmesg");
+    }
+    elsif($HWLogs)
     {
         listProbe("logs", "dmesg");
-        my $Dmesg = runCmd("dmesg 2>&1");
+        $Dmesg = runCmd("dmesg 2>&1");
         $Dmesg = hideTags($Dmesg, "SerialNumber");
         $Dmesg = hideMACs($Dmesg);
         writeLog($LOG_DIR."/dmesg", $Dmesg);
@@ -4637,14 +4645,21 @@ sub probeHW()
         }
     }
     
+    my $CmdLine = "";
+    my ($Nomodeset, $ForceVESA) = (undef, undef);
+    
     if($XLog)
     {
-        my $Nomodeset = (index($XLog, " nomodeset")!=-1);
-        my $ForceVESA = (index($XLog, "xdriver=vesa")!=-1);
+        if($XLog=~/Kernel command line:(.*)/) {
+            $CmdLine = $1;
+        }
+        
+        $Nomodeset = (index($CmdLine, " nomodeset")!=-1);
+        $ForceVESA = (index($CmdLine, "xdriver=vesa")!=-1);
         
         foreach my $D (@G_DRIVERS)
         {
-            if($Nomodeset or index($XLog, "$D.modeset=0")!=-1)
+            if($Nomodeset or index($CmdLine, "$D.modeset=0")!=-1)
             {
                 if($ForceVESA or isIntelDriver($D))
                 { # can't check
@@ -4653,7 +4668,7 @@ sub probeHW()
                 }
             }
             
-            if(defined $WorkMod{$D})
+            if(keys(%WorkMod) and defined $WorkMod{$D})
             {
                 my @Loaded = ();
                 
@@ -4712,12 +4727,45 @@ sub probeHW()
                     setCardStatus($D, "works");
                 }
             }
+            else
+            { # no lsmod info
+                my $DrLabel = uc($D);
+                if(isIntelDriver($D)) {
+                    $DrLabel = "intel";
+                }
+                
+                if(index($XLog, ") ".$DrLabel."(")!=-1)
+                { # (II) RADEON(0)
+                  # (II) NOUVEAU(0)
+                  # (II) intel(0)
+                    setCardStatus($D, "works");
+                }
+            }
         }
     }
     else
-    { # No info
+    { # No Xorg log
+        if($Dmesg)
+        {
+            if($Dmesg=~/Command line:(.*)/) {
+                $CmdLine = $1;
+            }
+            
+            $Nomodeset = (index($CmdLine, " nomodeset")!=-1);
+            $ForceVESA = (index($CmdLine, "xdriver=vesa")!=-1);
+        }
+        
         foreach my $D (@G_DRIVERS)
         {
+            if($Nomodeset or index($CmdLine, "$D.modeset=0")!=-1)
+            {
+                if($ForceVESA or isIntelDriver($D))
+                { # can't check
+                    setCardStatus($D, "detected");
+                    next;
+                }
+            }
+            
             if(defined $WorkMod{$D}) {
                 setCardStatus($D, "works");
             }
