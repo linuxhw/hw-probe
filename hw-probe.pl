@@ -44,6 +44,7 @@
 #  vainfo
 #  inxi
 #  i2c-tools
+#  opensc
 #
 # SUGGESTS
 # ========
@@ -152,6 +153,7 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "get-inventory-id|get-group!" => \$Opt{"GetGroup"},
 # Private
   "docker!" => \$Opt{"Docker"},
+  "appimage!" => \$Opt{"AppImage"},
   "low-compress!" => \$Opt{"LowCompress"},
   "high-compress!" => \$Opt{"HighCompress"},
   "identify-drive=s" => \$Opt{"IdentifyDrive"},
@@ -774,7 +776,7 @@ my @WrongAddr = (
     "E5A433E40C7D5C05E1F82A0C86983656"
 );
 
-my @ProtectedLogs = ("hwinfo", "biosdecode", "acpidump", "acpidump_decoded", "dmidecode", "smartctl", "smartctl_megaraid", "lspci", "lspci_all", "lsusb", "usb-devices", "ifconfig", "ip_addr", "hciconfig", "mmcli", "xrandr", "edid", "os-release", "lsb_release", "system-release");
+my @ProtectedLogs = ("hwinfo", "biosdecode", "acpidump", "acpidump_decoded", "dmidecode", "smartctl", "smartctl_megaraid", "lspci", "lspci_all", "lsusb", "usb-devices", "ifconfig", "ip_addr", "hciconfig", "mmcli", "xrandr", "edid", "os-release", "lsb_release", "system-release", "opensc-tool");
 
 my $USE_DIGEST = 0;
 my $USE_DUMPER = 0;
@@ -983,6 +985,10 @@ sub uploadData()
         
         if($Opt{"Docker"}) {
             @Cmd = (@Cmd, "-F docker=1");
+        }
+        
+        if($Opt{"AppImage"}) {
+            @Cmd = (@Cmd, "-F appimage=1");
         }
         
         if($Opt{"PC_Name"}) {
@@ -3224,7 +3230,7 @@ sub probeHW()
                 $GraphicsCards{$1}{$ID} = $HW{$ID}{"Driver"};
             }
         }
-        elsif(grep { $HW{$ID}{"Type"} eq $_ } ("network", "modem", "sound", "storage", "camera"))
+        elsif(grep { $HW{$ID}{"Type"} eq $_ } ("network", "modem", "sound", "storage", "camera", "chipcard", "fingerprint reader", "card reader", "dvb card", "tv card"))
         {
             if(not $HW{$ID}{"Driver"}) {
                 $HW{$ID}{"Status"} = "failed";
@@ -4671,20 +4677,20 @@ sub probeHW()
             if(keys(%WorkMod) and defined $WorkMod{$D})
             {
                 my @Loaded = ();
+                my @Drs = ($D);
                 
-                if(isIntelDriver($D))
-                {
-                    foreach my $Dr ("intel", "modesetting")
-                    {
-                        if(index($XLog, "LoadModule: \"$Dr\"")!=-1) {
-                            push(@Loaded, $Dr);
-                        }
-                    }
+                if(isIntelDriver($D)) {
+                    @Drs = ("intel", "modesetting");
                 }
-                else
+                elsif($D eq "nouveau")
+                { # Manjaro 17
+                    @Drs = ("nouveau", "nvidia");
+                }
+                
+                foreach my $Dr (@Drs)
                 {
-                    if(index($XLog, "LoadModule: \"$D\"")!=-1) {
-                        @Loaded = ($D);
+                    if(index($XLog, "LoadModule: \"$Dr\"")!=-1) {
+                        push(@Loaded, $Dr);
                     }
                 }
                 
@@ -4692,19 +4698,10 @@ sub probeHW()
                 {
                     my @Unloaded = ();
                     
-                    if(isIntelDriver($D))
+                    foreach my $Dr (@Loaded)
                     {
-                        foreach my $Dr (@Loaded)
-                        {
-                            if(index($XLog, "UnloadModule: \"$Dr\"")!=-1) {
-                                push(@Unloaded, $Dr);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if(index($XLog, "UnloadModule: \"$D\"")!=-1) {
-                            @Unloaded = ($D);
+                        if(index($XLog, "UnloadModule: \"$Dr\"")!=-1) {
+                            push(@Unloaded, $Dr);
                         }
                     }
                     
@@ -4783,7 +4780,7 @@ sub probeHW()
         if(check_Cmd("hciconfig"))
         {
             listProbe("logs", "hciconfig");
-            my $HciConfig = runCmd("hciconfig -a 2>&1");
+            $HciConfig = runCmd("hciconfig -a 2>&1");
             $HciConfig = hideMACs($HciConfig);
             if($HciConfig) {
                 writeLog($LOG_DIR."/hciconfig", $HciConfig);
@@ -4802,8 +4799,11 @@ sub probeHW()
                     my $F = $1;
                     foreach my $ID (sort grep {defined $HW{$_}{"Type"} and $HW{$_}{"Type"} eq "bluetooth"} keys(%HW))
                     { # TODO: identify particular bt devices by lsusb
-                        $HW{$ID}{"Status"} = "works";
-                        setAttachedStatus($ID, "works");
+                        if($HW{$ID}{"Driver"})
+                        {
+                            $HW{$ID}{"Status"} = "works";
+                            setAttachedStatus($ID, "works");
+                        }
                     }
                 }
             }
@@ -4854,7 +4854,43 @@ sub probeHW()
             {
                 if(my $ID = "usb:".lc($1."-".$2))
                 {
-                    if(defined $HW{$ID})
+                    if(defined $HW{$ID} and $HW{$ID}{"Driver"})
+                    {
+                        $HW{$ID}{"Status"} = "works";
+                        setAttachedStatus($ID, "works");
+                    }
+                }
+            }
+        }
+    }
+    
+    my $OpenscTool = "";
+    
+    if($Opt{"FixProbe"})
+    {
+        $OpenscTool = readFile($FixProbe_Logs."/opensc-tool");
+    }
+    else
+    {
+        if(check_Cmd("opensc-tool"))
+        {
+            listProbe("logs", "opensc-tool");
+            $OpenscTool = runCmd("opensc-tool --list-readers");
+            if($OpenscTool and $OpenscTool!~/No smart card readers/) {
+                writeLog($LOG_DIR."/opensc-tool", $OpenscTool);
+            }
+        }
+    }
+    
+    if($OpenscTool)
+    {
+        foreach my $SCReader (split(/\n\n/, $OpenscTool))
+        {
+            if(index($SCReader, "Driver")!=-1)
+            {
+                foreach my $ID (sort grep {defined $HW{$_}{"Type"} and $HW{$_}{"Type"} eq "chipcard"} keys(%HW))
+                { # TODO: match particular chipcard devices by name
+                    if($HW{$ID}{"Driver"})
                     {
                         $HW{$ID}{"Status"} = "works";
                         setAttachedStatus($ID, "works");

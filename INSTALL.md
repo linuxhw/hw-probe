@@ -10,14 +10,16 @@ See more info in the [README.md](https://github.com/linuxhw/hw-probe/).
 Contents
 --------
 
-1. [ Requirements for Linux  ](#requirements-for-linux)
-2. [ Install from Source     ](#install-from-source)
-3. [ Install on Ubuntu       ](#install-on-ubuntu)
-4. [ Install on Debian       ](#install-on-debian)
-5. [ Install on Debian (Easy)](#install-on-debian-easy)
-6. [ Install on CentOS 7     ](#install-on-centos-7)
-7. [ Install on CentOS 6     ](#install-on-centos-6)
-8. [ Build Debian package    ](#build-debian-package)
+1.  [ Requirements for Linux  ](#requirements-for-linux)
+2.  [ Install from Source     ](#install-from-source)
+3.  [ Install on Ubuntu       ](#install-on-ubuntu)
+4.  [ Install on Debian       ](#install-on-debian)
+5.  [ Install on Debian (Easy)](#install-on-debian-easy)
+6.  [ Install on openSUSE     ](#install-on-opensuse)
+7.  [ Install on Arch Linux   ](#install-on-arch-linux)
+8.  [ Install on CentOS 7     ](#install-on-centos-7)
+9.  [ Install on CentOS 6     ](#install-on-centos-6)
+10. [ Build Debian package    ](#build-debian-package)
 
 
 Requirements for Linux
@@ -51,6 +53,7 @@ Requirements for Linux
 * vainfo
 * inxi
 * i2c-tools
+* opensc
 
 ###### Suggests
 
@@ -111,6 +114,23 @@ Make a probe:
 
     su
     curl -s https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | perl - -all -upload
+
+
+Install on openSUSE
+-------------------
+
+Setup an OBS repository and install the package:
+
+    sudo zypper addrepo -G -f obs://home:linuxbuild/openSUSE_Factory hw-probe
+    sudo zypper install hw-probe
+
+
+Install on Arch Linux
+---------------------
+
+    git clone https://aur.archlinux.org/hw-probe.git
+    cd hw-probe
+    makepkg -sri
 
 
 Install on CentOS 7
