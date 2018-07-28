@@ -9,13 +9,14 @@ Contents
 1.  [ About        ](#about)
 2.  [ Install      ](#install)
 3.  [ Usage        ](#usage)
-4.  [ Docker       ](#docker)
-5.  [ Live ISO     ](#live-iso)
-6.  [ Inventory    ](#inventory)
-7.  [ Offline view ](#offline-view)
-8.  [ ACPI dump    ](#acpi-dump)
-9.  [ Operability  ](#operability)
-10. [ Privacy      ](#privacy)
+4.  [ AppImage     ](#appimage)
+5.  [ Docker       ](#docker)
+6.  [ Live ISO     ](#live-iso)
+7.  [ Inventory    ](#inventory)
+8.  [ Offline view ](#offline-view)
+9.  [ ACPI dump    ](#acpi-dump)
+10. [ Operability  ](#operability)
+11. [ Privacy      ](#privacy)
 
 
 About
@@ -27,7 +28,7 @@ Sample probe: https://linux-hardware.org/?probe=b394035f90
 
 Share your probes and logs with Linux developers in order to debug and fix problems on your computer. Simplify inventory of hardware in your company.
 
-You can make a probe with the help of a script, Docker image or Linux ISO (see below).
+You can make a probe of your computer with the help of [AppImage](#appimage), [Docker image](#docker), [Live ISO](#live-iso) or RPM/DEB package.
 
 By creating probes you contribute to the "HDD/SSD Real-Life Reliability Test" study: https://github.com/linuxhw/SMART
 
@@ -35,45 +36,9 @@ By creating probes you contribute to the "HDD/SSD Real-Life Reliability Test" st
 Install
 -------
 
-From source:
+You can probe your computer by [AppImage](#appimage), [Docker image](#docker) or [Live ISO](#live-iso).
 
-    sudo make install prefix=/usr
-
-If you don't want to install anything to your system, then you can probe your computer by Docker image or Live ISO (see below).
-
-See more install instructions in the [INSTALL.md](https://github.com/linuxhw/hw-probe/blob/master/INSTALL.md) file.
-
-###### Install on Ubuntu
-
-On Ubuntu-based Linux distributions (Ubuntu, Linux Mint, Elementary OS, etc.) you can install a PPA package:
-
-    sudo add-apt-repository universe
-    sudo add-apt-repository ppa:mikhailnov/hw-probe
-    sudo apt update
-    sudo apt install hw-probe --no-install-recommends
-
-###### Requires
-
-* Perl 5
-* perl-Digest-SHA
-* perl-Data-Dumper
-* hwinfo (https://github.com/openSUSE/hwinfo or https://pkgs.org/download/hwinfo)
-* curl
-* dmidecode
-* smartmontools
-* pciutils
-* usbutils
-* edid-decode
-
-###### Recommends
-
-* mcelog
-* hdparm
-* systemd-tools
-* acpica-tools
-* mesa-demos
-* memtester
-* ... (see [INSTALL.md](https://github.com/linuxhw/hw-probe/blob/master/INSTALL.md))
+Also you can install native RPM/DEB package for your Linux distribution or install from source. See all install instructions in the [INSTALL.md](https://github.com/linuxhw/hw-probe/blob/master/INSTALL.md) file.
 
 
 Usage
@@ -85,6 +50,29 @@ Make a probe:
 
 DESC — any description of the probe.
 
+
+AppImage
+--------
+
+The portable app that runs anywhere, no need to install anything. Just download [hw-probe-1.4-97-x86_64.AppImage](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe-1.4-97-x86_64.AppImage) and run to probe your computer:
+
+    chmod +x ./hw-probe-1.4-97-x86_64.AppImage
+    sudo ./hw-probe-1.4-97-x86_64.AppImage -all -upload
+
+###### Supported systems
+
+The app runs on all Linux distributions with `Glibc >= 2.14` including:
+
+* Ubuntu 12.04 and later
+* Linux Mint 13 and later
+* Debian 8 and later
+* openSUSE 12.0 and later
+* Manjaro 0.8 and later
+* ROSA Linux R1 and later
+* Fedora 15 and later (need to add `fuse-libs` package to host on Fedora 15, 16 and 17)
+* CentOS 7 and later
+* Alt Linux 7 and later
+* Gentoo 12 and later
 
 Docker
 ------

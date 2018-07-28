@@ -48,6 +48,7 @@
 #
 # SUGGESTS
 # ========
+#  perl-libwww-perl (to use instead of curl)
 #  hplip (hp-probe)
 #  sane-backends (sane-find-scanner)
 #  pnputils (lspnp)
@@ -952,7 +953,8 @@ sub getOldProbeDir()
 
 sub getGroup()
 {
-    my $CurlCmd = "curl -s -S -f -POST -F get=group -H \"Expect:\" --http1.0 $URL/get_group.php";
+    my $GroupURL = $URL."/get_group.php";
+    my $CurlCmd = "curl -s -S -f -POST -F get=group -H \"Expect:\" --http1.0 $GroupURL";
     my $Log = qx/$CurlCmd 2>&1/;
     print $Log;
     if($?)
@@ -962,100 +964,172 @@ sub getGroup()
         exit(1);
     }
     
-    if($Log=~/Group ID: (\w+)/)
+    if($Log=~/(Group|Inventory) ID: (\w+)/)
     {
-        my $ID = $1;
+        my $ID = $2;
         my $GroupLog = "INVENTORY\n=====\n".localtime(time)."\nInventory ID: $ID\n";
         appendFile($PROBE_LOG, $GroupLog."\n");
     }
+}
+
+sub sendFile($$$)
+{
+    my ($UploadURL, $Data, $SSL) = @_;
+    
+    require LWP::UserAgent;
+    
+    my $UAgent = LWP::UserAgent->new(parse_head => 0);
+    
+    if($SSL eq "NoSSL" or not checkModule("Mozilla/CA.pm"))
+    {
+        $UploadURL=~s/\Ahttps:/http:/g;
+        $UAgent->ssl_opts(verify_hostname => 0, SSL_verify_mode => 0x00);
+    }
+    
+    my $Res = $UAgent->post(
+        $UploadURL,
+        Content_Type => "form-data",
+        Content => $Data
+    );
+    
+    my $Out = $Res->{"_content"};
+    
+    if(not $Out) {
+        return $Res->{"_headers"}{"x-died"};
+    }
+    
+    return $Out;
 }
 
 sub uploadData()
 {
     my ($Pkg, $HWaddr) = createPackage();
     
-    if($Pkg)
+    if(not $Pkg) {
+        return;
+    }
+    
+    my $UploadURL = $URL."/upload_result.php";
+    my $Salt = getSha512L($SALT_CLIENT, 10);
+    
+    # upload package
+    my @Cmd = ("curl", "-s", "-S", "-f", "-POST");
+    my %Data = ();
+    
+    @Cmd = (@Cmd, "-F file=\@".$Pkg);
+    $Data{"file"} = [$Pkg];
+    
+    @Cmd = (@Cmd, "-F hwaddr=$HWaddr");
+    $Data{"hwaddr"} = $HWaddr;
+    
+    if($Opt{"Debug"})
     {
-        # upload package
-        my @Cmd = ("curl", "-s", "-S", "-f", "-POST", "-F file=\@".$Pkg."", "-F hwaddr=$HWaddr");
-        
-        if($Opt{"Debug"}) {
-            @Cmd = (@Cmd, "-F debug=1");
+        @Cmd = (@Cmd, "-F debug=1");
+        $Data{"debug"} = "1";
+    }
+    
+    if($Opt{"Docker"})
+    {
+        @Cmd = (@Cmd, "-F docker=1");
+        $Data{"docker"} = "1";
+    }
+    
+    if($Opt{"AppImage"})
+    {
+        @Cmd = (@Cmd, "-F appimage=1");
+        $Data{"appimage"} = "1";
+    }
+    
+    if($Opt{"PC_Name"})
+    {
+        @Cmd = (@Cmd, "-F id=\'".$Opt{"PC_Name"}."\'");
+        $Data{"id"} = $Opt{"PC_Name"};
+    }
+    
+    if($Opt{"Group"})
+    {
+        @Cmd = (@Cmd, "-F group=\'".$Opt{"Group"}."\'");
+        $Data{"group"} = $Opt{"Group"};
+    }
+    
+    @Cmd = (@Cmd, "-F tool_ver=\'$TOOL_VERSION\'");
+    $Data{"tool_ver"} = $TOOL_VERSION;
+    
+    @Cmd = (@Cmd, "-F salt=\'$Salt\'");
+    $Data{"salt"} = $Salt;
+    
+    # fix curl error 22: "The requested URL returned error: 417 Expectation Failed"
+    @Cmd = (@Cmd, "-H", "Expect:");
+    @Cmd = (@Cmd, "--http1.0");
+    
+    @Cmd = (@Cmd, $UploadURL);
+    
+    my $CurlCmd = join(" ", @Cmd);
+    my $Log = qx/$CurlCmd 2>&1/;
+    my $Err = $?;
+    
+    if($Err)
+    {
+        if(my $WWWLog = sendFile($UploadURL, \%Data, "NoSSL"))
+        {
+            if(index($WWWLog, "probe=")==-1)
+            {
+                print STDERR $WWWLog."\n";
+                print STDERR "ERROR: failed to upload data\n";
+                if(index($WWWLog, "Can't locate HTML/HeadParser.pm")!=-1) {
+                    print STDERR "ERROR: please add 'libhtml-parser-perl' or 'perl-HTML-Parser' package to your system\n";
+                }
+                exit(1);
+            }
+            
+            $Log = $WWWLog;
         }
-        
-        if($Opt{"Docker"}) {
-            @Cmd = (@Cmd, "-F docker=1");
-        }
-        
-        if($Opt{"AppImage"}) {
-            @Cmd = (@Cmd, "-F appimage=1");
-        }
-        
-        if($Opt{"PC_Name"}) {
-            @Cmd = (@Cmd, "-F id=\'".$Opt{"PC_Name"}."\'");
-        }
-        
-        if($Opt{"Group"}) {
-            @Cmd = (@Cmd, "-F group=\'".$Opt{"Group"}."\'");
-        }
-        
-        @Cmd = (@Cmd, "-F tool_ver=\'$TOOL_VERSION\'");
-        @Cmd = (@Cmd, "-F salt=\'".getSha512L($SALT_CLIENT, 10)."\'");
-        
-        # fix curl error 22: "The requested URL returned error: 417 Expectation Failed"
-        @Cmd = (@Cmd, "-H", "Expect:");
-        @Cmd = (@Cmd, "--http1.0");
-        
-        @Cmd = (@Cmd, $URL."/upload_result.php");
-        
-        my $CurlCmd = join(" ", @Cmd);
-        my $Log = qx/$CurlCmd 2>&1/;
-        my $Err = $?;
-        
-        my ($ID, $Token) = ();
-        if($Log=~/probe\=(\w+)/) {
-            $ID = $1;
-        }
-        if($Log=~/token\=(\w+)/) {
-            $Token = $1;
-        }
-        
-        $Log=~s/\s*Private access:\s*http.+?token\=(\w+)\s*/\n/;
-        print $Log;
-        if($Err)
+        else
         {
             my $ECode = $Err>>8;
+            print STDERR $Log."\n";
             print STDERR "ERROR: failed to upload data, curl error code \"".$ECode."\"\n";
             exit(1);
         }
+    }
+    
+    $Log=~s/\s*Private access:\s*http.+?token\=(\w+)\s*/\n/;
+    print $Log;
+    
+    my ($ID, $Token) = ();
+    if($Log=~/probe\=(\w+)/) {
+        $ID = $1;
+    }
+    if($Log=~/token\=(\w+)/) {
+        $Token = $1;
+    }
+    
+    # save uploaded probe and its ID
+    if($ID)
+    {
+        my $NewProbe = $PROBE_DIR."/".$ID;
         
-        # save uploaded probe and its ID
-        if($ID)
+        if(-d $NewProbe)
         {
-            my $NewProbe = $PROBE_DIR."/".$ID;
-            
-            if(-d $NewProbe)
-            {
-                print STDERR "ERROR: the probe with ID \'$ID\' already exists, overwriting ...\n";
-                unlink($NewProbe."/hw.info.txz");
-            }
-            else {
-                mkpath($NewProbe);
-            }
-            
-            move($Pkg, $NewProbe);
-            
-            my $Time = time;
-            my $ProbeUrl = "$URL/?probe=$ID";
-            my $ProbeLog = "PROBE\n=====\nDate: ".localtime($Time)." ($Time)\n";
-            
-            $ProbeLog .= "Probe URL: $ProbeUrl\n";
-            if($Token) {
-                $ProbeLog .= "Private access: $ProbeUrl&token=$Token\n";
-            }
-            
-            appendFile($PROBE_LOG, $ProbeLog."\n");
+            print STDERR "ERROR: the probe with ID \'$ID\' already exists, overwriting ...\n";
+            unlink($NewProbe."/hw.info.txz");
         }
+        else {
+            mkpath($NewProbe);
+        }
+        
+        move($Pkg, $NewProbe);
+        
+        my $Time = time;
+        my $ProbeUrl = "$URL/?probe=$ID";
+        my $ProbeLog = "PROBE\n=====\nDate: ".localtime($Time)." ($Time)\n";
+        
+        $ProbeLog .= "Probe URL: $ProbeUrl\n";
+        if($Token) {
+            $ProbeLog .= "Private access: $ProbeUrl&token=$Token\n";
+        }
+        
+        appendFile($PROBE_LOG, $ProbeLog."\n");
     }
 }
 
@@ -1186,7 +1260,12 @@ sub createPackage()
         }
         else
         {
-            print STDERR "ERROR: \'".$DATA_DIR."\' directory is not found, please make probe first\n";
+            if($Admin) {
+                print STDERR "ERROR: can't access \'".$DATA_DIR."\', please make probe first\n";
+            }
+            else {
+                print STDERR "ERROR: can't access \'".$DATA_DIR."\', please run as root\n";
+            }
             exit(1);
         }
     }
@@ -4025,10 +4104,6 @@ sub probeHW()
             }
         }
         
-        if($Edid=~/EDID block does not conform at all/i) {
-            $Edid = "";
-        }
-        
         if($HWLogs and $Edid) {
             writeLog($LOG_DIR."/edid", $Edid);
         }
@@ -6652,7 +6727,7 @@ sub writeLogs()
         $Glxinfo = clearLog_X11($Glxinfo);
         
         if(not clearLog_X11($Glxinfo)) {
-            print STDERR "WARNING: X11-related logs are not collected (try to run 'xhost +local:' to enable access)\n";
+            print STDERR "WARNING: X11-related logs are not collected (try to run 'xhost +local:' to enable access or run as root by su)\n";
         }
         
         writeLog($LOG_DIR."/glxinfo", $Glxinfo);
@@ -6693,8 +6768,8 @@ sub writeLogs()
         my $Uptime = runCmd("uptime");
         writeLog($LOG_DIR."/uptime", $Uptime);
         
-        if(check_Cmd("cpupower"))
-        {
+        if(not $Opt{"AppImage"} and check_Cmd("cpupower"))
+        { # TODO: Why doesn't work in AppImage?
             listProbe("logs", "cpupower");
             my $CPUpower = "";
             $CPUpower .= "frequency-info\n--------------\n";
@@ -6770,7 +6845,7 @@ sub writeLogs()
         if(check_Cmd("pacman"))
         { # Arch
             listProbe("logs", "pkglist");
-            my $Pkglist = runCmd("pacman -Qqe");
+            my $Pkglist = runCmd("pacman -Q 2>/dev/null");
             
             if($Pkglist) {
                 writeLog($LOG_DIR."/pkglist", $Pkglist);
@@ -7740,7 +7815,7 @@ sub alignStr($$)
 sub checkGraphics()
 {
     print "Check graphics ... ";
-    my $Glxgears = getGears("glxgears", "glxgears");
+    my $Glxgears = getGears();
     
     listProbe("tests", "glxgears");
     my $Out_I = runCmd("vblank_mode=0 $Glxgears");
@@ -7864,15 +7939,8 @@ sub checkHW()
 { # TODO: test operability, set status to "works", "malfunc" or "failed"
     if($Opt{"CheckGraphics"} and check_Cmd("glxgears"))
     {
-        if(defined $ENV{"WAYLAND_DISPLAY"} or $ENV{"XDG_SESSION_TYPE"} eq "wayland") {
+        if(defined $ENV{"WAYLAND_DISPLAY"} or $ENV{"XDG_SESSION_TYPE"} eq "wayland" or defined $ENV{"DISPLAY"}) {
             checkGraphics();
-        }
-        elsif(defined $ENV{"DISPLAY"})
-        { # X11
-            if(check_Cmd("xwininfo")
-            and check_Cmd("xkill")) {
-                checkGraphics();
-            }
         }
     }
     
@@ -7930,18 +7998,8 @@ sub checkHW()
     }
 }
 
-sub getGears($$)
-{
-    my ($Cmd, $Win) = @_;
-    
-    if(defined $ENV{"WAYLAND_DISPLAY"} or $ENV{"XDG_SESSION_TYPE"} eq "wayland") {
-        return $Cmd." -info 2>/dev/null & sleep 17 ; killall glxgears 2>/dev/null";
-    }
-    elsif(defined $ENV{"DISPLAY"}) { # X11
-        return $Cmd." -info 2>/dev/null & sleep 17 ; xwininfo -name \'$Win\' ; xkill -id \$(xwininfo -name \'$Win\' | grep \"Window id\" | cut -d' ' -f4) >/dev/null";
-    }
-    
-    return undef;
+sub getGears() {
+    return "glxgears -info 2>/dev/null & sleep 17 ; killall glxgears 2>/dev/null";
 }
 
 sub listProbe($$)

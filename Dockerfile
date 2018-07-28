@@ -5,7 +5,7 @@ RUN apk update \
     smartmontools hdparm sysstat util-linux lm_sensors acpi iw wireless-tools \
     alsa-utils xrandr xdpyinfo xinput acpica iasl \
     && apk add --no-cache --virtual build-deps git gcc make libc-dev flex linux-headers \
-    && git clone https://anongit.freedesktop.org/git/xorg/app/edid-decode.git \
+    && git clone https://git.linuxtv.org/cgit.cgi/edid-decode.git \
     && cd edid-decode \
     && make \
     && make install \

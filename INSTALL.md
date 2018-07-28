@@ -10,20 +10,35 @@ See more info in the [README.md](https://github.com/linuxhw/hw-probe/).
 Contents
 --------
 
-1.  [ Requirements for Linux  ](#requirements-for-linux)
-2.  [ Install from Source     ](#install-from-source)
-3.  [ Install on Ubuntu       ](#install-on-ubuntu)
-4.  [ Install on Debian       ](#install-on-debian)
-5.  [ Install on Debian (Easy)](#install-on-debian-easy)
-6.  [ Install on openSUSE     ](#install-on-opensuse)
-7.  [ Install on Arch Linux   ](#install-on-arch-linux)
-8.  [ Install on CentOS 7     ](#install-on-centos-7)
-9.  [ Install on CentOS 6     ](#install-on-centos-6)
-10. [ Build Debian package    ](#build-debian-package)
+1.  [ Run without Installing ](#run-without-installing)
+2.  [ Install from Source    ](#install-from-source)
+3.  [ Install on Ubuntu      ](#install-on-ubuntu)
+4.  [ Install on Debian      ](#install-on-debian)
+5.  [ Install on openSUSE    ](#install-on-opensuse)
+6.  [ Install on Arch Linux  ](#install-on-arch-linux)
+7.  [ Install on CentOS 7    ](#install-on-centos-7)
+8.  [ Install on CentOS 6    ](#install-on-centos-6)
+9.  [ Build Debian package   ](#build-debian-package)
 
 
-Requirements for Linux
+Run without Installing
 ----------------------
+
+You can probe your computer by [AppImage](https://github.com/linuxhw/hw-probe#appimage), [Docker image](https://github.com/linuxhw/hw-probe#docker) or [Live ISO](https://github.com/linuxhw/hw-probe#live-iso).
+
+Install from Source
+-------------------
+
+This command will install the `hw-probe` program in the `PREFIX/bin` system directory:
+
+    sudo make install prefix=PREFIX [/usr, /usr/local, ...]
+
+To uninstall:
+
+    sudo make uninstall prefix=PREFIX
+
+###### Requires
+---------------
 
 * Perl 5
 * perl-Digest-SHA
@@ -62,18 +77,6 @@ Requirements for Linux
 * pnputils (lspnp)
 
 
-Install from Source
--------------------
-
-This command will install the `hw-probe` program in the `PREFIX/bin` system directory:
-
-    sudo make install prefix=PREFIX [/usr, /usr/local, ...]
-
-###### Remove
-
-    sudo make uninstall prefix=PREFIX
-
-
 Install on Ubuntu
 -----------------
 
@@ -90,6 +93,8 @@ On Ubuntu-based Linux distributions (Ubuntu, Linux Mint, Elementary OS, etc.) yo
 Install on Debian
 -----------------
 
+###### Way #1
+
 Setup a PPA repository and install the package:
 
     su
@@ -101,8 +106,7 @@ Setup a PPA repository and install the package:
     apt install hw-probe --no-install-recommends
 
 
-Install on Debian (Easy)
-------------------------
+###### Way #2
 
 Install dependencies:
 
@@ -110,7 +114,7 @@ Install dependencies:
     apt install libdigest-sha-perl curl hwinfo dmidecode pciutils usbutils smartmontools edid-decode \
     util-linux lsb-release lm-sensors mcelog wireless-tools x11-utils
 
-Make a probe:
+And make a probe:
 
     su
     curl -s https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | perl - -all -upload
@@ -128,10 +132,19 @@ Setup an OBS repository and install the package:
 Install on Arch Linux
 ---------------------
 
+On Arch Linux and Arch Linux based Linux distributions (Manjaro, Antergos, etc.):
+
+###### From AUR
+
     git clone https://aur.archlinux.org/hw-probe.git
     cd hw-probe
     makepkg -sri
 
+###### Binary Package
+
+Download package [hw-probe-1.4-1.ArchLinux-any.pkg.tar.xz](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe-1.4-1.ArchLinux-any.pkg.tar.xz) and install it by pacman:
+
+    pacman -U ./hw-probe-1.4-1.ArchLinux-any.pkg.tar.xz
 
 Install on CentOS 7
 -------------------
