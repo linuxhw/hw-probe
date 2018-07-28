@@ -22,7 +22,7 @@ Contents
 About
 -----
 
-Probe — is a snapshot of your computer's hardware state and system logs. HW Probe tool returns permanent URL to view the probe of the computer.
+Probe — is a snapshot of your computer's hardware state and system logs. HW Probe tool returns a permanent URL to view the probe of the computer.
 
 Sample probe: https://linux-hardware.org/?probe=b394035f90
 
@@ -54,7 +54,7 @@ DESC — any description of the probe.
 AppImage
 --------
 
-The portable app that runs anywhere, no need to install anything. Just download [hw-probe-1.4-97-x86_64.AppImage](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe-1.4-97-x86_64.AppImage) and run to probe your computer:
+The portable app that runs anywhere, no need to install anything. Just download [hw-probe-1.4-97-x86_64.AppImage](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe-1.4-97-x86_64.AppImage) and run the following command to probe your computer:
 
     chmod +x ./hw-probe-1.4-97-x86_64.AppImage
     sudo ./hw-probe-1.4-97-x86_64.AppImage -all -upload

@@ -24,7 +24,7 @@ Contents
 Run without Installing
 ----------------------
 
-You can probe your computer by [AppImage](https://github.com/linuxhw/hw-probe#appimage), [Docker image](https://github.com/linuxhw/hw-probe#docker) or [Live ISO](https://github.com/linuxhw/hw-probe#live-iso).
+You can probe your computer by [AppImage](https://github.com/linuxhw/hw-probe#appimage), [Docker image](https://github.com/linuxhw/hw-probe#docker) or [Live ISO](https://github.com/linuxhw/hw-probe#live-iso) without the need to install anything on your host.
 
 Install from Source
 -------------------
@@ -38,7 +38,6 @@ To uninstall:
     sudo make uninstall prefix=PREFIX
 
 ###### Requires
----------------
 
 * Perl 5
 * perl-Digest-SHA
@@ -82,7 +81,7 @@ Install on Ubuntu
 
 PPA: https://launchpad.net/~mikhailnov/+archive/ubuntu/hw-probe
 
-On Ubuntu-based Linux distributions (Ubuntu, Linux Mint, Elementary OS, etc.) you can install a PPA package:
+On Ubuntu based Linux distributions (Ubuntu, Linux Mint, Elementary OS, etc.) you can install a PPA package:
 
     sudo add-apt-repository universe
     sudo add-apt-repository ppa:mikhailnov/hw-probe
@@ -142,7 +141,7 @@ On Arch Linux and Arch Linux based Linux distributions (Manjaro, Antergos, etc.)
 
 ###### Binary Package
 
-Download package [hw-probe-1.4-1.ArchLinux-any.pkg.tar.xz](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe-1.4-1.ArchLinux-any.pkg.tar.xz) and install it by pacman:
+Download package [hw-probe-1.4-1.ArchLinux-any.pkg.tar.xz](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe-1.4-1.ArchLinux-any.pkg.tar.xz) and install by pacman:
 
     pacman -U ./hw-probe-1.4-1.ArchLinux-any.pkg.tar.xz
 
