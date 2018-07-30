@@ -54,7 +54,7 @@ DESC — any description of the probe.
 AppImage
 --------
 
-The portable app that runs anywhere, no need to install anything. Just download [hw-probe-1.4-97-x86_64.AppImage](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe-1.4-97-x86_64.AppImage) and run the following command to probe your computer:
+The portable app that runs anywhere, no need to install anything. Just download [hw-probe-1.4-97-x86_64.AppImage](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe-1.4-97-x86_64.AppImage) and run the following command in terminal to probe your computer:
 
     chmod +x ./hw-probe-1.4-97-x86_64.AppImage
     sudo ./hw-probe-1.4-97-x86_64.AppImage -all -upload
@@ -69,10 +69,14 @@ The app runs on all Linux distributions with `Glibc >= 2.14` including:
 * openSUSE 12.0 and later
 * Manjaro 0.8 and later
 * ROSA Linux R1 and later
+* elementary OS 0.2 and later
 * Fedora 15 and later (need to add `fuse-libs` package to host on Fedora 15, 16 and 17)
 * CentOS 7 and later
+* Mageia 2 and later
 * Alt Linux 7 and later
 * Gentoo 12 and later
+* Sabayon 13 and later
+* Slackware 14.2 and later
 
 Docker
 ------

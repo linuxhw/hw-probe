@@ -16,9 +16,10 @@ Contents
 4.  [ Install on Debian      ](#install-on-debian)
 5.  [ Install on openSUSE    ](#install-on-opensuse)
 6.  [ Install on Arch Linux  ](#install-on-arch-linux)
-7.  [ Install on CentOS 7    ](#install-on-centos-7)
-8.  [ Install on CentOS 6    ](#install-on-centos-6)
-9.  [ Build Debian package   ](#build-debian-package)
+7.  [ Install on Fedora      ](#install-on-fedora)
+8.  [ Install on CentOS 7    ](#install-on-centos-7)
+9.  [ Install on CentOS 6    ](#install-on-centos-6)
+10. [ Build Debian package   ](#build-debian-package)
 
 
 Run without Installing
@@ -81,7 +82,7 @@ Install on Ubuntu
 
 PPA: https://launchpad.net/~mikhailnov/+archive/ubuntu/hw-probe
 
-On Ubuntu based Linux distributions (Ubuntu, Linux Mint, Elementary OS, etc.) you can install a PPA package:
+On Ubuntu and Ubuntu based Linux distributions (Linux Mint, elementary OS, etc.) you can install a PPA package:
 
     sudo add-apt-repository universe
     sudo add-apt-repository ppa:mikhailnov/hw-probe
@@ -92,31 +93,10 @@ On Ubuntu based Linux distributions (Ubuntu, Linux Mint, Elementary OS, etc.) yo
 Install on Debian
 -----------------
 
-###### Way #1
+Download DEB package [hw-probe_1.4-2_all.deb](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe_1.4-2_all.deb) and install:
 
-Setup a PPA repository and install the package:
-
-    su
-    apt install dirmngr
-    echo "deb http://ppa.launchpad.net/mikhailnov/hw-probe/ubuntu bionic main" | tee /etc/apt/sources.list.d/mikhailnov-ubuntu-hw-probe-bionic.list
-    apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys FE3AE55CF74041EAA3F0AD10D5B19A73A8ECB754
-    echo -e "Package: * \nPin: release o=LP-PPA-mikhailnov-hw-probe \nPin-Priority: 1" | tee /etc/preferences.d/mikhailnov-ubuntu-hw-probe-ppa
-    apt update
-    apt install hw-probe --no-install-recommends
-
-
-###### Way #2
-
-Install dependencies:
-
-    su
-    apt install libdigest-sha-perl curl hwinfo dmidecode pciutils usbutils smartmontools edid-decode \
-    util-linux lsb-release lm-sensors mcelog wireless-tools x11-utils
-
-And make a probe:
-
-    su
-    curl -s https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | perl - -all -upload
+    sudo dpkg -i ./hw-probe_1.4-2_all.deb
+    sudo apt install -f --no-install-recommends
 
 
 Install on openSUSE
@@ -144,6 +124,13 @@ On Arch Linux and Arch Linux based Linux distributions (Manjaro, Antergos, etc.)
 Download package [hw-probe-1.4-1.ArchLinux-any.pkg.tar.xz](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe-1.4-1.ArchLinux-any.pkg.tar.xz) and install by pacman:
 
     pacman -U ./hw-probe-1.4-1.ArchLinux-any.pkg.tar.xz
+
+
+Install on Fedora
+-----------------
+
+    sudo yum install https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe-1.4-101.1.Fedora.noarch.rpm
+
 
 Install on CentOS 7
 -------------------
