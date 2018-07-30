@@ -105,7 +105,7 @@ Install on openSUSE
 Setup an OBS repository and install the package:
 
     sudo zypper addrepo -G -f obs://home:linuxbuild/openSUSE_Factory hw-probe
-    sudo zypper install hw-probe
+    sudo zypper install --no-recommends hw-probe
 
 
 Install on Arch Linux
