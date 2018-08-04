@@ -129,7 +129,9 @@ Download package [hw-probe-1.4-1.ArchLinux-any.pkg.tar.xz](https://github.com/li
 Install on Fedora
 -----------------
 
-    sudo yum install https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe-1.4-101.1.Fedora.noarch.rpm
+Download package [hw-probe-1.4-101.1.Fedora.noarch.rpm](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe-1.4-101.1.Fedora.noarch.rpm) and install:
+
+    sudo yum install ./hw-probe-1.4-101.1.Fedora.noarch.rpm
 
 
 Install on CentOS 7
