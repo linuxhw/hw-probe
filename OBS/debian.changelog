@@ -1,0 +1,5 @@
+hw-probe (1.4-1) stable; urgency=low
+
+  * Initial Package on OBS
+
+ -- Andrey Ponomarenko <andrewponomarenko@yandex.ru>  Fri, 20 Jul 2018 16:05:00 +0300
