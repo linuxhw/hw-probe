@@ -89,6 +89,9 @@ On Ubuntu and Ubuntu based Linux distributions (Linux Mint, elementary OS, etc.)
     sudo apt update
     sudo apt install hw-probe --no-install-recommends
 
+###### Snap
+
+The [Snap package](https://github.com/linuxhw/hw-probe#snap) is also available to install and run easily on Ubuntu without the need to install any Deb packages to your system.
 
 Install on Debian
 -----------------

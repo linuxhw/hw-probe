@@ -12,11 +12,12 @@ Contents
 4.  [ AppImage     ](#appimage)
 5.  [ Docker       ](#docker)
 6.  [ Live ISO     ](#live-iso)
-7.  [ Inventory    ](#inventory)
-8.  [ Offline view ](#offline-view)
-9.  [ ACPI dump    ](#acpi-dump)
-10. [ Operability  ](#operability)
-11. [ Privacy      ](#privacy)
+7.  [ Snap         ](#snap)
+8.  [ Inventory    ](#inventory)
+9.  [ Offline view ](#offline-view)
+10. [ ACPI dump    ](#acpi-dump)
+11. [ Operability  ](#operability)
+12. [ Privacy      ](#privacy)
 
 
 About
@@ -28,7 +29,7 @@ Sample probe: https://linux-hardware.org/?probe=b394035f90
 
 Share your probes and logs with Linux developers in order to debug and fix problems on your computer. Simplify inventory of hardware in your company.
 
-You can make a probe of your computer with the help of [AppImage](#appimage), [Docker image](#docker), [Live ISO](#live-iso) or RPM/DEB package.
+You can make a probe of your computer with the help of [AppImage](#appimage), [Docker image](#docker), [Snap](#snap), [Live ISO](#live-iso) or RPM/DEB package.
 
 By creating probes you contribute to the "HDD/SSD Real-Life Reliability Test" study: https://github.com/linuxhw/SMART
 
@@ -36,7 +37,7 @@ By creating probes you contribute to the "HDD/SSD Real-Life Reliability Test" st
 Install
 -------
 
-You can probe your computer by [AppImage](#appimage), [Docker image](#docker) or [Live ISO](#live-iso).
+You can probe your computer by [AppImage](#appimage), [Docker image](#docker), [Snap](#snap) or [Live ISO](#live-iso).
 
 Also you can install native RPM/DEB package for your Linux distribution or install from source. See all install instructions in the [INSTALL.md](https://github.com/linuxhw/hw-probe/blob/master/INSTALL.md) file.
 
@@ -103,6 +104,23 @@ If the tool is not pre-installed in your system or you have troubles with instal
 
 Boot this Linux ISO in Live mode on your computer and make a probe (see USAGE).
 
+
+Snap
+----
+
+Download the universal Linux package [hw-probe_1.4-1_amd64.snap](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe_1.4-1_amd64.snap) and install:
+
+    sudo snap install ./hw-probe_1.4-1_amd64.snap --dangerous --classic
+
+The `hw-probe` command should become available on the command line after installation. If not, try:
+
+    export PATH=$PATH:/snap/bin
+
+You need a Snap runtime (`snapd` package) in your system to install and run snaps (pre-installed on Ubuntu 16.04 and Ubuntu 18.04).
+
+###### Supported systems
+
+* Ubuntu 14.04 and later
 
 Inventory
 ---------
