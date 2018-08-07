@@ -11,7 +11,7 @@ Contents
 3.  [ Usage        ](#usage)
 4.  [ AppImage     ](#appimage)
 5.  [ Docker       ](#docker)
-6.  [ Live ISO     ](#live-iso)
+6.  [ Live CD      ](#live-cd)
 7.  [ Snap         ](#snap)
 8.  [ Inventory    ](#inventory)
 9.  [ Offline view ](#offline-view)
@@ -29,7 +29,7 @@ Sample probe: https://linux-hardware.org/?probe=b394035f90
 
 Share your probes and logs with Linux developers in order to debug and fix problems on your computer. Simplify inventory of hardware in your company.
 
-You can make a probe of your computer with the help of [AppImage](#appimage), [Docker image](#docker), [Snap](#snap), [Live ISO](#live-iso) or RPM/DEB package.
+You can make a probe of your computer with the help of [AppImage](#appimage), [Docker image](#docker), [Snap](#snap), [Live CD](#live-cd) or RPM/DEB package.
 
 By creating probes you contribute to the "HDD/SSD Real-Life Reliability Test" study: https://github.com/linuxhw/SMART
 
@@ -37,7 +37,7 @@ By creating probes you contribute to the "HDD/SSD Real-Life Reliability Test" st
 Install
 -------
 
-You can probe your computer by [AppImage](#appimage), [Docker image](#docker), [Snap](#snap) or [Live ISO](#live-iso).
+You can probe your computer by [AppImage](#appimage), [Docker image](#docker), [Snap](#snap) or [Live CD](#live-cd).
 
 Also you can install native RPM/DEB package for your Linux distribution or install from source. See all install instructions in the [INSTALL.md](https://github.com/linuxhw/hw-probe/blob/master/INSTALL.md) file.
 
@@ -72,6 +72,7 @@ The app runs on all Linux distributions with `Glibc >= 2.14` including:
 * ROSA Linux R1 and later
 * elementary OS 0.2 and later
 * Fedora 15 and later (need to add `fuse-libs` package to host on Fedora 15, 16 and 17)
+* RHEL 7 and later
 * CentOS 7 and later
 * Mageia 2 and later
 * Alt Linux 7 and later
@@ -97,12 +98,12 @@ You may need to run `xhost +local:` before docker run to collect X11 info (xrand
 Docker hub repository: https://hub.docker.com/r/linuxhw/hw-probe/
 
 
-Live ISO
---------
+Live CD
+-------
 
-If the tool is not pre-installed in your system or you have troubles with installing the tool or its dependencies (e.g. hwinfo is not available in the repository) then try this Linux ISO with hw-probe installed: https://mirror.yandex.ru/rosa/rosa2016.1/iso/ROSA.Fresh.R10/
+If the tool is not pre-installed in your system or you have troubles with installing the tool or its dependencies (e.g. hwinfo is not available in the repository) then try this Linux CD with hw-probe installed: https://mirror.yandex.ru/rosa/rosa2016.1/iso/ROSA.Fresh.R10/
 
-Boot this Linux ISO in Live mode on your computer and make a probe (see USAGE).
+Boot this Linux CD on your computer and make a probe (see [Usage](#usage)).
 
 
 Snap
@@ -116,11 +117,13 @@ The `hw-probe` command should become available on the command line after install
 
     export PATH=$PATH:/snap/bin
 
-You need a Snap runtime (`snapd` package) in your system to install and run snaps (pre-installed on Ubuntu 16.04 and Ubuntu 18.04).
+You need a Snap runtime (`snapd` package) and `/snap` symlink to `/var/lib/snapd/snap` (by `sudo ln -s /var/lib/snapd/snap /snap`) in your system to install and run snaps (pre-installed on Ubuntu 16.04 and Ubuntu 18.04).
 
 ###### Supported systems
 
 * Ubuntu 14.04 and later
+* Debian 9 and later
+* Fedora 26 and later
 
 Inventory
 ---------

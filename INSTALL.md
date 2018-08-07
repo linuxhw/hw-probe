@@ -25,7 +25,7 @@ Contents
 Run without Installing
 ----------------------
 
-You can probe your computer by [AppImage](https://github.com/linuxhw/hw-probe#appimage), [Docker image](https://github.com/linuxhw/hw-probe#docker) or [Live ISO](https://github.com/linuxhw/hw-probe#live-iso) without the need to install anything on your host.
+You can probe your computer by [AppImage](https://github.com/linuxhw/hw-probe#appimage), [Docker image](https://github.com/linuxhw/hw-probe#docker) or [Live CD](https://github.com/linuxhw/hw-probe#live-cd) without the need to install anything on your host.
 
 Install from Source
 -------------------
