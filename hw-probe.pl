@@ -151,7 +151,7 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "decode-acpi!" => \$Opt{"DecodeACPI"},
   "import=s" => \$Opt{"ImportProbes"},
   "inventory-id|group|g=s" => \$Opt{"Group"},
-  "get-inventory-id|get-group!" => \$Opt{"GetGroup"},
+  "generate-inventory-id|generate-group!" => \$Opt{"GenerateGroup"},
 # Private
   "docker!" => \$Opt{"Docker"},
   "appimage!" => \$Opt{"AppImage"},
@@ -255,11 +255,11 @@ GENERAL OPTIONS:
 
 INVENTORY OPTIONS:
   -inventory-id ID
-      Set inventory ID of the probe. You can get this ID
-      by the -get-inventory-id option.
+      Set inventory ID of the probe. You can generate a new ID
+      by the -generate-inventory-id option.
   
-  -get-inventory-id
-      Get inventory ID.
+  -generate-inventory-id
+      Generate new inventory ID.
 
 OTHER OPTIONS:
   -src|-source PATH
@@ -951,7 +951,7 @@ sub getOldProbeDir()
     return $Dir;
 }
 
-sub getGroup()
+sub generateGroup()
 {
     my $GroupURL = $URL."/get_group.php";
     my $CurlCmd = "curl -s -S -f -POST -F get=group -H \"Expect:\" --http1.0 $GroupURL";
@@ -9123,8 +9123,8 @@ sub scenario()
         cleanData();
     }
     
-    if($Opt{"GetGroup"}) {
-        getGroup();
+    if($Opt{"GenerateGroup"}) {
+        generateGroup();
     }
     
     if($Opt{"ImportProbes"})
