@@ -136,6 +136,11 @@ Download package [hw-probe-1.4-101.1.Fedora.noarch.rpm](https://github.com/linux
 
     sudo yum install ./hw-probe-1.4-101.1.Fedora.noarch.rpm
 
+###### Fedora repository
+
+    sudo dnf config-manager --add-repo https://download.opensuse.org/repositories/home:/linuxbuild/Fedora_Rawhide/home:linuxbuild.repo
+    sudo dnf config-manager --set-enabled home_linuxbuild
+    sudo dnf install hw-probe
 
 Install on CentOS 7
 -------------------

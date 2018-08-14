@@ -151,10 +151,11 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "decode-acpi!" => \$Opt{"DecodeACPI"},
   "import=s" => \$Opt{"ImportProbes"},
   "inventory-id|group|g=s" => \$Opt{"Group"},
-  "get-inventory-id|get-group!" => \$Opt{"GetGroup"},
+  "generate-inventory-id|get-inventory-id|get-group!" => \$Opt{"GetGroup"},
 # Private
   "docker!" => \$Opt{"Docker"},
   "appimage!" => \$Opt{"AppImage"},
+  "snap!" => \$Opt{"Snap"},
   "low-compress!" => \$Opt{"LowCompress"},
   "high-compress!" => \$Opt{"HighCompress"},
   "identify-drive=s" => \$Opt{"IdentifyDrive"},
@@ -255,11 +256,11 @@ GENERAL OPTIONS:
 
 INVENTORY OPTIONS:
   -inventory-id ID
-      Set inventory ID of the probe. You can get this ID
-      by the -get-inventory-id option.
+      Mark the probe by inventory ID. You can generate it
+      by the -generate-inventory-id option.
   
-  -get-inventory-id
-      Get inventory ID.
+  -generate-inventory-id
+      Generate new inventory ID.
 
 OTHER OPTIONS:
   -src|-source PATH
@@ -402,7 +403,8 @@ my %DiskVendor = (
     "SPK" => "KingSpec",
     "S10T" => "Chiprex",
     "IM2S" => "ADATA",
-    "IC35" => "IBM/Hitachi"
+    "IC35" => "IBM/Hitachi",
+    "PH6-CE" => "Plextor"
 );
 
 # http://standards-oui.ieee.org/oui.txt
@@ -470,6 +472,7 @@ my %SdioType = (
 
 # Fix monitor vendor
 my %MonVendor = (
+    "ACH" => "Achieva Shimian", # QHD270
     "ACI" => "Ancor Communications", # ASUS
     "ACR" => "Acer",
     "AIC" => "Arnos Instruments", # AG Neovo
@@ -501,6 +504,7 @@ my %MonVendor = (
     "FUS" => "Fujitsu Siemens",
     "GRU" => "Grundig",
     "GSM" => "Goldstar",
+    "GTW" => "Gateway",
     "GWD" => "GreenWood",
     "GWY" => "Gateway",
     "HAI" => "Haier",
@@ -1038,6 +1042,12 @@ sub uploadData()
     {
         @Cmd = (@Cmd, "-F appimage=1");
         $Data{"appimage"} = "1";
+    }
+    
+    if($Opt{"Snap"})
+    {
+        @Cmd = (@Cmd, "-F snap=1");
+        $Data{"snap"} = "1";
     }
     
     if($Opt{"PC_Name"})
@@ -5018,8 +5028,8 @@ sub shortModel($)
 sub shortOS($)
 {
     my $Name = $_[0];
-    $Name=~s/\s+(linux|project)\s+/ /i;
-    $Name=~s/\s*(linux|project)\Z//i;
+    $Name=~s/\s+(linux|project|amd64)\s+/ /i;
+    $Name=~s/\s*(linux|project|amd64)\Z//i;
     $Name=~s/\s+/\-/g;
     $Name=~s/\.\Z//g;
     return $Name;
@@ -5079,50 +5089,58 @@ sub detectMonitor($)
         # }
     }
     
-    if($Info=~/(Maximum image size|Screen size):(.+?)\n/i)
+    foreach my $Attr ("Maximum image size", "Screen size", "Detailed mode")
     {
-        my $MonSize = $2;
-        
-        if($MonSize=~/(\d+)\s*mm\s*x\s*(\d+)\s*mm/) {
-            $Device{"Size"} = $1."x".$2."mm";
-        }
-        elsif($MonSize=~/([\d\.]+)\s*cm\s*x\s*([\d\.]+)\s*cm/) {
-            $Device{"Size"} = ($1*10)."x".($2*10)."mm";
+        if($Info=~/$Attr:(.+?)\n/i)
+        {
+            my $MonSize = $1;
+            
+            if($MonSize=~/(\d+)\s*mm\s*x\s*(\d+)\s*mm/) {
+                $Device{"Size"} = $1."x".$2."mm";
+            }
+            elsif($MonSize=~/([\d\.]+)\s*cm\s*x\s*([\d\.]+)\s*cm/) {
+                $Device{"Size"} = ($1*10)."x".($2*10)."mm";
+            }
+            
+            if($Device{"Size"}) {
+                last;
+            }
         }
     }
     
-    if($Device{"Size"} eq "160x90mm") {
+    if(grep {$Device{"Size"} eq $_} ("1600x900mm", "160x90mm", "16x9mm", "0x0mm")) {
         $Device{"Size"} = undef;
     }
     
+    $Info=~s/CTA extension block.+//s;
+    
     my %Resolutions = ();
     while($Info=~s/(\d+)x(\d+)\@\d+//) {
-        $Resolutions{$1} = $1."x".$2;
+        $Resolutions{$1} = $2;
+    }
+    
+    my ($W, $H) = ();
+    while($Info=~s/\n\s+(\d+)\s+.+?\s+hborder//)
+    {
+        my $W = $1;
+        if($Info=~s/\n\s+(\d+)\s+.+?\s+vborder//)
+        {
+            my $H = $1;
+            
+            if(not defined $Resolutions{$W} or $H>$Resolutions{$W}) {
+                $Resolutions{$W} = $H;
+            }
+        }
     }
     
     if(my @Res = sort {int($b)<=>int($a)} keys(%Resolutions)) {
-        $Device{"Resolution"} = $Resolutions{$Res[0]};
+        $Device{"Resolution"} = $Res[0]."x".$Resolutions{$Res[0]};
     }
     
     if(not $Device{"Resolution"})
     { # monitor-parse-edid
         if($Info=~s/"(\d+x\d+)"//) {
             $Device{"Resolution"} = $1;
-        }
-    }
-    
-    if(not $Device{"Resolution"})
-    {
-        my ($W, $H) = ();
-        if($Info=~/\n\s+(\d+)\s+.+?\s+hborder/) {
-            $W = $1;
-        }
-        if($Info=~/\n\s+(\d+)\s+.+?\s+vborder/) {
-            $H = $1;
-        }
-        
-        if($W and $H) {
-            $Device{"Resolution"} = $W."x".$H;
         }
     }
     
@@ -5565,9 +5583,9 @@ sub guessDriveVendor($)
 {
     my $Name = $_[0];
     
-    foreach my $Len (5, 4, 3)
+    foreach my $Len (6, 5, 4, 3)
     {
-        if($Name=~/\A([A-Z\d]{$Len})[A-Z\d\-]+/
+        if($Name=~/\A([A-Z\d\-\_]{$Len})[A-Z\d\-]+/
         and defined $DiskVendor{$1}) {
             return $DiskVendor{$1};
         }
@@ -5593,6 +5611,9 @@ sub guessDriveVendor($)
     elsif($Name=~/\A(InM2)/) {
         return "Indilinx";
     }
+    elsif($Name=~/\AQ200 EX/) {
+        return "Toshiba";
+    }
     elsif($Name=~/\ASSDPAMM/) {
         return "Intel";
     }
@@ -5605,10 +5626,13 @@ sub guessDriveVendor($)
     elsif($Name=~/\ACHN25SATA/) {
         return "Zheino";
     }
+    elsif($Name=~/\ACF Card/) {
+        return "SanDisk";
+    }
     elsif($Name=~/\A(SSDPR_CX|IR_SSDPR|IR\-SSDPR)/) {
         return "Goodram";
     }
-    elsif($Name=~/\A(MT|MSH|P3|P3D|T)\-(60|64|128|240|256|512|1TB|2TB)\Z/
+    elsif($Name=~/\A(MT|MSH|P3|P3D|T)\-(60|64|120|128|240|256|512|1TB|2TB)\Z/
     or grep { $Name eq $_ } ("V-32", "NT-256"))
     { # MT-64 MSH-256 P3-128 P3D-240 P3-2TB T-60 V-32
         return "KingSpec";
@@ -6404,6 +6428,9 @@ sub probeDistr()
             }
             elsif($Descr=~/ Enterprise Desktop X([\d\-\.]+)/i) {
                 $Rel = "red-x".$1;
+            }
+            elsif($OS_Rel=~/Fresh R(\d+) /) {
+                $Rel = "rosafresh-r".$1;
             }
             
             return ("rosa-".$Release, $Rel);
