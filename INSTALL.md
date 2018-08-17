@@ -72,6 +72,7 @@ To uninstall:
 
 ###### Suggests
 
+* libwww-perl (to use instead of curl)
 * hplip (hp-probe)
 * sane-backends (sane-find-scanner)
 * pnputils (lspnp)

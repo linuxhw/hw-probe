@@ -48,7 +48,7 @@
 #
 # SUGGESTS
 # ========
-#  perl-libwww-perl (to use instead of curl)
+#  libwww-perl (to use instead of curl)
 #  hplip (hp-probe)
 #  sane-backends (sane-find-scanner)
 #  pnputils (lspnp)
@@ -825,6 +825,11 @@ sub encryptSerials(@)
         $Name = shift(@_);
     }
     
+    my $Lower = undef;
+    if(@_) {
+        $Lower = shift(@_);
+    }
+    
     my %Serials = ();
     while($Content=~/\Q$Tag\E\s*[:=]\s*"?([^"]+?)"?\s*\n/g) {
         $Serials{$1} = 1;
@@ -836,7 +841,15 @@ sub encryptSerials(@)
             next;
         }
         
-        my $Enc = clientHash($Ser);
+        my $Enc = undef;
+        
+        if($Lower) {
+            $Enc = clientHash(lc($Ser));
+        }
+        else {
+            $Enc = clientHash($Ser);
+        }
+        
         $Content=~s/(\Q$Tag\E\s*[:=]\s*"?)\Q$Ser\E("?\s*\n)/$1$Enc$2/g;
         
         if($Name and $Name eq "hwinfo") {
@@ -1373,11 +1386,14 @@ sub fmtVal($)
         return "";
     }
     
-    $Val=~s/\((R|TM)\)\-/-/ig;
-    $Val=~s/\((R|TM)\)/ /ig;
+    $Val=~s/\((R|TM)\)\-/-/gi;
+    $Val=~s/\((R|TM)\)/ /gi;
     
-    $Val=~s/\A[_\-\? ]//ig;
-    $Val=~s/[_\-\? ]\Z//ig;
+    $Val=~s/\342\204\242|\302\256|\302\251//g; # TM (trade mark), R (registered), C (copyright) special symbols
+    $Val=~s/\303\227/x/g; # multiplication sign
+    
+    $Val=~s/\A[_\-\? ]//gi;
+    $Val=~s/[_\-\? ]\Z//gi;
     
     $Val=~s/[ ]{2,}/ /g;
     
@@ -1558,7 +1574,7 @@ sub getDefaultType($$)
             elsif($Name=~/fingerprint (reader|scanner|sensor)/i) {
                 return "fingerprint reader";
             }
-            elsif($Name=~/USB Scanner/i) {
+            elsif($Name=~/USB Scanner|CanoScan|FlatbedScanner|Scanjet|EPSON Scanner/i) {
                 return "scanner";
             }
             elsif($Name=~/bluetooth/i) {
@@ -1584,6 +1600,9 @@ sub getDefaultType($$)
             }
             elsif($Name=~/Gamepad/i) {
                 return "gamepad";
+            }
+            elsif($Name=~/DVB-T/) {
+                return "dvb card";
             }
         }
         elsif($Bus eq "pci")
@@ -4607,11 +4626,14 @@ sub probeHW()
     else
     {
         my $StorcliCmd = undef;
-        if(check_Cmd("storcli64")) {
-            $StorcliCmd = "storcli64";
-        }
-        elsif(check_Cmd("storcli")) {
-            $StorcliCmd = "storcli";
+        
+        foreach my $Cmd ("storcli64", "storcli")
+        {
+            if(check_Cmd($Cmd))
+            {
+                $StorcliCmd = $Cmd;
+                last;
+            }
         }
         
         if($StorcliCmd)
@@ -4669,7 +4691,7 @@ sub probeHW()
                         if($Output)
                         {
                             # $Output=~s/\A.*?(\=\=\=)/$1/sg;
-                            $Smartctl .= $Dev.",".$Did."\n".$Output."\n";
+                            $SmartctlMR .= $Dev.",".$Did."\n".$Output."\n";
                         }
                         
                         if(my $Id = detectDrive($Output, $Dev, 1))
@@ -4689,6 +4711,75 @@ sub probeHW()
                         }
                     }
                 }
+                
+                if($SmartctlMR) {
+                    writeLog($LOG_DIR."/smartctl_megaraid", $SmartctlMR);
+                }
+            }
+        }
+    }
+    
+    if(not $Opt{"FixProbe"} and not $SmartctlMR)
+    {
+        my $MegacliCmd = undef;
+        
+        foreach my $Cmd ("megacli", "MegaCli64", "MegaCli")
+        {
+            if(check_Cmd($Cmd))
+            {
+                $MegacliCmd = $Cmd;
+                last;
+            }
+        }
+        
+        if($MegacliCmd)
+        {
+            listProbe("logs", $MegacliCmd);
+            my $Megacli = runCmd($MegacliCmd." -PDList -aAll 2>&1");
+            $Megacli=~s/(Inquiry Data\s*:.+?)\s\w+\n/$1.../g; # Hide serial
+            $Megacli = encryptSerials($Megacli, "WWN");
+            if($Megacli) {
+                writeLog($LOG_DIR."/megacli", $Megacli);
+            }
+            
+            my %DIDs = ();
+            while($Megacli=~/Device Id\s*:\s*(\d+)/g) {
+                $DIDs{$1} = 1;
+            }
+        }
+    }
+    
+    if(not $Opt{"FixProbe"})
+    {
+        if(check_Cmd("megactl"))
+        {
+            listProbe("logs", "megactl");
+            my $Megactl = runCmd("megactl 2>&1");
+            if($Megactl) {
+                writeLog($LOG_DIR."/megactl", $Megactl);
+            }
+        }
+    }
+    
+    if(not $Opt{"FixProbe"})
+    {
+        if(check_Cmd("arcconf"))
+        {
+            listProbe("logs", "arcconf");
+            my $Arcconf = runCmd("arcconf GETCONFIG 1 PD 2>&1");
+            $Arcconf = encryptSerials($Arcconf, "Serial number");
+            $Arcconf = encryptSerials($Arcconf, "World-wide name", "arcconf", 1);
+            if($Arcconf) {
+                writeLog($LOG_DIR."/arcconf", $Arcconf);
+            }
+            
+            listProbe("logs", "arcconf_smart");
+            my $Arcconf_Smart = runCmd("arcconf GETSMARTSTATS 1 TABULAR 2>&1");
+            $Arcconf_Smart=~s/\.{4,}/:/g;
+            $Arcconf_Smart = encryptSerials($Arcconf_Smart, "serialNumber");
+            $Arcconf_Smart = encryptSerials($Arcconf_Smart, "vendorProductID");
+            if($Arcconf_Smart) {
+                writeLog($LOG_DIR."/arcconf_smart", $Arcconf_Smart);
             }
         }
     }
@@ -5902,8 +5993,12 @@ sub fixModel($$$)
         $Model=~s/LifeBook/LIFEBOOK/g;
         $Model=~s/Stylistic/STYLISTIC/g;
     }
-    elsif(uc($Vendor) eq "DELL") {
-        $Model=~s/\A(MM061|MXC061|MP061|ME051)\Z/Inspiron MM061/g;
+    elsif($Vendor=~/\ADell(\s|\Z)/i)
+    {
+        $Model=~s/\A(MM061|MXC061|MP061|ME051)\Z/Inspiron $1/g;
+        $Model=~s/\A(MXC062)\Z/XPS $1/g;
+        $Model=~s/\ADell System //g; # Dell System Vostro 3450 by Dell Inc.
+        $Model=~s/\ADell //g; # Dell 500 by Dell Inc.
     }
     elsif($Vendor eq "Micro-Star International")
     {
@@ -5912,6 +6007,10 @@ sub fixModel($$$)
     }
     elsif(uc($Vendor) eq "LENOVO")
     {
+        if($Model=~/\A\s*INVALID\s*\Z/) {
+            $Model = "";
+        }
+        
         if($Version=~/[A-Z]/i)
         {
             $Version=~s/\ALenovo-?\s*//i;
@@ -5920,7 +6019,7 @@ sub fixModel($$$)
             {
                 while($Model=~s/\A\Q$Version\E\s+//i){};
                 
-                if($Model!~/\Q$Version\E/i and $Model ne "INVALID") {
+                if($Model!~/\Q$Version\E/i) {
                     $Model = $Version." ".$Model;
                 }
             }
@@ -5931,10 +6030,6 @@ sub fixModel($$$)
         $Model=~s/\AProduct\s+Lenovo\s+//i;
         $Model=~s/\AProduct\s+//i;
         $Model=~s/\ALenovo\s+//i;
-        
-        if($Model=~/\A\s*INVALID\s*\Z/) {
-            $Model = "";
-        }
     }
     elsif($Version=~/ThinkPad/i and $Model!~/ThinkPad/i) {
         $Model = $Version." ".$Model;
@@ -6950,10 +7045,20 @@ sub writeLogs()
             writeLog($LOG_DIR."/fdisk", $Fdisk);
         }
         
-        if(check_Cmd("inxi"))
+        if(my $InxiCmd = check_Cmd("inxi"))
         {
             listProbe("logs", "inxi");
-            my $Inxi = runCmd("inxi -! 31 -Fzx -c 0 2>&1");
+            my $Inxi = undef;
+            
+            if(readLine($InxiCmd)=~/perl/)
+            { # The new Perl inxi
+                $Inxi = runCmd("inxi -Fzx -c 0 --no-host 2>&1");
+            }
+            else
+            { # Old inxi
+                $Inxi = runCmd("inxi -Fzx -c 0 -! 31 2>&1");
+            }
+            
             writeLog($LOG_DIR."/inxi", $Inxi);
         }
         
@@ -7449,16 +7554,16 @@ sub check_Cmd($)
     
     if(index($Cmd, "/")!=-1 and -x $Cmd)
     { # relative or absolute path
-        return 1;
+        return $Cmd;
     }
     
-    foreach my $Path (sort {length($a)<=>length($b)} split(/:/, $ENV{"PATH"}))
+    foreach my $Dir (sort {length($a)<=>length($b)} split(/:/, $ENV{"PATH"}))
     {
-        if(-x $Path."/".$Cmd) {
-            return 1;
+        if(-x $Dir."/".$Cmd) {
+            return $Dir."/".$Cmd;
         }
     }
-    return 0;
+    return undef;
 }
 
 sub decodeACPI($$)
@@ -8645,6 +8750,14 @@ sub fixLogs($)
           # pcilib: Cannot open /proc/bus/pci
           # lspci: Cannot find any working access method.
             writeFile($Dir."/".$L, "");
+        }
+    }
+    
+    if(-e $Dir."/inxi"
+    and -s $Dir."/inxi" < 100)
+    { # Support for HW Probe 1.4
+        if(readFile($Dir."/inxi")=~/Unsupported option/) {
+            writeFile($Dir."/inxi", "");
         }
     }
 }
