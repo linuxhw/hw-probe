@@ -7052,13 +7052,14 @@ sub writeLogs()
             
             if(readLine($InxiCmd)=~/perl/)
             { # The new Perl inxi
-                $Inxi = runCmd("inxi -Fzx -c 0 --no-host 2>&1");
+                $Inxi = runCmd("inxi -Fxxxz --no-host 2>&1");
             }
             else
             { # Old inxi
-                $Inxi = runCmd("inxi -Fzx -c 0 -! 31 2>&1");
+                $Inxi = runCmd("inxi -Fxz -c 0 -! 31 2>&1");
             }
             
+            $Inxi=~s/\s+\w+\:\s*<filter>//g;
             writeLog($LOG_DIR."/inxi", $Inxi);
         }
         
