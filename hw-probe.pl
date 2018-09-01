@@ -136,6 +136,7 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "hwinfo-path=s" => \$Opt{"HWInfoPath"},
 # Other
   "src|source=s" => \$Opt{"Source"},
+  "save=s" => \$Opt{"Save"},
   "fix=s" => \$Opt{"FixProbe"},
   "show!" => \$Opt{"Show"},
   "compact!" => \$Opt{"Compact"},
@@ -263,6 +264,10 @@ INVENTORY OPTIONS:
       Generate new inventory ID.
 
 OTHER OPTIONS:
+  -save DIR
+      Save probe package to DIR. This is useful if you are offline
+      and need to upload a probe later (with the help of -src option).
+  
   -src|-source PATH
       A probe to upload.
   
@@ -1016,6 +1021,23 @@ sub sendFile($$$)
     }
     
     return $Out;
+}
+
+sub saveProbe($)
+{
+    my $To = $_[0];
+    
+    $To=~s&/+\Z&&;
+    
+    my ($Pkg, $HWaddr) = createPackage();
+    
+    if(not $Pkg) {
+        return;
+    }
+    
+    move($Pkg, $To);
+    
+    print "Saved to: $To/".basename($Pkg)."\n";
 }
 
 sub uploadData()
@@ -2775,7 +2797,7 @@ sub probeHW()
         
         if(check_Cmd("lspci"))
         {
-            $Lspci_A = runCmd("lspci -vvnn 2>&1");
+            $Lspci_A = runCmd("lspci -vvnn");
             $Lspci_A=~s/(Serial Number:?\s+|Manufacture ID:\s+).+/$1.../gi;
         }
         
@@ -2816,7 +2838,7 @@ sub probeHW()
         
         if(check_Cmd("lspci"))
         {
-            $Lspci = runCmd("lspci -vmnnk 2>&1");
+            $Lspci = runCmd("lspci -vmnnk");
         }
         
         if($HWLogs) {
@@ -2960,7 +2982,7 @@ sub probeHW()
         
         if(check_Cmd("lsusb"))
         {
-            $Lsusb = runCmd("lsusb -v 2>&1");
+            $Lsusb = runCmd("lsusb -v");
             $Lsusb=~s/(iSerial\s+\d+\s*)[^\s]+$/$1.../mg;
         }
         
@@ -3340,8 +3362,11 @@ sub probeHW()
         }
         elsif(grep { $HW{$ID}{"Type"} eq $_ } ("network", "modem", "sound", "storage", "camera", "chipcard", "fingerprint reader", "card reader", "dvb card", "tv card"))
         {
-            if(not $HW{$ID}{"Driver"}) {
-                $HW{$ID}{"Status"} = "failed";
+            if($ID=~/\A(usb|pci|ide):/)
+            {
+                if(not $HW{$ID}{"Driver"}) {
+                    $HW{$ID}{"Status"} = "failed";
+                }
             }
             
             if($HW{$ID}{"Status"} eq "works") {
@@ -6775,6 +6800,15 @@ sub writeLogs()
     
     listProbe("logs", "xorg.log.1");
     my $XLog_Old = readFile("/var/log/Xorg.0.log.old");
+    
+    if(not $XLog_Old)
+    {
+        if(my $SessUser = getUser())
+        { # Old Xorg log in XWayland (Ubuntu 18.04)
+            $XLog_Old = readFile("/home/".$SessUser."/.local/share/xorg/Xorg.0.log.old");
+        }
+    }
+    
     $XLog_Old = hideTags($XLog_Old, "Serial#");
     if(my $HostName = $ENV{"HOSTNAME"}) {
         $XLog_Old=~s/ $HostName / NODE /g;
@@ -6795,16 +6829,13 @@ sub writeLogs()
     
     listProbe("logs", "xorg.conf");
     my $XorgConf = readFile("/etc/X11/xorg.conf");
-    if(not $Opt{"Docker"} or $XorgConf) {
-        writeLog($LOG_DIR."/xorg.conf", $XorgConf);
+    
+    if(not $XorgConf) {
+        $XorgConf = readFile("/usr/share/X11/xorg.conf");
     }
     
-    my $MonConf = "/etc/X11/xorg.conf.d/10-monitor.conf";
-    if(-f $MonConf)
-    { # Obsoleted
-        listProbe("logs", "monitor.conf");
-        my $MonitorConf = readFile($MonConf);
-        writeLog($LOG_DIR."/monitor.conf", $MonitorConf);
+    if(not $Opt{"Docker"} or $XorgConf) {
+        writeLog($LOG_DIR."/xorg.conf", $XorgConf);
     }
     
     if(-e "/etc/default/grub")
@@ -7345,21 +7376,30 @@ sub writeLogs()
         }
         
         listProbe("logs", "xorg.conf.d");
-        my @XorgConfD = listDir("/etc/X11/xorg.conf.d/");
         my $XConfig = "";
-        foreach my $Xc (@XorgConfD)
+        
+        foreach my $XDir ("/etc/X11/xorg.conf.d", "/usr/share/X11/xorg.conf.d")
         {
-            if($Xc!~/\.conf\Z/) {
+            if(not -d $XDir) {
                 next;
             }
-            $XConfig .= $Xc."\n";
-            foreach (1 .. length($Xc)) {
-                $XConfig .= "-";
+            
+            my @XorgConfD = listDir($XDir);
+            foreach my $Xc (@XorgConfD)
+            {
+                if($Xc!~/\.conf\Z/) {
+                    next;
+                }
+                $XConfig .= $Xc."\n";
+                foreach (1 .. length($Xc)) {
+                    $XConfig .= "-";
+                }
+                $XConfig .= "\n";
+                $XConfig .= readFile($XDir."/".$Xc);
+                $XConfig .= "\n\n";
             }
-            $XConfig .= "\n";
-            $XConfig .= readFile("/etc/X11/xorg.conf.d/".$Xc);
-            $XConfig .= "\n\n";
         }
+        
         if(not $Opt{"Docker"} or $XConfig) {
             writeLog($LOG_DIR."/xorg.conf.d", $XConfig);
         }
@@ -8754,6 +8794,17 @@ sub fixLogs($)
         }
     }
     
+    if(-e $Dir."/lsusb")
+    {
+        my $Lsusb = readFile($Dir."/lsusb");
+        if(index($Lsusb, "Resource temporarily unavailable")!=-1)
+        {
+            $Lsusb=~s/can't get device qualifier: Resource temporarily unavailable\n//g;
+            $Lsusb=~s/can't get debug descriptor: Resource temporarily unavailable\n//g;
+            writeFile($Dir."/lsusb", $Lsusb);
+        }
+    }
+    
     if(-e $Dir."/inxi"
     and -s $Dir."/inxi" < 100)
     { # Support for HW Probe 1.4
@@ -9089,6 +9140,15 @@ sub scenario()
         $Opt{"Logs"} = 0;
     }
     
+    if($Opt{"Save"})
+    {
+        if(not -d $Opt{"Save"})
+        {
+            print STDERR "ERROR: please create directory first\n";
+            exit(1);
+        }
+    }
+    
     if($Opt{"Probe"} or $Opt{"Check"})
     {
         probeSys();
@@ -9120,6 +9180,8 @@ sub scenario()
     }
     elsif($Opt{"FixProbe"})
     {
+        fixLogs($FixProbe_Logs);
+        
         readHost($Opt{"FixProbe"}); # instead of probeSys
         probeHWaddr();
         probeHW();
@@ -9224,8 +9286,6 @@ sub scenario()
             unlink($FixProbe_Logs."/acpidump");
         }
         
-        fixLogs($FixProbe_Logs);
-        
         writeDevs();
         writeHost();
         
@@ -9262,6 +9322,9 @@ sub scenario()
     {
         uploadData();
         cleanData();
+    }
+    elsif($Opt{"Save"}) {
+        saveProbe($Opt{"Save"});
     }
     
     if($Opt{"GetGroup"}) {
