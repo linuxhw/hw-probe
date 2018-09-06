@@ -27,7 +27,7 @@ apps:
   hw-probe:
     command: usr/bin/hw-probe -snap
     environment:
-      PATH: $SNAP/sbin:$SNAP/usr/sbin:$SNAP/usr/bin:$PATH
+      PATH: $PATH:$SNAP/sbin:$SNAP/usr/sbin:$SNAP/usr/bin
       PERL5LIB: $SNAP/usr/share/perl5
       LD_LIBRARY_PATH: $SNAP/lib/x86_64-linux-gnu/:$SNAP/usr/lib:$SNAP/usr/lib:$SNAP/usr/lib64:$SNAP/usr/lib/x86_64-linux-gnu
 parts:
@@ -343,11 +343,9 @@ parts:
     source-type: tar
     plugin: make
     override-build: |
-      make
       make install DESTDIR=$SNAPCRAFT_PART_INSTALL
     build-packages:
       - make
       - perl
     prime:
       - usr/bin/hw-probe
-
