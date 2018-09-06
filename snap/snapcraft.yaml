@@ -1,5 +1,5 @@
 name: hw-probe
-version: 1.4-1
+version: 1.4-2
 summary: A tool to check operability of computer hardware
 description: >
  A tool to check operability of computer hardware and upload result
@@ -27,7 +27,7 @@ apps:
   hw-probe:
     command: usr/bin/hw-probe -snap
     environment:
-      PATH: $PATH:$SNAP/sbin:$SNAP/usr/sbin:$SNAP/usr/bin
+      PATH: $SNAP/sbin:$SNAP/usr/sbin:$SNAP/usr/bin:$PATH
       PERL5LIB: $SNAP/usr/share/perl5
       LD_LIBRARY_PATH: $SNAP/lib/x86_64-linux-gnu/:$SNAP/usr/lib:$SNAP/usr/lib:$SNAP/usr/lib64:$SNAP/usr/lib/x86_64-linux-gnu
 parts:
@@ -36,7 +36,7 @@ parts:
     source-type: git
     plugin: make
     override-build: |
-      sed -i -e 's/ -g / /' Makefile
+      sed -i -e 's/ -g / -s /' Makefile
       make
       make install DESTDIR=$SNAPCRAFT_PART_INSTALL
     build-packages:
@@ -44,54 +44,89 @@ parts:
       - make
     prime:
       - usr/bin/edid-decode
+  dmidecode:
+    source: https://download-mirror.savannah.gnu.org/releases/dmidecode/dmidecode-3.1.tar.xz
+    source-type: tar
+    plugin: make
+    override-build: |
+      sed -i -e 's/ -O2/ -s -O2/' Makefile
+      make
+      make install prefix=/usr DESTDIR=$SNAPCRAFT_PART_INSTALL
+      find $SNAPCRAFT_PART_INSTALL -type f | perl -lne 'print if -B and -x' | xargs strip
+    build-packages:
+      - gcc
+      - make
+    prime:
+      - usr/sbin/dmidecode
+      - usr/sbin/biosdecode
+  lm-sensors:
+    source: https://ftp.gwdg.de/pub/linux/misc/lm-sensors/lm_sensors-3.4.0.tar.bz2
+    source-type: tar
+    plugin: make
+    override-build: |
+      sed -i -e 's/ -g / -s /' Makefile
+      make
+      make install BUILD_STATIC_LIB=0 DEBUG=0 PREFIX=/usr DESTDIR=$SNAPCRAFT_PART_INSTALL
+      find $SNAPCRAFT_PART_INSTALL -type f | perl -lne 'print if -B and -x' | xargs strip
+    build-packages:
+      - gcc
+      - make
+    prime:
+      - usr/bin/sensors
+      - etc/sensors3.conf
+      - usr/lib/libsensors*
   libkmod:
     source: http://ftp.riken.jp/Linux/kernel.org/linux/utils/kernel/kmod/kmod-12.tar.gz
     source-type: tar
     plugin: make
     override-build: |
       ./configure --disable-debug --disable-python --disable-logging --disable-tools --disable-test-modules --disable-manpages --prefix=/usr
-      sed -i -e 's/ -g / /' Makefile
+      sed -i -e 's/ -g / -s /' Makefile
       make
       make install DESTDIR=$SNAPCRAFT_PART_INSTALL
+      find $SNAPCRAFT_PART_INSTALL -type f | perl -lne 'print if -B and -x' | xargs strip
     build-packages:
       - gcc
       - make
     prime:
       - usr/lib/libkmod.so*
   usbutils:
-    source: https://mirrors.edge.kernel.org/pub/linux/utils/usb/usbutils/usbutils-010.tar.xz
+    source: https://mirrors.edge.kernel.org/pub/linux/utils/usb/usbutils/usbutils-007.tar.xz
     source-type: tar
     plugin: make
     build-attributes: [no-system-libraries]
     override-build: |
+      curl http://www.linux-usb.org/usb.ids > usb.ids
       ./configure --prefix=/usr
+      sed -i -e 's/ -g / -s /' Makefile
       make
       make install DESTDIR=$SNAPCRAFT_PART_INSTALL
-      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/
-      curl http://www.linux-usb.org/usb.ids > $SNAPCRAFT_PART_INSTALL/usr/share/usb.ids
+      find $SNAPCRAFT_PART_INSTALL -type f | perl -lne 'print if -B and -x' | xargs strip
+      sed -i -e 's|/usr/share/usb.ids|/tmp/HW_PROBE_USB_|' $SNAPCRAFT_PART_INSTALL/usr/bin/lsusb
     build-packages:
       - gcc
       - make
+      - curl
       - libusb-1.0-0-dev
       - libudev-dev
-      - curl
     prime:
       - usr/bin/lsusb
       - usr/bin/usb-devices
       - usr/share/usb.ids
   pciutils:
-    source: https://github.com/pciutils/pciutils/archive/v3.6.1.tar.gz
+    source: https://github.com/pciutils/pciutils/archive/v3.6.2.tar.gz
     source-type: tar
     plugin: make
     build-attributes: [no-system-libraries]
     override-build: |
       curl https://pci-ids.ucw.cz/v2.2/pci.ids > pci.ids
-      make
-      make install PREFIX=/usr DESTDIR=$SNAPCRAFT_PART_INSTALL
+      make install PREFIX=/usr DESTDIR=$SNAPCRAFT_PART_INSTALL SHARED=no LIBKMOD=yes HWDB=no ZLIB=no DNS=no
+      sed -i -e 's|/usr/share/pci.ids|/tmp/HW_PROBE_PCI_|' $SNAPCRAFT_PART_INSTALL/usr/sbin/lspci
     build-packages:
       - gcc
       - make
       - curl
+      - libkmod-dev
     prime:
       - usr/sbin/lspci
       - usr/share/pci.ids
@@ -130,9 +165,10 @@ parts:
     override-build: |
       sh autogen.sh
       ./configure --with-nvme-devicescan --prefix=/
-      sed -i -e 's/ -g / /' Makefile
+      sed -i -e 's/ -g / -s /' Makefile
       make
       make install DESTDIR=$SNAPCRAFT_PART_INSTALL
+      find $SNAPCRAFT_PART_INSTALL -type f | perl -lne 'print if -B and -x' | xargs strip
     build-packages:
       - gcc
       - make
@@ -146,12 +182,32 @@ parts:
     override-build: |
       echo '2.0' > VERSION
       rm -f git2log
-      sed -i -e 's/ -g / /' Makefile
+      sed -i -e 's/ -g / -s /' Makefile
       make
       make install DESTDIR=$SNAPCRAFT_PART_INSTALL
     build-packages:
       - gcc
       - make
+  mesa-demos:
+    source: ftp://ftp.freedesktop.org/pub/mesa/demos/8.1.0/mesa-demos-8.1.0.tar.bz2
+    source-type: tar
+    plugin: make
+    build-attributes: [no-system-libraries]
+    override-build: |
+      ./configure --prefix=/usr
+      sed -i -e 's/-lGLEW//' Makefile src/xdemos/Makefile
+      make
+      make install DESTDIR=$SNAPCRAFT_PART_INSTALL
+      find $SNAPCRAFT_PART_INSTALL -type f | perl -lne 'print if -B and -x' | xargs strip
+    build-packages:
+      - gcc
+      - make
+      - libgl1-mesa-dev
+      - libglew-dev
+      - freeglut3-dev
+    prime:
+      - usr/bin/glxgears
+      - usr/bin/glxinfo
   hwinfo:
     after: [libx86emu]
     source: https://github.com/openSUSE/hwinfo/archive/21.56.tar.gz
@@ -160,7 +216,7 @@ parts:
     override-build: |
       echo '21.56' > VERSION
       rm -f git2log
-      sed -i -e 's/ -g / /' Makefile
+      sed -i -e 's/ -g / -s /' Makefile.common
       CFLAGS='-I'$SNAPCRAFT_STAGE'/usr/include' LDFLAGS='-L'$SNAPCRAFT_STAGE'/usr/lib64 -lx86emu' make
       make install DESTDIR=$SNAPCRAFT_PART_INSTALL
     build-packages:
@@ -171,20 +227,6 @@ parts:
       - usr/lib64/libhd*
       - usr/share/hwinfo/*
       - usr/sbin/hwinfo
-  mesa-demos:
-    source: ftp://ftp.freedesktop.org/pub/mesa/demos/8.3.0/mesa-demos-8.3.0.tar.bz2
-    source-type: tar
-    plugin: autotools
-    build-attributes: [no-system-libraries]
-    build-packages:
-      - gcc
-      - make
-      - libgl1-mesa-dev
-      - libglew-dev
-      - freeglut3-dev
-    prime:
-      - bin/glxgears
-      - bin/glxinfo
   perl-uri:
     source: https://cpan.metacpan.org/authors/id/E/ET/ETHER/URI-1.74.tar.gz
     source-type: tar
@@ -233,6 +275,42 @@ parts:
     build-packages:
       - make
       - perl
+  perl-lwp-mediatypes:
+    source: https://cpan.metacpan.org/authors/id/G/GA/GAAS/LWP-MediaTypes-6.02.tar.gz
+    source-type: tar
+    plugin: make
+    override-build: |
+      perl Makefile.PL
+      make install DESTDIR=`pwd`/INST INSTALLSITELIB=/SITELIB
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/perl5/
+      cp -fr ./INST/SITELIB/* $SNAPCRAFT_PART_INSTALL/usr/share/perl5/
+    build-packages:
+      - make
+      - perl
+  perl-http-date:
+    source: https://cpan.metacpan.org/authors/id/G/GA/GAAS/HTTP-Date-6.02.tar.gz
+    source-type: tar
+    plugin: make
+    override-build: |
+      perl Makefile.PL
+      make install DESTDIR=`pwd`/INST INSTALLSITELIB=/SITELIB
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/perl5/
+      cp -fr ./INST/SITELIB/* $SNAPCRAFT_PART_INSTALL/usr/share/perl5/
+    build-packages:
+      - make
+      - perl
+  perl-timedate:
+    source: https://cpan.metacpan.org/authors/id/G/GB/GBARR/TimeDate-2.30.tar.gz
+    source-type: tar
+    plugin: make
+    override-build: |
+      perl Makefile.PL
+      make install DESTDIR=`pwd`/INST INSTALLSITELIB=/SITELIB
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/perl5/
+      cp -fr ./INST/SITELIB/* $SNAPCRAFT_PART_INSTALL/usr/share/perl5/
+    build-packages:
+      - make
+      - perl
   libwww-perl:
     source: https://cpan.metacpan.org/authors/id/E/ET/ETHER/libwww-perl-6.35.tar.gz
     source-type: tar
@@ -248,24 +326,28 @@ parts:
     prime:
       - usr/share/perl5/LWP
       - usr/share/perl5/LWP.pm
+  perl-parent:
+    source: https://cpan.metacpan.org/authors/id/C/CO/CORION/parent-0.237.tar.gz
+    source-type: tar
+    plugin: make
+    override-build: |
+      perl Makefile.PL
+      make install DESTDIR=`pwd`/INST INSTALLSITELIB=/SITELIB
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/perl5/
+      cp -fr ./INST/SITELIB/* $SNAPCRAFT_PART_INSTALL/usr/share/perl5/
+    build-packages:
+      - make
+      - perl
   hw-probe:
     source: https://github.com/linuxhw/build-stuff/releases/download/1.4/hw-probe-1.4-AI.tar.gz
     source-type: tar
     plugin: make
-    build-attributes: [no-system-libraries]
     override-build: |
+      make
       make install DESTDIR=$SNAPCRAFT_PART_INSTALL
     build-packages:
       - make
       - perl
-      - curl
-    stage-packages:
-      - dmidecode
-      - lm-sensors
     prime:
-      - usr/sbin/biosdecode
-      - usr/sbin/dmidecode
       - usr/bin/hw-probe
-      - usr/bin/sensors
-      - usr/lib/x86_64-linux-gnu/libsensors*
 

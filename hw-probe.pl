@@ -1703,7 +1703,7 @@ sub probeHW()
         
         if($HWLogs)
         {
-            foreach my $Prog ("dmidecode", "curl", "edid-decode")
+            foreach my $Prog ("dmidecode", "edid-decode")
             {
                 if(not check_Cmd($Prog)) {
                     print STDERR "WARNING: '".$Prog."' package is not installed\n";
@@ -4463,6 +4463,16 @@ sub probeHW()
     }
     
     my $Smartctl = "";
+    my $SmartctlCmd = "smartctl";
+    
+    if($Opt{"Snap"} or $Opt{"AppImage"})
+    {
+        if(not $Opt{"FixProbe"} and $HWLogs)
+        {
+            $SmartctlCmd = find_Cmd("smartctl");
+        }
+    }
+    
     if($Opt{"FixProbe"})
     {
         $Smartctl = readFile($FixProbe_Logs."/smartctl");
@@ -4511,7 +4521,7 @@ sub probeHW()
             foreach my $Dev (sort keys(%HDD))
             {
                 my $Id = $HDD{$Dev};
-                my $Output = runCmd("smartctl -x \"".$Dev."\" 2>/dev/null");
+                my $Output = runCmd($SmartctlCmd." -x \"".$Dev."\" 2>/dev/null");
                 $Output = encryptSerials($Output, "Serial Number");
                 $Output = hideWWNs($Output);
                 
@@ -4709,7 +4719,7 @@ sub probeHW()
                 {
                     foreach my $Did (sort keys(%{$DID{$Dev}}))
                     {
-                        my $Output = runCmd("smartctl -x -d megaraid,$Did \"$Dev\" 2>/dev/null");
+                        my $Output = runCmd($SmartctlCmd." -x -d megaraid,$Did \"$Dev\" 2>/dev/null");
                         $Output = encryptSerials($Output, "Serial Number");
                         $Output = hideWWNs($Output);
                         
@@ -7589,9 +7599,13 @@ sub writeLogs()
     print "Ok\n";
 }
 
-sub check_Cmd($)
+sub check_Cmd(@)
 {
-    my $Cmd = $_[0];
+    my $Cmd = shift(@_);
+    my $Verify = undef;
+    if(@_) {
+        $Verify = shift(@_);
+    }
     
     if(index($Cmd, "/")!=-1 and -x $Cmd)
     { # relative or absolute path
@@ -7600,11 +7614,27 @@ sub check_Cmd($)
     
     foreach my $Dir (sort {length($a)<=>length($b)} split(/:/, $ENV{"PATH"}))
     {
-        if(-x $Dir."/".$Cmd) {
+        if(-x $Dir."/".$Cmd)
+        {
+            if($Verify)
+            {
+                if(not `$Dir/$Cmd --version 2>/dev/null`) {
+                    next;
+                }
+            }
             return $Dir."/".$Cmd;
         }
     }
     return undef;
+}
+
+sub find_Cmd($)
+{
+    my $Cmd = $_[0];
+    if(my $Path = check_Cmd($Cmd, 1)) {
+        return $Path;
+    }
+    return $Cmd;
 }
 
 sub decodeACPI($$)
@@ -9149,6 +9179,30 @@ sub scenario()
         }
     }
     
+    if($Opt{"Upload"})
+    {
+        if(not check_Cmd("curl")) {
+            print STDERR "WARNING: 'curl' package is not installed\n";
+        }
+    }
+    
+    my $UsbLink = "/tmp/HW_PROBE_USB_";
+    my $PciLink = "/tmp/HW_PROBE_PCI_";
+    
+    if($Opt{"Snap"} and my $SNAP_Dir = $ENV{"SNAP"})
+    {
+        if(-e $UsbLink) {
+            unlink($UsbLink);
+        }
+        
+        if(-e $PciLink) {
+            unlink($PciLink);
+        }
+        
+        symlink("$SNAP_Dir/usr/share/usb.ids", $UsbLink);
+        symlink("$SNAP_Dir/usr/share/pci.ids", $PciLink);
+    }
+    
     if($Opt{"Probe"} or $Opt{"Check"})
     {
         probeSys();
@@ -9346,6 +9400,12 @@ sub scenario()
         }
         
         importProbes($Opt{"ImportProbes"});
+    }
+    
+    if($Opt{"Snap"})
+    {
+        unlink($UsbLink);
+        unlink($PciLink);
     }
     
     exit(0);
