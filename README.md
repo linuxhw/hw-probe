@@ -55,10 +55,10 @@ DESC — any description of the probe.
 AppImage
 --------
 
-The portable app that runs anywhere, no need to install anything. Just download [hw-probe-1.4-110-x86_64.AppImage](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe-1.4-110-x86_64.AppImage) and run the following command in terminal to probe your computer:
+The portable app that runs anywhere, no need to install anything. Just download [hw-probe-1.4-129-x86_64.AppImage](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe-1.4-129-x86_64.AppImage) and run the following command in terminal to probe your computer:
 
-    chmod +x ./hw-probe-1.4-110-x86_64.AppImage
-    sudo ./hw-probe-1.4-110-x86_64.AppImage -all -upload
+    chmod +x ./hw-probe-1.4-129-x86_64.AppImage
+    sudo ./hw-probe-1.4-129-x86_64.AppImage -all -upload
 
 ###### Supported systems
 
@@ -109,9 +109,9 @@ Boot this Linux CD on your computer and make a probe (see [Usage](#usage)).
 Snap
 ----
 
-Download the universal Linux package [hw-probe_1.4-1_amd64.snap](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe_1.4-1_amd64.snap) and install:
+Download the universal Linux package [hw-probe_1.4-2_amd64.snap](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe_1.4-2_amd64.snap) and install:
 
-    sudo snap install ./hw-probe_1.4-1_amd64.snap --dangerous --classic
+    sudo snap install ./hw-probe_1.4-2_amd64.snap --dangerous --classic
 
 The `hw-probe` command should become available on the command line after installation. If not, try:
 
