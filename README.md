@@ -117,7 +117,11 @@ The `hw-probe` command should become available on the command line after install
 
     export PATH=$PATH:/snap/bin
 
-You need a Snap runtime (`snapd` package) and `/snap` symlink to `/var/lib/snapd/snap` (by `sudo ln -s /var/lib/snapd/snap /snap`) in your system to install and run snaps (pre-installed on Ubuntu 16.04 and Ubuntu 18.04).
+Now you can create computer probes:
+
+    sudo hw-probe -all -upload
+
+NOTE: You need a Snap runtime (`snapd` package) and `/snap` symlink to `/var/lib/snapd/snap` (by `sudo ln -s /var/lib/snapd/snap /snap`) in your system to install and run snaps (pre-installed on Ubuntu 16.04 and Ubuntu 18.04).
 
 ###### Supported systems
 
@@ -142,7 +146,7 @@ Find your computers by the inventory ID on this page: https://linux-hardware.org
 Offline view
 ------------
 
-Create your probes collection view for offline use:
+Save your probes HTML view to a directory for offline use:
 
     sudo hw-probe -import DIR
 
