@@ -1,5 +1,5 @@
 name: hw-probe
-version: 1.4-2
+version: 1.4-6
 summary: A tool to check operability of computer hardware
 description: >
  A tool to check operability of computer hardware and upload result
@@ -15,21 +15,27 @@ description: >
  
      sudo hw-probe -all -upload
  
+ Make sure required Snap interfaces are connected:
+ 
+     for i in hardware-observe mount-observe network-observe physical-memory-observe system-observe upower-observe log-observe home;do sudo snap connect hw-probe:$i :$i; done
+ 
  By creating probes you contribute to the HDD/SSD Real-Life
  Reliability Test study: https://github.com/linuxhw/SMART
      
  The tool is released under the GNU LGPL 2.1+ license.
      
 type: app
-confinement: classic
+confinement: strict
 grade: stable
 apps:
   hw-probe:
     command: usr/bin/hw-probe -snap
+    plugs: [hardware-observe, mount-observe, network-observe, physical-memory-observe, system-observe, upower-observe, log-observe, home]
     environment:
       PATH: $PATH:$SNAP/sbin:$SNAP/usr/sbin:$SNAP/usr/bin
-      PERL5LIB: $SNAP/usr/share/perl5
+      PERL5LIB: $SNAP/usr/share/perl5:$SNAP/usr/lib/x86_64-linux-gnu/perl-base
       LD_LIBRARY_PATH: $SNAP/lib/x86_64-linux-gnu/:$SNAP/usr/lib:$SNAP/usr/lib:$SNAP/usr/lib64:$SNAP/usr/lib/x86_64-linux-gnu
+      LC_ALL: C
 parts:
   edid-decode:
     source: https://git.linuxtv.org/cgit.cgi/edid-decode.git
@@ -80,16 +86,18 @@ parts:
     source-type: tar
     plugin: make
     override-build: |
-      ./configure --disable-debug --disable-python --disable-logging --disable-tools --disable-test-modules --disable-manpages --prefix=/usr
+      ./configure --disable-debug --disable-python --disable-logging --disable-test-modules --disable-manpages --prefix=/usr
       sed -i -e 's/ -g / -s /' Makefile
       make
       make install DESTDIR=$SNAPCRAFT_PART_INSTALL
+      cp -f tools/lsmod $SNAPCRAFT_PART_INSTALL/usr/bin/
       find $SNAPCRAFT_PART_INSTALL -type f | perl -lne 'print if -B and -x' | xargs strip
     build-packages:
       - gcc
       - make
     prime:
       - usr/lib/libkmod.so*
+      - usr/bin/lsmod
   usbutils:
     source: https://mirrors.edge.kernel.org/pub/linux/utils/usb/usbutils/usbutils-007.tar.xz
     source-type: tar
@@ -175,46 +183,44 @@ parts:
       - automake
     prime:
       - sbin/smartctl
-  libx86emu:
-    source: https://github.com/wfeldt/libx86emu/archive/2.0.tar.gz
+  util-linux:
+    source: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.32/util-linux-2.32.1.tar.gz
     source-type: tar
     plugin: make
     override-build: |
-      echo '2.0' > VERSION
-      rm -f git2log
+      ./configure --prefix=/usr
       sed -i -e 's/ -g / -s /' Makefile
       make
-      make install DESTDIR=$SNAPCRAFT_PART_INSTALL
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/bin/
+      cp -f ./dmesg $SNAPCRAFT_PART_INSTALL/usr/bin/
+      find $SNAPCRAFT_PART_INSTALL -type f | perl -lne 'print if -B and -x' | xargs strip
     build-packages:
       - gcc
       - make
-  mesa-demos:
-    source: ftp://ftp.freedesktop.org/pub/mesa/demos/8.1.0/mesa-demos-8.1.0.tar.bz2
+      - automake
+    prime:
+      - usr/bin/dmesg
+  libx86emu:
+    source: https://github.com/wfeldt/libx86emu/archive/2.1.tar.gz
     source-type: tar
     plugin: make
-    build-attributes: [no-system-libraries]
     override-build: |
-      ./configure --prefix=/usr
-      sed -i -e 's/-lGLEW//' Makefile src/xdemos/Makefile
+      echo '2.1' > VERSION
+      rm -f git2log
+      sed -i -e 's/ -g / -s /' Makefile
       make
       make install DESTDIR=$SNAPCRAFT_PART_INSTALL
       find $SNAPCRAFT_PART_INSTALL -type f | perl -lne 'print if -B and -x' | xargs strip
     build-packages:
       - gcc
       - make
-      - libgl1-mesa-dev
-      - libglew-dev
-      - freeglut3-dev
-    prime:
-      - usr/bin/glxgears
-      - usr/bin/glxinfo
   hwinfo:
     after: [libx86emu]
-    source: https://github.com/openSUSE/hwinfo/archive/21.56.tar.gz
+    source: https://github.com/openSUSE/hwinfo/archive/21.57.tar.gz
     source-type: tar
     plugin: make
     override-build: |
-      echo '21.56' > VERSION
+      echo '21.57' > VERSION
       rm -f git2log
       sed -i -e 's/ -g / -s /' Makefile.common
       CFLAGS='-I'$SNAPCRAFT_STAGE'/usr/include' LDFLAGS='-L'$SNAPCRAFT_STAGE'/usr/lib64 -lx86emu' make
@@ -338,14 +344,47 @@ parts:
     build-packages:
       - make
       - perl
+  perl-data-dumper:
+    source: https://cpan.metacpan.org/authors/id/S/SM/SMUELLER/Data-Dumper-2.161.tar.gz
+    source-type: tar
+    plugin: make
+    override-build: |
+      perl Makefile.PL
+      make install DESTDIR=`pwd`/INST INSTALLSITELIB=/SITELIB
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/perl5/
+      cp -fr ./INST/usr/lib/x86_64-linux-gnu/perl/*/* $SNAPCRAFT_PART_INSTALL/usr/share/perl5/
+    build-packages:
+      - make
+      - perl
+  perl-time-local:
+    source: https://cpan.metacpan.org/authors/id/D/DR/DROLSKY/Time-Local-1.28.tar.gz
+    source-type: tar
+    plugin: make
+    override-build: |
+      perl Makefile.PL
+      make install DESTDIR=`pwd`/INST INSTALLSITELIB=/SITELIB
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/perl5/
+      cp -fr ./INST/SITELIB/* $SNAPCRAFT_PART_INSTALL/usr/share/perl5/
+    build-packages:
+      - make
+      - perl
   hw-probe:
     source: https://github.com/linuxhw/build-stuff/releases/download/1.4/hw-probe-1.4-AI.tar.gz
     source-type: tar
     plugin: make
     override-build: |
       make install DESTDIR=$SNAPCRAFT_PART_INSTALL
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/perl5/File/
+      mv $SNAPCRAFT_PART_INSTALL/usr/share/perl/5.*.*/File/Copy.pm $SNAPCRAFT_PART_INSTALL/usr/share/perl5/File/
     build-packages:
       - make
       - perl
+    stage-packages:
+      - perl-base
+      - perl-modules
     prime:
       - usr/bin/hw-probe
+      - usr/lib/x86_64-linux-gnu/perl-base
+      - usr/bin/perl
+      - usr/share/perl5/File/Copy.pm
+
