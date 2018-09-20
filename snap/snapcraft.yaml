@@ -1,5 +1,5 @@
 name: hw-probe
-version: 1.4-6
+version: 1.4-9
 summary: A tool to check operability of computer hardware
 description: >
  A tool to check operability of computer hardware and upload result
@@ -17,7 +17,7 @@ description: >
  
  Make sure required Snap interfaces are connected:
  
-     for i in hardware-observe mount-observe network-observe physical-memory-observe system-observe upower-observe log-observe home;do sudo snap connect hw-probe:$i :$i; done
+     for i in hardware-observe mount-observe network-observe system-observe upower-observe log-observe raw-usb physical-memory-observe opengl;do sudo snap connect hw-probe:$i :$i; done
  
  By creating probes you contribute to the HDD/SSD Real-Life
  Reliability Test study: https://github.com/linuxhw/SMART
@@ -30,7 +30,7 @@ grade: stable
 apps:
   hw-probe:
     command: usr/bin/hw-probe -snap
-    plugs: [hardware-observe, mount-observe, network-observe, physical-memory-observe, system-observe, upower-observe, log-observe, home]
+    plugs: [hardware-observe, mount-observe, network-observe, system-observe, upower-observe, log-observe, raw-usb, physical-memory-observe, opengl]
     environment:
       PATH: $PATH:$SNAP/sbin:$SNAP/usr/sbin:$SNAP/usr/bin
       PERL5LIB: $SNAP/usr/share/perl5:$SNAP/usr/lib/x86_64-linux-gnu/perl-base
@@ -90,14 +90,12 @@ parts:
       sed -i -e 's/ -g / -s /' Makefile
       make
       make install DESTDIR=$SNAPCRAFT_PART_INSTALL
-      cp -f tools/lsmod $SNAPCRAFT_PART_INSTALL/usr/bin/
       find $SNAPCRAFT_PART_INSTALL -type f | perl -lne 'print if -B and -x' | xargs strip
     build-packages:
       - gcc
       - make
     prime:
       - usr/lib/libkmod.so*
-      - usr/bin/lsmod
   usbutils:
     source: https://mirrors.edge.kernel.org/pub/linux/utils/usb/usbutils/usbutils-007.tar.xz
     source-type: tar
@@ -135,6 +133,7 @@ parts:
       - make
       - curl
       - libkmod-dev
+      - pkg-config
     prime:
       - usr/sbin/lspci
       - usr/share/pci.ids
@@ -183,6 +182,23 @@ parts:
       - automake
     prime:
       - sbin/smartctl
+  libusb-1:
+    source: https://github.com/libusb/libusb/archive/v1.0.22.tar.gz
+    source-type: tar
+    plugin: make
+    override-build: |
+      sh autogen.sh
+      ./configure --disable-static --prefix=/usr
+      sed -i -e 's/ -g / -s /' Makefile
+      make
+      make install DESTDIR=$SNAPCRAFT_PART_INSTALL
+      find $SNAPCRAFT_PART_INSTALL -type f | perl -lne 'print if -B and -x' | xargs strip
+    build-packages:
+      - gcc
+      - make
+      - automake
+    prime:
+      - usr/lib/libusb*.so*
   util-linux:
     source: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.32/util-linux-2.32.1.tar.gz
     source-type: tar
