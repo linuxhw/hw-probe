@@ -100,7 +100,6 @@ parts:
     source: https://mirrors.edge.kernel.org/pub/linux/utils/usb/usbutils/usbutils-007.tar.xz
     source-type: tar
     plugin: make
-    build-attributes: [no-system-libraries]
     override-build: |
       curl http://www.linux-usb.org/usb.ids > usb.ids
       ./configure --prefix=/usr
@@ -123,7 +122,6 @@ parts:
     source: https://github.com/pciutils/pciutils/archive/v3.6.2.tar.gz
     source-type: tar
     plugin: make
-    build-attributes: [no-system-libraries]
     override-build: |
       curl https://pci-ids.ucw.cz/v2.2/pci.ids > pci.ids
       make install PREFIX=/usr DESTDIR=$SNAPCRAFT_PART_INSTALL SHARED=no LIBKMOD=yes HWDB=no ZLIB=no DNS=no
@@ -134,6 +132,7 @@ parts:
       - curl
       - libkmod-dev
       - pkg-config
+      - libtool
     prime:
       - usr/sbin/lspci
       - usr/share/pci.ids
@@ -239,7 +238,7 @@ parts:
       echo '21.57' > VERSION
       rm -f git2log
       sed -i -e 's/ -g / -s /' Makefile.common
-      CFLAGS='-I'$SNAPCRAFT_STAGE'/usr/include' LDFLAGS='-L'$SNAPCRAFT_STAGE'/usr/lib64 -lx86emu' make
+      CFLAGS='-I'$SNAPCRAFT_STAGE'/usr/include' LDFLAGS='-L'$SNAPCRAFT_STAGE'/usr/lib64 -L'$SNAPCRAFT_STAGE'/usr/lib -lx86emu' make
       make install DESTDIR=$SNAPCRAFT_PART_INSTALL
     build-packages:
       - gcc
