@@ -62,6 +62,11 @@ parts:
     build-packages:
       - gcc
       - make
+    stage-packages:
+      - on armhf:
+        - dmidecode
+      - on arm64:
+        - dmidecode
     prime:
       - usr/sbin/dmidecode
       - usr/sbin/biosdecode

@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Hardware Probe
 Comment=Probe for hardware and upload result to the Linux hardware database
-Exec=sh -c "echo 'Executing sudo hw-probe -all -upload\n';sudo hw-probe -all -upload;sleep 60"
+Exec=hw-probe
 Icon=$SNAP/meta/gui/icon.png
 Terminal=true
 Type=Application
