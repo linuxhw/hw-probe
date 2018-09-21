@@ -68,8 +68,7 @@ parts:
       - on arm64:
         - dmidecode
     prime:
-      - usr/sbin/dmidecode
-      - usr/sbin/biosdecode
+      - usr/sbin
   lm-sensors:
     source: https://ftp.gwdg.de/pub/linux/misc/lm-sensors/lm_sensors-3.4.0.tar.bz2
     source-type: tar
