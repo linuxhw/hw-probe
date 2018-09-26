@@ -4055,6 +4055,22 @@ sub probeHW()
                                 last;
                             }
                         }
+                        
+                        if(not $OldEdid{$Card})
+                        {
+                            foreach my $L (split(/\n/, $Block))
+                            {
+                                if($L=~/([a-f0-9]{32})/)
+                                {
+                                    if(not defined $OldEdid{$Card}) {
+                                        $OldEdid{$Card} = $1;
+                                    }
+                                    else {
+                                        $OldEdid{$Card} .= " ".$1;
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 
@@ -4122,20 +4138,27 @@ sub probeHW()
         my $EdidDecode = check_Cmd("edid-decode");
         my $MonEdid = check_Cmd("monitor-get-edid");
         
-        if($EdidDecode)
+        my $MDir = "/sys/class/drm";
+        foreach my $Dir (listDir($MDir))
         {
-            my $MDir = "/sys/class/drm";
-            foreach my $Dir (listDir($MDir))
+            my $Path = $MDir."/".$Dir."/edid";
+            
+            if(-f $Path)
             {
-                my $Path = $MDir."/".$Dir."/edid";
+                my $Dec = "";
+                my $EdidHex = readFileHex($Path);
+                $EdidHex=~s/(.{32})/$1\n/g;
                 
-                if(-f $Path)
+                if($EdidDecode) {
+                    $Dec = runCmd("edid-decode \"$Path\" 2>/dev/null");
+                }
+                
+                if($EdidHex)
                 {
-                    my $Dec = runCmd("edid-decode \"$Path\" 2>/dev/null");
-                    
-                    if($Dec and $Dec!~/No header found/i) {
-                        $Edid .= "edid-decode \"$Path\"\n".$Dec."\n\n";
-                    }
+                    $Edid .= "edid-decode \"$Path\"\n\n";
+                    $Edid .= "EDID (hex):\n";
+                    $Edid .= $EdidHex."\n";
+                    $Edid .= $Dec."\n\n";
                 }
             }
         }
@@ -4575,6 +4598,11 @@ sub probeHW()
                     setAttachedStatus($Id, "works"); # got SMART
                 }
             }
+            
+            if($Opt{"Snap"} and $Smartctl=~/Operation not permitted|Permission denied/) {
+                $Smartctl = "";
+            }
+            
             writeLog($LOG_DIR."/smartctl", $Smartctl);
         }
         else
@@ -4832,6 +4860,13 @@ sub probeHW()
         $Dmesg = hideTags($Dmesg, "SerialNumber");
         $Dmesg = hideMACs($Dmesg);
         writeLog($LOG_DIR."/dmesg", $Dmesg);
+    }
+    
+    if(not $Sys{"System"} and $Dmesg)
+    {
+        if($Dmesg=~/Linux version.+\-Ubuntu /) {
+            $Sys{"System"} = "ubuntu";
+        }
     }
     
     my $XLog = "";
@@ -5154,8 +5189,8 @@ sub shortModel($)
 sub shortOS($)
 {
     my $Name = $_[0];
-    $Name=~s/\s+(linux|project|amd64)\s+/ /i;
-    $Name=~s/\s*(linux|project|amd64)\Z//i;
+    $Name=~s/\s+(linux|project|amd64|x86_64)\s+/ /i;
+    $Name=~s/\s*(linux|project|amd64|x86_64)\Z//i;
     $Name=~s/\s+/\-/g;
     $Name=~s/\.\Z//g;
     return $Name;
@@ -5740,6 +5775,9 @@ sub guessDriveVendor($)
     elsif($Name=~/\AQ200 EX/) {
         return "Toshiba";
     }
+    elsif($Name=~/\AOOS2000G/) {
+        return "Seagate";
+    }
     elsif($Name=~/\ASSDPAMM/) {
         return "Intel";
     }
@@ -5759,7 +5797,7 @@ sub guessDriveVendor($)
         return "Goodram";
     }
     elsif($Name=~/\A(MT|MSH|P3|P3D|T)\-(60|64|120|128|240|256|512|1TB|2TB)\Z/
-    or grep { $Name eq $_ } ("V-32", "NT-256"))
+    or grep { $Name eq $_ } ("V-32", "NT-256", "NT-512", "Q-360"))
     { # MT-64 MSH-256 P3-128 P3D-240 P3-2TB T-60 V-32
         return "KingSpec";
     }
@@ -5818,7 +5856,7 @@ sub guessDeviceVendor($)
 {
     my $Device = $_[0];
     
-    if($Device=~s/\A(WDC|Western Digital|Seagate|Samsung Electronics|SAMSUNG|Hitachi|TOSHIBA|Maxtor|SanDisk|Kingston|ADATA|Lite-On|OCZ|Smartbuy|SK hynix|GOODRAM|LDLC|A\-DATA|KingFast|ExcelStor Technology)([\s_\-]|\Z)//i)
+    if($Device=~s/\A(WDC|Western Digital|Seagate|Samsung Electronics|SAMSUNG|Hitachi|TOSHIBA|Maxtor|SanDisk|Kingston|ADATA|Lite-On|OCZ|Smartbuy|SK hynix|GOODRAM|LDLC|A\-DATA|KingFast|ExcelStor Technology|i-FlashDisk)([\s_\-]|\Z)//i)
     { # drives
         return $1;
     }
@@ -6103,7 +6141,7 @@ sub probeSys()
     $Sys{"Systemrel"} = $Rel;
     
     if(not $Sys{"System"}) {
-        print STDERR "WARNING: failed to detect Linux distribution\n";
+        print STDERR "ERROR: failed to detect Linux distribution\n";
     }
     
     $Sys{"Arch"} = runCmd("uname -m");
@@ -6432,6 +6470,17 @@ sub getRealHWaddr($)
     return undef;
 }
 
+sub readFileHex($)
+{
+    my $Path = $_[0];
+    local $/ = undef;
+    open(FILE, $Path);
+    binmode FILE;
+    my $Data = <FILE>;
+    close FILE;
+    return unpack('H*', $Data);
+}
+
 sub readFile($)
 {
     my $Path = $_[0];
@@ -6575,6 +6624,10 @@ sub probeDistr()
         elsif($Descr=~/\AMaui/i) {
             $Name = $Descr;
         }
+    }
+    
+    if(grep { $Release eq $_ } ("amd64", "x86_64")) {
+        $Release = undef;
     }
     
     if((not $Name or not $Release) and $OS_Rel)
@@ -7252,6 +7305,10 @@ sub writeLogs()
             if($Lsblk=~/unknown column/)
             { # CentOS 6: no PARTUUID column
                 $Lsblk = runCmd("lsblk -al -o NAME,SIZE,TYPE,FSTYPE,LABEL,UUID,MOUNTPOINT,MODEL 2>&1");
+            }
+            
+            if($Opt{"Snap"} and $Lsblk=~/Permission denied/) {
+                $Lsblk = "";
             }
         }
         writeLog($LOG_DIR."/lsblk", $Lsblk);
@@ -8744,7 +8801,7 @@ sub fixLogs($)
     }
     
     if(-f $Dir."/dmidecode"
-    and -s $Dir."/dmidecode" < 100)
+    and -s $Dir."/dmidecode" < 160)
     { # Support for HW Probe 1.3
       # dmidecode: command not found
       # No SMBIOS nor DMI entry point found
@@ -8812,7 +8869,7 @@ sub fixLogs($)
         }
     }
     
-    foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all", "pstree")
+    foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all", "pstree", "lsblk")
     {
         if(-f $Dir."/".$L
         and -s $Dir."/".$L < 100)
@@ -8820,6 +8877,7 @@ sub fixLogs($)
           # sh: XXX: command not found
           # pcilib: Cannot open /proc/bus/pci
           # lspci: Cannot find any working access method.
+          # lsblk: Permission denied
             writeFile($Dir."/".$L, "");
         }
     }
@@ -8831,6 +8889,12 @@ sub fixLogs($)
         {
             $Lsusb=~s/can't get device qualifier: Resource temporarily unavailable\n//g;
             $Lsusb=~s/can't get debug descriptor: Resource temporarily unavailable\n//g;
+            $Lsusb=~s/Couldn't open device, some information will be missing\n//g;
+            writeFile($Dir."/lsusb", $Lsusb);
+        }
+        elsif(index($Lsusb, "some information will be missing")!=-1)
+        {
+            $Lsusb=~s/Couldn't open device, some information will be missing\n//g;
             writeFile($Dir."/lsusb", $Lsusb);
         }
     }

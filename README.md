@@ -123,15 +123,30 @@ Now you can create computer probes:
 
 NOTE: You need a Snap runtime (`snapd` package) and `/snap` symlink to `/var/lib/snapd/snap` (by `sudo ln -s /var/lib/snapd/snap /snap`) in your system to install and run snaps (pre-installed on Ubuntu 16.04 and Ubuntu 18.04).
 
-###### Store
+###### Snap Store
 
-The app is available in the Canonical Snapcraft Store: https://snapcraft.io/hw-probe
+The app is available in the Snap Store: https://snapcraft.io/hw-probe
+
+This is a strict snap that runs in a sandbox with limited functionality. It's better to use classic snap (see above) to collect more info about the computer.
+
+Install app from Store:
+
+    sudo snap install hw-probe
+
+Connect system interfaces:
+
+    for i in hardware-observe mount-observe network-observe system-observe upower-observe log-observe raw-usb physical-memory-observe opengl;do sudo snap connect hw-probe:$i :$i; done
+
+Now you can create computer probes:
+
+    sudo hw-probe -all -upload
 
 ###### Supported systems
 
 * Ubuntu 14.04 and later
 * Debian 9 and later
 * Fedora 26 and later
+
 
 Inventory
 ---------
