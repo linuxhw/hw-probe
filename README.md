@@ -135,7 +135,9 @@ Install app from Store:
 
 Connect system interfaces:
 
-    for i in hardware-observe mount-observe network-observe system-observe upower-observe log-observe raw-usb physical-memory-observe opengl;do sudo snap connect hw-probe:$i :$i; done
+    for i in hardware-observe mount-observe network-observe \
+    system-observe upower-observe log-observe raw-usb \
+    physical-memory-observe opengl;do sudo snap connect hw-probe:$i :$i; done
 
 Now you can create computer probes:
 
