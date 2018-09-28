@@ -77,7 +77,6 @@ use File::Temp qw(tempdir);
 use File::Copy qw(copy move);
 use File::Basename qw(basename dirname);
 use Cwd qw(abs_path cwd);
-use POSIX qw(strftime ceil);
 use Config;
 
 my $TOOL_VERSION = "1.4";
@@ -86,13 +85,7 @@ my $CmdName = basename($0);
 my $URL = "https://linux-hardware.org";
 my $GITHUB = "https://github.com/linuxhw/hw-probe";
 
-my $PROBE_DIR = "/root/HW_PROBE";
-my $DATA_DIR = $PROBE_DIR."/LATEST/hw.info";
-my $LOG_DIR = $DATA_DIR."/logs";
-my $TEST_DIR = $DATA_DIR."/tests";
-my $PROBE_LOG = $PROBE_DIR."/LOG";
 my $LOCALE = "C";
-
 my $ORIG_DIR = cwd();
 
 my $HWLogs = 0;
@@ -103,13 +96,21 @@ A tool to probe for hardware and upload result to the Linux hardware DB
 License: GNU LGPL 2.1+
 
 Usage: sudo $CmdName [options]
-Example: sudo $CmdName -all -upload -id DESC
+Example: sudo $CmdName -all -upload
 
 DESC — any description of the probe.\n\n";
 
-if($#ARGV==-1)
-{
-    print $ShortUsage;
+my $SNAP_DESKTOP = (defined $ENV{"BAMF_DESKTOP_FILE_HINT"});
+
+if(($#ARGV==0 and $ARGV[0] eq "-snap") or $#ARGV==-1)
+{ # 1) To run by desktop file
+  # 2) No arguments passed
+    print "Executing hw-probe -all -upload\n\n";
+    system("hw-probe -snap -all -upload");
+    if($SNAP_DESKTOP)
+    { # Desktop
+        sleep(60);
+    }
     exit(0);
 }
 
@@ -175,6 +176,17 @@ sub errMsg()
     print "\n".$ShortUsage;
     exit(1);
 }
+
+my $PROBE_DIR = "/root/HW_PROBE";
+
+if($Opt{"Snap"}) {
+    $PROBE_DIR = $ENV{"SNAP_USER_COMMON"}."/HW_PROBE";
+}
+
+my $DATA_DIR = $PROBE_DIR."/LATEST/hw.info";
+my $LOG_DIR = $DATA_DIR."/logs";
+my $TEST_DIR = $DATA_DIR."/tests";
+my $PROBE_LOG = $PROBE_DIR."/LOG";
 
 my $HelpMessage="
 NAME:
@@ -307,6 +319,9 @@ OTHER OPTIONS:
   
   -import DIR
       Import probes from the database to DIR for offline use.
+      
+      If you are using Snap package, then DIR will be created
+      in the Snap sandbox data directory.
 
 DATA LOCATION:
   Probes are saved in the $PROBE_DIR directory.
@@ -976,8 +991,18 @@ sub getOldProbeDir()
 sub getGroup()
 {
     my $GroupURL = $URL."/get_group.php";
-    my $CurlCmd = "curl -s -S -f -POST -F get=group -H \"Expect:\" --http1.0 $GroupURL";
-    my $Log = qx/$CurlCmd 2>&1/;
+    
+    my $Log = "";
+    
+    if(check_Cmd("curl"))
+    {
+        my $CurlCmd = "curl -s -S -f -POST -F get=group -H \"Expect:\" --http1.0 $GroupURL";
+        $Log = qx/$CurlCmd 2>&1/;
+    }
+    else {
+        $Log = postRequest($GroupURL, { "get"=>"group" }, "NoSSL");
+    }
+    
     print $Log;
     if($?)
     {
@@ -994,7 +1019,7 @@ sub getGroup()
     }
 }
 
-sub sendFile($$$)
+sub postRequest($$$)
 {
     my ($UploadURL, $Data, $SSL) = @_;
     
@@ -1013,6 +1038,33 @@ sub sendFile($$$)
         Content_Type => "form-data",
         Content => $Data
     );
+    
+    my $Out = $Res->{"_content"};
+    
+    if(not $Out) {
+        return $Res->{"_headers"}{"x-died"};
+    }
+    
+    return $Out;
+}
+
+sub getRequest($$)
+{
+    my ($UploadURL, $SSL) = @_;
+    
+    require LWP::UserAgent;
+    
+    my $UAgent = LWP::UserAgent->new(parse_head => 0);
+    
+    if($SSL eq "NoSSL" or not checkModule("Mozilla/CA.pm"))
+    {
+        $UploadURL=~s/\Ahttps:/http:/g;
+        $UAgent->ssl_opts(verify_hostname => 0, SSL_verify_mode => 0x00);
+    }
+    
+    $UAgent->agent("Mozilla/5.0 (X11; Linux x86_64; rv:50.0) Gecko/20100101 Firefox/50.123");
+    
+    my $Res = $UAgent->get($UploadURL);
     
     my $Out = $Res->{"_content"};
     
@@ -1115,7 +1167,7 @@ sub uploadData()
     
     if($Err)
     {
-        if(my $WWWLog = sendFile($UploadURL, \%Data, "NoSSL"))
+        if(my $WWWLog = postRequest($UploadURL, \%Data, "NoSSL"))
         {
             if(index($WWWLog, "probe=")==-1)
             {
@@ -1316,6 +1368,10 @@ sub createPackage()
     }
     
     return ($Pkg, $HWaddr);
+}
+
+sub ceilNum($) {
+    return int($_[0]+0.99);
 }
 
 sub copyFiles($$)
@@ -1802,10 +1858,37 @@ sub probeHW()
     else
     {
         listProbe("logs", "lsmod");
-        $Lsmod = runCmd("lsmod 2>&1");
-        
-        if(length($Lsmod)<60) {
-            $Lsmod = "";
+        if($Opt{"Snap"})
+        {
+            $Lsmod = "Module                  Size  Used by\n";
+            foreach my $L (split(/\n/, readFile("/proc/modules")))
+            {
+                if($L=~/\A(\w+)\s+(\d+)\s+(\d+)\s+([\w,-]+)/)
+                {
+                    my ($Mod, $Size, $Used, $By) = ($1, $2, $3, $4);
+                    $By=~s/[,-]\Z//;
+                    # if($By) {
+                    #     $By = join(",", sort split(/,/, $By));
+                    # }
+                    $Lsmod .= $Mod;
+                    my $Sp = 28 - length($Size) - length($Mod);
+                    if($Sp<4) {
+                        $Sp = 4;
+                    }
+                    foreach (1 .. $Sp) {
+                        $Lsmod .= " ";
+                    }
+                    $Lsmod .= $Size."  ".$Used." ".$By."\n";
+                }
+            }
+        }
+        else
+        {
+            $Lsmod = runCmd("lsmod 2>&1");
+            
+            if(length($Lsmod)<60) {
+                $Lsmod = "";
+            }
         }
         
         if($Lsmod)
@@ -5698,7 +5781,7 @@ sub fixDrive($)
         {
             if($Device->{"Capacity"}=~/\A([\d\.]+)/)
             {
-                my ($S1, $S2) = (int($1), ceil($1));
+                my ($S1, $S2) = (int($1), ceilNum($1));
                 if($S1 % 2 != 0) {
                     $S1 += 1;
                 }
@@ -6140,18 +6223,33 @@ sub probeSys()
     $Sys{"System"} = $Distr;
     $Sys{"Systemrel"} = $Rel;
     
-    if(not $Sys{"System"}) {
+    if(not $Sys{"System"})
+    {
         print STDERR "ERROR: failed to detect Linux distribution\n";
+        if($Opt{"Snap"})
+        {
+            warnSnapInterfaces();
+            exit(1);
+        }
     }
     
-    $Sys{"Arch"} = runCmd("uname -m");
+    if(check_Cmd("uname"))
+    {
+        $Sys{"Arch"} = runCmd("uname -m");
+        $Sys{"Kernel"} = runCmd("uname -r");
+    }
+    else
+    {
+        require POSIX;
+        $Sys{"Arch"} = (POSIX::uname())[4];
+        $Sys{"Kernel"} = (POSIX::uname())[2];
+    }
+    
     if($Sys{"Arch"}=~/unknown/i)
     {
         $Sys{"Arch"} = $Config{"archname"};
         $Sys{"Arch"}=~s/\-linux.*//;
     }
-    
-    $Sys{"Kernel"} = runCmd("uname -r");
     
     $Sys{"Node"} = "NODE";
     $Sys{"User"} = "USER";
@@ -6287,6 +6385,30 @@ sub probeHWaddr()
                 }
             }
         }
+        elsif(checkModule("IO/Socket.pm")
+        and checkModule("IO/Interface.pm"))
+        {
+            require IO::Socket;
+            require IO::Interface;
+            
+            my $Socket = IO::Socket::INET->new(Proto => "udp");
+            my @Ifs = ();
+            my %Addrs = ();
+            foreach my $If ($Socket->if_list)
+            {
+                if(my $Mac = $Socket->if_hwaddr($If))
+                {
+                    $Mac = lc($Mac);
+                    $Mac=~s/:/-/g;
+                    $Mac = lc(clientHash(lc($Mac)));
+                    
+                    push(@Ifs, $If); # save order
+                    $Addrs{$If} = $Mac;
+                }
+            }
+            
+            $Sys{"HWaddr"} = selectHWAddr(\@Ifs, \%Addrs);
+        }
         else
         {
             print STDERR "ERROR: can't find 'ifconfig' or 'ip'\n";
@@ -6296,12 +6418,6 @@ sub probeHWaddr()
         if($IFConfig)
         {
             $Sys{"HWaddr"} = detectHWaddr($IFConfig);
-            
-            if(not $Sys{"HWaddr"})
-            {
-                print STDERR "ERROR: failed to detect hwid\n";
-                exit(1);
-            }
             
             if($HWLogs)
             {
@@ -6313,6 +6429,17 @@ sub probeHWaddr()
                     writeLog($LOG_DIR."/ethtool_p", $EthtoolP);
                 }
             }
+        }
+        
+        if(not $Sys{"HWaddr"})
+        {
+            print STDERR "ERROR: failed to detect hwid\n";
+            
+            if($Opt{"Snap"}) {
+                warnSnapInterfaces();
+            }
+            
+            exit(1);
         }
     }
     
@@ -6332,6 +6459,12 @@ sub probeHWaddr()
     }
 }
 
+sub warnSnapInterfaces()
+{
+    print STDERR "\nMake sure required Snap interfaces are connected:\n\n";
+    print STDERR "    for i in hardware-observe mount-observe network-observe system-observe upower-observe log-observe raw-usb physical-memory-observe opengl;do sudo snap connect hw-probe:\$i :\$i; done\n";
+}
+
 sub countStr($$)
 {
     my ($Str, $Target) = @_;
@@ -6347,7 +6480,8 @@ sub detectHWaddr($)
 {
     my $IFConfig = $_[0];
     
-    my (@Eth, @Wlan, @Other, @Wrong) = ();
+    my @Devs = ();
+    my %Addrs = ();
     
     foreach my $Block (split(/[\n]\s*[\n]+/, $IFConfig))
     {
@@ -6375,54 +6509,65 @@ sub detectHWaddr($)
             $Addr=~s/:/-/g;
         }
         
-        if(grep {uc($Addr) eq $_} @WrongAddr)
-        { # Different samples of some network controllers may have same HWaddr
-            push(@Wrong, $Addr);
+        my $NetDev = undef;
+        
+        if($Block=~/\A([^:]+):?\s/) {
+            $NetDev = $1;
         }
-        else
+        else {
+            next;
+        }
+        
+        push(@Devs, $NetDev); # save order
+        $Addrs{$NetDev} = $Addr;
+    }
+    
+    return selectHWAddr(\@Devs, \%Addrs);
+}
+
+sub selectHWAddr($$)
+{
+    my $Devs = $_[0];
+    my $Addrs = $_[1];
+    
+    my (@Eth, @Wlan, @Other, @Wrong) = ();
+    
+    foreach my $NetDev (@{$Devs})
+    {
+        my $Addr = $Addrs->{$NetDev};
+        
+        if(not $Opt{"FixProbe"})
         {
-            my $NetDev = undef;
-            
-            if($Block=~/\A([^:]+):?\s/) {
-                $NetDev = $1;
+            if(my $RealMac = getRealHWaddr($NetDev)) {
+                $PermanentAddr{$NetDev} = clientHash($RealMac);
             }
-            else {
-                next;
-            }
-            
-            if(not $Opt{"FixProbe"})
-            {
-                if(my $RealMac = getRealHWaddr($NetDev)) {
-                    $PermanentAddr{$NetDev} = clientHash($RealMac);
-                }
-            }
-            
-            if(defined $PermanentAddr{$NetDev}) {
-                $Addr = lc($PermanentAddr{$NetDev});
-            }
-            
-            if($NetDev=~/\Aenp\d+s\d+.*u\d+\Z/i)
-            { # enp0s20f0u3, enp0s29u1u5, enp0s20u1, etc.
-                push(@Other, $Addr);
-            }
-            elsif(index($Addr, "-")!=-1
-            and (countStr($Addr, "00")>=5 or countStr($Addr, "88")>=5 or countStr($Addr, "ff")>=5))
-            { # 00-dd-00-00-00-00, 88-88-88-88-87-88, ...
-              # Support for old probes
-                push(@Other, $Addr);
-            }
-            elsif($NetDev=~/\Ae/)
-            {
-                push(@Eth, $Addr);
-            }
-            elsif($NetDev=~/\Aw/)
-            {
-                $WLanInterface{$NetDev} = 1;
-                push(@Wlan, $Addr);
-            }
-            else {
-                push(@Other, $Addr);
-            }
+        }
+        
+        if(defined $PermanentAddr{$NetDev}) {
+            $Addr = lc($PermanentAddr{$NetDev});
+        }
+        
+        if($NetDev=~/\Aenp\d+s\d+.*u\d+\Z/i)
+        { # enp0s20f0u3, enp0s29u1u5, enp0s20u1, etc.
+            push(@Other, $Addr);
+        }
+        elsif(index($Addr, "-")!=-1
+        and (countStr($Addr, "00")>=5 or countStr($Addr, "88")>=5 or countStr($Addr, "ff")>=5))
+        { # 00-dd-00-00-00-00, 88-88-88-88-87-88, ...
+          # Support for old probes
+            push(@Other, $Addr);
+        }
+        elsif($NetDev=~/\Ae/)
+        {
+            push(@Eth, $Addr);
+        }
+        elsif($NetDev=~/\Aw/)
+        {
+            $WLanInterface{$NetDev} = 1;
+            push(@Wlan, $Addr);
+        }
+        else {
+            push(@Other, $Addr);
         }
     }
     
@@ -6532,6 +6677,13 @@ sub probeDistr()
     {
         listProbe("logs", "os-release");
         $OS_Rel = readFile("/etc/os-release");
+        if($Opt{"Snap"})
+        { # Snap strict confinement
+            my $OSRelHostFs = "/var/lib/snapd/hostfs/etc/os-release";
+            if(-e $OSRelHostFs) {
+                $OS_Rel = readFile($OSRelHostFs);
+            }
+        }
         if($HWLogs) {
             writeLog($LOG_DIR."/os-release", $OS_Rel);
         }
@@ -7074,6 +7226,11 @@ sub writeLogs()
             {
                 listProbe("logs", "rfkill");
                 my $Rfkill = runCmd("rfkill list 2>&1");
+                
+                if($Opt{"Snap"} and $Rfkill=~/Permission denied/) {
+                    $Rfkill = "";
+                }
+                
                 writeLog($LOG_DIR."/rfkill", $Rfkill);
             }
         }
@@ -7082,6 +7239,11 @@ sub writeLogs()
         {
             listProbe("logs", "iw_list");
             my $IwList = runCmd("iw list 2>&1");
+            
+            if($Opt{"Snap"} and $IwList=~/Permission denied/) {
+                $IwList = "";
+            }
+            
             if($IwList) {
                 writeLog($LOG_DIR."/iw_list", $IwList);
             }
@@ -7120,14 +7282,23 @@ sub writeLogs()
         {
             listProbe("logs", "findmnt");
             my $Findmnt = runCmd("findmnt 2>&1");
+            
+            if($Opt{"Snap"} and $Findmnt=~/Permission denied/) {
+                $Findmnt = "";
+            }
+            
             if($Findmnt) {
                 writeLog($LOG_DIR."/findmnt", $Findmnt);
             }
-            
-            if(not $Findmnt)
+            else
             {
                 listProbe("logs", "mount");
                 my $Mount = runCmd("mount -v 2>&1");
+                
+                if($Opt{"Snap"} and $Mount=~/Permission denied/) {
+                    $Mount = "";
+                }
+                
                 writeLog($LOG_DIR."/mount", $Mount);
             }
         }
@@ -7136,6 +7307,9 @@ sub writeLogs()
         {
             listProbe("logs", "fdisk");
             my $Fdisk = runCmd("fdisk -l 2>&1");
+            if($Opt{"Snap"} and $Fdisk=~/Permission denied/) {
+                $Fdisk = "";
+            }
             writeLog($LOG_DIR."/fdisk", $Fdisk);
         }
         
@@ -7359,7 +7533,7 @@ sub writeLogs()
         if(check_Cmd("aplay"))
         {
             $Aplay = runCmd("aplay -l 2>&1");
-            if(length($Aplay)<80 and $Aplay=~/no soundcards found/i) {
+            if(length($Aplay)<80 and $Aplay=~/no soundcards found|not found/i) {
                 $Aplay = "";
             }
         }
@@ -7370,15 +7544,11 @@ sub writeLogs()
         if(check_Cmd("arecord"))
         {
             $Arecord = runCmd("arecord -l 2>&1");
-            if(length($Arecord)<80 and $Arecord=~/no soundcards found/i) {
+            if(length($Arecord)<80 and $Arecord=~/no soundcards found|not found/i) {
                 $Arecord = "";
             }
         }
         writeLog($LOG_DIR."/arecord", $Arecord);
-        
-        # listProbe("logs", "codec");
-        # my $Codec = runCmd("cat /proc/asound/card*/codec* 2>&1");
-        # writeLog($LOG_DIR."/codec", $Codec);
         
         listProbe("logs", "amixer");
         my %CardNums = ();
@@ -7496,7 +7666,7 @@ sub writeLogs()
     if($Opt{"LogLevel"} eq "maximal")
     {
         listProbe("logs", "firmware");
-        my $Firmware = runCmd("find /lib/firmware -type f|sort");
+        my $Firmware = runCmd("find /lib/firmware -type f | sort");
         $Firmware=~s&/lib/firmware/&&g;
         writeLog($LOG_DIR."/firmware", $Firmware);
         
@@ -8532,16 +8702,30 @@ sub downloadFileContent($)
 {
     my $Url = $_[0];
     $Url=~s/&amp;/&/g;
-    my $Cmd = getCurlCmd($Url);
-    return `$Cmd`;
+    if(check_Cmd("curl"))
+    {
+        my $Cmd = getCurlCmd($Url);
+        return `$Cmd`;
+        
+    }
+    else {
+        return getRequest($Url, "NoSSL");
+    }
 }
 
 sub downloadFile($$)
 {
     my ($Url, $Output) = @_;
     $Url=~s/&amp;/&/g;
-    my $Cmd = getCurlCmd($Url)." --output \"$Output\"";
-    return `$Cmd`;
+    if(check_Cmd("curl"))
+    {
+        my $Cmd = getCurlCmd($Url)." --output \"$Output\"";
+        return `$Cmd`;
+        
+    }
+    else {
+        writeFile($Output, getRequest($Url, "NoSSL"));
+    }
 }
 
 sub getCurlCmd($)
@@ -8558,6 +8742,10 @@ sub getCurlCmd($)
 sub importProbes($)
 {
     my $Dir = $_[0];
+    
+    if($Opt{"Snap"}) {
+        $Dir = $ENV{"SNAP_USER_COMMON"}."/".$Dir;
+    }
     
     if(not -d $Dir)
     {
@@ -8644,7 +8832,7 @@ sub importProbes($)
         }
         my $D = $Dir."/".$P;
         my $Prop = eval(readFile($D."/probe.info"));
-        $Indexed{$Prop->{"hwaddr"}}{$P} = $Prop;
+        $Indexed{lc($Prop->{"hwaddr"})}{$P} = $Prop;
         $OneProbe = $P;
     }
     
@@ -8683,7 +8871,7 @@ sub importProbes($)
         $LIST .= "<h2>$Title</h2>\n";
         $LIST .= "<table class='tbl highlight local_timeline'>\n";
         $LIST .= "<tr>\n";
-        $LIST .= "<th>Probe</th><th>Arch</th><th>System</th><th>Date</th><th>ID</th>\n";
+        $LIST .= "<th>Probe</th><th>Arch</th><th>System</th><th>Date</th><th>Desc</th>\n";
         $LIST .= "</tr>\n";
         foreach my $P (@Probes)
         {
@@ -8745,12 +8933,22 @@ sub getShortHWid($)
     return $HWid;
 }
 
-sub getDateStamp($) {
-    return strftime('%b %d, %Y', localtime($_[0]));
+sub getDateStamp($)
+{
+    my $Date = localtime($_[0]);
+    if($Date=~/\w+ (\w+ \d+) \d+:\d+:\d+ (\d+)/) {
+        return "$1, $2";
+    }
+    return $Date;
 }
 
-sub getTimeStamp($) {
-    return strftime('%H:%M', localtime($_[0]));
+sub getTimeStamp($)
+{
+    my $Date = localtime($_[0]);
+    if($Date=~/\w+ \w+ \d+ (\d+:\d+):\d+ \d+/) {
+        return $1;
+    }
+    return $Date;
 }
 
 sub setPublic($)
@@ -8768,14 +8966,17 @@ sub setPublic($)
     push(@Chmod, $Path);
     system(@Chmod);
     
-    if(my $SessUser = getUser())
+    if(not $Opt{"Snap"})
     {
-        my @Chown = ("chown", $SessUser.":".$SessUser);
-        if($R) {
-            push(@Chown, $R);
+        if(my $SessUser = getUser())
+        {
+            my @Chown = ("chown", $SessUser.":".$SessUser);
+            if($R) {
+                push(@Chown, $R);
+            }
+            push(@Chown, $Path);
+            system(@Chown);
         }
-        push(@Chown, $Path);
-        system(@Chown);
     }
 }
 
@@ -9060,7 +9261,8 @@ sub scenario()
     
     if($Opt{"Probe"})
     {
-        if(not $Admin)
+        if(not $Admin
+        and not $SNAP_DESKTOP)
         {
             print STDERR "ERROR: you should run as root (sudo or su)\n";
             exit(1);
@@ -9245,8 +9447,11 @@ sub scenario()
     
     if($Opt{"Upload"})
     {
-        if(not check_Cmd("curl")) {
-            print STDERR "WARNING: 'curl' package is not installed\n";
+        if(not check_Cmd("curl"))
+        {
+            if(not $Opt{"Snap"} and not $Opt{"Flatpak"}) {
+                print STDERR "WARNING: 'curl' package is not installed\n";
+            }
         }
     }
     
