@@ -6,21 +6,14 @@ sdk: org.freedesktop.Sdk
 command: /app/usr/bin/hw-probe-flatpak
 rename-icon: hw-probe
 finish-args:
-  - --socket=x11
-  - --socket=pulseaudio
   - --share=network
-  - --share=ipc
   - --device=all
-  - --allow=bluetooth
   - --filesystem=host:ro
   - --filesystem=/var/log:ro
   - --env=PATH=/usr/bin:/bin:/usr/sbin:/sbin:/app/sbin:/app/usr/sbin:/app/usr/bin:/app/bin
   - --env=PERL5LIB=/app/usr/share/perl5:/app/usr/lib/x86_64-linux-gnu/perl-base:/app/usr/lib/i386-linux-gnu/perl-base
   - --env=LD_LIBRARY_PATH=/app/lib/x86_64-linux-gnu/:/app/lib/i386-linux-gnu/:/app/usr/lib64:/app/usr/lib:/app/usr/lib/x86_64-linux-gnu:/app/usr/lib/i386-linux-gnu
   - --env=LC_ALL=C
-build-options:
-  build-args:
-    - --share=network
 cleanup:
   - /usr/include
   - /usr/man
@@ -29,6 +22,7 @@ cleanup:
   - /usr/share/hwinfo
   - /usr/share/pkgconfig
   - /usr/share/usb.ids.gz
+  - /usr/share/PERL5_BASE
   - /usr/sbin/check_hd
   - /usr/sbin/convert_hd
   - /usr/sbin/fancontrol
@@ -352,19 +346,6 @@ modules:
       - type: archive
         url: https://cpan.metacpan.org/authors/id/D/DR/DROLSKY/Time-Local-1.28.tar.gz
         sha256: 9278b9e5cc99dcbb0fd27a43e914828b59685601edae082889b5ee7266afe10e
-  - name: perl-digest-sha
-    buildsystem: simple
-    build-commands:
-      - perl Makefile.PL PREFIX=/usr
-      - make install DESTDIR=`pwd`/INST INSTALLSITELIB=/SITELIB
-      - chmod 777 -R ./INST
-      - find ./INST -type f | perl -lne 'print if -B and -x' | xargs strip
-      - mkdir -p $FLATPAK_DEST/usr/share/perl5/
-      - cp -fr ./INST/usr/lib/perl/*/*/* $FLATPAK_DEST/usr/share/perl5/
-    sources:
-      - type: archive
-        url: https://cpan.metacpan.org/authors/id/M/MS/MSHELOR/Digest-SHA-6.02.tar.gz
-        sha256: 2c66a6bea3eac9c210315ac7bf0af3e2e35679c4b65d8bae1ad4be3a58039b06
   - name: perl-data-dumper
     buildsystem: simple
     build-commands:
@@ -383,6 +364,7 @@ modules:
     build-commands:
       - make install DESTDIR=$FLATPAK_DEST
       - mv flatpak/hw-probe.sh $FLATPAK_DEST/usr/bin/hw-probe-flatpak
+      - mv flatpak/PERL5_BASE $FLATPAK_DEST/usr/share/
       - chmod a+x $FLATPAK_DEST/usr/bin/hw-probe-flatpak
       - mkdir -p $FLATPAK_DEST/share/icons/hicolor/256x256/apps $FLATPAK_DEST/share/icons/hicolor/128x128/apps $FLATPAK_DEST/share/icons/hicolor/64x64/apps $FLATPAK_DEST/share/applications $FLATPAK_DEST/share/metainfo $FLATPAK_DEST/usr/share/
       - mv OBS/hw-probe.appdata.xml $FLATPAK_DEST/share/metainfo/org.linux_hardware.hw-probe.appdata.xml
@@ -394,5 +376,18 @@ modules:
     sources:
       - type: archive
         url: https://github.com/linuxhw/build-stuff/releases/download/1.4/hw-probe-1.4-AI.tar.gz
-        sha256: 6227368fc01f5dcd59226db1c1b75ad10e551f350c4b4a31f7915c072cf48f7d
+        sha256: b50c3461ebb8aa65f6ac7e2c95839c033d2ae6ff7446f5d96e0d93dd6099c8fa
+  - name: perl-base
+    buildsystem: simple
+    build-commands:
+      - sh Configure -de -Dprefix=/usr
+      - make
+      - find . -type f | perl -lne 'print if -B and -x' | xargs strip
+      - mkdir -p $FLATPAK_DEST/usr/share/perl5/
+      - mv perl $FLATPAK_DEST/usr/bin/
+      - cd lib && cat $FLATPAK_DEST/usr/share/PERL5_BASE | while read i; do mkdir -p $FLATPAK_DEST/usr/share/perl5/`dirname $i`; cp -fr $i $FLATPAK_DEST/usr/share/perl5/$i; done
+    sources:
+      - type: archive
+        url: https://www.cpan.org/src/5.0/perl-5.28.0.tar.gz
+        sha256: 7e929f64d4cb0e9d1159d4a59fc89394e27fa1f7004d0836ca0d514685406ea8
 
