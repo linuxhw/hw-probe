@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Hardware Probe
+Comment=Probe for hardware and upload result to the Linux hardware database
+Exec=org.linux_hardware.hw-probe
+Icon=org.linux_hardware.hw-probe
+Terminal=true
+Type=Application
+StartupNotify=true
+Categories=System;
+Keywords=HW Probe;Hardware;Probe;
