@@ -394,5 +394,5 @@ modules:
     sources:
       - type: archive
         url: https://github.com/linuxhw/build-stuff/releases/download/1.4/hw-probe-1.4-AI.tar.gz
-        sha256: 9191dcd0855478b336e8e531f021af5430f5770c6262f63348530aaaea8b6f5c
+        sha256: 6227368fc01f5dcd59226db1c1b75ad10e551f350c4b4a31f7915c072cf48f7d
 
