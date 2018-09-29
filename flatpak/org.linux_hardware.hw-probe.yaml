@@ -10,6 +10,7 @@ finish-args:
   - --device=all
   - --filesystem=host:ro
   - --filesystem=/var/log:ro
+  - --filesystem=/sys:ro
   - --env=PATH=/usr/bin:/bin:/usr/sbin:/sbin:/app/sbin:/app/usr/sbin:/app/usr/bin:/app/bin
   - --env=PERL5LIB=/app/usr/share/perl5:/app/usr/lib/x86_64-linux-gnu/perl-base:/app/usr/lib/i386-linux-gnu/perl-base
   - --env=LD_LIBRARY_PATH=/app/lib/x86_64-linux-gnu/:/app/lib/i386-linux-gnu/:/app/usr/lib64:/app/usr/lib:/app/usr/lib/x86_64-linux-gnu:/app/usr/lib/i386-linux-gnu
@@ -45,7 +46,6 @@ cleanup:
   - /usr/bin/acpihelp
   - /usr/bin/acpinames
   - /usr/bin/acpisrc
-  - /usr/bin/acpixtract
   - /usr/bin/kmod
   - /usr/bin/lsusb.py
   - /usr/bin/sensors-conf-convert
