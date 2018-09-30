@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <component type="desktop-application">
-  <id>org.linux-hardware.hw-probe</id>
+  <id>org.linux_hardware.hw-probe</id>
   <metadata_license>CC-BY-3.0</metadata_license>
   <project_license>LGPL-2.1+</project_license>
   <name>Hardware Probe</name>
@@ -31,7 +31,7 @@
     </p>
   </description>
 
-  <launchable type="desktop-id">org.linux-hardware.hw-probe.desktop</launchable>
+  <launchable type="desktop-id">org.linux_hardware.hw-probe.desktop</launchable>
 
   <screenshots>
     <screenshot type="default">
