@@ -32,10 +32,10 @@
   </description>
 
   <categories>
-      <category>System</category>
+    <category>
+      System
+    </category>
   </categories>
-
-  <launchable type="desktop-id">org.linux_hardware.hw-probe.desktop</launchable>
 
   <screenshots>
     <screenshot type="default">
@@ -50,9 +50,8 @@
   </screenshots>
 
   <url type="homepage">https://github.com/linuxhw/hw-probe</url>
-  <project_group>Linux Hardware</project_group>
 
   <provides>
-    <binary>hw-probe</binary>
+    <binary>hw-probe-flatpak</binary>
   </provides>
 </component>

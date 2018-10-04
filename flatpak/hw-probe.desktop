@@ -1,10 +1,9 @@
 [Desktop Entry]
+Type=Application
+Terminal=true
 Name=Hardware Probe
 Comment=Probe for hardware and upload result to the Linux hardware database
-Exec=/app/bin/hw-probe-flatpak
-Icon=org.linux_hardware.hw-probe
-Terminal=true
-Type=Application
-StartupNotify=true
+Icon=org.linux_hardware.hwprobe
+Exec=hw-probe-flatpak
 Categories=System;
-Keywords=HW Probe;Hardware;Probe;
+
