@@ -3,7 +3,7 @@ Type=Application
 Terminal=true
 Name=Hardware Probe
 Comment=Probe for hardware and upload result to the Linux hardware database
-Icon=org.linux_hardware.hwprobe
+Icon=org.linux_hardware.hw-probe
 Exec=hw-probe-flatpak
 Categories=System;
 
