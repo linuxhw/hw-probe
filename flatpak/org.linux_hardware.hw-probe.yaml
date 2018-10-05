@@ -390,12 +390,12 @@ modules:
       - install -D flatpak/icon-128x128.png $FLATPAK_DEST/share/icons/hicolor/128x128/apps/org.linux_hardware.hw-probe.png
       - install -D flatpak/icon-64x64.png $FLATPAK_DEST/share/icons/hicolor/64x64/apps/org.linux_hardware.hw-probe.png
       - install -D flatpak/hw-probe.desktop $FLATPAK_DEST/share/applications/org.linux_hardware.hw-probe.desktop
-      - install -D flatpak/usb.ids $FLATPAK_DEST/usr/share/usb.ids
-      - install -D flatpak/pci.ids $FLATPAK_DEST/usr/share/pci.ids
+      - install -D flatpak/usb.ids $FLATPAK_DEST/share/usb.ids
+      - install -D flatpak/pci.ids $FLATPAK_DEST/share/pci.ids
     sources:
       - type: archive
         url: https://github.com/linuxhw/build-stuff/releases/download/1.4/hw-probe-1.4-AI.tar.gz
-        sha256: 77a4b119687cd745e29f7febe8cb1bcf05440730ba274ebc254bc07821692e3a
+        sha256: a3ed1af0c9272e64cb9c9713678eb0b0cd86e6769a240194a905f5a68efda884
   - name: perl-base
     buildsystem: simple
     build-commands:
