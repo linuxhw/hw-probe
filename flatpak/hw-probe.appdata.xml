@@ -54,6 +54,6 @@
   <url type="homepage">https://github.com/linuxhw/hw-probe</url>
 
   <provides>
-    <binary>hw-probe-flatpak</binary>
+    <binary>hw-probe</binary>
   </provides>
 </component>

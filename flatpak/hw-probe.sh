@@ -1,2 +1,2 @@
 #!/bin/sh
-perl /app/usr/bin/hw-probe -flatpak "$@"
+perl /app/bin/hw-probe-flatpak -flatpak "$@"
