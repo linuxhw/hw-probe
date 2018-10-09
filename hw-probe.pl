@@ -6547,6 +6547,12 @@ sub selectHWAddr($$)
             $Addr = lc($PermanentAddr{$NetDev});
         }
         
+        if(grep { uc($Addr) eq $_ } @WrongAddr)
+        {
+            push(@Wrong, $Addr);
+            next;
+        }
+        
         if($NetDev=~/\Aenp\d+s\d+.*u\d+\Z/i)
         { # enp0s20f0u3, enp0s29u1u5, enp0s20u1, etc.
             push(@Other, $Addr);
@@ -7281,10 +7287,14 @@ sub writeLogs()
         if(not $Opt{"Docker"})
         {
             listProbe("logs", "findmnt");
-            my $Findmnt = runCmd("findmnt 2>&1");
-            
-            if($Opt{"Snap"} and $Findmnt=~/Permission denied/) {
-                $Findmnt = "";
+            my $Findmnt = "";
+            if(check_Cmd("findmnt"))
+            {
+                $Findmnt = runCmd("findmnt 2>&1");
+                
+                if($Opt{"Snap"} and $Findmnt=~/Permission denied/) {
+                    $Findmnt = "";
+                }
             }
             
             if($Findmnt) {
@@ -7293,12 +7303,15 @@ sub writeLogs()
             else
             {
                 listProbe("logs", "mount");
-                my $Mount = runCmd("mount -v 2>&1");
-                
-                if($Opt{"Snap"} and $Mount=~/Permission denied/) {
-                    $Mount = "";
+                my $Mount = "";
+                if(check_Cmd("mount"))
+                {
+                    $Mount = runCmd("mount -v 2>&1");
+                    
+                    if($Opt{"Snap"} and $Mount=~/Permission denied/) {
+                        $Mount = "";
+                    }
                 }
-                
                 writeLog($LOG_DIR."/mount", $Mount);
             }
         }
@@ -7306,9 +7319,13 @@ sub writeLogs()
         if($Admin)
         {
             listProbe("logs", "fdisk");
-            my $Fdisk = runCmd("fdisk -l 2>&1");
-            if($Opt{"Snap"} and $Fdisk=~/Permission denied/) {
-                $Fdisk = "";
+            my $Fdisk = "";
+            if(check_Cmd("fdisk"))
+            {
+                $Fdisk = runCmd("fdisk -l 2>&1");
+                if($Opt{"Snap"} and $Fdisk=~/Permission denied/) {
+                    $Fdisk = "";
+                }
             }
             writeLog($LOG_DIR."/fdisk", $Fdisk);
         }
