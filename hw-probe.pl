@@ -101,17 +101,23 @@ Example: sudo $CmdName -all -upload
 DESC — any description of the probe.\n\n";
 
 my $SNAP_DESKTOP = (defined $ENV{"BAMF_DESKTOP_FILE_HINT"});
+my $FLATPAK_DESKTOP = ($#ARGV==0 and $ARGV[0] eq "-flatpak");
 
-if(($#ARGV==0 and $ARGV[0] eq "-snap") or $#ARGV==-1)
-{ # 1) To run by desktop file
-  # 2) No arguments passed
+if($#ARGV==0 and grep { $ARGV[0] eq $_ } ("-snap", "-flatpak"))
+{ # Run by desktop file
     print "Executing hw-probe -all -upload\n\n";
-    system("hw-probe -snap -all -upload");
-    if($SNAP_DESKTOP)
+    system("hw-probe ".$ARGV[0]." -all -upload");
+    if($SNAP_DESKTOP or $FLATPAK_DESKTOP)
     { # Desktop
         sleep(60);
     }
     exit(0);
+}
+
+if($#ARGV==-1)
+{
+    print $ShortUsage;
+    exit(1);
 }
 
 my %Opt;
@@ -158,6 +164,7 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "docker!" => \$Opt{"Docker"},
   "appimage!" => \$Opt{"AppImage"},
   "snap!" => \$Opt{"Snap"},
+  "flatpak!" => \$Opt{"Flatpak"},
   "low-compress!" => \$Opt{"LowCompress"},
   "high-compress!" => \$Opt{"HighCompress"},
   "identify-drive=s" => \$Opt{"IdentifyDrive"},
@@ -181,6 +188,13 @@ my $PROBE_DIR = "/root/HW_PROBE";
 
 if($Opt{"Snap"}) {
     $PROBE_DIR = $ENV{"SNAP_USER_COMMON"}."/HW_PROBE";
+}
+elsif($Opt{"Flatpak"})
+{
+    $TMP_DIR = "/var".$TMP_DIR;
+    mkpath($TMP_DIR);
+    
+    $PROBE_DIR = $ENV{"XDG_DATA_HOME"}."/HW_PROBE";
 }
 
 my $DATA_DIR = $PROBE_DIR."/LATEST/hw.info";
@@ -320,8 +334,8 @@ OTHER OPTIONS:
   -import DIR
       Import probes from the database to DIR for offline use.
       
-      If you are using Snap package, then DIR will be created
-      in the Snap sandbox data directory.
+      If you are using Snap or Flatpak package, then DIR will be created
+      in the sandbox data directory.
 
 DATA LOCATION:
   Probes are saved in the $PROBE_DIR directory.
@@ -984,6 +998,15 @@ sub encryptMACs($)
     return $Content;
 }
 
+sub exitStatus($)
+{
+    my $St = $_[0];
+    if($Opt{"Flatpak"} and -d $TMP_DIR) {
+        rmtree($TMP_DIR);
+    }
+    exit($St);
+}
+
 sub checkModule($)
 {
     foreach my $P (@INC)
@@ -1048,7 +1071,7 @@ sub getGroup()
     {
         my $ECode = $?>>8;
         print STDERR "ERROR: failed to get group, curl error code \"".$ECode."\"\n";
-        exit(1);
+        exitStatus(1);
     }
     
     if($Log=~/(Group|Inventory) ID: (\w+)/)
@@ -1177,6 +1200,12 @@ sub uploadData()
         $Data{"snap"} = "1";
     }
     
+    if($Opt{"Flatpak"})
+    {
+        @Cmd = (@Cmd, "-F flatpak=1");
+        $Data{"flatpak"} = "1";
+    }
+    
     if($Opt{"PC_Name"})
     {
         @Cmd = (@Cmd, "-F id=\'".$Opt{"PC_Name"}."\'");
@@ -1216,7 +1245,7 @@ sub uploadData()
                 if(index($WWWLog, "Can't locate HTML/HeadParser.pm")!=-1) {
                     print STDERR "ERROR: please add 'libhtml-parser-perl' or 'perl-HTML-Parser' package to your system\n";
                 }
-                exit(1);
+                exitStatus(1);
             }
             
             $Log = $WWWLog;
@@ -1226,7 +1255,7 @@ sub uploadData()
             my $ECode = $Err>>8;
             print STDERR $Log."\n";
             print STDERR "ERROR: failed to upload data, curl error code \"".$ECode."\"\n";
-            exit(1);
+            exitStatus(1);
         }
     }
     
@@ -1308,7 +1337,7 @@ sub createPackage()
                 if($?)
                 {
                     print STDERR "ERROR: failed to extract package (".$?.")\n";
-                    exit(1);
+                    exitStatus(1);
                 }
                 
                 if(my @Dirs = listDir($TMP_DIR))
@@ -1338,7 +1367,7 @@ sub createPackage()
                         if($?)
                         {
                             print STDERR "ERROR: failed to create a package (".$?.")\n";
-                            exit(1);
+                            exitStatus(1);
                         }
                         
                         $Pkg = $TMP_DIR."/hw.info.txz";
@@ -1348,7 +1377,7 @@ sub createPackage()
             else
             {
                 print STDERR "ERROR: not a package\n";
-                exit(1);
+                exitStatus(1);
             }
         }
         elsif(-d $Opt{"Source"})
@@ -1365,7 +1394,7 @@ sub createPackage()
             if($?)
             {
                 print STDERR "ERROR: failed to create a package (".$?.")\n";
-                exit(1);
+                exitStatus(1);
             }
             
             $Pkg = $TMP_DIR."/hw.info.txz";
@@ -1373,7 +1402,7 @@ sub createPackage()
         else
         {
             print STDERR "ERROR: can't access \'".$Opt{"Source"}."\'\n";
-            exit(1);
+            exitStatus(1);
         }
     }
     else
@@ -1383,7 +1412,7 @@ sub createPackage()
             if(not -f $DATA_DIR."/devices")
             {
                 print STDERR "ERROR: \'./".$DATA_DIR."/devices\' file is not found, please make probe first\n";
-                exit(1);
+                exitStatus(1);
             }
             
             updateHost($DATA_DIR, "id", $Opt{"PC_Name"});
@@ -1403,7 +1432,7 @@ sub createPackage()
             else {
                 print STDERR "ERROR: can't access \'".$DATA_DIR."\', please run as root\n";
             }
-            exit(1);
+            exitStatus(1);
         }
     }
     
@@ -1794,7 +1823,7 @@ sub probeHW()
         if(not defined $Opt{"HWInfoPath"} and not check_Cmd("hwinfo"))
         {
             print STDERR "ERROR: 'hwinfo' is not installed\n";
-            exit(1);
+            exitStatus(1);
         }
         
         if($HWLogs)
@@ -1898,7 +1927,7 @@ sub probeHW()
     else
     {
         listProbe("logs", "lsmod");
-        if($Opt{"Snap"})
+        if($Opt{"Snap"} or $Opt{"Flatpak"})
         {
             $Lsmod = "Module                  Size  Used by\n";
             foreach my $L (split(/\n/, readFile("/proc/modules")))
@@ -4518,7 +4547,7 @@ sub probeHW()
     my $Smartctl = "";
     my $SmartctlCmd = "smartctl";
     
-    if($Opt{"Snap"} or $Opt{"AppImage"})
+    if($Opt{"Snap"} or $Opt{"AppImage"} or $Opt{"Flatpak"})
     {
         if(not $Opt{"FixProbe"} and $HWLogs)
         {
@@ -6279,7 +6308,7 @@ sub probeSys()
         if($Opt{"Snap"})
         {
             warnSnapInterfaces();
-            exit(1);
+            exitStatus(1);
         }
     }
     
@@ -6530,7 +6559,7 @@ sub probeHWaddr()
         else
         {
             print STDERR "ERROR: can't find 'ifconfig' or 'ip'\n";
-            exit(1);
+            exitStatus(1);
         }
         
         if($IFConfig)
@@ -6557,7 +6586,7 @@ sub probeHWaddr()
                 warnSnapInterfaces();
             }
             
-            exit(1);
+            exitStatus(1);
         }
     }
     
@@ -6778,7 +6807,7 @@ sub probeDistr()
     }
     else
     {
-        if(not $Opt{"Docker"})
+        if(not $Opt{"Docker"} and not $Opt{"Snap"} and not $Opt{"Flatpak"})
         {
             if(check_Cmd("lsb_release"))
             {
@@ -6806,6 +6835,20 @@ sub probeDistr()
             my $OSRelHostFs = "/var/lib/snapd/hostfs/etc/os-release";
             if(-e $OSRelHostFs) {
                 $OS_Rel = readFile($OSRelHostFs);
+            }
+        }
+        elsif($Opt{"Flatpak"})
+        {
+            my $OSRelHostFs = "/run/host/etc/os-release";
+            if(-e $OSRelHostFs) {
+                $OS_Rel = readFile($OSRelHostFs);
+            }
+            else
+            {
+                $OSRelHostFs = "/run/host/usr/lib/os-release";
+                if(-e $OSRelHostFs) {
+                    $OS_Rel = readFile($OSRelHostFs);
+                }
             }
         }
         if($HWLogs) {
@@ -7408,7 +7451,14 @@ sub writeLogs()
             my $Findmnt = "";
             if(check_Cmd("findmnt"))
             {
-                $Findmnt = runCmd("findmnt 2>&1");
+                my $FindmntCmd = "findmnt";
+                if($Opt{"Flatpak"}) {
+                    $FindmntCmd .= " 2>/dev/null";
+                }
+                else {
+                    $FindmntCmd .= " 2>&1";
+                }
+                $Findmnt = runCmd($FindmntCmd);
                 
                 if($Opt{"Snap"} and $Findmnt=~/Permission denied/) {
                     $Findmnt = "";
@@ -7609,11 +7659,19 @@ sub writeLogs()
         my $Lsblk = "";
         if(check_Cmd("lsblk"))
         {
-            $Lsblk = runCmd("lsblk -al -o NAME,SIZE,TYPE,FSTYPE,LABEL,UUID,MOUNTPOINT,MODEL,PARTUUID 2>&1");
+            my $LsblkCmd = "lsblk -al -o NAME,SIZE,TYPE,FSTYPE,LABEL,UUID,MOUNTPOINT,MODEL,PARTUUID";
+            if($Opt{"Flatpak"}) {
+                $LsblkCmd .= " 2>/dev/null";
+            }
+            else {
+                $LsblkCmd .= " 2>&1";
+            }
+            $Lsblk = runCmd($LsblkCmd);
             
             if($Lsblk=~/unknown column/)
             { # CentOS 6: no PARTUUID column
-                $Lsblk = runCmd("lsblk -al -o NAME,SIZE,TYPE,FSTYPE,LABEL,UUID,MOUNTPOINT,MODEL 2>&1");
+                $LsblkCmd=~s/\,PARTUUID//g;
+                $Lsblk = runCmd($LsblkCmd);
             }
             
             if($Opt{"Snap"} and $Lsblk=~/Permission denied/) {
@@ -7629,9 +7687,12 @@ sub writeLogs()
             writeLog($LOG_DIR."/fstab", $Fstab);
         }
         
-        listProbe("logs", "lscpu");
-        my $Lscpu = runCmd("lscpu 2>&1");
-        writeLog($LOG_DIR."/lscpu", $Lscpu);
+        if(not $Opt{"Flatpak"})
+        {
+            listProbe("logs", "lscpu");
+            my $Lscpu = runCmd("lscpu 2>&1");
+            writeLog($LOG_DIR."/lscpu", $Lscpu);
+        }
         
         if(check_Cmd("cpuid"))
         {
@@ -8106,7 +8167,7 @@ sub showInfo()
                 if($?)
                 {
                     print STDERR "ERROR: failed to extract package (".$?.")\n";
-                    exit(1);
+                    exitStatus(1);
                 }
                 
                 if(my @Dirs = listDir($TMP_DIR)) {
@@ -8115,13 +8176,13 @@ sub showInfo()
                 else
                 {
                     print STDERR "ERROR: failed to extract package\n";
-                    exit(1);
+                    exitStatus(1);
                 }
             }
             else
             {
                 print STDERR "ERROR: not a package\n";
-                exit(1);
+                exitStatus(1);
             }
         }
         elsif(-d $Opt{"Source"})
@@ -8131,7 +8192,7 @@ sub showInfo()
         else
         {
             print STDERR "ERROR: can't access \'".$Opt{"Source"}."\'\n";
-            exit(1);
+            exitStatus(1);
         }
     }
     else
@@ -8139,7 +8200,7 @@ sub showInfo()
         if(not -d $DATA_DIR)
         {
             print STDERR "ERROR: \'".$DATA_DIR."\' is not found, please make probe first\n";
-            exit(1);
+            exitStatus(1);
         }
     }
     
@@ -8748,12 +8809,12 @@ sub downloadProbe($$)
     {
         print STDERR "ERROR: You are not allowed temporarily to download probes\n";
         rmtree($Dir."/logs");
-        exit(1);
+        exitStatus(1);
     }
     elsif(not $Page)
     {
         print STDERR "ERROR: Internet connection is required\n";
-        exit(1);
+        exitStatus(1);
     }
     
     print "Importing probe $ID\n";
@@ -8796,7 +8857,7 @@ sub downloadProbe($$)
                 {
                     print STDERR "ERROR: You are not allowed temporarily to download probes\n";
                     rmtree($Dir."/logs");
-                    exit(1);
+                    exitStatus(1);
                 }
                 
                 $Log = preparePage($Log);
@@ -8880,6 +8941,9 @@ sub importProbes($)
     
     if($Opt{"Snap"}) {
         $Dir = $ENV{"SNAP_USER_COMMON"}."/".$Dir;
+    }
+    elsif($Opt{"Flatpak"}) {
+        $Dir = $ENV{"XDG_DATA_HOME"}."/".$Dir;
     }
     
     if(not -d $Dir)
@@ -9249,19 +9313,19 @@ sub scenario()
     if($Opt{"Help"})
     {
         helpMsg();
-        exit(0);
+        exitStatus(0);
     }
     
     if($Opt{"DumpVersion"})
     {
         print $TOOL_VERSION."\n";
-        exit(0);
+        exitStatus(0);
     }
     
     if($Opt{"ShowVersion"})
     {
         print $ShortUsage;
-        exit(0);
+        exitStatus(0);
     }
     
     if(checkModule("Digest/SHA.pm"))
@@ -9293,7 +9357,7 @@ sub scenario()
         if($Opt{"LogLevel"}!~/\A(minimal|default|maximal)\Z/i)
         {
             print STDERR "ERROR: unknown log level \'".$Opt{"LogLevel"}."\'\n";
-            exit(1);
+            exitStatus(1);
         }
         
         $Opt{"LogLevel"} = lc($Opt{"LogLevel"});
@@ -9308,7 +9372,7 @@ sub scenario()
         if(not -f $Opt{"HWInfoPath"})
         {
             print STDERR "ERROR: can't access file \'".$Opt{"HWInfoPath"}."\'\n";
-            exit(1);
+            exitStatus(1);
         }
     }
     
@@ -9317,7 +9381,7 @@ sub scenario()
         if(not $USE_DUMPER)
         {
             print STDERR "ERROR: requires perl-Data-Dumper module\n";
-            exit(1);
+            exitStatus(1);
         }
     }
     
@@ -9326,7 +9390,7 @@ sub scenario()
         if(not -f $Opt{"IdentifyDrive"})
         {
             print STDERR "ERROR: can't access file \'".$Opt{"IdentifyDrive"}."\'\n";
-            exit(1);
+            exitStatus(1);
         }
         
         my $DriveDesc = readFile($Opt{"IdentifyDrive"});
@@ -9338,7 +9402,7 @@ sub scenario()
         
         detectDrive($DriveDesc, $DriveDev);
         print Data::Dumper::Dumper(\%HW);
-        exit(0);
+        exitStatus(0);
     }
     
     if($Opt{"IdentifyMonitor"})
@@ -9346,12 +9410,12 @@ sub scenario()
         if(not -f $Opt{"IdentifyMonitor"})
         {
             print STDERR "ERROR: can't access file \'".$Opt{"IdentifyMonitor"}."\'\n";
-            exit(1);
+            exitStatus(1);
         }
         
         detectMonitor(readFile($Opt{"IdentifyMonitor"}));
         print Data::Dumper::Dumper(\%HW);
-        exit(0);
+        exitStatus(0);
     }
     
     if($Opt{"DecodeACPI_From"} and $Opt{"DecodeACPI_To"})
@@ -9359,10 +9423,10 @@ sub scenario()
         if(not -f $Opt{"DecodeACPI_From"})
         {
             print STDERR "ERROR: can't access file \'".$Opt{"DecodeACPI_From"}."\'\n";
-            exit(1);
+            exitStatus(1);
         }
         decodeACPI($Opt{"DecodeACPI_From"}, $Opt{"DecodeACPI_To"});
-        exit(0);
+        exitStatus(0);
     }
     
     if($Opt{"All"})
@@ -9388,7 +9452,7 @@ sub scenario()
             if(not -w $DATA_DIR)
             {
                 print STDERR "ERROR: can't write to \'$DATA_DIR\', please run as root\n";
-                exit(1);
+                exitStatus(1);
             }
             rmtree($DATA_DIR);
         }
@@ -9397,10 +9461,10 @@ sub scenario()
     if($Opt{"Probe"})
     {
         if(not $Admin
-        and not $SNAP_DESKTOP)
+        and not $SNAP_DESKTOP and not $FLATPAK_DESKTOP)
         {
             print STDERR "ERROR: you should run as root (sudo or su)\n";
-            exit(1);
+            exitStatus(1);
         }
     }
     
@@ -9431,7 +9495,7 @@ sub scenario()
         if(not -e $Opt{"PciIDs"})
         {
             print STDERR "ERROR: can't access \'".$Opt{"PciIDs"}."\'\n";
-            exit(1);
+            exitStatus(1);
         }
         readPciIds($Opt{"PciIDs"}, \%PciInfo, \%PciInfo_D);
         
@@ -9445,7 +9509,7 @@ sub scenario()
         if(not -e $Opt{"UsbIDs"})
         {
             print STDERR "ERROR: can't access \'".$Opt{"UsbIDs"}."\'\n";
-            exit(1);
+            exitStatus(1);
         }
         readUsbIds($Opt{"UsbIDs"}, \%UsbInfo);
         
@@ -9459,7 +9523,7 @@ sub scenario()
         if(not -e $Opt{"SdioIDs"})
         {
             print STDERR "ERROR: can't access \'".$Opt{"SdioIDs"}."\'\n";
-            exit(1);
+            exitStatus(1);
         }
         readSdioIds($Opt{"SdioIDs"}, \%SdioInfo, \%SdioVendor);
         
@@ -9473,7 +9537,7 @@ sub scenario()
         if(not -e $Opt{"PnpIDs"})
         {
             print STDERR "ERROR: can't access \'".$Opt{"PnpIDs"}."\'\n";
-            exit(1);
+            exitStatus(1);
         }
     }
     
@@ -9482,7 +9546,7 @@ sub scenario()
         if(not -e $Opt{"FixProbe"})
         {
             print STDERR "ERROR: can't access \'".$Opt{"FixProbe"}."\'\n";
-            exit(1);
+            exitStatus(1);
         }
         
         if(isPkg($Opt{"FixProbe"}))
@@ -9501,7 +9565,7 @@ sub scenario()
         elsif(-f $Opt{"FixProbe"})
         {
             print STDERR "ERROR: unsupported probe format \'".$Opt{"FixProbe"}."\'\n";
-            exit(1);
+            exitStatus(1);
         }
         
         $Opt{"FixProbe"}=~s/[\/]+\Z//g;
@@ -9513,13 +9577,13 @@ sub scenario()
             if(not listDir($FixProbe_Logs))
             {
                 print STDERR "ERROR: can't find logs in \'".$Opt{"FixProbe"}."\'\n";
-                exit(1);
+                exitStatus(1);
             }
         }
         else
         {
             print STDERR "ERROR: can't access \'".$Opt{"FixProbe"}."\'\n";
-            exit(1);
+            exitStatus(1);
         }
         
         if(-f $FixProbe_Logs."/media_urls")
@@ -9576,7 +9640,7 @@ sub scenario()
         if(not -d $Opt{"Save"})
         {
             print STDERR "ERROR: please create directory first\n";
-            exit(1);
+            exitStatus(1);
         }
     }
     
@@ -9593,7 +9657,13 @@ sub scenario()
     my $UsbLink = "/tmp/HW_PROBE_USB_";
     my $PciLink = "/tmp/HW_PROBE_PCI_";
     
-    if($Opt{"Snap"} and my $SNAP_Dir = $ENV{"SNAP"})
+    if($Opt{"Flatpak"})
+    {
+        $UsbLink = "/var/tmp/P_USB";
+        $PciLink = "/var/tmp/P_PCI";
+    }
+    
+    if($Opt{"Snap"} or $Opt{"Flatpak"})
     {
         if(-e $UsbLink) {
             unlink($UsbLink);
@@ -9602,9 +9672,17 @@ sub scenario()
         if(-e $PciLink) {
             unlink($PciLink);
         }
-        
+    }
+    
+    if($Opt{"Snap"} and my $SNAP_Dir = $ENV{"SNAP"})
+    {
         symlink("$SNAP_Dir/usr/share/usb.ids", $UsbLink);
         symlink("$SNAP_Dir/usr/share/pci.ids", $PciLink);
+    }
+    elsif($Opt{"Flatpak"})
+    {
+        symlink("/app/share/usb.ids", $UsbLink);
+        symlink("/app/share/pci.ids", $PciLink);
     }
     
     if($Opt{"Probe"} or $Opt{"Check"})
@@ -9796,25 +9874,25 @@ sub scenario()
         if(not $Admin)
         {
             print STDERR "ERROR: you should run as root (sudo or su)\n";
-            exit(1);
+            exitStatus(1);
         }
         
         if(not $USE_DUMPER)
         {
             print STDERR "ERROR: requires perl-Data-Dumper module\n";
-            exit(1);
+            exitStatus(1);
         }
         
         importProbes($Opt{"ImportProbes"});
     }
     
-    if($Opt{"Snap"})
+    if($Opt{"Snap"} or $Opt{"Flatpak"})
     {
         unlink($UsbLink);
         unlink($PciLink);
     }
     
-    exit(0);
+    exitStatus(0);
 }
 
 scenario();
