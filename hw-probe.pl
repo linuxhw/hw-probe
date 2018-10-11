@@ -342,6 +342,7 @@ my %HDD = ();
 my %HDD_Info = ();
 my %MMC = ();
 my %MON = ();
+my $MotherboardID = undef;
 
 my %DeviceIDByNum = ();
 my %DeviceNumByID = ();
@@ -460,6 +461,45 @@ my %DistSuffix = (
     "res6" => "rels-6",
     "vl6"  => "virtuozzo-7",
     "vl6"  => "virtuozzo-6"
+);
+
+my %ChassisType = (
+    1  => "Other",
+    2  => "Unknown",
+    3  => "Desktop",
+    4  => "Low Profile Desktop",
+    5  => "Pizza Box",
+    6  => "Mini Tower",
+    7  => "Tower",
+    8  => "Portable",
+    9  => "Laptop",
+    10 => "Notebook",
+    11 => "Hand Held",
+    12 => "Docking Station",
+    13 => "All In One",
+    14 => "Sub Notebook",
+    15 => "Space-saving",
+    16 => "Lunch Box",
+    17 => "Main Server Chassis",
+    18 => "Expansion Chassis",
+    19 => "Sub Chassis",
+    20 => "Bus Expansion Chassis",
+    21 => "Peripheral Chassis",
+    22 => "RAID Chassis",
+    23 => "Rack Mount Chassis",
+    24 => "Sealed-case PC",
+    25 => "Multi-system",
+    26 => "CompactPCI",
+    27 => "AdvancedTCA",
+    28 => "Blade",
+    29 => "Blade Enclosing",
+    30 => "Tablet",
+    31 => "Convertible",
+    32 => "Detachable",
+    33 => "IoT Gateway",
+    34 => "Embedded PC",
+    35 => "Mini PC",
+    36 => "Stick PC"
 );
 
 # SDIO IDs
@@ -3513,7 +3553,6 @@ sub probeHW()
     
     my $MemIndex = 0;
     my %MemIDs = ();
-    my $MotherboardID = undef;
     
     foreach my $Info (split(/\n\n/, $Dmidecode))
     {
@@ -3527,10 +3566,7 @@ sub probeHW()
         { # notebook or desktop
             if($Info=~/Type:[ ]*(.+?)[ ]*(\n|\Z)/)
             {
-                my $CType = lc($1);
-                $CType=~s/ chassis//i;
-                
-                if($CType!~/unknown|other/) {
+                if(my $CType = getChassisType($1)) {
                     $Sys{"Type"} = $CType;
                 }
             }
@@ -3691,73 +3727,12 @@ sub probeHW()
                 elsif($Key eq "Product Name") {
                     $Device{"Device"} = fmtVal($Val);
                 }
-                elsif($Key eq "Version")
-                {
-                    if($Val!~/\b(n\/a|Not)\b/i) {
-                        $Device{"Version"} = $Val;
-                    }
+                elsif($Key eq "Version") {
+                    $Device{"Version"} = $Val;
                 }
             }
             
-            $Device{"Vendor"}=~s&\Ahttp://www.&&i; # http://www.abit.com.tw as vendor
-            
-            cleanValues(\%Device);
-            
-            if($Device{"Version"}=~/board version/i) {
-                delete($Device{"Version"});
-            }
-            
-            if($Device{"Device"}=~/\bName\d*\b/i)
-            { # no info
-                next;
-            }
-            
-            if(not $Device{"Vendor"})
-            {
-                if($Device{"Device"}=~/\AConRoe[A-Z\d]/)
-                { # ConRoe1333, ConRoeXFire
-                    $Device{"Vendor"} = "ASRock";
-                }
-            }
-            
-            if(my $Ver = $Device{"Version"}) {
-                $Device{"Device"} .= " ".$Device{"Version"};
-            }
-            
-            if(my $Vendor = $Device{"Vendor"}) {
-                $Device{"Device"}=~s/\A\Q$Vendor\E\s+//ig;
-            }
-            
-            $Device{"Type"} = "motherboard";
-            $Device{"Status"} = "works";
-            
-            if(not $Device{"Vendor"}) {
-                $Device{"Vendor"} = $VendorByModel{shortModel($Device{"Device"})};
-            }
-            
-            if(not $Device{"Vendor"})
-            {
-                if($Device{"Device"}=~/\AMS\-\d+\Z/) {
-                    $Device{"Vendor"} = "MSI";
-                }
-                elsif($Device{"Device"}=~/\ASiS\-\d+/) {
-                    $Device{"Vendor"} = "SiS Technology";
-                }
-                elsif($Device{"Device"}=~/\A(4CoreDual|4Core1600|775XFire|ALiveNF)/) {
-                    $Device{"Vendor"} = "ASRock";
-                }
-            }
-            
-            $ID = devID(nameID($Device{"Vendor"}), devSuffix(\%Device));
-            $ID = fmtID($ID);
-            
-            $Device{"Device"} = "Motherboard ".$Device{"Device"};
-            
-            if($ID)
-            {
-                $MotherboardID = "board:".$ID;
-                $HW{$MotherboardID} = \%Device;
-            }
+            $MotherboardID = detectBoard(\%Device);
         }
         elsif($Info=~/BIOS Information\n/)
         {
@@ -3773,35 +3748,7 @@ sub probeHW()
                 }
             }
             
-            cleanValues(\%Device);
-            
-            my @Name = ();
-            
-            if($Device{"Version"}) {
-                push(@Name, $Device{"Version"});
-            }
-            
-            if(my $BiosDate = $Device{"Release Date"})
-            {
-                push(@Name, $Device{"Release Date"});
-                
-                if($BiosDate=~/\b(\d\d\d\d)\b/) {
-                    $Sys{"Year"} = $1;
-                }
-            }
-            
-            $Device{"Device"} = join(" ", @Name);
-            $Device{"Type"} = "bios";
-            $Device{"Status"} = "works";
-            
-            $ID = devID(nameID($Device{"Vendor"}), devSuffix(\%Device));
-            $ID = fmtID($ID);
-            
-            $Device{"Device"} = "BIOS ".$Device{"Device"};
-            
-            if($ID) {
-                $HW{"bios:".$ID} = \%Device;
-            }
+            detectBIOS(\%Device);
         }
         elsif($Info=~/Processor Information\n/)
         {
@@ -5279,6 +5226,109 @@ sub shortOS($)
     return $Name;
 }
 
+sub detectBoard($)
+{
+    my $Device = $_[0];
+    
+    $Device->{"Vendor"}=~s&\Ahttp://www.&&i; # http://www.abit.com.tw as vendor
+    
+    if($Device->{"Version"}=~/\b(n\/a|Not)\b/i) {
+        $Device->{"Version"} = undef;
+    }
+    
+    cleanValues($Device);
+    
+    if($Device->{"Version"}=~/board version/i) {
+        delete($Device->{"Version"});
+    }
+    
+    if($Device->{"Device"}=~/\bName\d*\b/i)
+    { # no info
+        return undef;
+    }
+    
+    if(not $Device->{"Vendor"})
+    {
+        if($Device->{"Device"}=~/\AConRoe[A-Z\d]/)
+        { # ConRoe1333, ConRoeXFire
+            $Device->{"Vendor"} = "ASRock";
+        }
+    }
+    
+    if(my $Ver = $Device->{"Version"}) {
+        $Device->{"Device"} .= " ".$Device->{"Version"};
+    }
+    
+    if(my $Vendor = $Device->{"Vendor"}) {
+        $Device->{"Device"}=~s/\A\Q$Vendor\E\s+//ig;
+    }
+    
+    $Device->{"Type"} = "motherboard";
+    $Device->{"Status"} = "works";
+    
+    if(not $Device->{"Vendor"}) {
+        $Device->{"Vendor"} = $VendorByModel{shortModel($Device->{"Device"})};
+    }
+    
+    if(not $Device->{"Vendor"})
+    {
+        if($Device->{"Device"}=~/\AMS\-\d+\Z/) {
+            $Device->{"Vendor"} = "MSI";
+        }
+        elsif($Device->{"Device"}=~/\ASiS\-\d+/) {
+            $Device->{"Vendor"} = "SiS Technology";
+        }
+        elsif($Device->{"Device"}=~/\A(4CoreDual|4Core1600|775XFire|ALiveNF)/) {
+            $Device->{"Vendor"} = "ASRock";
+        }
+    }
+    
+    my $ID = devID(nameID($Device->{"Vendor"}), devSuffix($Device));
+    $ID = fmtID($ID);
+    
+    $Device->{"Device"} = "Motherboard ".$Device->{"Device"};
+    
+    my $MID = "board:".$ID;
+    $HW{$MID} = $Device;
+    
+    return $MID;
+}
+
+sub detectBIOS($)
+{
+    my $Device = $_[0];
+    
+    cleanValues($Device);
+    
+    my @Name = ();
+    
+    if($Device->{"Version"}) {
+        push(@Name, $Device->{"Version"});
+    }
+    
+    if(my $BiosDate = $Device->{"Release Date"})
+    {
+        push(@Name, $Device->{"Release Date"});
+        
+        if($BiosDate=~/\b(\d\d\d\d)\b/) {
+            $Sys{"Year"} = $1;
+        }
+    }
+    
+    $Device->{"Device"} = join(" ", @Name);
+    $Device->{"Type"} = "bios";
+    $Device->{"Status"} = "works";
+    
+    my $ID = devID(nameID($Device->{"Vendor"}), devSuffix($Device));
+    $ID = fmtID($ID);
+    
+    $Device->{"Device"} = "BIOS ".$Device->{"Device"};
+    
+    if($ID) {
+        $HW{"bios:".$ID} = $Device;
+    }
+}
+
 sub detectMonitor($)
 {
     my $Info = $_[0];
@@ -6259,7 +6309,9 @@ sub probeSys()
     }
     
     listProbe("logs", "dmi_id");
-    foreach my $File ("sys_vendor", "product_name", "product_version")
+    
+    my $Dmi = "";
+    foreach my $File ("sys_vendor", "product_name", "product_version", "chassis_type", "board_vendor", "board_name", "board_version", "bios_vendor", "bios_version", "bios_date")
     {
         my $Value = readFile("/sys/class/dmi/id/".$File);
         
@@ -6287,6 +6339,20 @@ sub probeSys()
                 $Sys{"Version"} = $Value;
             }
         }
+        elsif($File eq "chassis_type")
+        {
+            if(my $CType = getChassisType($ChassisType{$Value})) {
+                $Sys{"Type"} = $CType;
+            }
+        }
+        
+        if($Value ne "" and $Value=~/[A-Z0-9]/i) {
+            $Dmi .= $File.": ".$Value."\n";
+        }
+    }
+    
+    if($Opt{"Logs"}) {
+        writeLog($LOG_DIR."/dmi_id", $Dmi);
     }
     
     $Sys{"Vendor"} = fixVendor($Sys{"Vendor"});
@@ -6297,6 +6363,58 @@ sub probeSys()
     foreach (keys(%Sys)) {
         chomp($Sys{$_});
     }
+}
+
+sub getChassisType($)
+{
+    my $CType = lc($_[0]);
+    $CType=~s/ chassis//i;
+    
+    if($CType!~/unknown|other/) {
+        return $CType;
+    }
+    
+    return undef;
+}
+
+sub fixChassis()
+{
+    my (%Bios, %Board) = ();
+    foreach my $L (split(/\n/, readFile($FixProbe_Logs."/dmi_id")))
+    {
+        if($L=~/\A(\w+?):\s+(.+?)\Z/)
+        {
+            my ($File, $Value) = ($1, $2);
+            
+            if($File eq "chassis_type")
+            {
+                if(my $CType = getChassisType($ChassisType{$Value})) {
+                    $Sys{"Type"} = $CType;
+                }
+            }
+            elsif($File eq "bios_vendor") {
+                $Bios{"Vendor"} = fmtVal($Value);
+            }
+            elsif($File eq "bios_version") {
+                $Bios{"Version"} = $Value;
+            }
+            elsif($File eq "bios_date") {
+                $Bios{"Release Date"} = $Value;
+            }
+            elsif($File eq "board_vendor") {
+                $Board{"Vendor"} = fmtVal($Value);
+            }
+            elsif($File eq "board_name") {
+                $Board{"Device"} = fmtVal($Value);
+            }
+            elsif($File eq "board_version") {
+                $Board{"Version"} = $Value;
+            }
+        }
+    }
+    
+    detectBIOS(\%Bios);
+    $MotherboardID = detectBoard(\%Board);
 }
 
 sub ipAddr2ifConfig($)
@@ -9523,6 +9641,8 @@ sub scenario()
         fixLogs($FixProbe_Logs);
         
         readHost($Opt{"FixProbe"}); # instead of probeSys
+        
+        fixChassis();
         probeHWaddr();
         probeHW();
         
