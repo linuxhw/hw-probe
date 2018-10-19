@@ -101,7 +101,7 @@ Example: sudo $CmdName -all -upload
 DESC — any description of the probe.\n\n";
 
 my $SNAP_DESKTOP = (defined $ENV{"BAMF_DESKTOP_FILE_HINT"});
-my $FLATPAK_DESKTOP = ($#ARGV==0 and $ARGV[0] eq "-flatpak");
+my $FLATPAK_DESKTOP = (grep { $_ eq "-flatpak" } @ARGV);
 
 if($#ARGV==0 and grep { $ARGV[0] eq $_ } ("-snap", "-flatpak"))
 { # Run by desktop file
