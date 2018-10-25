@@ -101,7 +101,7 @@ Example: sudo $CmdName -all -upload
 DESC — any description of the probe.\n\n";
 
 my $SNAP_DESKTOP = (defined $ENV{"BAMF_DESKTOP_FILE_HINT"});
-my $FLATPAK_DESKTOP = (grep { $_ eq "-flatpak" } @ARGV);
+my $FLATPAK_DESKTOP = ($#ARGV==0 and $ARGV[0] eq "-flatpak");
 
 if($#ARGV==0 and grep { $ARGV[0] eq $_ } ("-snap", "-flatpak"))
 { # Run by desktop file
@@ -354,6 +354,7 @@ my %WLanInterface = ();
 my %PermanentAddr = ();
 my %HDD = ();
 my %HDD_Info = ();
+my %MMC_Info = ();
 my %MMC = ();
 my %MON = ();
 my $MotherboardID = undef;
@@ -732,7 +733,7 @@ my @UnknownVendors = (
     "___"
 );
 
-# Repair vendor of some motherboards
+# Repair vendor of some motherboards and mmc devices
 # It is needed for catalog of public reports on github
 my %VendorModels = (
     "ASRock" => ["4CoreDual-VSTA", "4CoreDual-SATA2", "4Core1600-GLAN", "4Core1600-D800", "4CoreN73PV-HD720p", "775XFire-RAID", "775XFire-RAID",
@@ -743,7 +744,11 @@ my %VendorModels = (
     "ECS" => ["848P-A7", "965PLT-A", "H110M4-C2H", "K8M800-M2", "nForce4-A939", "nForce4-A754", "nForce", "nVidia-nForce", "RS480-M"],
     "ASUSTek Computer" => ["C51MCP51", "P5GD1-TMX/S", "RC410-SB450"],
     "MSI" => ["MS-7210", "MS-7030", "MS-7025", "MS-7210 100"],
-    "SiS Technology" => ["SiS-661", "SiS-649", "SiS-648FX", "SiS-650GX"]
+    "SiS Technology" => ["SiS-661", "SiS-649", "SiS-648FX", "SiS-650GX"],
+    
+    "Samsung"  => ["AWMB3R", "CJNB4R", "MAG2GC", "MCG8GA", "MCG8GC"],
+    "SanDisk"  => ["DF4032", "DF4064", "DF4128", "SDW64G", "SL32G"],
+    "SK hynix" => ["HBG4a", "HBG4e", "HCG8e"]
 );
 
 my %VendorByModel;
@@ -864,7 +869,7 @@ my $HASH_LEN_CLIENT = 32;
 my $SALT_CLIENT = "GN-4w?T]>r3FS/*_";
 
 my $MAX_LOG_SIZE = 1048576; # 1Mb
-my $LARGE_LOGS = ("xorg.log", "xorg.log.1", "dmesg", "dmesg.1");
+my @LARGE_LOGS = ("xorg.log", "xorg.log.1", "dmesg", "dmesg.1");
 
 sub getSha512L($$)
 {
@@ -2363,7 +2368,7 @@ sub probeHW()
                     or index($Val, "nvme")!=-1 or $Bus eq "usb") {
                         $HDD{$Val} = 0;
                     }
-                    elsif(index($Val, "mmcblk")!=-1) {
+                    elsif(index($Val, "mmcblk")!=-1 and $Val=~/mmcblk\d+\Z/) {
                         $MMC{$Val} = 0;
                     }
                 }
@@ -2475,6 +2480,18 @@ sub probeHW()
                         }
                     }
                     $HDD_Info{$Device{"File"}} = \%Device;
+                    next;
+                }
+            }
+            elsif(index($Device{"File"}, "mmcblk")!=-1)
+            {
+                if($Device{"FsId"}=~/\Ammc-(.+?)[_]+(0x[a-f\d]{8})\Z/)
+                {
+                    $Bus = "mmc";
+                    $Device{"Device"} = $1;
+                    $Device{"Serial"} = clientHash($2);
+                    
+                    $MMC_Info{$Device{"File"}} = \%Device;
                     next;
                 }
             }
@@ -4703,6 +4720,37 @@ sub probeHW()
         }
     }
     
+    foreach my $Dev (keys(%MMC))
+    {
+        if(not $MMC{$Dev})
+        {
+            if(index($Dev, "mmcblk")!=-1)
+            {
+                my %Drv = ( "Type"=>"disk" );
+                if(defined $MMC_Info{$Dev})
+                {
+                    foreach ("Capacity", "Driver", "Vendor", "Device", "Serial") {
+                        $Drv{$_} = $MMC_Info{$Dev}{$_};
+                    }
+                }
+                
+                if(defined $VendorByModel{$Drv{"Device"}}) {
+                    $Drv{"Vendor"} = $VendorByModel{$Drv{"Device"}};
+                }
+                
+                $Drv{"Capacity"} = fixCapacity($Drv{"Capacity"});
+                
+                if($Drv{"Device"})
+                {
+                    $Drv{"Device"} .= " SSD".addCapacity($Drv{"Device"}, $Drv{"Capacity"});
+                    
+                    my $MMC_ID = fmtID(devID(nameID($Drv{"Vendor"}), devSuffix(\%Drv)));
+                    $HW{"mmc:".$MMC_ID} = \%Drv;
+                }
+            }
+        }
+    }
+    
     my $SmartctlMR = "";
     if($Opt{"FixProbe"})
     {
@@ -4886,21 +4934,48 @@ sub probeHW()
     if(not $Opt{"FixProbe"})
     {
         if(check_Cmd("arcconf"))
-        {
+        { # Adaptec RAID
             listProbe("logs", "arcconf");
-            my $Arcconf = runCmd("arcconf GETCONFIG 1 PD 2>&1");
-            $Arcconf = encryptSerials($Arcconf, "Serial number");
-            $Arcconf = encryptSerials($Arcconf, "World-wide name", "arcconf", 1);
-            if($Arcconf) {
+            
+            my @Controllers = ();
+            my $ArcconfList = runCmd("arcconf LIST 2>&1");
+            while($ArcconfList=~s/Controller\s+(\d+)//) {
+                push(@Controllers, $1);
+            }
+            
+            my $Arcconf = "";
+            
+            foreach my $Cn (@Controllers)
+            {
+                $Arcconf .= "Controller $Cn:\n";
+                $Arcconf .= runCmd("arcconf GETCONFIG $Cn PD 2>&1");
+                $Arcconf .= "\n";
+            }
+            
+            if($Arcconf)
+            {
+                $Arcconf = encryptSerials($Arcconf, "Serial number");
+                $Arcconf = encryptSerials($Arcconf, "World-wide name", "arcconf", 1);
+                
                 writeLog($LOG_DIR."/arcconf", $Arcconf);
             }
             
             listProbe("logs", "arcconf_smart");
-            my $Arcconf_Smart = runCmd("arcconf GETSMARTSTATS 1 TABULAR 2>&1");
-            $Arcconf_Smart=~s/\.{4,}/:/g;
-            $Arcconf_Smart = encryptSerials($Arcconf_Smart, "serialNumber");
-            $Arcconf_Smart = encryptSerials($Arcconf_Smart, "vendorProductID");
-            if($Arcconf_Smart) {
+            my $Arcconf_Smart = "";
+            
+            foreach my $Cn (@Controllers)
+            {
+                $Arcconf_Smart .= "Controller $Cn:\n";
+                $Arcconf_Smart .= runCmd("arcconf GETSMARTSTATS $Cn TABULAR 2>&1");
+                $Arcconf_Smart .= "\n";
+            }
+            
+            if($Arcconf_Smart)
+            {
+                $Arcconf_Smart=~s/\.{4,}/:/g;
+                $Arcconf_Smart = encryptSerials($Arcconf_Smart, "serialNumber");
+                $Arcconf_Smart = encryptSerials($Arcconf_Smart, "vendorProductID");
+                
                 writeLog($LOG_DIR."/arcconf_smart", $Arcconf_Smart);
             }
         }
@@ -5208,6 +5283,18 @@ sub probeHW()
     print "Ok\n";
 }
 
+sub fixCapacity($)
+{
+    my $Capacity = $_[0];
+    if($Capacity=~/\A(31|63|127|255)GB\Z/)
+    {
+        my $Size = $1;
+        my $NSize = $1 + 1;
+        $Capacity=~s/\A\Q$Size\E(GB)\Z/$NSize$1/;
+    }
+    return $Capacity;
+}
+
 sub isIntelDriver($) {
     return grep {$_[0] eq $_} @G_DRIVERS_INTEL;
 }
@@ -5312,6 +5399,10 @@ sub detectBoard($)
         }
     }
     
+    if(not $Device->{"Vendor"} or not $Device->{"Device"}) {
+        return undef;
+    }
+    
     my $ID = devID(nameID($Device->{"Vendor"}), devSuffix($Device));
     $ID = fmtID($ID);
     
@@ -5345,6 +5436,11 @@ sub detectBIOS($)
     }
     
     $Device->{"Device"} = join(" ", @Name);
+    
+    if(not $Device->{"Vendor"} or not $Device->{"Device"}) {
+        return undef;
+    }
+    
     $Device->{"Type"} = "bios";
     $Device->{"Status"} = "works";
     
@@ -8587,11 +8683,11 @@ sub checkHW()
         my $HDD_Num = 0;
         foreach my $Dr (sort keys(%HDD))
         {
-            my $HDD_Info = $HW{$HDD{$Dr}};
+            my $Hdd_Info = $HW{$HDD{$Dr}};
             my $Cmd = "hdparm -t $Dr";
             my $Out = runCmd($Cmd);
             $Out=~s/\A\n\Q$Dr\E\:\n//;
-            $HDD_Read .= $HDD_Info->{"Vendor"}." ".$HDD_Info->{"Device"}."\n";
+            $HDD_Read .= $Hdd_Info->{"Vendor"}." ".$Hdd_Info->{"Device"}."\n";
             $HDD_Read .= "$Cmd\n";
             $HDD_Read .= $Out."\n";
             
@@ -8644,7 +8740,7 @@ sub writeLog($$)
     {
         my $MaxSize = 2*$MAX_LOG_SIZE;
         
-        if(grep {$Log eq $_} $LARGE_LOGS) {
+        if(grep {$Log eq $_} @LARGE_LOGS) {
             $MaxSize = $MAX_LOG_SIZE;
         }
         
@@ -9622,7 +9718,7 @@ sub scenario()
             }
         }
         
-        foreach my $L ($LARGE_LOGS)
+        foreach my $L (@LARGE_LOGS)
         {
             if(-s $FixProbe_Logs."/".$L > $MAX_LOG_SIZE)
             {
