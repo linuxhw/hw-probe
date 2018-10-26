@@ -968,6 +968,13 @@ sub hideTags($$)
     return $Content;
 }
 
+sub hideHostname($)
+{
+    my $Content = $_[0];
+    $Content=~s/(Set hostname to) <.+>\./$1 <...>./g;
+    return $Content;
+}
+
 sub hideIPs($)
 {
     my $Content = $_[0];
@@ -4992,6 +4999,7 @@ sub probeHW()
         listProbe("logs", "dmesg");
         $Dmesg = runCmd("dmesg 2>&1");
         $Dmesg = hideTags($Dmesg, "SerialNumber");
+        $Dmesg = hideHostname($Dmesg);
         $Dmesg = hideMACs($Dmesg);
         writeLog($LOG_DIR."/dmesg", $Dmesg);
     }
@@ -7271,6 +7279,7 @@ sub writeLogs()
             my $Dmesg_Old = runCmd("journalctl -a -k -b -1 -o short-monotonic 2>/dev/null | grep -v systemd");
             $Dmesg_Old=~s/\]\s+.*?\s+kernel:/]/g;
             $Dmesg_Old = hideTags($Dmesg_Old, "SerialNumber");
+            $Dmesg_Old = hideHostname($Dmesg_Old);
             $Dmesg_Old = hideMACs($Dmesg_Old);
             writeLog($LOG_DIR."/dmesg.1", $Dmesg_Old);
         }
