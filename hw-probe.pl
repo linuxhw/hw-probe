@@ -193,7 +193,7 @@ elsif($Opt{"Flatpak"})
 {
     $TMP_DIR = "/var".$TMP_DIR;
     mkpath($TMP_DIR);
-    
+
     $PROBE_DIR = $ENV{"XDG_DATA_HOME"}."/HW_PROBE";
 }
 
@@ -210,7 +210,7 @@ NAME:
 DESCRIPTION:
   Hardware Probe Tool (HW Probe) is a tool to probe for hardware,
   check its operability and upload result to the Linux hardware DB.
-  
+
   By creating probes you contribute to the \"HDD/SSD Real-Life Reliability
   Test\" study: https://github.com/linuxhw/SMART
 
@@ -223,20 +223,20 @@ USAGE:
 PRIVACY:
   Private information (including the username, machine's hostname, IP addresses,
   MAC addresses and serial numbers) is NOT uploaded to the database.
-  
+
   The tool uploads SHA512 hash of MAC addresses and serial numbers to properly
   identify unique computers and hard drives. All the data is uploaded securely
   via HTTPS.
 
 EXAMPLES:
   sudo $CmdName -all -upload -id DESC
-  
+
   DESC — any description of the probe.
 
 INFORMATION OPTIONS:
   -h|-help
       Print this help.
-  
+
   -v|-version
       Print version info.
 
@@ -246,38 +246,38 @@ INFORMATION OPTIONS:
 GENERAL OPTIONS:
   -all
       Enable all probes.
-  
+
   -probe
       Probe for hardware. Collect only
       hardware related logs.
-  
+
   -logs
       Collect system logs.
-  
+
   -log-level N
       Set the logging level to N.
       Available values:
-      
+
         - minimal
         - default
         - maximal
-  
+
   -printers
       Probe for printers.
-  
+
   -scanners
       Probe for scanners.
-  
+
   -check
       Check devices operability.
-  
+
   -id|-name DESC
       Any description of the probe.
-  
+
   -upload
       Upload result to the Linux hardware DB. You will get a
       permanent URL to view the probe.
-  
+
   -hwinfo-path PATH
       Path to a local hwinfo binary.
 
@@ -285,7 +285,7 @@ INVENTORY OPTIONS:
   -inventory-id ID
       Mark the probe by inventory ID. You can generate it
       by the -generate-inventory-id option.
-  
+
   -generate-inventory-id
       Generate new inventory ID.
 
@@ -293,47 +293,47 @@ OTHER OPTIONS:
   -save DIR
       Save probe package to DIR. This is useful if you are offline
       and need to upload a probe later (with the help of -src option).
-  
+
   -src|-source PATH
       A probe to upload.
-  
+
   -fix PATH
       Update list of devices and host info
       in the probe using probe data.
-  
+
   -show
       Show devices info.
-  
+
   -compact
       Use with -show option for compact view.
-  
+
   -verbose
       Use with -show option to show type and status of the device.
-  
+
   -pci-ids  PATH
   -usb-ids  PATH
   -sdio-ids PATH
   -pnp-ids  PATH
       Path to {pci,usb,sdio,pnp}.ids file to read missed device names.
-  
+
   -list
       List executed probes (for debugging).
-  
+
   -clean
       Remove the probe data after the probe is uploaded.
-  
+
   -debug|-d
       The probe is for debugging purposes only.
-  
+
   -dump-acpi
       Probe for ACPI table.
-  
+
   -decode-acpi
       Decode ACPI table.
-  
+
   -import DIR
       Import probes from the database to DIR for offline use.
-      
+
       If you are using Snap or Flatpak package, then DIR will be created
       in the sandbox data directory.
 
@@ -745,7 +745,7 @@ my %VendorModels = (
     "ASUSTek Computer" => ["C51MCP51", "P5GD1-TMX/S", "RC410-SB450"],
     "MSI" => ["MS-7210", "MS-7030", "MS-7025", "MS-7210 100"],
     "SiS Technology" => ["SiS-661", "SiS-649", "SiS-648FX", "SiS-650GX"],
-    
+
     "Samsung"  => ["AWMB3R", "CJNB4R", "MAG2GC", "MCG8GA", "MCG8GC"],
     "SanDisk"  => ["DF4032", "DF4064", "DF4128", "SDW64G", "SL32G"],
     "SK hynix" => ["HBG4a", "HBG4e", "HCG8e"]
@@ -875,7 +875,7 @@ sub getSha512L($$)
 {
     my $String = $_[0];
     my $Hash = undef;
-    
+
     if($USE_DIGEST) {
         $Hash = Digest::SHA::sha512_hex($String);
     }
@@ -884,7 +884,7 @@ sub getSha512L($$)
         $Hash = qx/echo -n \'$String\' | sha512sum/;
         $Hash=~s/\A([\da-f]+).*?\Z/$1/;
     }
-    
+
     return substr($Hash, 0, $_[1]);
 }
 
@@ -898,17 +898,17 @@ sub encryptSerials(@)
 {
     my $Content = shift(@_);
     my $Tag = shift(@_);
-    
+
     my $Name = undef;
     if(@_) {
         $Name = shift(@_);
     }
-    
+
     my $Lower = undef;
     if(@_) {
         $Lower = shift(@_);
     }
-    
+
     my %Serials = ();
     while($Content=~/\Q$Tag\E\s*[:=]\s*"?([^"]+?)"?\s*\n/g) {
         $Serials{$1} = 1;
@@ -919,18 +919,18 @@ sub encryptSerials(@)
         or index($Ser, ":")!=-1) {
             next;
         }
-        
+
         my $Enc = undef;
-        
+
         if($Lower) {
             $Enc = clientHash(lc($Ser));
         }
         else {
             $Enc = clientHash($Ser);
         }
-        
+
         $Content=~s/(\Q$Tag\E\s*[:=]\s*"?)\Q$Ser\E("?\s*\n)/$1$Enc$2/g;
-        
+
         if($Name and $Name eq "hwinfo") {
             $Content=~s/_\Q$Ser\E\b/_$Enc/g; # /dev/disk/by-id/ata-Samsung_SSD_850_EVO_250GB_XXXXXXXXXXXXXXX
         }
@@ -978,14 +978,14 @@ sub hideHostname($)
 sub hideIPs($)
 {
     my $Content = $_[0];
-    
+
     # IPv4
     $Content=~s/\d+\.\d+\.\d+\.\d+/XXX.XXX.XXX.XXX/g;
-    
+
     # IPv6
     $Content=~s/[\da-f]+\:\:[\da-f]+\:[\da-f]+\:[\da-f]+\:[\da-f]+/XXXX::XXX:XXX:XXX:XXX/gi;
     $Content=~s/[\da-f]+\:[\da-f]+\:[\da-f]+\:[\da-f]+\:[\da-f]+\:[\da-f]+\:[\da-f]+\:[\da-f]+/XXXX:XXXX:XXXX:XXXX:XXXX:XXXX:XXXX:XXXX/gi;
-    
+
     return $Content;
 }
 
@@ -1027,18 +1027,18 @@ sub checkModule($)
             return 1;
         }
     }
-    
+
     return 0;
 }
 
 sub runCmd($)
 {
     my $Cmd = $_[0];
-    
+
     if($Opt{"ListProbes"}) {
         print "Executing: ".$Cmd."\n";
     }
-    
+
     return `LC_ALL=$LOCALE $Cmd`;
 }
 
@@ -1046,29 +1046,29 @@ sub getOldProbeDir()
 {
     my $SubDir = "HW_PROBE";
     my $Dir = undef;
-    
+
     if(my $Home = $ENV{"HOME"}) {
         $Dir = $Home."/".$SubDir;
     }
-    
+
     if($Dir and $Dir eq $PROBE_DIR)
     {
         $Dir = undef;
-        
+
         if(my $SessUser = getUser()) {
             $Dir = "/home/".$SessUser."/".$SubDir;
         }
     }
-    
+
     return $Dir;
 }
 
 sub getGroup()
 {
     my $GroupURL = $URL."/get_group.php";
-    
+
     my $Log = "";
-    
+
     if(check_Cmd("curl"))
     {
         my $CurlCmd = "curl -s -S -f -POST -F get=group -H \"Expect:\" --http1.0 $GroupURL";
@@ -1077,7 +1077,7 @@ sub getGroup()
     else {
         $Log = postRequest($GroupURL, { "get"=>"group" }, "NoSSL");
     }
-    
+
     print $Log;
     if($?)
     {
@@ -1085,7 +1085,7 @@ sub getGroup()
         print STDERR "ERROR: failed to get group, curl error code \"".$ECode."\"\n";
         exitStatus(1);
     }
-    
+
     if($Log=~/(Group|Inventory) ID: (\w+)/)
     {
         my $ID = $2;
@@ -1097,155 +1097,155 @@ sub getGroup()
 sub postRequest($$$)
 {
     my ($UploadURL, $Data, $SSL) = @_;
-    
+
     require LWP::UserAgent;
-    
+
     my $UAgent = LWP::UserAgent->new(parse_head => 0);
-    
+
     if($SSL eq "NoSSL" or not checkModule("Mozilla/CA.pm"))
     {
         $UploadURL=~s/\Ahttps:/http:/g;
         $UAgent->ssl_opts(verify_hostname => 0, SSL_verify_mode => 0x00);
     }
-    
+
     my $Res = $UAgent->post(
         $UploadURL,
         Content_Type => "form-data",
         Content => $Data
     );
-    
+
     my $Out = $Res->{"_content"};
-    
+
     if(not $Out) {
         return $Res->{"_headers"}{"x-died"};
     }
-    
+
     return $Out;
 }
 
 sub getRequest($$)
 {
     my ($UploadURL, $SSL) = @_;
-    
+
     require LWP::UserAgent;
-    
+
     my $UAgent = LWP::UserAgent->new(parse_head => 0);
-    
+
     if($SSL eq "NoSSL" or not checkModule("Mozilla/CA.pm"))
     {
         $UploadURL=~s/\Ahttps:/http:/g;
         $UAgent->ssl_opts(verify_hostname => 0, SSL_verify_mode => 0x00);
     }
-    
+
     $UAgent->agent("Mozilla/5.0 (X11; Linux x86_64; rv:50.0) Gecko/20100101 Firefox/50.123");
-    
+
     my $Res = $UAgent->get($UploadURL);
-    
+
     my $Out = $Res->{"_content"};
-    
+
     if(not $Out) {
         return $Res->{"_headers"}{"x-died"};
     }
-    
+
     return $Out;
 }
 
 sub saveProbe($)
 {
     my $To = $_[0];
-    
+
     $To=~s&/+\Z&&;
-    
+
     my ($Pkg, $HWaddr) = createPackage();
-    
+
     if(not $Pkg) {
         return;
     }
-    
+
     move($Pkg, $To);
-    
+
     print "Saved to: $To/".basename($Pkg)."\n";
 }
 
 sub uploadData()
 {
     my ($Pkg, $HWaddr) = createPackage();
-    
+
     if(not $Pkg) {
         return;
     }
-    
+
     my $UploadURL = $URL."/upload_result.php";
     my $Salt = getSha512L($SALT_CLIENT, 10);
-    
+
     # upload package
     my @Cmd = ("curl", "-s", "-S", "-f", "-POST");
     my %Data = ();
-    
+
     @Cmd = (@Cmd, "-F file=\@".$Pkg);
     $Data{"file"} = [$Pkg];
-    
+
     @Cmd = (@Cmd, "-F hwaddr=$HWaddr");
     $Data{"hwaddr"} = $HWaddr;
-    
+
     if($Opt{"Debug"})
     {
         @Cmd = (@Cmd, "-F debug=1");
         $Data{"debug"} = "1";
     }
-    
+
     if($Opt{"Docker"})
     {
         @Cmd = (@Cmd, "-F docker=1");
         $Data{"docker"} = "1";
     }
-    
+
     if($Opt{"AppImage"})
     {
         @Cmd = (@Cmd, "-F appimage=1");
         $Data{"appimage"} = "1";
     }
-    
+
     if($Opt{"Snap"})
     {
         @Cmd = (@Cmd, "-F snap=1");
         $Data{"snap"} = "1";
     }
-    
+
     if($Opt{"Flatpak"})
     {
         @Cmd = (@Cmd, "-F flatpak=1");
         $Data{"flatpak"} = "1";
     }
-    
+
     if($Opt{"PC_Name"})
     {
         @Cmd = (@Cmd, "-F id=\'".$Opt{"PC_Name"}."\'");
         $Data{"id"} = $Opt{"PC_Name"};
     }
-    
+
     if($Opt{"Group"})
     {
         @Cmd = (@Cmd, "-F group=\'".$Opt{"Group"}."\'");
         $Data{"group"} = $Opt{"Group"};
     }
-    
+
     @Cmd = (@Cmd, "-F tool_ver=\'$TOOL_VERSION\'");
     $Data{"tool_ver"} = $TOOL_VERSION;
-    
+
     @Cmd = (@Cmd, "-F salt=\'$Salt\'");
     $Data{"salt"} = $Salt;
-    
+
     # fix curl error 22: "The requested URL returned error: 417 Expectation Failed"
     @Cmd = (@Cmd, "-H", "Expect:");
     @Cmd = (@Cmd, "--http1.0");
-    
+
     @Cmd = (@Cmd, $UploadURL);
-    
+
     my $CurlCmd = join(" ", @Cmd);
     my $Log = qx/$CurlCmd 2>&1/;
     my $Err = $?;
-    
+
     if($Err)
     {
         if(my $WWWLog = postRequest($UploadURL, \%Data, "NoSSL"))
@@ -1259,7 +1259,7 @@ sub uploadData()
                 }
                 exitStatus(1);
             }
-            
+
             $Log = $WWWLog;
         }
         else
@@ -1270,10 +1270,10 @@ sub uploadData()
             exitStatus(1);
         }
     }
-    
+
     $Log=~s/\s*Private access:\s*http.+?token\=(\w+)\s*/\n/;
     print $Log;
-    
+
     my ($ID, $Token) = ();
     if($Log=~/probe\=(\w+)/) {
         $ID = $1;
@@ -1281,12 +1281,12 @@ sub uploadData()
     if($Log=~/token\=(\w+)/) {
         $Token = $1;
     }
-    
+
     # save uploaded probe and its ID
     if($ID)
     {
         my $NewProbe = $PROBE_DIR."/".$ID;
-        
+
         if(-d $NewProbe)
         {
             print STDERR "ERROR: the probe with ID \'$ID\' already exists, overwriting ...\n";
@@ -1295,18 +1295,18 @@ sub uploadData()
         else {
             mkpath($NewProbe);
         }
-        
+
         move($Pkg, $NewProbe);
-        
+
         my $Time = time;
         my $ProbeUrl = "$URL/?probe=$ID";
         my $ProbeLog = "PROBE\n=====\nDate: ".localtime($Time)." ($Time)\n";
-        
+
         $ProbeLog .= "Probe URL: $ProbeUrl\n";
         if($Token) {
             $ProbeLog .= "Private access: $ProbeUrl&token=$Token\n";
         }
-        
+
         appendFile($PROBE_LOG, $ProbeLog."\n");
     }
 }
@@ -1324,19 +1324,19 @@ sub cleanData()
 sub readHostAttr($$)
 {
     my ($Path, $Attr) = @_;
-    
+
     if(readFile($Path."/host")=~/\Q$Attr\E\:([^\n]*)/)
     {
         return $1;
     }
-    
+
     return "";
 }
 
 sub createPackage()
 {
     my ($Pkg, $HWaddr) = ();
-    
+
     if($Opt{"Source"})
     {
         if(-f $Opt{"Source"})
@@ -1344,44 +1344,44 @@ sub createPackage()
             if(isPkg($Opt{"Source"}))
             {
                 $Pkg = $Opt{"Source"};
-                
+
                 system("tar", "--directory", $TMP_DIR, "-xJf", $Pkg);
                 if($?)
                 {
                     print STDERR "ERROR: failed to extract package (".$?.")\n";
                     exitStatus(1);
                 }
-                
+
                 if(my @Dirs = listDir($TMP_DIR))
                 {
                     my $Dir = $Dirs[0];
-                    
+
                     my $Chg = 0;
-                    
+
                     if($Dir ne "hw.info")
                     { # packaged by user
                         move($TMP_DIR."/".$Dir, $TMP_DIR."/hw.info");
                         $Chg = 1;
                     }
-                    
+
                     if(updateHost($TMP_DIR."/hw.info", "id", $Opt{"PC_Name"})) {
                         $Chg = 1;
                     }
-                    
+
                     $HWaddr = readHostAttr($TMP_DIR."/hw.info", "hwaddr");
-                    
+
                     if($Chg)
                     {
                         chdir($TMP_DIR);
                         system("tar", "-cJf", "hw.info.txz", "hw.info");
                         chdir($ORIG_DIR);
-                        
+
                         if($?)
                         {
                             print STDERR "ERROR: failed to create a package (".$?.")\n";
                             exitStatus(1);
                         }
-                        
+
                         $Pkg = $TMP_DIR."/hw.info.txz";
                     }
                 }
@@ -1396,19 +1396,19 @@ sub createPackage()
         {
             copyFiles($Opt{"Source"}, $TMP_DIR."/hw.info");
             updateHost($TMP_DIR."/hw.info", "id", $Opt{"PC_Name"});
-            
+
             $HWaddr = readHostAttr($TMP_DIR."/hw.info", "hwaddr");
-            
+
             chdir($TMP_DIR);
             system("tar", "-cJf", "hw.info.txz", "hw.info");
             chdir($ORIG_DIR);
-            
+
             if($?)
             {
                 print STDERR "ERROR: failed to create a package (".$?.")\n";
                 exitStatus(1);
             }
-            
+
             $Pkg = $TMP_DIR."/hw.info.txz";
         }
         else
@@ -1426,12 +1426,12 @@ sub createPackage()
                 print STDERR "ERROR: \'./".$DATA_DIR."/devices\' file is not found, please make probe first\n";
                 exitStatus(1);
             }
-            
+
             updateHost($DATA_DIR, "id", $Opt{"PC_Name"});
             $HWaddr = readHostAttr($DATA_DIR, "hwaddr");
-            
+
             $Pkg = $TMP_DIR."/hw.info.txz";
-            
+
             chdir(dirname($DATA_DIR));
             system("tar", "-cJf", $Pkg, basename($DATA_DIR));
             chdir($ORIG_DIR);
@@ -1447,7 +1447,7 @@ sub createPackage()
             exitStatus(1);
         }
     }
-    
+
     return ($Pkg, $HWaddr);
 }
 
@@ -1458,9 +1458,9 @@ sub ceilNum($) {
 sub copyFiles($$)
 {
     my ($P1, $P2) = @_;
-    
+
     mkpath($P2);
-    
+
     foreach my $Top (listDir($P1))
     {
         if(-d $P1."/".$Top)
@@ -1493,18 +1493,18 @@ sub isPkg($)
 sub updateHost($$$)
 {
     my ($Path, $Attr, $Val) = @_;
-    
+
     if($Val)
     {
         if(not -f $Path."/host")
         { # internal error
             return 0;
         }
-        
+
         my $Content = readFile($Path."/host");
-        
+
         my $Chg = 0;
-        
+
         if($Content!~/(\A|\n)$Attr:/)
         {
             if($Content!~/\n\Z/) {
@@ -1521,7 +1521,7 @@ sub updateHost($$$)
                 $Chg = 1;
             }
         }
-        
+
         if($Chg)
         {
             writeFile($Path."/host", $Content);
@@ -1529,42 +1529,42 @@ sub updateHost($$$)
             return 1;
         }
     }
-    
+
     return 0;
 }
 
 sub fmtVal($)
 {
     my $Val = $_[0];
-    
+
     if(not defined $Val or $Val eq "" or $Val=~/\A\s+\Z/) {
         return "";
     }
-    
+
     if($Val!~/[a-z0-9]/i) { # invalid
         return "";
     }
-    
+
     $Val=~s/\((R|TM)\)\-/-/gi;
     $Val=~s/\((R|TM)\)/ /gi;
-    
+
     $Val=~s/\342\204\242|\302\256|\302\251//g; # TM (trade mark), R (registered), C (copyright) special symbols
     $Val=~s/\303\227/x/g; # multiplication sign
-    
+
     $Val=~s/\A[_\-\? ]//gi;
     $Val=~s/[_\-\? ]\Z//gi;
-    
+
     $Val=~s/[ ]{2,}/ /g;
-    
+
     return $Val;
 }
 
 sub bytesToHuman($)
 {
     my $Bytes = $_[0];
-    
+
     $Bytes /= 1000000; # MB
-    
+
     if($Bytes>=1000)
     {
         $Bytes /= 1000; # GB
@@ -1575,25 +1575,25 @@ sub bytesToHuman($)
             $Bytes = roundToNearest($Bytes);
             return $Bytes."TB";
         }
-        
+
         return $Bytes."GB";
     }
-    
+
     return $Bytes."MB";
 }
 
 sub getPnpVendor($)
 {
     my $V = $_[0];
-    
+
     if(defined $MonVendor{$V}) {
         return $MonVendor{$V};
     }
-    
+
     if(grep {$V eq $_} @UnknownVendors) {
         return $V;
     }
-    
+
     # NOTE: this is not reliable
     # if(not keys(%PnpVendor)) {
     #     readPnpIds();
@@ -1605,29 +1605,29 @@ sub getPnpVendor($)
     #         return $PnpVendor{$V};
     #     }
     # }
-    
+
     return undef;
 }
 
 sub readPnpIds()
 {
     my $Path = undef;
-    
+
     if($Opt{"PnpIDs"}) {
         $Path = $Opt{"PnpIDs"};
     }
     else {
         $Path = "/usr/share/hwdata/pnp.ids"; # ROSA Fresh, RELS
     }
-    
+
     if(not -e $Path) {
         $Path = "/usr/share/misc/pnp.ids"; # ROSA Marathon
     }
-    
+
     if(not -e $Path) {
         return;
     }
-    
+
     foreach my $Line (split(/\n/, readFile($Path)))
     {
         if($Line=~/\A([A-Z]+)\s+(.*?)\Z/) {
@@ -1639,37 +1639,37 @@ sub readPnpIds()
 sub getPciVendor($)
 {
     my $V = $_[0];
-    
+
     if(defined $PciVendor{$V}) {
         return $PciVendor{$V};
     }
-    
+
     if(not keys(%PciInfo)) {
         readVendorIds();
     }
-    
+
     if(defined $PciVendor{$V}) {
         return $PciVendor{$V};
     }
-    
+
     return undef;
 }
 
 sub readVendorIds()
 {
     my $Path = "/usr/share/hwdata/pci.ids";
-    
+
     if($Opt{"PciIDs"}) {
         $Path = $Opt{"PciIDs"};
     }
     elsif(-e "ids/pci.ids") {
         $Path = "ids/pci.ids";
     }
-    
+
     if(not -e $Path) {
         return;
     }
-    
+
     foreach my $Line (split(/\n/, readFile($Path)))
     {
         if($Line=~/\A(\w{4})\s+(.*?)\Z/) {
@@ -1681,14 +1681,14 @@ sub readVendorIds()
 sub getSdioType($)
 {
     my $Class = $_[0];
-    
+
     return $SdioType{$Class};
 }
 
 sub getClassType($$)
 {
     my ($Bus, $Class) = @_;
-    
+
     while($Class)
     {
         if($Bus eq "pci")
@@ -1703,25 +1703,25 @@ sub getClassType($$)
                 return $UsbClassType{$Class};
             }
         }
-        
+
         if($Class!~s/\-\w+?\Z//) {
             last;
         }
     }
-    
+
     return "";
 }
 
 sub getDefaultType($$)
 {
     my ($Bus, $Device) = @_;
-    
+
     foreach my $Name ($Device->{"Device"}, $Device->{"SDevice"})
     {
         if(not $Name) {
             next;
         }
-        
+
         if($Bus eq "usb")
         {
             if($Name=~/camera|webcam|web cam/i) {
@@ -1783,23 +1783,23 @@ sub getDefaultType($$)
             }
         }
     }
-    
+
     if($Bus eq "usb")
     {
         if(defined $Device->{"ActiveDriver"}{"btusb"}) {
             return "bluetooth";
         }
     }
-    
+
     return "";
 }
 
 sub addCapacity($$)
 {
     my ($Device, $Capacity) = @_;
-    
+
     $Capacity=~s/\.\d+//;
-    
+
     if($Capacity)
     {
         $Capacity=~s/\s+//g;
@@ -1808,20 +1808,20 @@ sub addCapacity($$)
             return " ".$Capacity;
         }
     }
-    
+
     return "";
 }
 
 sub decodeEdid($)
 {
     my $Edid = $_[0];
-    
+
     my $TmpFile = $TMP_DIR."/hex-edid";
     writeFile($TmpFile, $Edid);
-    
+
     my $Res = qx/edid-decode $TmpFile 2>&1/;
     unlink($TmpFile);
-    
+
     return $Res;
 }
 
@@ -1837,7 +1837,7 @@ sub probeHW()
             print STDERR "ERROR: 'hwinfo' is not installed\n";
             exitStatus(1);
         }
-        
+
         if($HWLogs)
         {
             foreach my $Prog ("dmidecode", "edid-decode")
@@ -1846,30 +1846,30 @@ sub probeHW()
                     print STDERR "WARNING: '".$Prog."' package is not installed\n";
                 }
             }
-            
+
             if(not check_Cmd("smartctl")) {
                 print STDERR "WARNING: 'smartmontools' package is not installed\n";
             }
-            
+
             if(not check_Cmd("lspci")) {
                 print STDERR "WARNING: 'pciutils' package is not installed\n";
             }
-            
+
             if(not check_Cmd("lsusb")) {
                 print STDERR "WARNING: 'usbutils' package is not installed\n";
             }
         }
-        
+
         print "Probe for hardware ... ";
-        
+
         if($Opt{"ListProbes"}) {
             print "\n";
         }
     }
-    
+
     # Dev listing
     my $DevFiles = "";
-    
+
     if($Opt{"FixProbe"}) {
         $DevFiles = readFile($FixProbe_Logs."/dev");
     }
@@ -1888,40 +1888,40 @@ sub probeHW()
             $DevFiles=~s/total \d+\n//g;
             $DevFiles=~s/(\A|\n).*?\s+\d+\s+\d\d:\d\d\s+/$1/g;
         }
-        
+
         my %DiskSer = ();
         while($DevFiles=~/((\/|^)(ata|nvme|scsi)-[^\s]*_)(.+?)(\-part|[\s\n,])/mg) {
             $DiskSer{$4} = 1;
         }
-        
+
         foreach my $Ser (sort keys(%DiskSer))
         {
             my $Enc = clientHash($Ser);
             $DevFiles=~s/_\Q$Ser\E\b/_$Enc/g; # /dev/disk/by-id/ata-Samsung_SSD_850_EVO_250GB_XXXXXXXXXXXXXXX
         }
-        
+
         $DevFiles=~s/(\/usb-[^\s]*_).+?([\s\n,]|\-[\da-z])/$1...$2/g;
         $DevFiles = encryptWWNs($DevFiles);
-        
+
         writeLog($LOG_DIR."/dev", $DevFiles);
     }
-    
+
     my %DevIdByName = ();
     my %DevNameById = ();
-    
+
     my $InDevById = 0;
     foreach my $Line (split(/\n/, $DevFiles))
     {
         if(not $InDevById and index($Line, "/dev/disk/by-id")==0) {
             $InDevById = 1;
         }
-        
+
         if($InDevById)
         {
             if(not $Line or index($Line, "/dev/disk/by-uuid")==0) {
                 last;
             }
-            
+
             if($Line=~/\A(\/dev\/disk\/by-id\/|)((ata|usb|nvme|wwn)\-[^\/]+)\s+\-\>\s+.*?(\w+)\Z/)
             {
                 $DevIdByName{$4} = $2;
@@ -1929,10 +1929,10 @@ sub probeHW()
             }
         }
     }
-    
+
     # Loaded modules
     my $Lsmod = "";
-    
+
     if($Opt{"FixProbe"}) {
         $Lsmod = readFile($FixProbe_Logs."/lsmod");
     }
@@ -1966,27 +1966,27 @@ sub probeHW()
         else
         {
             $Lsmod = runCmd("lsmod 2>&1");
-            
+
             if(length($Lsmod)<60) {
                 $Lsmod = "";
             }
         }
-        
+
         if($Lsmod)
         { # Sort, but save title
             my $FL = "";
             if($Lsmod=~s/\A(.*?)\n//) {
                 $FL = $1;
             }
-            
+
             $Lsmod = $FL."\n".join("\n", sort split(/\n/, $Lsmod));
         }
-        
+
         if($HWLogs) {
             writeLog($LOG_DIR."/lsmod", $Lsmod);
         }
     }
-    
+
     my @KernDrvs = ();
     foreach my $Line (split(/\n/, $Lsmod))
     {
@@ -1995,18 +1995,18 @@ sub probeHW()
             my ($Name, $Use) = ($1, $3);
             $KernMod{$Name} = $Use;
             push(@KernDrvs, $Name);
-            
+
             if($Use) {
                 $WorkMod{$Name} = 1;
             }
         }
     }
-    
+
     if($Sys{"System"}=~/Gentoo/i)
     { # Gentoo
         %WorkMod = ();
     }
-    
+
     if(not $Opt{"FixProbe"} and $Opt{"Logs"})
     {
         if(check_Cmd("modinfo"))
@@ -2019,18 +2019,18 @@ sub probeHW()
             writeLog($LOG_DIR."/modinfo", $Modinfo);
         }
     }
-    
+
     if(not $Opt{"FixProbe"})
     {
         my $RpmLst = "/run/initramfs/live/rpm.lst";
         if(-f $RpmLst)
         { # Live
             my $Build = `head -n 1 $RpmLst 2>&1`; # iso build No.11506
-            
+
             if($Build=~/(\d+)/) {
                 $Sys{"Build"} = $1;
             }
-            
+
             if($Opt{"Logs"}) {
                 writeLog($LOG_DIR."/build", $Build);
             }
@@ -2041,24 +2041,24 @@ sub probeHW()
             if(-f $RevInfo)
             { # DX
                 my $Build = readFile($RevInfo);
-                
+
                 if($Build=~/RELEASE\:\s*(\d+)/i) {
                     $Sys{"Build"} = $1;
                 }
-                
+
                 if($Opt{"Logs"}) {
                     writeLog($LOG_DIR."/revision.info", $Build);
                 }
             }
         }
     }
-    
+
     my %DriveKind = ();
-    
+
     if($Opt{"FixProbe"})
     { # Fix drive IDs after uploading
         my $Smart = readFile($FixProbe_Logs."/smartctl");
-        
+
         my $CurDev = undef;
         foreach my $SL (split(/\n/, $Smart))
         {
@@ -2078,32 +2078,32 @@ sub probeHW()
             }
         }
     }
-    
+
     my $Cpu_ID = undef;
-    
+
     # HW Info
     my $HWInfo = "";
-    
+
     if($Opt{"FixProbe"}) {
         $HWInfo = readFile($FixProbe_Logs."/hwinfo");
     }
     else
     {
         listProbe("logs", "hwinfo");
-        
+
         my @Items = qw(monitor bluetooth bridge
         camera cdrom chipcard cpu disk dvb fingerprint floppy
         framebuffer gfxcard hub ide isapnp isdn joystick keyboard
         mouse netcard network pci pcmcia scanner scsi smp sound
         tape tv usb usb-ctrl wlan zip);
-        
+
         my $HWInfoCmd = "hwinfo";
-        
+
         if(defined $Opt{"HWInfoPath"})
         {
             my $HWInfoDir = dirname(dirname($Opt{"HWInfoPath"}));
             $HWInfoCmd = $Opt{"HWInfoPath"};
-            
+
             if(-d $HWInfoDir."/lib64") {
                 $HWInfoCmd = "LD_LIBRARY_PATH=\"".$HWInfoDir."/lib64\" ".$HWInfoCmd;
             }
@@ -2111,7 +2111,7 @@ sub probeHW()
                 $HWInfoCmd = "LD_LIBRARY_PATH=\"".$HWInfoDir."/lib\" ".$HWInfoCmd;
             }
         }
-        
+
         if(my $HWInfoVer = qx/$HWInfoCmd --version/)
         {
             chomp($HWInfoVer);
@@ -2124,49 +2124,49 @@ sub probeHW()
                 }
             }
         }
-        
+
         my $Items = "--".join(" --", @Items);
-        
+
         $HWInfo = runCmd("$HWInfoCmd $Items 2>/dev/null");
-        
+
         if(not $HWInfo)
         { # incorrect option
             print STDERR "WARNING: incorrect hwinfo option passed, using --all\n";
             $HWInfo = runCmd($HWInfoCmd." --all 2>&1");
         }
-        
+
         $HWInfo = hideMACs($HWInfo);
         $HWInfo = hideTags($HWInfo, "UUID|Asset Tag");
         $HWInfo = encryptSerials($HWInfo, "Serial ID", "hwinfo");
         $HWInfo = encryptWWNs($HWInfo);
-        
+
         if($HWLogs) {
             writeLog($LOG_DIR."/hwinfo", $HWInfo);
         }
     }
 
     my %LongID = ();
-    
+
     foreach my $Info (split(/\n\n/, $HWInfo))
     {
         my %Device = ();
         my ($DevNum, $Bus) = ();
-        
+
         my ($V, $D, $SV, $SD, $C) = ();
-        
+
         if($Info=~s/(\d+):\s*([^ ]+)//)
         { # 37: PCI 700.0: 0200 Ethernet controller
             $DevNum = $1;
             $Bus = lc($2);
         }
-        
+
         $Bus=~s/\(.*?\)//g;
-        
+
         if($Bus eq "adb")
         { # adb:0001-0001-macintosh-mouse-button-emulation
             next;
         }
-        
+
         if($Info=~s/:\s*\w+\s+(.*)//)
         { # 37: PCI 700.0: 0200 Ethernet controller
             if($1 eq "BIOS")
@@ -2179,7 +2179,7 @@ sub probeHW()
                 $Device{"GeneralType"} = $1;
             }
         }
-        
+
         if($Device{"Type"} eq "partition") {
             next;
         }
@@ -2187,25 +2187,25 @@ sub probeHW()
         and $Bus eq "pci") {
             $Bus = $PCI_DISK_BUS;
         }
-        
+
         $Info=~s/[ ]{2,}/ /g;
-        
+
         my $ID = "";
-        
+
         while($Info=~s/[ \t]*([\w ]+?):[ \t]*(.*)//)
         {
             my ($Key, $Val) = ($1, $2);
-            
+
             if($Key eq "Device" or $Key eq "Vendor" or $Key eq "SubVendor" or $Key eq "SubDevice")
             {
                 $Key=~s/\ASub/S/; # name mapping
-                
+
                 if($Bus ne "ide" and $Bus ne $PCI_DISK_BUS)
                 {
                     if($Val=~s/\A(\w+) 0x/0x/) {
                         $Bus = $1;
                     }
-                    
+
                     if($Val=~s/0x(\w{4})\s*//)
                     {
                         if($Key eq "Vendor") {
@@ -2222,11 +2222,11 @@ sub probeHW()
                         }
                     }
                 }
-                
+
                 if($Val=~/\"(.*)\"/) {
                     $Device{$Key} = fmtVal($1);
                 }
-                
+
                 if($Device{"Type"} eq "cpu")
                 { # fix cpu
                     if($Key eq "Vendor")
@@ -2242,7 +2242,7 @@ sub probeHW()
                         }
                     }
                 }
-                
+
                 if(not $V)
                 {
                     if($Val=~/(\w+)\s+\".*\"/) {
@@ -2291,7 +2291,7 @@ sub probeHW()
                 if($Val=~/\"(.*)\"/)
                 {
                     $Val = $1;
-                    
+
                     if($Val=~/ic(\w\w)isc(\w\w)ip(\w\w)\Z/)
                     { # usb
                         $C = devID($1, $2, $3);
@@ -2333,7 +2333,7 @@ sub probeHW()
                 {
                     my $Bytes = $1;
                     $Bytes=~s/ bytes//g;
-                    
+
                     $Val = bytesToHuman($Bytes);
                 }
                 $Val=~s/ //g;
@@ -2350,7 +2350,7 @@ sub probeHW()
                     #     $Bus = "sata";
                     # }
                 }
-                
+
                 if($Val=~/#(\d+)/) {
                     $DeviceAttached{$DevNum} = $1;
                 }
@@ -2370,7 +2370,7 @@ sub probeHW()
                         $Device{"AdvFile"} = $1;
                     }
                     $Device{"File"} = $Val;
-                    
+
                     if($Bus eq "ide" or $Bus eq $PCI_DISK_BUS
                     or index($Val, "nvme")!=-1 or $Bus eq "usb") {
                         $HDD{$Val} = 0;
@@ -2402,9 +2402,9 @@ sub probeHW()
                 }
             }
         }
-        
+
         cleanValues(\%Device);
-        
+
         if(my $DF = $Device{"File"})
         {
             if($Bus eq "scsi")
@@ -2414,7 +2414,7 @@ sub probeHW()
                 }
             }
         }
-        
+
         if(not $Device{"Device"})
         {
             if(my $Model = $Device{"Model"}) {
@@ -2425,14 +2425,14 @@ sub probeHW()
                 $Device{"Device"} = $Platform." Processor";
             }
         }
-        
+
         if(defined $Device{"ActiveDriver"}) {
             $Device{"Driver"} = join(", ", sort {$Device{"ActiveDriver"}{$a} <=> $Device{"ActiveDriver"}{$b}} keys(%{$Device{"ActiveDriver"}}));
         }
         elsif(defined $Device{"ActiveDriver_Common"}) {
             $Device{"Driver"} = join(", ", sort {$Device{"ActiveDriver_Common"}{$a} <=> $Device{"ActiveDriver_Common"}{$b}} keys(%{$Device{"ActiveDriver_Common"}}));
         }
-        
+
         if($Device{"Type"} eq "cpu") {
             $Bus = "cpu";
         }
@@ -2441,7 +2441,7 @@ sub probeHW()
             $Bus = "fb";
             next; # disabled
         }
-        
+
         if($Device{"Type"} eq "disk")
         {
             if(index($Device{"File"}, "nvme")!=-1)
@@ -2455,17 +2455,17 @@ sub probeHW()
                         $Device{"Model"} = $2;
                         $Device{"Serial"} = $3;
                         $Device{"Device"} = $Device{"Model"};
-                        
+
                         if($Device{"Serial"}!~/\A[A-F]{$HASH_LEN_CLIENT}\Z/) {
                             $Device{"Serial"} = clientHash($Device{"Serial"});
                         }
-                        
+
                         if($Bus eq "none") {
                             $Bus = $PCI_DISK_BUS;
                         }
                     }
                 }
-                
+
                 if(not $Device{"Device"} or $Device{"Device"} eq "Disk"
                 or not $Device{"Vendor"} or not $Device{"Serial"})
                 { # empty info for NVMe drives
@@ -2497,32 +2497,32 @@ sub probeHW()
                     $Bus = "mmc";
                     $Device{"Device"} = $1;
                     $Device{"Serial"} = clientHash($2);
-                    
+
                     $MMC_Info{$Device{"File"}} = \%Device;
                     next;
                 }
             }
-            
+
             if(not $Device{"Attached"}) {
                 next;
             }
         }
-        
+
         #if($Bus eq "none")
         #{
         #    if($Device{"Type"} eq "disk" and $Device{"File"}=~/\/dev\/vd/) {
         #        $Bus = "ide";
         #    }
         #}
-        
+
         if($Bus eq "none") {
             next;
         }
-        
+
         if(not $Device{"Type"}) {
             $Device{"Type"} = getDefaultType($Bus, \%Device);
         }
-        
+
         # fix type
         if($Device{"Type"} eq "keyboard")
         {
@@ -2551,12 +2551,12 @@ sub probeHW()
                 $Device{"Type"} = "mfp";
             }
         }
-        
+
         # fix vendor
         if($V eq "1d6b") {
             $Device{"Vendor"} = "Linux Foundation";
         }
-        
+
         if(not $Device{"Vendor"})
         {
             if($Bus eq "ps/2")
@@ -2565,7 +2565,7 @@ sub probeHW()
                 or $Device{"Type"} eq "mouse")
                 {
                     if($Device{"Device"}=~s/(\w+) (DualPoint Touchpad)/$2/i)
-                    { # AlpsPS/2 ALPS DualPoint TouchPad 
+                    { # AlpsPS/2 ALPS DualPoint TouchPad
                         $Device{"Vendor"} = $1;
                     }
                     elsif($Device{"Device"}=~s/(\w+) (Touchpad|TrackPoint|GlidePoint)/$2/i) {
@@ -2586,30 +2586,30 @@ sub probeHW()
                     elsif($Device{"Device"}=~/\A(ALPS) /i) {
                         $Device{"Vendor"} = "ALPS";
                     }
-                    
+
                     if($Device{"Vendor"} eq "FocalTech") {
                         $Device{"Device"}=~s/FocalTech (FocalTech)/$1/i;
                     }
                 }
             }
         }
-        
+
         if($Device{"Type"} eq "disk" and $Bus ne "usb")
         {
             my $FsId = $Device{"FsId"};
-            
+
             if(not $FsId)
             { # Docker
                 if($Device{"File"}) {
                     $FsId = $DevIdByName{basename($Device{"File"})};
                 }
             }
-            
+
             if($FsId)
             {
                 my $N = $Device{"Device"};
                 $N=~s/ /_/g;
-                
+
                 if(my $Serial = $Device{"Serial"})
                 {
                     if($FsId=~/\Q$N\E(.*?)_\Q$Serial\E/)
@@ -2623,14 +2623,14 @@ sub probeHW()
                     $Device{"Device"} .= $1;
                 }
             }
-            
+
             if(defined $DriveKind{$Device{"File"}})
             { # NOTE: on fixing probe
                 $Device{"Kind"} = $DriveKind{$Device{"File"}};
             }
-            
+
             $Device{"Device"} = duplVendor($Device{"Vendor"}, $Device{"Device"});
-            
+
             # Fix incorrect vendor in hwinfo
             if($Device{"Vendor"} eq "m.2")
             {
@@ -2642,7 +2642,7 @@ sub probeHW()
                 $Device{"Device"} = $Device{"Vendor"}." ".$Device{"Device"};
                 $Device{"Vendor"} = undef;
             }
-            
+
             fixDrive_Pre(\%Device);
             fixDrive(\%Device);
         }
@@ -2653,15 +2653,15 @@ sub probeHW()
                 $Device{"Device"} = "LCD Monitor";
             }
         }
-        
+
         if($Bus eq "usb" or $Bus eq "pci")
         {
             $ID = devID($V, $D, $SV, $SD);
-            
+
             if($SV, $SD) {
                 $LongID{devID($V, $D)}{$ID} = 1;
             }
-            
+
             if($Device{"Type"} eq "disk") {
                 $Device{"Device"} .= addCapacity($Device{"Device"}, $Device{"Capacity"});
             }
@@ -2672,17 +2672,17 @@ sub probeHW()
             { # PNP devices, etc.
                 next;
             }
-            
+
             if(not $Device{"Device"}) {
                 next;
             }
-            
+
             if($Device{"Type"} eq "monitor")
             {
                 if(lc($Device{"Device"}) eq lc($Device{"Vendor"})) {
                     $Device{"Device"} = $Device{"GeneralType"};
                 }
-                
+
                 if($V)
                 {
                     if(my $Vendor = getPnpVendor($V))
@@ -2693,23 +2693,23 @@ sub probeHW()
                     elsif(not $Device{"Vendor"}) {
                         $Device{"Vendor"} = $V;
                     }
-                    
+
                     # if(not defined $MonVendor{$V} and not grep {$_ eq $V} @UnknownVendors) {
                     #     print "WARNING: unknown monitor vendor $V\n";
                     # }
                 }
             }
-            
+
             if($Device{"Type"} eq "framebuffer")
             {
                 if($Device{"Vendor"} eq $Device{"Device"}) {
                     $Device{"Vendor"} = "";
                 }
             }
-            
+
             # create id
             if($Device{"Type"} eq "monitor" and $V)
-            { 
+            {
                 #if(nameID($Device{"Vendor"}) ne $V)
                 #{ # do not add vendor name to id
                     $ID = devID(nameID($Device{"Vendor"}));
@@ -2726,22 +2726,22 @@ sub probeHW()
                 }
                 $ID = devID($ID, $D, devSuffix(\%Device));
             }
-            
+
             # additionals to device attributes
             if($Device{"Type"} eq "monitor")
             {
                 if($D) {
                     $Device{"Device"} .= " ".uc($V.$D);
                 }
-                
+
                 if($Device{"Resolution"}) {
                     $Device{"Device"} .= " ".$Device{"Resolution"};
                 }
-                
+
                 if($Device{"Size"}) {
                     $Device{"Device"} .= " ".$Device{"Size"};
                 }
-                
+
                 if(my $Inch = computeInch($Device{"Device"})) {
                     $Device{"Device"} .= " ".$Inch."-inch";
                 }
@@ -2760,7 +2760,7 @@ sub probeHW()
                 $Device{"Device"} .= " ".$Device{"Memory Size"};
             }
         }
-        
+
         if($Device{"Type"} eq "network")
         {
             if(defined $Device{"Files"})
@@ -2773,21 +2773,21 @@ sub probeHW()
                 }
             }
         }
-        
+
         # delete unused fields
         delete($Device{"ActiveDriver_Common"});
         delete($Device{"ActiveDriver"});
-        
+
         delete($Device{"FsId"});
         delete($Device{"Serial"});
         delete($Device{"Model"});
-        
+
         $Device{"Class"} = $C;
-        
+
         cleanValues(\%Device);
-        
+
         $ID = fmtID($ID);
-        
+
         if($Device{"Type"} eq "monitor") {
             $MON{uc($V.$D)} = $ID;
         }
@@ -2798,7 +2798,7 @@ sub probeHW()
                 $HDD{$File} = $Bus.":".$ID;
             }
         }
-        
+
         if($Device{"Type"}=~/touchpad/
         and $Bus eq "ps/2")
         {
@@ -2808,12 +2808,12 @@ sub probeHW()
                 $Sys{"Type"} = "notebook";
             }
         }
-        
+
         my $BusID = $Bus.":".$ID;
-        
+
         $DeviceIDByNum{$DevNum} = $BusID;
         $DeviceNumByID{$BusID} = $DevNum;
-        
+
         if(not $HW{$BusID}) {
             $HW{$BusID} = \%Device;
         }
@@ -2823,17 +2823,17 @@ sub probeHW()
                 $HW{$BusID} = \%Device;
             }
         }
-        
+
         if($Device{"Type"} eq "cpu") {
             $Cpu_ID = $ID;
         }
     }
-    
+
     my %HDD_Serial = ();
-    
+
     # UDEV
     my $Udevadm = "";
-    
+
     if($Opt{"FixProbe"})
     {
         $Udevadm = readFile($FixProbe_Logs."/udev-db");
@@ -2871,67 +2871,67 @@ sub probeHW()
             }
         }
     }
-    
+
     foreach my $Info (split(/\n\n/, $Udevadm))
     {
         my %DInfo = "";
-        
+
         foreach my $Line (split(/\n/, $Info))
         {
             if($Line=~/E:\s+(\w+)\=(.+)/) {
                 $DInfo{$1} = $2;
             }
         }
-        
+
         my %Device = ();
-        
+
         my $Bus = undef;
         my ($V, $D) = ();
         my $ID = undef;
-        
+
         if($DInfo{"DEVTYPE"} eq "disk"
         and $DInfo{"ID_TYPE"} eq "disk")
         {
             $HDD_Serial{$DInfo{"ID_MODEL"}}{$DInfo{"ID_SERIAL_SHORT"}} = 1;
         }
-        
+
         if($DInfo{"SUBSYSTEM"} eq "sdio")
         {
             $Bus = "sdio";
-            
+
             if($DInfo{"SDIO_ID"}=~/(\w\w\w\w)\:(\w\w\w\w)/)
             {
                 ($V, $D) = (lc($1), lc($2));
-                
+
                 if(not keys(%SdioInfo)) {
                     readSdioIds_Sys();
                 }
-                
+
                 $Device{"Vendor"} = $SdioVendor{$V};
                 $Device{"Device"} = $SdioInfo{$V}{$D};
-                
+
                 $ID = devID($V, $D);
             }
-            
+
             $Device{"Class"} = $DInfo{"SDIO_CLASS"};
             if($Device{"Device"}=~/WLAN|Wireless/i) {
                 $Device{"Class"} = "07";
             }
-            
+
             $Device{"Driver"} = $DInfo{"DRIVER"};
             $Device{"Type"} = getSdioType($Device{"Class"});
         }
-        
+
         if($ID)
         {
             $ID = fmtID($ID);
-            
+
             if(not $HW{$Bus.":".$ID}) {
                 $HW{$Bus.":".$ID} = \%Device;
             }
         }
     }
-    
+
     # fix incomplete HDD ids (if not root)
     if(not $Admin and keys(%HDD_Serial))
     {
@@ -2940,120 +2940,120 @@ sub probeHW()
             if($ID=~/\Aide:(.+)/)
             {
                 my $Name = $HW{$ID}{"Device"};
-                
+
                 foreach my $FN (sort keys(%HDD_Serial))
                 {
                     if($FN=~/$Name(.+)/i)
                     {
                         my $Missed = $1;
-                        
+
                         foreach my $Ser (sort keys(%{$HDD_Serial{$FN}}))
                         {
                             my $NewID = $ID.devID($Missed)."-serial-".devID($Ser);
                             $HW{$NewID} = $HW{$ID};
                             $HW{$NewID}{"Device"}=~s/(\Q$Name\E)/$1$Missed/;
                         }
-                        
+
                         delete($HW{$ID});
                     }
                 }
             }
         }
     }
-    
+
     # PCI (all)
     my $Lspci_A = "";
-    
+
     if($Opt{"FixProbe"}) {
         $Lspci_A = readFile($FixProbe_Logs."/lspci_all");
     }
     else
     {
         listProbe("logs", "lspci_all");
-        
+
         if(check_Cmd("lspci"))
         {
             $Lspci_A = runCmd("lspci -vvnn");
             $Lspci_A=~s/(Serial Number:?\s+|Manufacture ID:\s+).+/$1.../gi;
         }
-        
+
         if($HWLogs) {
             writeLog($LOG_DIR."/lspci_all", $Lspci_A);
         }
     }
-    
+
     foreach my $Info (split(/\n\n/, $Lspci_A))
     {
         my ($V, $D) = ();
         my @ID = ();
-        
+
         if($Info=~/\w+:\w+\.\w\s+(.*?)\s*\[\w+\]:.*?\[(\w+)\:(\w+)\]/) {
             ($V, $D) = ($2, $3);
         }
-        
+
         if($Info=~/Subsystem\:.*?\[(\w+)\:(\w+)\]/i) {
             push(@ID, $1, $2);
         }
-        
+
         my $ID = devID($V, $D, @ID);
-        
+
         if($V and $D and @ID) {
             $LongID{devID($V, $D)}{$ID} = 1;
         }
     }
-    
+
     # PCI
     my $Lspci = "";
-    
+
     if($Opt{"FixProbe"}) {
         $Lspci = readFile($FixProbe_Logs."/lspci");
     }
     else
     {
         listProbe("logs", "lspci");
-        
+
         if(check_Cmd("lspci"))
         {
             $Lspci = runCmd("lspci -vmnnk");
         }
-        
+
         if($HWLogs) {
             writeLog($LOG_DIR."/lspci", $Lspci);
         }
     }
-    
+
     foreach my $Info (split(/\n\n/, $Lspci))
     {
         my %Device = ();
         my (@ID, @Class) = ();
-        
+
         while($Info=~s/(\w+):\s*(.*)//) {
             $Device{$1} = $2;
         }
-        
+
         foreach ("Vendor", "Device", "SVendor", "SDevice")
         {
             if($Device{$_}=~s/\s*\[(\w{4})\]//) {
                 push(@ID, $1);
             }
         }
-        
+
         my $ClassName = $Device{"Class"};
-        
+
         if($ClassName=~s/\s*\[(\w{2})(\w{2})\]//)
         {
             push(@Class, $1, $2);
-            
+
             if($Device{"ProgIf"}) {
                 push(@Class, $Device{"ProgIf"});
             }
         }
-        
+
         delete($Device{"Class"});
         delete($Device{"ProgIf"});
-        
+
         cleanValues(\%Device);
-        
+
         if($Opt{"PciIDs"})
         {
             if(not $Device{"Device"})
@@ -3062,52 +3062,52 @@ sub probeHW()
                     $Device{"Device"} = $Name;
                 }
             }
-            
+
             if(my $AddName = $AddPciInfo{$ID[0]}{$ID[1]}) {
                 $Device{"Device"} = $AddName;
             }
-            
+
             if(not $Device{"SDevice"})
             {
                 if(my $Name = $PciInfo_D{$ID[0]}{$ID[1]}{$ID[2]}{$ID[3]}) {
                     $Device{"SDevice"} = $Name;
                 }
             }
-            
+
             if(my $AddSubName = $AddPciInfo_D{$ID[0]}{$ID[1]}{$ID[2]}{$ID[3]}) {
                 $Device{"SDevice"} = $AddSubName;
             }
         }
-        
+
         $Device{"Class"} = devID(@Class);
-        
+
         my $ID = devID(@ID);
         my @L_IDs = keys(%{$LongID{$ID}});
-        
+
         if($#L_IDs==0) {
             $ID = $L_IDs[0];
         }
-        
+
         if(not $ID) {
             next;
         }
-        
+
         #if(defined $HW{"pci:".$ID}{"Class"}) {
         #    delete($Device{"Class"});
         #}
-        
+
         if($Device{"Module"})
         {
             $Device{"Driver"} = $Device{"Module"};
             delete($Device{"Module"});
         }
-        
+
         my $NewDevice = (not defined $HW{"pci:".$ID});
-        
+
         if(not $NewDevice and not $HW{"pci:".$ID}{"Type"})
         {
             $Device{"Type"} = getDefaultType("pci", \%Device);
-            
+
             if(not $Device{"Type"})
             {
                 if($Class[0] eq "02")
@@ -3115,26 +3115,26 @@ sub probeHW()
                     $Device{"Type"} = "network";
                 }
             }
-            
+
             if(not $Device{"Type"})
             {
                 if(@Class) {
                     $Device{"Type"} = getClassType("pci", devID(@Class));
                 }
             }
-            
+
             if(not $Device{"Type"})
             {
                 if($Device{"Device"}=~/Ethernet Controller/i) {
                     $Device{"Type"} = "network";
                 }
             }
-            
+
             if(not $Device{"Type"}) {
                 $Device{"Type"} = lc($ClassName);
             }
         }
-        
+
         foreach (keys(%Device))
         {
             if(my $Val = $Device{$_})
@@ -3145,55 +3145,55 @@ sub probeHW()
             }
         }
     }
-    
+
     # USB
     my $Lsusb = "";
-    
+
     if($Opt{"FixProbe"}) {
         $Lsusb = readFile($FixProbe_Logs."/lsusb");
     }
     else
     {
         listProbe("logs", "lsusb");
-        
+
         if(check_Cmd("lsusb"))
         {
             $Lsusb = runCmd("lsusb -v");
             $Lsusb=~s/(iSerial\s+\d+\s*)[^\s]+$/$1.../mg;
         }
-        
+
         if(length($Lsusb)<60 and $Lsusb=~/unable to initialize/i) {
             $Lsusb = "";
         }
-        
+
         if($HWLogs) {
             writeLog($LOG_DIR."/lsusb", $Lsusb);
         }
     }
-    
+
     foreach my $Info (split(/\n\n/, $Lsusb))
     {
         my %Device = ();
         my ($V, $D, @Class) = ();
-        
+
         if($Info=~/idVendor[ ]+0x(\w{4})[ ]+(.*)/)
         {
             $V = $1;
-            
+
             if($2) {
                 $Device{"Vendor"} = fmtVal($2);
             }
         }
-        
+
         if($Info=~/idProduct[ ]+0x(\w{4})[ ]+(.*)/)
         {
             $D = $1;
-            
+
             if($2) {
                 $Device{"Device"} = fmtVal($2);
             }
         }
-        
+
         if($Info=~/bInterfaceClass\s+(\w+)\s+/) {
             push(@Class, fNum(sprintf('%x',$1)));
         }
@@ -3203,30 +3203,30 @@ sub probeHW()
         if($Info=~/bInterfaceProtocol\s+(\w+)\s+/) {
             push(@Class, fNum(sprintf('%x',$1)));
         }
-        
+
         $Device{"Class"} = devID(@Class);
-        
+
         if(not $V)
         { # Couldn't open device
             next;
         }
-        
+
         if(not $D)
         { # Couldn't open device
             next;
         }
-        
+
         my $ID = devID($V, $D);
-        
+
         #if(defined $HW{"usb:".$ID}{"Class"}) {
         #    delete($Device{"Class"});
         #}
-        
+
         my $Vendor = $Device{"Vendor"};
-        
+
         my $OldName = $HW{"usb:".$ID}{"Device"};
         my $OldVendor = $HW{"usb:".$ID}{"Vendor"};
-        
+
         if($Device{"Device"}=~/\AFlash (Drive|Disk)\Z/i and $OldName)
         {
             $Device{"Device"} = $OldName;
@@ -3237,7 +3237,7 @@ sub probeHW()
                 $Device{"Device"} .= addCapacity($Device{"Device"}, $HW{"usb:".$ID}{"Capacity"});
             }
         }
-        
+
         if($Opt{"UsbIDs"})
         {
             if(not $Device{"Device"})
@@ -3258,7 +3258,7 @@ sub probeHW()
                     }
                 }
             }
-            
+
             if(my $AddName = $AddUsbInfo{$V}{$D})
             {
                 if($Vendor)
@@ -3275,13 +3275,13 @@ sub probeHW()
                 }
             }
         }
-        
+
         my $FinalName = $Device{"Device"};
-        
+
         if(not $FinalName) {
             $FinalName = $OldName;
         }
-        
+
         if($FinalName!~/root hub/i)
         {
             if($Info=~/iProduct[ ]+\w+[ ]+(.+)/)
@@ -3292,9 +3292,9 @@ sub probeHW()
                     {
                         my $N1 = $FinalName;
                         my $N2 = $SubDevice;
-                        
+
                         $N2=~s/\AUSB //g;
-                        
+
                         if($N1!~/\Q$N2\E/i and $N2!~/\Q$N1\E/i) {
                             $Device{"SDevice"} = $SubDevice;
                         }
@@ -3310,16 +3310,16 @@ sub probeHW()
                     $Device{"SDevice"} = $OldName;
                 }
             }
-            
+
             if($Info=~/iManufacturer[ ]+\w+[ ]+(.+)/)
             {
                 if(my $SubVendor = fmtVal($1))
                 {
                     $SubVendor=~s/\AManufacturer\s+//ig;
-                    
+
                     my $V1 = nameID($Vendor);
                     my $V2 = nameID($SubVendor);
-                    
+
                     if($Vendor
                     and $SubVendor!~/usb/i and $SubVendor!~/generic/
                     and $SubVendor ne $Device{"SDevice"}
@@ -3332,11 +3332,11 @@ sub probeHW()
                 }
             }
         }
-        
+
         if(not $HW{"usb:".$ID}{"Type"})
         {
             $Device{"Type"} = getDefaultType("usb", \%Device);
-            
+
             if(not $Device{"Type"})
             {
                 if($Info=~/Camera Sensor/i) {
@@ -3349,7 +3349,7 @@ sub probeHW()
                     $Device{"Type"} = "card reader";
                 }
             }
-            
+
             if(not $Device{"Type"})
             {
                 if(@Class) {
@@ -3357,9 +3357,9 @@ sub probeHW()
                 }
             }
         }
-        
+
         cleanValues(\%Device);
-        
+
         foreach (keys(%Device))
         {
             if($Device{$_}) {
@@ -3367,55 +3367,55 @@ sub probeHW()
             }
         }
     }
-    
+
     my $Usb_devices = "";
-    
+
     if($Opt{"FixProbe"}) {
         $Usb_devices = readFile($FixProbe_Logs."/usb-devices");
     }
     else
     {
         listProbe("logs", "usb-devices");
-        
+
         if(check_Cmd("usb-devices"))
         {
             $Usb_devices = runCmd("usb-devices -v 2>&1");
             $Usb_devices = encryptSerials($Usb_devices, "SerialNumber");
         }
-        
+
         if($HWLogs) {
             writeLog($LOG_DIR."/usb-devices", $Usb_devices);
         }
     }
-    
+
     foreach my $Info (split(/\n\n/, $Usb_devices))
     {
         my ($V, $D) = ();
-        
+
         if($Info=~/Vendor=([^ ]+)/) {
             $V = $1;
         }
-        
+
         if($Info=~/ProdID=([^ ]+)/) {
             $D = $1;
         }
-        
+
         my %Driver = ();
-        
+
         while($Info=~s/Driver=([\w\-]+)//)
         {
             my $Dr = $1;
             $Dr=~s/\-/_/g;
-            
+
             if(not defined $Driver{$Dr}) {
                 $Driver{$Dr} = keys(%Driver);
             }
         }
-        
+
         if($V and $D)
         {
             my $ID = devID($V, $D);
-            
+
             if(defined $HW{"usb:".$ID} and not defined $HW{"usb:".$ID}{"Driver"})
             {
                 if(my @Dr = keys(%Driver))
@@ -3426,23 +3426,23 @@ sub probeHW()
             }
         }
     }
-    
+
     # Fix incorrectly detected drivers
     foreach my $ID (sort keys(%HW))
     {
         my $Driver = $HW{$ID}{"Driver"};
-        
+
         if(not $Driver) {
             next;
         }
-        
+
         my %Drivers = ();
         my $Num = 0;
-        
+
         foreach my $Dr (split(/\,\s+/, $Driver)) {
             $Drivers{$Dr} = $Num++
         }
-        
+
         if(keys(%WorkMod))
         { # lsmod is collected
             if(defined $Drivers{"nouveau"})
@@ -3453,7 +3453,7 @@ sub probeHW()
                     $Drivers{"nvidia"} = 1;
                 }
             }
-            
+
             if(defined $Drivers{"nvidia"} and defined $WorkMod{"nvidia"})
             {
                 foreach ("nvidiafb", "nvidia_drm")
@@ -3463,14 +3463,14 @@ sub probeHW()
                     }
                 }
             }
-            
+
             if(defined $Drivers{"radeon"})
             {
                 if(defined $Drivers{"amdgpu"} and defined $WorkMod{"amdgpu"}) {
                     delete($Drivers{"radeon"});
                 }
             }
-            
+
             foreach my $Dr (@G_DRIVERS)
             {
                 if(defined $Drivers{$Dr})
@@ -3480,7 +3480,7 @@ sub probeHW()
                     }
                 }
             }
-            
+
             foreach my $Dr (sort keys(%Drivers))
             {
                 my $CheckDr = undef;
@@ -3491,7 +3491,7 @@ sub probeHW()
                     }
                 }
             }
-            
+
             if($Driver ne "wl" and defined $Drivers{"wl"})
             {
                 if(not defined $WorkMod{"wl"}) {
@@ -3499,34 +3499,34 @@ sub probeHW()
                 }
             }
         }
-        
+
         $HW{$ID}{"Driver"} = join(", ", sort {$Drivers{$a}<=>$Drivers{$b}} keys(%Drivers));
     }
-    
+
     # Fix incorrectly detected types
     foreach my $ID (sort keys(%HW))
     {
         my $Type = $HW{$ID}{"Type"};
         my $Type_New = undef;
-        
+
         if($Type eq "cdrom" or $Type eq "serial controller")
         {
             my $Device = $HW{$ID}{"Device"};
             my $SDevice = $HW{$ID}{"SDevice"};
             my $Vendor = $HW{$ID}{"Vendor"};
-            
+
             if($Vendor=~/Huawei/i
             and ($Device=~/modem|mobile|broadband/i
             or $SDevice=~/modem|mobile|broadband/i)) {
                 $Type_New = "modem";
             }
         }
-        
+
         if(defined $Type_New) {
             $HW{$ID}{"Type"} = $Type_New;
         }
     }
-    
+
     # Fix status of graphics cards, network devices, etc.
     foreach my $ID (sort keys(%HW))
     {
@@ -3544,13 +3544,13 @@ sub probeHW()
                     $HW{$ID}{"Status"} = "failed";
                 }
             }
-            
+
             if($HW{$ID}{"Status"} eq "works") {
                 setAttachedStatus($ID, "works");
             }
         }
     }
-    
+
     foreach my $V (sort keys(%GraphicsCards))
     {
         foreach my $ID (sort keys(%{$GraphicsCards{$V}}))
@@ -3558,12 +3558,12 @@ sub probeHW()
             if(index($HW{$ID}{"Device"}, "Secondary")!=-1) {
                 next;
             }
-            
+
             if($HW{$ID}{"Class"} eq "03-80"
             and keys(%{$GraphicsCards{$V}})>=2) {
                 next;
             }
-            
+
             if(grep {$V eq $_} ("1002", "8086"))
             {
                 if(not $GraphicsCards{$V}{$ID}) {
@@ -3581,40 +3581,40 @@ sub probeHW()
             }
         }
     }
-    
+
     # DMI
     my $Dmidecode = "";
-    
+
     if($Opt{"FixProbe"}) {
         $Dmidecode = readFile($FixProbe_Logs."/dmidecode");
     }
     else
     {
         listProbe("logs", "dmidecode");
-        
+
         if(check_Cmd("dmidecode"))
         {
             $Dmidecode = runCmd("dmidecode 2>&1");
             $Dmidecode = hideTags($Dmidecode, "UUID|Asset Tag");
             $Dmidecode = encryptSerials($Dmidecode, "Serial Number");
         }
-        
+
         if($HWLogs) {
             writeLog($LOG_DIR."/dmidecode", $Dmidecode);
         }
     }
-    
+
     my $MemIndex = 0;
     my %MemIDs = ();
-    
+
     foreach my $Info (split(/\n\n/, $Dmidecode))
     {
         my %Device = ();
         my $D = "";
         my $ID = "";
-        
+
         $Info=~s/[ ]{2,}/ /g;
-        
+
         if($Info=~/Chassis Information\n/)
         { # notebook or desktop
             if($Info=~/Type:[ ]*(.+?)[ ]*(\n|\Z)/)
@@ -3629,28 +3629,28 @@ sub probeHW()
             if($Info=~/Manufacturer:[ ]*(.+?)[ ]*(\n|\Z)/) {
                 $Sys{"Vendor"} = $1;
             }
-            
+
             if($Info=~/Product Name:[ ]*(.+?)[ ]*(\n|\Z)/) {
                 $Sys{"Model"} = $1;
             }
-            
+
             if($Info=~/Version:[ ]*(.+?)[ ]*(\n|\Z)/) {
                 $Sys{"Version"} = $1;
             }
-            
+
             if($Info=~/Family:[ ]*(.+?)[ ]*(\n|\Z)/) {
                 $Sys{"Family"} = $1;
             }
-            
+
             # clear
             if($Sys{"Vendor"}=~/\b(System manufacturer|to be filled)\b/i) {
                 $Sys{"Vendor"} = "";
             }
-            
+
             if($Sys{"Model"}=~/\b(Name|to be filled)\b/i) {
                 $Sys{"Model"} = "";
             }
-            
+
             if($Sys{"Version"}=~/\b(Version|to be filled)\b/i) {
                 $Sys{"Version"} = $Sys{"Version"};
             }
@@ -3658,15 +3658,15 @@ sub probeHW()
         elsif($Info=~/Memory Device\n/) # $Info=~/Memory Module Information\n/
         {
             my @Add = ();
-            
+
             while($Info=~s/([\w ]+):[ \t]*(.+?)[ \t]*(\n|\Z)//)
             {
                 my ($Key, $Val) = ($1, fmtVal($2));
-                
+
                 if(lc($Val) eq "unknown") {
                     next;
                 }
-                
+
                 if($Key eq "Manufacturer")
                 {
                     $Device{"Vendor"} = $Val;
@@ -3684,7 +3684,7 @@ sub probeHW()
                 elsif($Key eq "Size")
                 {
                     $Device{"Size"} = $Val;
-                    
+
                     $Val=~s/ //g;
                     push(@Add, $Val);
                 }
@@ -3697,10 +3697,10 @@ sub probeHW()
                 elsif($Key eq "Installed Size")
                 {
                     $Device{"Size"} = $Val;
-                    
+
                     $Val=~s/ //g;
                     $Val=~s/\(.+\)//g;
-                    
+
                     push(@Add, $Val);
                 }
                 elsif($Key eq "Current Speed")
@@ -3709,61 +3709,61 @@ sub probeHW()
                     push(@Add, $Val);
                 }
             }
-            
+
             cleanValues(\%Device);
-            
+
             if($Device{"Size"} eq "No Module Installed") {
                 next;
             }
-            
+
             if($Device{"Size"} eq "Not Installed") {
                 next;
             }
-            
+
             $Device{"Type"} = "memory";
             $Device{"Status"} = "works";
-            
+
             my $Inc = 0;
             if(not $Device{"Vendor"})
             {
                 $Device{"Vendor"} = "Manufacturer".$MemIndex;
                 $Inc = 1;
             }
-            
+
             if(not $Device{"Device"})
             {
                 $Device{"Device"} = "Partnum".$MemIndex;
                 $Inc = 1;
             }
-            
+
             if(not $Device{"Serial"})
             {
                 $Device{"Serial"} = "Sernum".$MemIndex;
                 $Inc = 1;
             }
-            
+
             if($Inc) {
                 $MemIndex++;
             }
-            
+
             $ID = devID(nameID($Device{"Vendor"}), devSuffix(\%Device));
             $ID = fmtID($ID);
-            
+
             if(defined $MemIDs{$ID})
             { # ERROR: the same ID of RAM memory module
                 $ID .= "-".keys(%MemIDs);
             }
-            
+
             $MemIDs{$ID} = 1;
-            
+
             if(@Add)
             { # additionals
                 $Device{"Device"} .= " ".join(" ", @Add);
                 $Device{"Device"}=~s/\A\s+//g;
             }
-            
+
             $Device{"Device"} = "RAM ".$Device{"Device"};
-            
+
             if($ID) {
                 $HW{"mem:".$ID} = \%Device;
             }
@@ -3773,7 +3773,7 @@ sub probeHW()
             while($Info=~s/([\w ]+):[ \t]*(.+?)[ \t]*(\n|\Z)//)
             {
                 my ($Key, $Val) = ($1, $2);
-                
+
                 if($Key eq "Manufacturer") {
                     $Device{"Vendor"} = fmtVal($Val);
                 }
@@ -3784,7 +3784,7 @@ sub probeHW()
                     $Device{"Version"} = $Val;
                 }
             }
-            
+
             $MotherboardID = detectBoard(\%Device);
         }
         elsif($Info=~/BIOS Information\n/)
@@ -3792,7 +3792,7 @@ sub probeHW()
             while($Info=~s/([\w ]+):[ \t]*(.+?)[ \t]*(\n|\Z)//)
             {
                 my ($Key, $Val) = ($1, $2);
-                
+
                 if($Key eq "Vendor") {
                     $Device{$Key} = fmtVal($Val);
                 }
@@ -3800,7 +3800,7 @@ sub probeHW()
                     $Device{$Key} = $Val;
                 }
             }
-            
+
             detectBIOS(\%Device);
         }
         elsif($Info=~/Processor Information\n/)
@@ -3808,11 +3808,11 @@ sub probeHW()
             while($Info=~s/([\w ]+):[ \t]*(.+?)[ \t]*(\n|\Z)//)
             {
                 my ($Key, $Val) = ($1, $2);
-                
+
                 if($Key eq "Manufacturer")
                 {
                     $Device{"Vendor"} = fmtVal($Val);
-                    
+
                     if($Device{"Vendor"}=~/Intel/) {
                         $Device{"Vendor"} = "Intel";
                     }
@@ -3823,38 +3823,38 @@ sub probeHW()
                 elsif($Key eq "Signature")
                 { # Family 6, Model 42, Stepping 7
                     my @Model = ();
-                    
+
                     if($Val=~/Family\s+(\w+),/) {
                         push(@Model, $1);
                     }
-                    
+
                     if($Val=~/Model\s+(\w+),/) {
                         push(@Model, $1);
                     }
-                    
+
                     if($Val=~/Stepping\s+(\w+)/) {
                         push(@Model, $1);
                     }
-                    
+
                     $D = join(".", @Model);
                 }
                 elsif($Key eq "Version") {
                     $Device{"Device"} = fmtVal($Val);
                 }
             }
-            
+
             cleanValues(\%Device);
-            
+
             $Device{"Device"} = duplVendor($Device{"Vendor"}, $Device{"Device"});
-            
+
             $Device{"Type"} = "cpu";
             $Device{"Status"} = "works";
-            
+
             if(not $Cpu_ID)
             {
                 $ID = devID(nameID($Device{"Vendor"}), $D, devSuffix(\%Device));
                 $ID = fmtID($ID);
-                
+
                 if($ID) {
                     $HW{"cpu:".$ID} = \%Device;
                 }
@@ -3865,7 +3865,7 @@ sub probeHW()
                 {
                     my $Val1 = $HW{"cpu:".$Cpu_ID}{$_};
                     my $Val2 = $Device{$_};
-                    
+
                     if($Val2
                     and not $Val1) {
                         $HW{"cpu:".$Cpu_ID}{$_} = $Val2;
@@ -3874,7 +3874,7 @@ sub probeHW()
             }
         }
     }
-    
+
     if($MotherboardID)
     {
         if(not $Sys{"Vendor"} or not $Sys{"Model"})
@@ -3882,16 +3882,16 @@ sub probeHW()
             if($Sys{"Type"}=~/desktop|server/)
             {
                 my ($MVendor, $MModel) = ($HW{$MotherboardID}{"Vendor"}, shortModel($HW{$MotherboardID}{"Device"}));
-                
+
                 if($MVendor eq "NA"
                 or $MVendor=~/unkn|default|uknown/i) {
                     $MVendor = undef;
                 }
-                
+
                 if($MModel eq "NA") {
                     $MModel = undef;
                 }
-                
+
                 if(not $Sys{"Vendor"} and not $Sys{"Model"})
                 {
                     $Sys{"Vendor"} = $MVendor;
@@ -3912,93 +3912,93 @@ sub probeHW()
             }
         }
     }
-    
+
     # Printers
     my %Pr;
-    
+
     my $HP_probe = "";
-    
+
     if($Opt{"FixProbe"}) {
         $HP_probe = readFile($FixProbe_Logs."/hp-probe");
     }
     elsif($Opt{"Printers"})
     {
         listProbe("logs", "hp-probe");
-        
+
         # Net
         $HP_probe = runCmd("hp-probe -bnet -g 2>&1");
         $HP_probe .= "\n";
-        
+
         # Usb
         $HP_probe .= runCmd("hp-probe -busb -g 2>&1");
-        
+
         $HP_probe = clearLog($HP_probe);
-        
+
         if($HWLogs) {
             writeLog($LOG_DIR."/hp-probe", $HP_probe);
         }
     }
-    
+
     foreach my $Line (split(/\n/, $HP_probe))
     {
         if($Line=~/Found device/)
         {
             my %Device = ();
-            
+
             my %Attr = ();
-            
+
             while($Line=~s/\'([^']*?)\'\s*:\s*\'([^']*?)\'//)
             {
                 my ($Key, $Val) = ($1, $2);
-                
+
                 if($Val=~/MDL:(.*?);/) {
                     $Device{"Device"} = $1;
                 }
                 #if($Val=~/MFG:(.*?);/) {
                 #    $Device{"Vendor"} = $1;
                 #}
-                
+
                 $Attr{$Key} = $Val;
             }
-            
+
             $Pr{$Device{"Device"}} = 1;
-            
+
             if(not $Device{"Vendor"})
             {
                 if(my $Vnd = guessDeviceVendor($Device{"Device"})) {
                     $Device{"Vendor"} = $Vnd;
                 }
             }
-            
+
             if(my $Vendor = $Device{"Vendor"})
             {
                 $Device{"Device"}=~s/\A\Q$Vendor\E[\s\-]+//ig;
                 $Pr{$Device{"Device"}} = 1;
             }
-            
+
             $Device{"Type"} = "printer";
             if($Device{"Device"}=~/(\A| )MFP( |\Z)/) {
                 $Device{"Type"} = "mfp";
             }
-            
+
             # $Device{"Driver"} = "hplip";
-            
+
             my $ID = devID($Device{"Vendor"}, $Device{"Device"});
             $ID = fmtID($ID);
-            
+
             # additional info
             if(my $D = $Attr{"product_id"}) {
                 $Device{"Device"} .= " ".$D;
             }
-            
+
             if($ID) {
                 $HW{"net:".$ID} = \%Device;
             }
         }
     }
-    
+
     my $Avahi = "";
-    
+
     if($Opt{"FixProbe"})
     {
         if(-f $FixProbe_Logs."/hp-probe")
@@ -4012,62 +4012,62 @@ sub probeHW()
         {
             listProbe("logs", "avahi-browse");
             $Avahi = runCmd("avahi-browse -a -t 2>&1 | grep 'PDL Printer'");
-            
+
             if($HWLogs and $Avahi) {
                 writeLog($LOG_DIR."/avahi", $Avahi);
             }
         }
     }
-    
+
     foreach my $Line (split(/\n/, $Avahi))
     {
         if($Line=~/IPv\d\s+(.*?)\s+PDL Printer/)
         {
             my %Device;
-            
+
             $Device{"Device"} = $1;
             $Device{"Device"}=~s/\s*[\(\[].+[\)\]]//g;
-            
+
             if($Pr{$Device{"Device"}})
             { # already registered
                 next;
             }
-            
+
             if(not $Device{"Vendor"})
             {
                 if(my $Vnd = guessDeviceVendor($Device{"Device"})) {
                     $Device{"Vendor"} = $Vnd;
                 }
             }
-            
+
             if(my $Vendor = $Device{"Vendor"}) {
                 $Device{"Device"}=~s/\A\Q$Vendor\E[\s\-]+//ig;
             }
-            
+
             $Device{"Type"} = "printer";
             if($Device{"Device"}=~/(\A| )MFP( |\Z)/) {
                 $Device{"Type"} = "mfp";
             }
-            
+
             my $ID = devID($Device{"Vendor"}, $Device{"Device"});
             $ID = fmtID($ID);
-            
+
             if($ID) {
                 $HW{"net:".$ID} = \%Device;
             }
         }
     }
-    
+
     # Monitors
     my $Edid = "";
-    
+
     if($Opt{"FixProbe"})
     {
         $Edid = readFile($FixProbe_Logs."/edid");
-        
+
         my $XRandrLog = $FixProbe_Logs."/xrandr";
         my $XOrgLog = $FixProbe_Logs."/xorg.log";
-        
+
         if($Opt{"FixEdid"} and ($Edid or -s $XRandrLog or -s $XOrgLog))
         {
             my %EdidHex = ();
@@ -4088,7 +4088,7 @@ sub probeHW()
                     }
                 }
             }
-            
+
             if(not keys(%FoundEdid) and -s $XOrgLog)
             {
                 my $XCard = "DEFAULT1";
@@ -4105,7 +4105,7 @@ sub probeHW()
                     }
                 }
             }
-            
+
             if(index($Edid, "edid-decode")!=-1)
             {
                 my %OldEdid = ();
@@ -4114,11 +4114,11 @@ sub probeHW()
                     if($Block=~/\A\"(.+?)\"/)
                     {
                         my $Card = $1;
-                        
+
                         if($Card!~/edid/) {
                             $Card .= "/edid";
                         }
-                        
+
                         foreach my $B (split(/\n\n/, $Block))
                         {
                             if($B=~/serial number:/)
@@ -4138,7 +4138,7 @@ sub probeHW()
                                 last;
                             }
                         }
-                        
+
                         if(not $OldEdid{$Card})
                         {
                             foreach my $L (split(/\n/, $Block))
@@ -4156,27 +4156,27 @@ sub probeHW()
                         }
                     }
                 }
-                
+
                 foreach my $C (keys(%OldEdid))
                 {
                     if($C!~/\A\//)
                     { # from Xrandr or Xorg
                         next;
                     }
-                    
+
                     my $Hex = $OldEdid{$C};
                     $Hex=~s/\s//g;
                     $Hex=~s/(\w{32})/$1\n/g;
-                    
+
                     if(grep {$FoundEdid{$_}=~/\A$Hex\w+/} keys(%FoundEdid))
                     { # extended EDID is available
                         last;
                     }
-                    
+
                     $FoundEdid{$C} = $Hex;
                 }
             }
-            
+
             my $FixedContent = "";
             foreach my $C (sort {$b=~/\A\// cmp $a=~/\A\//} sort {lc($a) cmp lc($b)} keys(%FoundEdid))
             {
@@ -4185,19 +4185,19 @@ sub probeHW()
                     next;
                 }
                 $EdidHex{$Hex} = 1;
-                
+
                 my $Decoded = decodeEdid($Hex);
-                
+
                 if($Decoded=~/No header found/i) {
                     next;
                 }
-                
+
                 $FixedContent .= "edid-decode \"$C\":\n";
                 $FixedContent .= "\nEDID (hex):\n".$Hex."\n";
                 $FixedContent .= $Decoded;
                 $FixedContent .= "\n\n";
             }
-            
+
             if($FixedContent)
             {
                 $Edid = $FixedContent;
@@ -4217,25 +4217,25 @@ sub probeHW()
     else
     { # NOTE: works for KMS video drivers only
         listProbe("logs", "edid");
-        
+
         my $EdidDecode = check_Cmd("edid-decode");
         my $MonEdid = check_Cmd("monitor-get-edid");
-        
+
         my $MDir = "/sys/class/drm";
         foreach my $Dir (listDir($MDir))
         {
             my $Path = $MDir."/".$Dir."/edid";
-            
+
             if(-f $Path)
             {
                 my $Dec = "";
                 my $EdidHex = readFileHex($Path);
                 $EdidHex=~s/(.{32})/$1\n/g;
-                
+
                 if($EdidDecode) {
                     $Dec = runCmd("edid-decode \"$Path\" 2>/dev/null");
                 }
-                
+
                 if($EdidHex)
                 {
                     $Edid .= "edid-decode \"$Path\"\n\n";
@@ -4245,7 +4245,7 @@ sub probeHW()
                 }
             }
         }
-        
+
         if(not $Edid)
         { # for nvidia, fglrx
             if($MonEdid)
@@ -4263,12 +4263,12 @@ sub probeHW()
                 }
             }
         }
-        
+
         if($HWLogs and $Edid) {
             writeLog($LOG_DIR."/edid", $Edid);
         }
     }
-    
+
     my @Mons = ();
     if(index($Edid, "edid-decode")!=-1) {
         @Mons = split(/edid\-decode /, $Edid);
@@ -4276,14 +4276,14 @@ sub probeHW()
     else {
         @Mons = ($Edid);
     }
-    
+
     foreach my $Info (@Mons) {
         detectMonitor($Info);
     }
-    
+
     # Battery
     my $Upower = "";
-    
+
     if($Opt{"FixProbe"}) {
         $Upower = readFile($FixProbe_Logs."/upower");
     }
@@ -4299,7 +4299,7 @@ sub probeHW()
             }
         }
     }
-    
+
     if($Upower)
     {
         foreach my $UPInfo (split(/\n\n/, $Upower))
@@ -4307,40 +4307,40 @@ sub probeHW()
             if($UPInfo=~/devices\/battery_/)
             {
                 my %Device = ();
-                
+
                 $Device{"Type"} = "battery";
-                
+
                 foreach my $Line (split(/\n/, $UPInfo))
                 {
                     if($Line=~/vendor:[ ]*(.+?)[ ]*\Z/) {
                         $Device{"Vendor"} = fmtVal($1);
                     }
-                    
+
                     if($Line=~/model:[ ]*(.+?)[ ]*\Z/) {
                         $Device{"Device"} = fmtVal($1);
                     }
-                    
+
                     if($Line=~/serial:[ ]*(.+?)[ ]*\Z/) {
                         $Device{"Serial"} = $1;
                     }
-                    
+
                     if($Line=~/energy-full-design:[ ]*(.+?)[ ]*\Z/)
                     {
                         $Device{"Size"} = $1;
                         $Device{"Size"}=~s/\,/\./g;
                     }
-                    
+
                     if($Line=~/technology:[ ]*(.+?)[ ]*\Z/) {
                         $Device{"Technology"} = $1;
                     }
-                    
+
                     if($Line=~/capacity:[ ]*(.+?)[ ]*\Z/) {
                         $Device{"Capacity"} = $1;
                     }
                 }
-                
+
                 cleanValues(\%Device);
-                
+
                 #if($Device{"Vendor"}=~/customer/i
                 #or length($Device{"Vendor"})>20 and $Device{"Vendor"}!~/\s/)
                 #{
@@ -4352,22 +4352,22 @@ sub probeHW()
                 #{
                 #    $Device{"Device"} = ""; # model0
                 #}
-                
+
                 if($Device{"Vendor"} and $Device{"Device"})
                 {
                     my $ID = devID(nameID($Device{"Vendor"}), devSuffix(\%Device));
                     $ID = fmtID($ID);
-                    
+
                     $Device{"Device"} = "Battery ".$Device{"Device"};
-                    
+
                     if($Device{"Technology"}) {
                         $Device{"Device"} .= " ".$Device{"Technology"};
                     }
-                    
+
                     if($Device{"Size"}) {
                         $Device{"Device"} .= " ".$Device{"Size"};
                     }
-                    
+
                     if($Device{"Capacity"}=~/\A(\d+)/)
                     {
                         if($1>$MIN_BAT_CAPACITY) {
@@ -4377,7 +4377,7 @@ sub probeHW()
                             $Device{"Status"} = "malfunc";
                         }
                     }
-                    
+
                     if($ID) {
                         $HW{"bat:".$ID} = \%Device;
                     }
@@ -4385,10 +4385,10 @@ sub probeHW()
             }
         }
     }
-    
+
     my $PSDir = "/sys/class/power_supply";
     my $PowerSupply = "";
-    
+
     if($Opt{"FixProbe"}) {
         $PowerSupply = readFile($FixProbe_Logs."/power_supply");
     }
@@ -4402,14 +4402,14 @@ sub probeHW()
             $PowerSupply .= readFile($PSPath."/uevent");
             $PowerSupply .= "\n";
         }
-        
+
         $PowerSupply = encryptSerials($PowerSupply, "SERIAL_NUMBER");
-        
+
         if($HWLogs and $PowerSupply) {
             writeLog($LOG_DIR."/power_supply", $PowerSupply);
         }
     }
-    
+
     if(not $Upower and $PowerSupply)
     {
         my $PSPath = undef;
@@ -4418,70 +4418,70 @@ sub probeHW()
             if($Block=~/$PSDir\/BAT/i)
             {
                 my %Device = ();
-                
+
                 $Device{"Type"} = "battery";
-                
+
                 if($Block=~/POWER_SUPPLY_MODEL_NAME=(.+)/i) {
                     $Device{"Device"} = $1;
                 }
-                
+
                 if($Block=~/POWER_SUPPLY_MANUFACTURER=(.+)/i) {
                     $Device{"Vendor"} = $1;
                 }
-                
+
                 if($Block=~/POWER_SUPPLY_TECHNOLOGY=(.+)/i) {
                     $Device{"Technology"} = $1;
                 }
-                
+
                 if($Block=~/POWER_SUPPLY_ENERGY_FULL_DESIGN=(.+)/i)
                 {
                     my $EFullDesign = $1;
                     $Device{"Size"} = ($EFullDesign/1000000)."Wh";
-                    
+
                     if($Block=~/POWER_SUPPLY_ENERGY_FULL=(.+)/i) {
                         $Device{"Capacity"} = $1*100/$EFullDesign;
                     }
                 }
-                
+
                 if($Block=~/POWER_SUPPLY_CHARGE_FULL_DESIGN=(.+)/i)
                 {
                     $Device{"Change"} = $1;
-                    
+
                     if($Block=~/POWER_SUPPLY_CHARGE_FULL=(.+)/i) {
                         $Device{"Capacity"} = $1*100/$Device{"Change"};
                     }
                 }
-                
+
                 if($Block=~/POWER_SUPPLY_SERIAL_NUMBER=(.+)/i) {
                     $Device{"Serial"} = $1;
                 }
-                
+
                 if($Block=~/POWER_SUPPLY_VOLTAGE_MIN_DESIGN=(.+)/i) {
                     $Device{"Voltage"} = $1;
                 }
-                
+
                 if(not $Device{"Size"})
                 {
                     if($Device{"Voltage"} and $Device{"Change"}) {
                         $Device{"Size"} = (($Device{"Change"}/1000000)*($Device{"Voltage"}/1000000))."Wh";
                     }
                 }
-                
+
                 if($Device{"Vendor"} and $Device{"Device"})
                 {
                     my $ID = devID(nameID($Device{"Vendor"}), devSuffix(\%Device));
                     $ID = fmtID($ID);
-                    
+
                     $Device{"Device"} = "Battery ".$Device{"Device"};
-                    
+
                     if($Device{"Technology"}) {
                         $Device{"Device"} .= " ".$Device{"Technology"};
                     }
-                    
+
                     if($Device{"Size"}) {
                         $Device{"Device"} .= " ".$Device{"Size"};
                     }
-                    
+
                     if($Device{"Capacity"}=~/\A(\d+)/)
                     {
                         if($1>$MIN_BAT_CAPACITY) {
@@ -4491,7 +4491,7 @@ sub probeHW()
                             $Device{"Status"} = "malfunc";
                         }
                     }
-                    
+
                     if($ID) {
                         $HW{"bat:".$ID} = \%Device;
                     }
@@ -4499,7 +4499,7 @@ sub probeHW()
             }
         }
     }
-    
+
     # Fix incorrect machine type
     if(not $Sys{"Type"} or $Sys{"Type"} eq "desktop")
     {
@@ -4516,7 +4516,7 @@ sub probeHW()
             }
         }
     }
-    
+
     # PNP
     my $Lspnp = "";
     if($Opt{"FixProbe"}) {
@@ -4533,7 +4533,7 @@ sub probeHW()
             }
         }
     }
-    
+
     # HDD
     my $Hdparm = "";
     if($Opt{"FixProbe"}) {
@@ -4547,30 +4547,30 @@ sub probeHW()
             foreach my $Drive (sort keys(%HDD))
             {
                 my $Id = $HDD{$Drive};
-                
+
                 if(index($Id, "usb:")==0 or index($Id, "scsi:")==0) {
                     next;
                 }
-                
+
                 my $Output = runCmd("hdparm -I \"$Drive\" 2>/dev/null");
                 $Output = encryptSerials($Output, "Serial Number");
                 $Output = encryptSerials($Output, "Unique ID");
                 $Output = hideTags($Output, "WWN Device Identifier");
-                
+
                 if(length($Output)<30)
                 { # empty
                     next;
                 }
-                
+
                 $Hdparm .= $Output;
             }
         }
         writeLog($LOG_DIR."/hdparm", $Hdparm);
     }
-    
+
     my $Smartctl = "";
     my $SmartctlCmd = "smartctl";
-    
+
     if($Opt{"Snap"} or $Opt{"AppImage"} or $Opt{"Flatpak"})
     {
         if(not $Opt{"FixProbe"} and $HWLogs)
@@ -4578,11 +4578,11 @@ sub probeHW()
             $SmartctlCmd = find_Cmd("smartctl");
         }
     }
-    
+
     if($Opt{"FixProbe"})
     {
         $Smartctl = readFile($FixProbe_Logs."/smartctl");
-        
+
         my $CurDev = undef;
         my %DriveDesc = ();
         foreach my $SL (split(/\n/, $Smartctl))
@@ -4600,7 +4600,7 @@ sub probeHW()
             if(not $Id) {
                 $Id = detectDrive($DriveDesc{$Dev}, $Dev);
             }
-            
+
             if($Id)
             {
                 if($DriveDesc{$Dev}=~/result:\s*(PASSED|FAILED)/i)
@@ -4613,7 +4613,7 @@ sub probeHW()
                         $HW{$Id}{"Status"} = "malfunc";
                     }
                 }
-                
+
                 setAttachedStatus($Id, "works"); # got SMART
             }
         }
@@ -4630,41 +4630,41 @@ sub probeHW()
                 my $Output = runCmd($SmartctlCmd." -x \"".$Dev."\" 2>/dev/null");
                 $Output = encryptSerials($Output, "Serial Number");
                 $Output = hideWWNs($Output);
-                
+
                 if(index($Id, "usb:")==0
                 and $Output=~/Unsupported USB|Unknown USB/i)
                 { # device doesn't provide SMART
                     next;
                 }
-                
+
                 if(index($Id, "nvme:")==0
                 and $Output=~/Unable to detect device type/i)
                 { # old version of smartctl
                     next;
                 }
-                
+
                 if(index($Id, "scsi:")==0)
                 {
                     if(defined $CheckedScsi{$Id}) {
                         next;
                     }
                     $CheckedScsi{$Id} = 1;
-                    
+
                     if($Output=~/Unsupported|Unknown|Unable/i) {
                         next;
                     }
                 }
-                
+
                 if($Output)
                 {
                     # $Output=~s/\A.*?(\=\=\=)/$1/sg;
                     $Smartctl .= $Dev."\n".$Output."\n";
                 }
-                
+
                 if(not $Id) {
                     $Id = detectDrive($Output, $Dev);
                 }
-                
+
                 if($Id)
                 {
                     if($Output=~/result:\s*(PASSED|FAILED)/i)
@@ -4677,15 +4677,15 @@ sub probeHW()
                             $HW{$Id}{"Status"} = "malfunc";
                         }
                     }
-                    
+
                     setAttachedStatus($Id, "works"); # got SMART
                 }
             }
-            
+
             if($Opt{"Snap"} and $Smartctl=~/Operation not permitted|Permission denied/) {
                 $Smartctl = "";
             }
-            
+
             writeLog($LOG_DIR."/smartctl", $Smartctl);
         }
         else
@@ -4693,7 +4693,7 @@ sub probeHW()
             writeLog($LOG_DIR."/smartctl", "");
         }
     }
-    
+
     foreach my $Dev (keys(%HDD))
     {
         if(not $HDD{$Dev})
@@ -4707,26 +4707,26 @@ sub probeHW()
                         $Drv{$_} = $HDD_Info{$Dev}{$_};
                     }
                 }
-                
+
                 if($Drv{"Model"} and my $Vnd = guessDeviceVendor($Drv{"Model"}))
                 {
                     $Drv{"Vendor"} = $Vnd;
                     $Drv{"Model"}=~s/\A\Q$Vnd\E([\s_\-]+|\Z)//i;
                 }
-                
+
                 if($Drv{"Model"} and $Drv{"Model"} ne "Disk") {
                     $Drv{"Device"} = $Drv{"Model"};
                 }
                 else {
                     $Drv{"Device"} = "NVMe SSD Drive";
                 }
-                
+
                 $Drv{"Device"} .= addCapacity($Drv{"Device"}, $Drv{"Capacity"});
                 $HW{$PCI_DISK_BUS.":solid-state-drive"} = \%Drv;
             }
         }
     }
-    
+
     foreach my $Dev (keys(%MMC))
     {
         if(not $MMC{$Dev})
@@ -4740,29 +4740,29 @@ sub probeHW()
                         $Drv{$_} = $MMC_Info{$Dev}{$_};
                     }
                 }
-                
+
                 if(defined $VendorByModel{$Drv{"Device"}}) {
                     $Drv{"Vendor"} = $VendorByModel{$Drv{"Device"}};
                 }
-                
+
                 $Drv{"Capacity"} = fixCapacity($Drv{"Capacity"});
-                
+
                 if($Drv{"Device"})
                 {
                     $Drv{"Device"} .= " SSD".addCapacity($Drv{"Device"}, $Drv{"Capacity"});
-                    
+
                     my $MMC_ID = fmtID(devID(nameID($Drv{"Vendor"}), devSuffix(\%Drv)));
                     $HW{"mmc:".$MMC_ID} = \%Drv;
                 }
             }
         }
     }
-    
+
     my $SmartctlMR = "";
     if($Opt{"FixProbe"})
     {
         $SmartctlMR = readFile($FixProbe_Logs."/smartctl_megaraid");
-        
+
         my ($CurDev, $CurDid) = (undef, undef);
         my %DriveDesc = ();
         foreach my $SL (split(/\n/, $SmartctlMR))
@@ -4794,7 +4794,7 @@ sub probeHW()
                             $HW{$Id}{"Status"} = "malfunc";
                         }
                     }
-                    
+
                     setAttachedStatus($Id, "works"); # got SMART
                 }
             }
@@ -4803,7 +4803,7 @@ sub probeHW()
     else
     {
         my $StorcliCmd = undef;
-        
+
         foreach my $Cmd ("storcli64", "storcli")
         {
             if(check_Cmd($Cmd))
@@ -4812,7 +4812,7 @@ sub probeHW()
                 last;
             }
         }
-        
+
         if($StorcliCmd)
         { # MegaRAID
             listProbe("logs", $StorcliCmd);
@@ -4824,12 +4824,12 @@ sub probeHW()
             if($Storcli) {
                 writeLog($LOG_DIR."/storcli", $Storcli);
             }
-            
+
             if($Storcli)
             {
                 my %DInfo = ();
                 my $Ctrl = undef;
-                
+
                 foreach my $L (split(/\n/, $Storcli))
                 {
                     if($L=~/Controller = (\d+)/) {
@@ -4842,7 +4842,7 @@ sub probeHW()
                         $DInfo{$Ctrl}{"DID"}{$1} = 1;
                     }
                 }
-                
+
                 my %DID = ();
                 foreach my $Controller (sort {int($a)<=>int($b)} keys(%DInfo))
                 {
@@ -4856,7 +4856,7 @@ sub probeHW()
                         }
                     }
                 }
-                
+
                 foreach my $Dev (sort keys(%DID))
                 {
                     foreach my $Did (sort keys(%{$DID{$Dev}}))
@@ -4864,13 +4864,13 @@ sub probeHW()
                         my $Output = runCmd($SmartctlCmd." -x -d megaraid,$Did \"$Dev\" 2>/dev/null");
                         $Output = encryptSerials($Output, "Serial Number");
                         $Output = hideWWNs($Output);
-                        
+
                         if($Output)
                         {
                             # $Output=~s/\A.*?(\=\=\=)/$1/sg;
                             $SmartctlMR .= $Dev.",".$Did."\n".$Output."\n";
                         }
-                        
+
                         if(my $Id = detectDrive($Output, $Dev, 1))
                         {
                             if($Output=~/result:\s*(PASSED|FAILED)/i)
@@ -4883,23 +4883,23 @@ sub probeHW()
                                     $HW{$Id}{"Status"} = "malfunc";
                                 }
                             }
-                            
+
                             setAttachedStatus($Id, "works"); # got SMART
                         }
                     }
                 }
-                
+
                 if($SmartctlMR) {
                     writeLog($LOG_DIR."/smartctl_megaraid", $SmartctlMR);
                 }
             }
         }
     }
-    
+
     if(not $Opt{"FixProbe"} and not $SmartctlMR)
     {
         my $MegacliCmd = undef;
-        
+
         foreach my $Cmd ("megacli", "MegaCli64", "MegaCli")
         {
             if(check_Cmd($Cmd))
@@ -4908,7 +4908,7 @@ sub probeHW()
                 last;
             }
         }
-        
+
         if($MegacliCmd)
         {
             listProbe("logs", $MegacliCmd);
@@ -4918,14 +4918,14 @@ sub probeHW()
             if($Megacli) {
                 writeLog($LOG_DIR."/megacli", $Megacli);
             }
-            
+
             my %DIDs = ();
             while($Megacli=~/Device Id\s*:\s*(\d+)/g) {
                 $DIDs{$1} = 1;
             }
         }
     }
-    
+
     if(not $Opt{"FixProbe"})
     {
         if(check_Cmd("megactl"))
@@ -4937,59 +4937,59 @@ sub probeHW()
             }
         }
     }
-    
+
     if(not $Opt{"FixProbe"})
     {
         if(check_Cmd("arcconf"))
         { # Adaptec RAID
             listProbe("logs", "arcconf");
-            
+
             my @Controllers = ();
             my $ArcconfList = runCmd("arcconf LIST 2>&1");
             while($ArcconfList=~s/Controller\s+(\d+)//) {
                 push(@Controllers, $1);
             }
-            
+
             my $Arcconf = "";
-            
+
             foreach my $Cn (@Controllers)
             {
                 $Arcconf .= "Controller $Cn:\n";
                 $Arcconf .= runCmd("arcconf GETCONFIG $Cn PD 2>&1");
                 $Arcconf .= "\n";
             }
-            
+
             if($Arcconf)
             {
                 $Arcconf = encryptSerials($Arcconf, "Serial number");
                 $Arcconf = encryptSerials($Arcconf, "World-wide name", "arcconf", 1);
-                
+
                 writeLog($LOG_DIR."/arcconf", $Arcconf);
             }
-            
+
             listProbe("logs", "arcconf_smart");
             my $Arcconf_Smart = "";
-            
+
             foreach my $Cn (@Controllers)
             {
                 $Arcconf_Smart .= "Controller $Cn:\n";
                 $Arcconf_Smart .= runCmd("arcconf GETSMARTSTATS $Cn TABULAR 2>&1");
                 $Arcconf_Smart .= "\n";
             }
-            
+
             if($Arcconf_Smart)
             {
                 $Arcconf_Smart=~s/\.{4,}/:/g;
                 $Arcconf_Smart = encryptSerials($Arcconf_Smart, "serialNumber");
                 $Arcconf_Smart = encryptSerials($Arcconf_Smart, "vendorProductID");
-                
+
                 writeLog($LOG_DIR."/arcconf_smart", $Arcconf_Smart);
             }
         }
     }
-    
+
     my $Dmesg = "";
-    
+
     if($Opt{"FixProbe"})
     {
         $Dmesg = readFile($FixProbe_Logs."/dmesg");
@@ -5003,16 +5003,16 @@ sub probeHW()
         $Dmesg = hideMACs($Dmesg);
         writeLog($LOG_DIR."/dmesg", $Dmesg);
     }
-    
+
     if(not $Sys{"System"} and $Dmesg)
     {
         if($Dmesg=~/Linux version.+\-Ubuntu /) {
             $Sys{"System"} = "ubuntu";
         }
     }
-    
+
     my $XLog = "";
-    
+
     if($Opt{"FixProbe"})
     {
         $XLog = readFile($FixProbe_Logs."/xorg.log");
@@ -5021,7 +5021,7 @@ sub probeHW()
     {
         listProbe("logs", "xorg.log");
         $XLog = readFile("/var/log/Xorg.0.log");
-        
+
         if(not $XLog)
         {
             if(my $SessUser = getUser())
@@ -5029,7 +5029,7 @@ sub probeHW()
                 $XLog = readFile("/home/".$SessUser."/.local/share/xorg/Xorg.0.log");
             }
         }
-        
+
         $XLog = hideTags($XLog, "Serial#");
         if(my $HostName = $ENV{"HOSTNAME"}) {
             $XLog=~s/ $HostName / NODE /g;
@@ -5038,19 +5038,19 @@ sub probeHW()
             writeLog($LOG_DIR."/xorg.log", $XLog);
         }
     }
-    
+
     my $CmdLine = "";
     my ($Nomodeset, $ForceVESA) = (undef, undef);
-    
+
     if($XLog)
     {
         if($XLog=~/Kernel command line:(.*)/) {
             $CmdLine = $1;
         }
-        
+
         $Nomodeset = (index($CmdLine, " nomodeset")!=-1);
         $ForceVESA = (index($CmdLine, "xdriver=vesa")!=-1);
-        
+
         foreach my $D (@G_DRIVERS)
         {
             if($Nomodeset or index($CmdLine, "$D.modeset=0")!=-1)
@@ -5061,12 +5061,12 @@ sub probeHW()
                     next;
                 }
             }
-            
+
             if(keys(%WorkMod) and defined $WorkMod{$D})
             {
                 my @Loaded = ();
                 my @Drs = ($D);
-                
+
                 if(isIntelDriver($D)) {
                     @Drs = ("intel", "modesetting");
                 }
@@ -5074,32 +5074,32 @@ sub probeHW()
                 { # Manjaro 17
                     @Drs = ("nouveau", "nvidia");
                 }
-                
+
                 foreach my $Dr (@Drs)
                 {
                     if(index($XLog, "LoadModule: \"$Dr\"")!=-1) {
                         push(@Loaded, $Dr);
                     }
                 }
-                
+
                 if(@Loaded)
                 {
                     my @Unloaded = ();
-                    
+
                     foreach my $Dr (@Loaded)
                     {
                         if(index($XLog, "UnloadModule: \"$Dr\"")!=-1) {
                             push(@Unloaded, $Dr);
                         }
                     }
-                    
+
                     if(isIntelDriver($D) and defined $GraphicsCards{"1002"}
                     and defined $WorkMod{"fglrx"})
                     { # fglrx by intel, intel is unloaded
                         setCardStatus($D, "works");
                         next;
                     }
-                    
+
                     if($#Unloaded==$#Loaded) {
                         setCardStatus($D, "failed");
                     }
@@ -5118,7 +5118,7 @@ sub probeHW()
                 if(isIntelDriver($D)) {
                     $DrLabel = "intel";
                 }
-                
+
                 if(index($XLog, ") ".$DrLabel."(")!=-1)
                 { # (II) RADEON(0)
                   # (II) NOUVEAU(0)
@@ -5135,11 +5135,11 @@ sub probeHW()
             if($Dmesg=~/Command line:(.*)/) {
                 $CmdLine = $1;
             }
-            
+
             $Nomodeset = (index($CmdLine, " nomodeset")!=-1);
             $ForceVESA = (index($CmdLine, "xdriver=vesa")!=-1);
         }
-        
+
         foreach my $D (@G_DRIVERS)
         {
             if($Nomodeset or index($CmdLine, "$D.modeset=0")!=-1)
@@ -5150,15 +5150,15 @@ sub probeHW()
                     next;
                 }
             }
-            
+
             if(defined $WorkMod{$D}) {
                 setCardStatus($D, "works");
             }
         }
     }
-    
+
     my $HciConfig = "";
-    
+
     if($Opt{"FixProbe"})
     {
         $HciConfig = readFile($FixProbe_Logs."/hciconfig");
@@ -5175,7 +5175,7 @@ sub probeHW()
             }
         }
     }
-    
+
     if($HciConfig)
     {
         foreach my $HCI (split(/\n\n/, $HciConfig))
@@ -5197,9 +5197,9 @@ sub probeHW()
             }
         }
     }
-    
+
     my $MmCli = "";
-    
+
     if($Opt{"FixProbe"})
     {
         $MmCli = readFile($FixProbe_Logs."/mmcli");
@@ -5213,27 +5213,27 @@ sub probeHW()
             if($Modems=~/No modems were found/i) {
                 $Modems = "";
             }
-            
+
             my %MNums = ();
             while($Modems=~s/Modem\/(\d+)//) {
                 $MNums{$1} = 1;
             }
-            
+
             foreach my $Modem (sort {int($a)<=>int($b)} keys(%MNums))
             {
                 my $MInfo = runCmd("mmcli -m $Modem");
                 $MInfo = hideTags($MInfo, "own|imei|equipment id");
                 $MmCli .= $MInfo;
-                
+
                 $MmCli .= "\n";
             }
-            
+
             if($MmCli) {
                 writeLog($LOG_DIR."/mmcli", $MmCli);
             }
         }
     }
-    
+
     if($MmCli)
     {
         foreach my $MM (split(/\n\n/, $MmCli))
@@ -5251,9 +5251,9 @@ sub probeHW()
             }
         }
     }
-    
+
     my $OpenscTool = "";
-    
+
     if($Opt{"FixProbe"})
     {
         $OpenscTool = readFile($FixProbe_Logs."/opensc-tool");
@@ -5269,7 +5269,7 @@ sub probeHW()
             }
         }
     }
-    
+
     if($OpenscTool)
     {
         foreach my $SCReader (split(/\n\n/, $OpenscTool))
@@ -5287,7 +5287,7 @@ sub probeHW()
             }
         }
     }
-    
+
     print "Ok\n";
 }
 
@@ -5325,7 +5325,7 @@ sub setAttachedStatus($$)
 sub shortModel($)
 {
     my $Mdl = $_[0];
-    
+
     $Mdl=~s/\AMotherboard\s+//g;
     $Mdl=~s/\s+\Z//g;
     $Mdl=~s/\s*\(.+\)//g;
@@ -5336,7 +5336,7 @@ sub shortModel($)
     $Mdl=~s/\s*\d\*.*//; # Motherboard C31 1*V1.*
     $Mdl=~s/\s+(Unknow|INVALID|Default string)\Z//;
     $Mdl=~s/\s+R\d+\.\d+\Z//ig; # R2.0
-    
+
     return $Mdl;
 }
 
@@ -5353,24 +5353,24 @@ sub shortOS($)
 sub detectBoard($)
 {
     my $Device = $_[0];
-    
+
     $Device->{"Vendor"}=~s&\Ahttp://www.&&i; # http://www.abit.com.tw as vendor
-    
+
     if($Device->{"Version"}=~/\b(n\/a|Not)\b/i) {
         $Device->{"Version"} = undef;
     }
-    
+
     cleanValues($Device);
-    
+
     if($Device->{"Version"}=~/board version/i) {
         delete($Device->{"Version"});
     }
-    
+
     if($Device->{"Device"}=~/\bName\d*\b/i)
     { # no info
         return undef;
     }
-    
+
     if(not $Device->{"Vendor"})
     {
         if($Device->{"Device"}=~/\AConRoe[A-Z\d]/)
@@ -5378,22 +5378,22 @@ sub detectBoard($)
             $Device->{"Vendor"} = "ASRock";
         }
     }
-    
+
     if(my $Ver = $Device->{"Version"}) {
         $Device->{"Device"} .= " ".$Device->{"Version"};
     }
-    
+
     if(my $Vendor = $Device->{"Vendor"}) {
         $Device->{"Device"}=~s/\A\Q$Vendor\E\s+//ig;
     }
-    
+
     $Device->{"Type"} = "motherboard";
     $Device->{"Status"} = "works";
-    
+
     if(not $Device->{"Vendor"}) {
         $Device->{"Vendor"} = $VendorByModel{shortModel($Device->{"Device"})};
     }
-    
+
     if(not $Device->{"Vendor"})
     {
         if($Device->{"Device"}=~/\AMS\-\d+\Z/) {
@@ -5406,57 +5406,57 @@ sub detectBoard($)
             $Device->{"Vendor"} = "ASRock";
         }
     }
-    
+
     if(not $Device->{"Vendor"} or not $Device->{"Device"}) {
         return undef;
     }
-    
+
     my $ID = devID(nameID($Device->{"Vendor"}), devSuffix($Device));
     $ID = fmtID($ID);
-    
+
     $Device->{"Device"} = "Motherboard ".$Device->{"Device"};
-    
+
     my $MID = "board:".$ID;
     $HW{$MID} = $Device;
-    
+
     return $MID;
 }
 
 sub detectBIOS($)
 {
     my $Device = $_[0];
-    
+
     cleanValues($Device);
-    
+
     my @Name = ();
-    
+
     if($Device->{"Version"}) {
         push(@Name, $Device->{"Version"});
     }
-    
+
     if(my $BiosDate = $Device->{"Release Date"})
     {
         push(@Name, $Device->{"Release Date"});
-        
+
         if($BiosDate=~/\b(\d\d\d\d)\b/) {
             $Sys{"Year"} = $1;
         }
     }
-    
+
     $Device->{"Device"} = join(" ", @Name);
-    
+
     if(not $Device->{"Vendor"} or not $Device->{"Device"}) {
         return undef;
     }
-    
+
     $Device->{"Type"} = "bios";
     $Device->{"Status"} = "works";
-    
+
     my $ID = devID(nameID($Device->{"Vendor"}), devSuffix($Device));
     $ID = fmtID($ID);
-    
+
     $Device->{"Device"} = "BIOS ".$Device->{"Device"};
-    
+
     if($ID) {
         $HW{"bios:".$ID} = $Device;
     }
@@ -5465,21 +5465,21 @@ sub detectBIOS($)
 sub detectMonitor($)
 {
     my $Info = $_[0];
-    
+
     my ($V, $D) = ();
     my %Device = ();
-    
+
     if($Info=~/Digital display/) {
         $Device{"Kind"} = "Digital";
     }
     elsif($Info=~/Analog display/) {
         $Device{"Kind"} = "Analog";
     }
-    
+
     if($Info=~/Made in (.+)/) {
         $Device{"Made"} = $1;
     }
-    
+
     if($Info=~/Manufacturer:\s*(.+?)\s+Model\s+(.+?)\s+Serial/)
     {
         ($V, $D) = ($1, $2);
@@ -5497,11 +5497,11 @@ sub detectMonitor($)
     if(not $V or not $D) {
         return;
     }
-    
+
     if($V eq "\@\@\@") {
         return;
     }
-    
+
     if($Info=~/Monitor name:\s*(.*?)(\n|\Z)/) {
         $Device{"Device"} = $1;
     }
@@ -5515,37 +5515,37 @@ sub detectMonitor($)
         #     }
         # }
     }
-    
+
     foreach my $Attr ("Maximum image size", "Screen size", "Detailed mode")
     {
         if($Info=~/$Attr:(.+?)\n/i)
         {
             my $MonSize = $1;
-            
+
             if($MonSize=~/(\d+)\s*mm\s*x\s*(\d+)\s*mm/) {
                 $Device{"Size"} = $1."x".$2."mm";
             }
             elsif($MonSize=~/([\d\.]+)\s*cm\s*x\s*([\d\.]+)\s*cm/) {
                 $Device{"Size"} = ($1*10)."x".($2*10)."mm";
             }
-            
+
             if($Device{"Size"}) {
                 last;
             }
         }
     }
-    
+
     if(grep {$Device{"Size"} eq $_} ("1600x900mm", "160x90mm", "16x9mm", "0x0mm")) {
         $Device{"Size"} = undef;
     }
-    
+
     $Info=~s/CTA extension block.+//s;
-    
+
     my %Resolutions = ();
     while($Info=~s/(\d+)x(\d+)\@\d+//) {
         $Resolutions{$1} = $2;
     }
-    
+
     my ($W, $H) = ();
     while($Info=~s/\n\s+(\d+)\s+.+?\s+hborder//)
     {
@@ -5553,24 +5553,24 @@ sub detectMonitor($)
         if($Info=~s/\n\s+(\d+)\s+.+?\s+vborder//)
         {
             my $H = $1;
-            
+
             if(not defined $Resolutions{$W} or $H>$Resolutions{$W}) {
                 $Resolutions{$W} = $H;
             }
         }
     }
-    
+
     if(my @Res = sort {int($b)<=>int($a)} keys(%Resolutions)) {
         $Device{"Resolution"} = $Res[0]."x".$Resolutions{$Res[0]};
     }
-    
+
     if(not $Device{"Resolution"})
     { # monitor-parse-edid
         if($Info=~s/"(\d+x\d+)"//) {
             $Device{"Resolution"} = $1;
         }
     }
-    
+
     if($V)
     {
         if(my $Vendor = getPnpVendor($V))
@@ -5582,15 +5582,15 @@ sub detectMonitor($)
             $Device{"Vendor"} = $V;
         }
     }
-    
+
     my $MName = $Device{"Device"};
-    
+
     if(not $MName or $Device{"Vendor"}=~/\Q$MName\E/i) {
         $Device{"Device"} = "LCD Monitor";
     }
-    
+
     my $ID = undef;
-    
+
     if($Device{"Vendor"})
     {
         if($Device{"Vendor"} ne $V) {
@@ -5599,7 +5599,7 @@ sub detectMonitor($)
     }
     $ID = devID($ID, $V.$D);
     $ID = fmtID($ID);
-    
+
     if(my $OldID = $MON{uc($V.$D)})
     {
         my $Name = $Device{"Device"};
@@ -5612,43 +5612,43 @@ sub detectMonitor($)
         $HW{"eisa:".$OldID}{"Status"} = "works"; # got EDID
         return;
     }
-    
+
     if($D) {
         $Device{"Device"} .= " ".uc($V.$D);
     }
-    
+
     if($Device{"Resolution"}) {
         $Device{"Device"} .= " ".$Device{"Resolution"};
     }
-    
+
     if($Device{"Size"}) {
         $Device{"Device"} .= " ".$Device{"Size"};
     }
-    
+
     if(my $Inch = computeInch($Device{"Device"}))
     {
         $Device{"Inches"} .= $Inch;
         $Device{"Device"} .= " ".$Inch."-inch";
     }
-    
+
     $Device{"Type"} = "monitor";
-    
+
     if($Opt{"IdentifyMonitor"})
     {
         $Device{"Vendor"} = nameID($Device{"Vendor"});
-        
+
         if(not defined $MonVendor{$V}) {
             $Device{"Unknown"} = 1;
         }
     }
-    
+
     if($ID)
     {
         if(not defined $HW{"eisa:".$ID})
         {
             $HW{"eisa:".$ID} = \%Device;
             $HW{"eisa:".$ID}{"Status"} = "works"; # got EDID
-            
+
             # if(not $Opt{"IdentifyMonitor"} and not defined $MonVendor{$V} and not grep {$_ eq $V} @UnknownVendors) {
             #     print "WARNING: unknown monitor vendor $V\n";
             # }
@@ -5661,23 +5661,23 @@ sub detectDrive(@)
     my $Desc = shift(@_);
     my $Dev = undef;
     my $Raid = undef;
-    
+
     if(@_) {
         $Dev = shift(@_);
     }
     if(@_) {
         $Raid = shift(@_);
     }
-    
+
     my $Device = { "Type"=>"disk" };
-    
+
     my $Bus = "ide"; # SATA, PATA, M.2, mSATA, etc.
     if(index($Dev, "nvme")!=-1)
     {
         $Bus = $PCI_DISK_BUS;
         $Device->{"Kind"} = "NVMe";
     }
-    
+
     if(not $Opt{"IdentifyDrive"} and not $Raid
     and defined $HDD_Info{$Dev})
     {
@@ -5685,11 +5685,11 @@ sub detectDrive(@)
             $Device->{$_} = $HDD_Info{$Dev}{$_};
         }
     }
-    
+
     if($Desc=~/Serial Number:\s*(.+?)(\Z|\n)/) {
         $Device->{"Serial"} = $1;
     }
-    
+
     if($Desc=~/Device Model:\s*(.+?)(\Z|\n)/)
     { # ATA
         $Device->{"Device"} = $1;
@@ -5698,15 +5698,15 @@ sub detectDrive(@)
     { # NVMe
         $Device->{"Device"} = $1;
     }
-    
+
     if($Desc=~/Model Family:\s*(.+?)(\Z|\n)/) {
         $Device->{"Family"} = $1;
     }
-    
+
     if($Desc=~/Firmware Version:\s*(.+?)(\Z|\n)/) {
         $Device->{"Firmware"} = $1;
     }
-    
+
     if($Desc=~/LU WWN Device Id:\s*\w\s(\w{6})\s(\w+|\.\.\.)(\Z|\n)/) {
         $Device->{"IEEE_OUI"} = $1;
     }
@@ -5716,7 +5716,7 @@ sub detectDrive(@)
     elsif($Desc=~/IEEE EUI-64:\s*(\w{6})\s(\w+|\.\.\.)(\Z|\n)/) {
         $Device->{"IEEE_OUI"} = $1;
     }
-    
+
     if(not $Device->{"Kind"})
     {
         if($Desc=~/Rotation Rate:.*Solid State Device/
@@ -5734,7 +5734,7 @@ sub detectDrive(@)
             $Device->{"Kind"} = "HDD";
         }
     }
-    
+
     if($Desc=~/User Capacity:.*\[(.+?)\]/)
     { # ATA
         $Device->{"Capacity"} = $1;
@@ -5743,20 +5743,20 @@ sub detectDrive(@)
     { # NVMe
         $Device->{"Capacity"} = $1;
     }
-    
+
     $Device->{"Capacity"}=~s/,/./g;
     $Device->{"Capacity"}=~s/\.0+ //g;
     $Device->{"Capacity"}=~s/\s+//g;
-    
+
     $Device->{"Device"}=~s/\//-/g;
     $Device->{"Device"}=~s/"/-inch/g;
     $Device->{"Device"}=~s/\ASSD\s+//g;
     $Device->{"Device"}=~s/\Am\.2\s+//g;
     $Device->{"Device"}=~s/\s{2,}/ /g;
     $Device->{"Device"}=~s/\.\Z//g;
-    
+
     fixDrive_Pre($Device);
-    
+
     if(not $Device->{"Vendor"})
     { # NVMe
         if($Desc=~/PCI Vendor ID:\s*0x(\w+)/) {
@@ -5765,30 +5765,30 @@ sub detectDrive(@)
         elsif($Desc=~/PCI Vendor\/Subsystem ID:\s*0x(\w+)/) {
             $Device->{"Vendor"} = getPciVendor($1);
         }
-        
+
         if($Device->{"Vendor"} and my $Vnd = guessDeviceVendor($Device->{"Vendor"}))
         {
             $Device->{"Vendor"} = $Vnd;
             $Device->{"Device"}=~s/\s+$Vnd(\s+|\Z)/$1/i;
         }
-        
+
     }
-    
+
     if(not $Opt{"IdentifyDrive"})
     {
         if(not $Device->{"Vendor"} or not $Device->{"Device"}) {
             return undef;
         }
     }
-    
+
     $Device->{"Device"} = duplVendor($Device->{"Vendor"}, $Device->{"Device"});
     fixDrive($Device);
-    
+
     $Device->{"Model"} = $Device->{"Device"};
-    
+
     my $ID = devID(nameID($Device->{"Vendor"}));
     $ID = devID($ID, devSuffix($Device));
-    
+
     $Device->{"Device"} .= addCapacity($Device->{"Device"}, $Device->{"Capacity"});
     foreach (keys(%{$Device}))
     {
@@ -5796,18 +5796,18 @@ sub detectDrive(@)
             delete($Device->{$_});
         }
     }
-    
+
     my $HWId = $Bus.":".fmtID($ID);
     $HW{$HWId} = $Device;
     $HDD{$Dev} = $HWId;
-    
+
     return $HWId;
 }
 
 sub fixDrive_Pre($)
 {
     my $Device = $_[0];
-    
+
     if(not $Device->{"Vendor"}
     and not $Device->{"Family"}
     and $Device->{"Device"})
@@ -5819,14 +5819,14 @@ sub fixDrive_Pre($)
             $Device->{"Vendor"} = "Corsair";
         }
     }
-    
+
     if($Device->{"Device"} eq "ASUS-PHISON SSD") {
         $Device->{"Device"} = "ASUS PHISON SSD";
     }
     elsif($Device->{"Device"} eq "kingpower1108 SSD") {
         $Device->{"Device"} = "KingPower 1108 SSD";
     }
-    
+
     if(not $Device->{"Vendor"} and $Device->{"Device"})
     { # guess vendor
         if(my $Vnd = guessDeviceVendor($Device->{"Device"}))
@@ -5834,27 +5834,27 @@ sub fixDrive_Pre($)
             $Device->{"Device"}=~s/\A\Q$Vnd\E([\s_\-]+|\Z)//i;
             $Device->{"Vendor"} = $Vnd;
         }
-        
+
         my $FamilyVnd = undef;
-        
+
         if($Device->{"Family"}=~/\A([^ ]+)\s+/) {
             $FamilyVnd = $1;
         }
-        
+
         if($FamilyVnd)
         {
             if($Device->{"Device"}=~s/\A\Q$FamilyVnd\E([\s_\-]+|\Z)//i) {
                 $Device->{"Vendor"} = $FamilyVnd;
             }
         }
-        
+
         if(not $Device->{"Vendor"})
         {
             if($Device->{"Device"} eq "PLUS 480GB") {
                 $Device->{"Vendor"} = "SanDisk";
             }
         }
-        
+
         if(not $Device->{"Vendor"})
         {
             if(my $VndDr = guessDriveVendor($Device->{"Device"}))
@@ -5863,19 +5863,19 @@ sub fixDrive_Pre($)
                 $Device->{"Device"} = duplVendor($Device->{"Vendor"}, $Device->{"Device"});
             }
         }
-        
+
         if(not $Device->{"Vendor"})
         {
             if($Device->{"Device"}=~s/\A([A-Z]{5,})[\s_\-]+//i) {
                 $Device->{"Vendor"} = $1;
             }
         }
-        
+
         if(not $Device->{"Vendor"} and $FamilyVnd) {
             $Device->{"Vendor"} = $FamilyVnd;
         }
     }
-    
+
     if(not $Device->{"Vendor"} or grep {$Device->{"Vendor"} eq $_} ("Generic", "ZALMAN"))
     {
         if(my $VndS = guessSerialVendor($Device->{"Serial"})) {
@@ -5885,14 +5885,14 @@ sub fixDrive_Pre($)
             $Device->{"Vendor"} = $VndF;
         }
     }
-    
+
     if($Device->{"Kind"} ne "NVMe"
     and grep {uc($Device->{"Vendor"}) eq $_} ("OCZ", "CORSAIR", "CRUCIAL"))
     { # kind of several models is not detected properly by smartmontools
       # or smartmontools output is not collected
         $Device->{"Kind"} = "SSD";
     }
-    
+
     if($Device->{"Kind"} eq "HDD")
     {
         if(uc($Device->{"Vendor"}) eq "KINGSTON" and $Device->{"Device"}=~/\ASV300/) {
@@ -5910,7 +5910,7 @@ sub fixDrive_Pre($)
 sub fixDrive($)
 {
     my $Device = $_[0];
-    
+
     if($Device->{"Vendor"}=~/\A(SSD|mSata)\Z/)
     { # SSD/mSata instead of vendor name
       # Device Model: SSD Smartbuy 120GB
@@ -5926,23 +5926,23 @@ sub fixDrive($)
             $Device->{"Vendor"} = $DEFAULT_VENDOR;
         }
     }
-    
+
     if($Device->{"Vendor"}=~/\A(WD|ST)\d+/)
     { # model name instead of vendor name
         $Device->{"Device"} = $Device->{"Vendor"}." ".$Device->{"Device"};
         $Device->{"Vendor"} = $DiskVendor{$1};
     }
-    
+
     if(not $Device->{"Device"})
     { # no model name
         $Device->{"Device"} = $Device->{"Capacity"};
         $Device->{"Device"}=~s/\.\d+//g;
-        
+
         if($Device->{"Kind"} eq "SSD") {
             $Device->{"Device"} = "SSD ".$Device->{"Device"};
         }
     }
-    
+
     if($Device->{"Kind"} eq "SSD")
     {
         if($Device->{"Device"} eq "DISK") {
@@ -5955,7 +5955,7 @@ sub fixDrive($)
             $Device->{"Device"} = "SSD ".$Device->{"Device"};
         }
     }
-    
+
     if($Device->{"Kind"} eq "SSD"
     or $Device->{"Kind"} eq "NVMe")
     {
@@ -5978,11 +5978,11 @@ sub fixDrive($)
             }
         }
     }
-    
+
     if($Device->{"Device"} eq "ZALMAN") {
         $Device->{"Device"} .= addCapacity($Device->{"Device"}, $Device->{"Capacity"});
     }
-    
+
     if(not $Device->{"Vendor"})
     {
         if(grep {$Device->{"Device"} eq $_} ("OOS500G", "T60", "T120")
@@ -5994,7 +5994,7 @@ sub fixDrive($)
             $Device->{"Vendor"} = $DEFAULT_VENDOR;
         }
     }
-    
+
     if(not $Device->{"Vendor"} or $Device->{"Vendor"} eq $DEFAULT_VENDOR)
     {
         if(my $Oui = $Device->{"IEEE_OUI"})
@@ -6009,7 +6009,7 @@ sub fixDrive($)
 sub guessDriveVendor($)
 {
     my $Name = $_[0];
-    
+
     foreach my $Len (6, 5, 4, 3)
     {
         if($Name=~/\A([A-Z\d\-\_]{$Len})[A-Z\d\-]+/
@@ -6017,7 +6017,7 @@ sub guessDriveVendor($)
             return $DiskVendor{$1};
         }
     }
-    
+
     if($Name=~/\A([A-Z]{2})[A-Z\d\-]+/
     and defined $DiskVendor{$1}) {
         return $DiskVendor{$1};
@@ -6072,18 +6072,18 @@ sub guessDriveVendor($)
       # OCZ-VERTEX
         return $1;
     }
-    
+
     return undef;
 }
 
 sub guessSerialVendor($)
 {
     my $Serial = $_[0];
-    
+
     if(not $Serial) {
         return undef;
     }
-    
+
     if($Serial=~/\A([A-Z]+)\-/)
     {
         if(defined $SerialVendor{$1}) {
@@ -6096,49 +6096,49 @@ sub guessSerialVendor($)
             return $SerialVendor{$1};
         }
     }
-    
+
     return undef;
 }
 
 sub guessFirmwareVendor($)
 {
     my $Firmware = $_[0];
-    
+
     if(not $Firmware) {
         return undef;
     }
-    
+
     if($Firmware=~/\A(\w{4})/)
     {
         if(defined $FirmwareVendor{$1}) {
             return $FirmwareVendor{$1};
         }
     }
-    
+
     return undef;
 }
 
 sub guessDeviceVendor($)
 {
     my $Device = $_[0];
-    
+
     if($Device=~s/\A(WDC|Western Digital|Seagate|Samsung Electronics|SAMSUNG|Hitachi|TOSHIBA|Maxtor|SanDisk|Kingston|ADATA|Lite-On|OCZ|Smartbuy|SK hynix|GOODRAM|LDLC|A\-DATA|KingFast|ExcelStor Technology|i-FlashDisk)([\s_\-]|\Z)//i)
     { # drives
         return $1;
     }
-    
+
     if($Device=~/\A(HP|Hewlett\-Packard|Epson|Kyocera|Brother|Samsung|Canon|Xerox) /i)
     { # printers
         return $1;
     }
-    
+
     return undef;
 }
 
 sub computeInch($)
 {
     my $Info = $_[0];
-    
+
     my ($W, $H) = ();
     if($Info=~/(\A|\s)(\d+)x(\d+)mm(\s|\Z)/) {
         ($W, $H) = ($2, $3);
@@ -6146,11 +6146,11 @@ sub computeInch($)
     elsif($Info=~/(\A|\s)([\d\.]+)x([\d\.]+)cm(\s|\Z)/) {
         ($W, $H) = (10*$2, 10*$3);
     }
-    
+
     if($W and $H) {
         return sprintf("%.1f", sqrt($W*$W + $H*$H)/25.4);
     }
-    
+
     return undef;
 }
 
@@ -6159,14 +6159,14 @@ sub getXRes($)
     if($_[0]=~/\A(\d+)/) {
         return $1;
     }
-    
+
     return undef;
 }
 
 sub duplVendor($$)
 {
     my ($Vendor, $Device) = @_;
-    
+
     if($Vendor)
     { # do not duplicate vendor name
         if(not $Device=~s/\A\Q$Vendor\E([\s\-\_]+|\Z)//gi)
@@ -6179,20 +6179,20 @@ sub duplVendor($$)
             }
         }
     }
-    
+
     return $Device;
 }
 
 sub roundToNearest($)
 {
     my $Num = $_[0];
-    
+
     my $Delta = $Num - int($Num);
-    
+
     if($Delta*10>5) {
         return int($Num)+1;
     }
-    
+
     return int($Num);
 }
 
@@ -6207,7 +6207,7 @@ sub cleanValues($)
             or $Val=~/(\A|\b|\d)(to be filled|unclassified device|not defined)(\b|\Z)/i) {
                 delete($Hash->{$Key});
             }
-            
+
             if($Val=~/\A(vendor|device|unknown vendor|customer|model)\Z/i)
             {
                 delete($Hash->{$Key});
@@ -6219,21 +6219,21 @@ sub cleanValues($)
 sub devSuffix($)
 {
     my $Device = $_[0];
-    
+
     my $Suffix = $Device->{"Device"};
-    
+
     if($Device->{"Type"} eq "cpu")
     {
         if($Device->{"Vendor"} eq "Intel")
         { # short suffix
             my @Parts = ();
-            
+
             if($Device->{"Device"}=~/ CPU /)
             {
                 if($Device->{"Device"}=~/\A(.+?)\s+CPU/) {
                     push(@Parts, $1);
                 }
-                
+
                 if($Device->{"Device"}=~/ CPU\s+(.+?)\s*\@/) {
                     push(@Parts, $1);
                 }
@@ -6244,7 +6244,7 @@ sub devSuffix($)
                     push(@Parts, $1);
                 }
             }
-            
+
             $Suffix = join("-", @Parts);
         }
         elsif($Device->{"Vendor"} eq "AMD") {
@@ -6265,40 +6265,40 @@ sub devSuffix($)
             $Suffix .= "-serial-".$Device->{"Serial"};
         }
     }
-    
+
     return $Suffix;
 }
 
 sub fmtID($)
 {
     my $ID = $_[0];
-    
+
     $ID=~s/[\W]+\Z//g;
     $ID=~s/[\W\_]+/-/g;
-    
+
     $ID=~s/\A[\-]+//g;
     $ID=~s/[\-]+\Z//g;
-    
+
     return $ID;
 }
 
 sub nameID($)
 {
     my $Name = $_[0];
-    
+
     $Name=~s/\s*\([^()]*\)//g;
     $Name=~s/\s*\[[^\[\]]*\]//g;
-    
+
     while ($Name=~s/\s*(\,\s*|\s+)(Inc|Ltd|Co|GmbH|Corp|Pte|LLC|Sdn|Bhd|BV|RSS|PLC|s\.r\.l\.|srl|S\.P\.A\.|B\.V\.)(\.|\Z)//ig){};
     $Name=~s/,?\s+[a-z]{2,4}\.//ig;
     $Name=~s/,(.+)\Z//ig;
-    
+
     while ($Name=~s/\s+(Corporation|Computer|Computers|Electric|Company|Electronics|Electronic|Elektronik|Technologies|Technology)\Z//ig){};
-    
+
     $Name=~s/[\.\,]/ /g;
     $Name=~s/\s*\Z//g;
     $Name=~s/\A\s*//g;
-    
+
     return $Name;
 }
 
@@ -6312,10 +6312,10 @@ sub fixVendor($)
 sub fixModel($$$)
 {
     my ($Vendor, $Model, $Version) = @_;
-    
+
     $Model=~s/\A\-//;
     $Model=~s/\A\Q$Vendor\E\s+//i;
-    
+
     if($Vendor eq "Hewlett-Packard")
     {
         $Model=~s/\AHP\s+//g;
@@ -6349,21 +6349,21 @@ sub fixModel($$$)
         if($Model=~/\A\s*INVALID\s*\Z/) {
             $Model = "";
         }
-        
+
         if($Version=~/[A-Z]/i)
         {
             $Version=~s/\ALenovo-?\s*//i;
-            
+
             if($Version)
             {
                 while($Model=~s/\A\Q$Version\E\s+//i){};
-                
+
                 if($Model!~/\Q$Version\E/i) {
                     $Model = $Version." ".$Model;
                 }
             }
         }
-        
+
         $Model=~s/Ideapad/IdeaPad/gi;
         $Model=~s/ideacentre/IdeaCentre/gi;
         $Model=~s/\AProduct\s+Lenovo\s+//i;
@@ -6373,39 +6373,39 @@ sub fixModel($$$)
     elsif($Version=~/ThinkPad/i and $Model!~/ThinkPad/i) {
         $Model = $Version." ".$Model;
     }
-    
+
     return $Model;
 }
 
 sub listDir($)
 {
     my $Dir = $_[0];
-    
+
     if(not $Dir) {
         return ();
     }
-    
+
     opendir(my $DH, $Dir);
-    
+
     if(not $DH) {
         return ();
     }
-    
+
     my @Contents = grep { $_ ne "." && $_ ne ".." } readdir($DH);
     closedir($DH);
-    
+
     @Contents = sort @Contents;
-    
+
     return @Contents;
 }
 
 sub probeSys()
 {
     my ($Distr, $Rel) = probeDistr();
-    
+
     $Sys{"System"} = $Distr;
     $Sys{"Systemrel"} = $Rel;
-    
+
     if(not $Sys{"System"})
     {
         print STDERR "ERROR: failed to detect Linux distribution\n";
@@ -6415,7 +6415,7 @@ sub probeSys()
             exitStatus(1);
         }
     }
-    
+
     if(check_Cmd("uname"))
     {
         $Sys{"Arch"} = runCmd("uname -m");
@@ -6427,33 +6427,33 @@ sub probeSys()
         $Sys{"Arch"} = (POSIX::uname())[4];
         $Sys{"Kernel"} = (POSIX::uname())[2];
     }
-    
+
     if($Sys{"Arch"}=~/unknown/i)
     {
         $Sys{"Arch"} = $Config{"archname"};
         $Sys{"Arch"}=~s/\-linux.*//;
     }
-    
+
     $Sys{"Node"} = "NODE";
     $Sys{"User"} = "USER";
-    
+
     if($Opt{"PC_Name"}) {
         $Sys{"Name"} = $Opt{"PC_Name"};
     }
-    
+
     listProbe("logs", "dmi_id");
-    
+
     my $Dmi = "";
     foreach my $File ("sys_vendor", "product_name", "product_version", "chassis_type", "board_vendor", "board_name", "board_version", "bios_vendor", "bios_version", "bios_date")
     {
         my $Value = readFile("/sys/class/dmi/id/".$File);
-        
+
         if(not $Value) {
             next;
         }
-        
+
         $Value=~s/\s+\Z//g;
-        
+
         if($File eq "sys_vendor")
         {
             if($Value!~/\b(System manufacturer|to be filled)\b/i) {
@@ -6478,21 +6478,21 @@ sub probeSys()
                 $Sys{"Type"} = $CType;
             }
         }
-        
+
         if($Value ne "" and $Value=~/[A-Z0-9]/i) {
             $Dmi .= $File.": ".$Value."\n";
         }
     }
-    
+
     if($Opt{"Logs"}) {
         writeLog($LOG_DIR."/dmi_id", $Dmi);
     }
-    
+
     $Sys{"Vendor"} = fixVendor($Sys{"Vendor"});
     $Sys{"Model"} = fixModel($Sys{"Vendor"}, $Sys{"Model"}, $Sys{"Version"});
-    
+
     $Sys{"Probe_ver"} = $TOOL_VERSION;
-    
+
     foreach (keys(%Sys)) {
         chomp($Sys{$_});
     }
@@ -6502,11 +6502,11 @@ sub getChassisType($)
 {
     my $CType = lc($_[0]);
     $CType=~s/ chassis//i;
-    
+
     if($CType!~/unknown|other/) {
         return $CType;
     }
-    
+
     return undef;
 }
 
@@ -6518,7 +6518,7 @@ sub fixChassis()
         if($L=~/\A(\w+?):\s+(.+?)\Z/)
         {
             my ($File, $Value) = ($1, $2);
-            
+
             if($File eq "chassis_type")
             {
                 if(my $CType = getChassisType($ChassisType{$Value})) {
@@ -6545,7 +6545,7 @@ sub fixChassis()
             }
         }
     }
-    
+
     detectBIOS(\%Bios);
     $MotherboardID = detectBoard(\%Board);
 }
@@ -6553,9 +6553,9 @@ sub fixChassis()
 sub ipAddr2ifConfig($)
 {
     my $IPaddr = $_[0];
-    
+
     my $IFConfig = "";
-    
+
     foreach my $Line (split(/\n/, $IPaddr))
     {
         if($Line=~s/\A\d+:\s+//) {
@@ -6565,29 +6565,29 @@ sub ipAddr2ifConfig($)
             $IFConfig .= $Line."\n";
         }
     }
-    
+
     return $IFConfig;
 }
 
 sub probeHWaddr()
 {
     my $IFConfig = undef;
-    
+
     if($Opt{"FixProbe"})
     {
         $IFConfig = readFile($FixProbe_Logs."/ifconfig");
-        
+
         if(not $IFConfig)
         {
             if(my $IPaddr = readFile($FixProbe_Logs."/ip_addr")) {
                 $IFConfig = ipAddr2ifConfig($IPaddr);
             }
         }
-        
+
         if($IFConfig)
         { # fix HWaddr
             my $EthtoolP = readFile($FixProbe_Logs."/ethtool_p");
-            
+
             if($EthtoolP)
             {
                 foreach my $E (split(/\n/, $EthtoolP))
@@ -6597,10 +6597,10 @@ sub probeHWaddr()
                     }
                 }
             }
-            
+
             my $UAddr = $Sys{"HWaddr"};
             $UAddr=~s/\-/:/g;
-            
+
             if($EthtoolP or $IFConfig=~/\Q$UAddr\E/i)
             {
                 if(my $NewAddr = detectHWaddr($IFConfig)) {
@@ -6617,7 +6617,7 @@ sub probeHWaddr()
             $IFConfig = runCmd("ifconfig -a 2>&1");
             $IFConfig = hideIPs($IFConfig);
             $IFConfig = encryptMACs($IFConfig);
-            
+
             if($HWLogs) {
                 writeLog($LOG_DIR."/ifconfig", $IFConfig);
             }
@@ -6630,7 +6630,7 @@ sub probeHWaddr()
                 $IPaddr = hideIPs($IPaddr);
                 $IPaddr = encryptMACs($IPaddr);
                 $IFConfig = ipAddr2ifConfig($IPaddr);
-                
+
                 if($HWLogs) {
                     writeLog($LOG_DIR."/ip_addr", $IPaddr);
                 }
@@ -6641,7 +6641,7 @@ sub probeHWaddr()
         {
             require IO::Socket;
             require IO::Interface;
-            
+
             my $Socket = IO::Socket::INET->new(Proto => "udp");
             my @Ifs = ();
             my %Addrs = ();
@@ -6652,12 +6652,12 @@ sub probeHWaddr()
                     $Mac = lc($Mac);
                     $Mac=~s/:/-/g;
                     $Mac = lc(clientHash(lc($Mac)));
-                    
+
                     push(@Ifs, $If); # save order
                     $Addrs{$If} = $Mac;
                 }
             }
-            
+
             $Sys{"HWaddr"} = selectHWAddr(\@Ifs, \%Addrs);
         }
         else
@@ -6665,11 +6665,11 @@ sub probeHWaddr()
             print STDERR "ERROR: can't find 'ifconfig' or 'ip'\n";
             exitStatus(1);
         }
-        
+
         if($IFConfig)
         {
             $Sys{"HWaddr"} = detectHWaddr($IFConfig);
-            
+
             if($HWLogs)
             {
                 my $EthtoolP = "";
@@ -6681,19 +6681,19 @@ sub probeHWaddr()
                 }
             }
         }
-        
+
         if(not $Sys{"HWaddr"})
         {
             print STDERR "ERROR: failed to detect hwid\n";
-            
+
             if($Opt{"Snap"}) {
                 warnSnapInterfaces();
             }
-            
+
             exitStatus(1);
         }
     }
-    
+
     if($IFConfig)
     {
         foreach my $I (split(/\n\n/, $IFConfig))
@@ -6701,7 +6701,7 @@ sub probeHWaddr()
             if($I=~/\A([^:\s]+):?\s/)
             {
                 my $F = $1;
-                
+
                 if(($I=~/packets\s*:?\s*(\d+)/ and $1) or ($I=~/valid_lft\s+(\d+)/ and $1)) {
                     $UsedNetworkDev{$F} = 1;
                 }
@@ -6719,7 +6719,7 @@ sub warnSnapInterfaces()
 sub countStr($$)
 {
     my ($Str, $Target) = @_;
-    
+
     my $Count = 0;
     while($Str=~s/$Target//) {
         $Count += 1;
@@ -6730,18 +6730,18 @@ sub countStr($$)
 sub detectHWaddr($)
 {
     my $IFConfig = $_[0];
-    
+
     my @Devs = ();
     my %Addrs = ();
-    
+
     foreach my $Block (split(/[\n]\s*[\n]+/, $IFConfig))
     {
         my $Addr = undef;
-        
+
         if($Block=~/\Adocker/) {
             next;
         }
-        
+
         if($Block=~/ether\s+([^\s]+)/)
         { # Fresh
             $Addr = lc($1);
@@ -6750,29 +6750,29 @@ sub detectHWaddr($)
         { # Marathon
             $Addr = lc($1);
         }
-        
+
         if(not $Addr) {
             next;
         }
-        
+
         if(index($Addr, ":")!=-1)
         { # Support for old probes
             $Addr=~s/:/-/g;
         }
-        
+
         my $NetDev = undef;
-        
+
         if($Block=~/\A([^:]+):?\s/) {
             $NetDev = $1;
         }
         else {
             next;
         }
-        
+
         push(@Devs, $NetDev); # save order
         $Addrs{$NetDev} = $Addr;
     }
-    
+
     return selectHWAddr(\@Devs, \%Addrs);
 }
 
@@ -6780,30 +6780,30 @@ sub selectHWAddr($$)
 {
     my $Devs = $_[0];
     my $Addrs = $_[1];
-    
+
     my (@Eth, @Wlan, @Other, @Wrong) = ();
-    
+
     foreach my $NetDev (@{$Devs})
     {
         my $Addr = $Addrs->{$NetDev};
-        
+
         if(not $Opt{"FixProbe"})
         {
             if(my $RealMac = getRealHWaddr($NetDev)) {
                 $PermanentAddr{$NetDev} = clientHash($RealMac);
             }
         }
-        
+
         if(defined $PermanentAddr{$NetDev}) {
             $Addr = lc($PermanentAddr{$NetDev});
         }
-        
+
         if(grep { uc($Addr) eq $_ } @WrongAddr)
         {
             push(@Wrong, $Addr);
             next;
         }
-        
+
         if($NetDev=~/\Aenp\d+s\d+.*u\d+\Z/i)
         { # enp0s20f0u3, enp0s29u1u5, enp0s20u1, etc.
             push(@Other, $Addr);
@@ -6827,9 +6827,9 @@ sub selectHWAddr($$)
             push(@Other, $Addr);
         }
     }
-    
+
     my $Sel = undef;
-    
+
     if(@Eth) {
         $Sel = $Eth[0];
     }
@@ -6845,30 +6845,30 @@ sub selectHWAddr($$)
     else {
         return undef;
     }
-    
+
     return $Sel;
 }
 
 sub getRealHWaddr($)
 {
     my $Dev = $_[0];
-    
+
     if(check_Cmd("ethtool"))
     {
         my $Info = runCmd("ethtool -P $Dev 2>/dev/null");
-        
+
         if($Info=~/(\w\w:\w\w:\w\w:\w\w:\w\w:\w\w)/)
         {
             my $Mac = lc($1);
             $Mac=~s/:/-/g;
-            
+
             if($Mac ne "00-00-00-00-00-00"
             and $Mac ne "ff-ff-ff-ff-ff-ff") {
                 return $Mac;
             }
         }
     }
-    
+
     return undef;
 }
 
@@ -6905,7 +6905,7 @@ sub readLine($)
 sub probeDistr()
 {
     my $LSB_Rel = "";
-    
+
     if($Opt{"FixProbe"}) {
         $LSB_Rel = readFile($FixProbe_Logs."/lsb_release");
     }
@@ -6917,16 +6917,16 @@ sub probeDistr()
             {
                 listProbe("logs", "lsb_release");
                 $LSB_Rel = runCmd("lsb_release -i -d -r -c 2>/dev/null");
-                
+
                 if($HWLogs) {
                     writeLog($LOG_DIR."/lsb_release", $LSB_Rel);
                 }
             }
         }
     }
-    
+
     my $OS_Rel = "";
-    
+
     if($Opt{"FixProbe"}) {
         $OS_Rel = readFile($FixProbe_Logs."/os-release");
     }
@@ -6959,9 +6959,9 @@ sub probeDistr()
             writeLog($LOG_DIR."/os-release", $OS_Rel);
         }
     }
-    
+
     my $Sys_Rel = "";
-    
+
     if($Opt{"FixProbe"}) {
         $Sys_Rel = readFile($FixProbe_Logs."/system-release");
     }
@@ -6973,36 +6973,36 @@ sub probeDistr()
             writeLog($LOG_DIR."/system-release", $Sys_Rel);
         }
     }
-    
+
     my ($Name, $Release, $FName) = ();
-    
+
     if($LSB_Rel)
     { # Desktop
         my $Descr = undef;
         if($LSB_Rel=~/ID:\s*(.*)/) {
             $Name = $1;
         }
-        
+
         if(lc($Name) eq "n/a") {
             $Name = "";
         }
-        
+
         if($LSB_Rel=~/Release:\s*(.*)/) {
             $Release = lc($1);
         }
-        
+
         if($Release eq "n/a") {
             $Release = "";
         }
-        
+
         if($LSB_Rel=~/NAME:\s*(.*)/) {
             $FName = $1;
         }
-        
+
         if($LSB_Rel=~/Description:\s*(.*)/) {
             $Descr = $1;
         }
-        
+
         if($Name=~/\AROSAEnterpriseServer/i) {
             return ("rels-".$Release, "");
         }
@@ -7024,7 +7024,7 @@ sub probeDistr()
         elsif($Name=~/\AROSA/i)
         {
             my $Rel = "";
-            
+
             if($Descr=~/ R([\d\-\.]+)/i) {
                 $Rel = "rosafresh-r".$1;
             }
@@ -7034,7 +7034,7 @@ sub probeDistr()
             elsif($OS_Rel=~/Fresh R(\d+) /) {
                 $Rel = "rosafresh-r".$1;
             }
-            
+
             return ("rosa-".$Release, $Rel);
         }
         elsif($Name=~/\AOpenMandriva/i) {
@@ -7048,26 +7048,26 @@ sub probeDistr()
             $Name = $Descr;
         }
     }
-    
+
     if(grep { $Release eq $_ } ("amd64", "x86_64")) {
         $Release = undef;
     }
-    
+
     if((not $Name or not $Release) and $OS_Rel)
     {
         if($OS_Rel=~/\bID=\s*[\"\']*([^"'\n]+)/) {
             $Name = $1;
         }
-        
+
         if($OS_Rel=~/\bVERSION_ID=\s*[\"\']*([^"'\n]+)/) {
             $Release = lc($1);
         }
-        
+
         if($Release eq "n/a") {
             $Release = "";
         }
     }
-    
+
     if((not $Name or not $Release) and $Sys_Rel)
     {
         if($Sys_Rel=~/\A(.+?)\s+release\s+([\d\.]+)/ or $Sys_Rel=~/\A(.+?)\s+([\d\.]+)/)
@@ -7076,48 +7076,48 @@ sub probeDistr()
             $Release = lc($2);
         }
     }
-    
+
     if($Name=~/virtuozzo/i and (lc($Name) ne "virtuozzo"
     or not $FName or lc($FName) ne "virtuozzo"))
     {
         $Release = undef;
         $Name = "Virtuozzo";
     }
-    
+
     $Name = shortOS($Name);
-    
+
     if($Name and $Release) {
         return (lc($Name)."-".$Release, "");
     }
     elsif($Name) {
         return (lc($Name), "");
     }
-    
+
     return ("", "");
 }
 
 sub devID(@)
 {
     my @ID = ();
-    
+
     foreach (@_)
     {
         if($_) {
             push(@ID,  $_);
         }
     }
-    
+
     return lc(join("-", @ID));
 }
 
 sub fNum($)
 {
     my $N = $_[0];
-    
+
     if(length($N)==1) {
         $N = "0".$N;
     }
-    
+
     return $N;
 }
 
@@ -7133,37 +7133,37 @@ sub writeDevs()
         foreach (keys(%{$HW{$ID}})) {
             $HW{$ID}{$_}=~s/;/ /g;
         }
-        
+
         my @D = ();
-        
+
         push(@D, $ID);
         push(@D, $HW{$ID}{"Class"});
-        
+
         if(not $HW{$ID}{"Status"}) {
             $HW{$ID}{"Status"} = "detected";
         }
-        
+
         push(@D, $HW{$ID}{"Status"}); # test result
-        
+
         push(@D, $HW{$ID}{"Type"});
         push(@D, $HW{$ID}{"Driver"});
-        
+
         push(@D, $HW{$ID}{"Vendor"});
         push(@D, $HW{$ID}{"Device"});
-        
+
         if($HW{$ID}{"SVendor"} or $HW{$ID}{"SDevice"})
         {
             push(@D, $HW{$ID}{"SVendor"});
-            
+
             if(defined $HW{$ID}{"SDevice"}
             and $HW{$ID}{"SDevice"} ne "Device") {
                 push(@D, $HW{$ID}{"SDevice"});
             }
         }
-        
+
         $HWData .= join(";", @D)."\n";
     }
-    
+
     if($Opt{"FixProbe"}) {
         writeFile($Opt{"FixProbe"}."/devices", $HWData);
     }
@@ -7189,7 +7189,7 @@ sub writeHost()
     $Host .= "node:".$Sys{"Node"}."\n";
     $Host .= "arch:".$Sys{"Arch"}."\n";
     $Host .= "kernel:".$Sys{"Kernel"}."\n";
-    
+
     if($Sys{"Vendor"}) {
         $Host .= "vendor:".$Sys{"Vendor"}."\n";
     }
@@ -7208,7 +7208,7 @@ sub writeHost()
     if($Sys{"Name"}) {
         $Host .= "id:".$Sys{"Name"}."\n";
     }
-    
+
     # Host Info
     if($Opt{"FixProbe"}) {
         writeFile($Opt{"FixProbe"}."/host", $Host);
@@ -7221,9 +7221,9 @@ sub writeHost()
 sub readHost($)
 {
     my $Path = $_[0];
-    
+
     my $Content = readFile($Path."/host");
-    
+
     foreach my $Line (split(/\n/, $Content))
     {
         if($Line=~/\A(\w+)\:(.*)\Z/)
@@ -7251,25 +7251,25 @@ sub getUser()
             return $ENV{$Var};
         }
     }
-    
+
     return undef;
 }
 
 sub writeLogs()
 {
     print "Reading logs ... ";
-    
+
     if($Opt{"ListProbes"}) {
         print "\n";
     }
-    
+
     my $SessUser = getUser();
     if(not $SessUser) {
         $SessUser = $ENV{"USER"};
     }
-    
+
     my $KRel = $Sys{"Kernel"};
-    
+
     # level=minimal
     if($Admin)
     {
@@ -7284,10 +7284,10 @@ sub writeLogs()
             writeLog($LOG_DIR."/dmesg.1", $Dmesg_Old);
         }
     }
-    
+
     listProbe("logs", "xorg.log.1");
     my $XLog_Old = readFile("/var/log/Xorg.0.log.old");
-    
+
     if(not $XLog_Old)
     {
         if(my $SessUser = getUser())
@@ -7295,43 +7295,43 @@ sub writeLogs()
             $XLog_Old = readFile("/home/".$SessUser."/.local/share/xorg/Xorg.0.log.old");
         }
     }
-    
+
     $XLog_Old = hideTags($XLog_Old, "Serial#");
     if(my $HostName = $ENV{"HOSTNAME"}) {
         $XLog_Old=~s/ $HostName / NODE /g;
     }
     writeLog($LOG_DIR."/xorg.log.1", $XLog_Old);
-    
+
     if(check_Cmd("mcelog"))
     {
         listProbe("logs", "mcelog");
         my $Mcelog = runCmd("mcelog --client 2>&1");
-        
+
         if($Mcelog=~/No such file or directory/) {
             $Mcelog = "";
         }
-        
+
         writeLog($LOG_DIR."/mcelog", $Mcelog);
     }
-    
+
     listProbe("logs", "xorg.conf");
     my $XorgConf = readFile("/etc/X11/xorg.conf");
-    
+
     if(not $XorgConf) {
         $XorgConf = readFile("/usr/share/X11/xorg.conf");
     }
-    
+
     if(not $Opt{"Docker"} or $XorgConf) {
         writeLog($LOG_DIR."/xorg.conf", $XorgConf);
     }
-    
+
     if(-e "/etc/default/grub")
     {
         listProbe("logs", "grub");
         my $Grub = readFile("/etc/default/grub");
         writeLog($LOG_DIR."/grub", $Grub);
     }
-    
+
     if(not $Opt{"Docker"})
     {
         if(-f "/boot/grub2/grub.cfg")
@@ -7341,61 +7341,61 @@ sub writeLogs()
             writeLog($LOG_DIR."/grub.cfg", $GrubCfg);
         }
     }
-    
+
     if(-f "/var/log/boot.log")
     {
         listProbe("logs", "boot.log");
         my $BootLog = clearLog(readFile("/var/log/boot.log"));
         writeLog($LOG_DIR."/boot.log", $BootLog);
     }
-    
+
     if(check_Cmd("xrandr"))
     {
         listProbe("logs", "xrandr");
         my $XRandr = runCmd("xrandr --verbose 2>&1");
         writeLog($LOG_DIR."/xrandr", clearLog_X11($XRandr));
-        
+
         listProbe("logs", "xrandr_providers");
         my $XRandrProviders = runCmd("xrandr --listproviders 2>&1");
         writeLog($LOG_DIR."/xrandr_providers", clearLog_X11($XRandrProviders));
     }
-    
+
     if(check_Cmd("glxinfo"))
     {
         listProbe("logs", "glxinfo");
         my $Glxinfo = runCmd("glxinfo 2>&1");
         $Glxinfo = clearLog_X11($Glxinfo);
-        
+
         if(not clearLog_X11($Glxinfo)) {
             print STDERR "WARNING: X11-related logs are not collected (try to run 'xhost +local:' to enable access or run as root by su)\n";
         }
-        
+
         writeLog($LOG_DIR."/glxinfo", $Glxinfo);
     }
-    
+
     listProbe("logs", "biosdecode");
     my $BiosDecode = "";
     if($Admin)
     {
         $BiosDecode = runCmd("biosdecode 2>/dev/null");
-        
+
         if(length($BiosDecode)<20) {
             $BiosDecode = "";
         }
     }
     writeLog($LOG_DIR."/biosdecode", $BiosDecode);
-    
+
     if(not $Opt{"Docker"})
     {
         listProbe("logs", "df");
         my $Df = runCmd("df -h 2>&1");
         writeLog($LOG_DIR."/df", $Df);
     }
-    
+
     listProbe("logs", "meminfo");
     my $Meminfo = readFile("/proc/meminfo");
     writeLog($LOG_DIR."/meminfo", $Meminfo);
-    
+
     # level=default
     if($Opt{"LogLevel"} eq "default"
     or $Opt{"LogLevel"} eq "maximal")
@@ -7403,11 +7403,11 @@ sub writeLogs()
         listProbe("logs", "sensors");
         my $Sensors = runCmd("sensors 2>/dev/null");
         writeLog($LOG_DIR."/sensors", $Sensors);
-        
+
         listProbe("logs", "uptime");
         my $Uptime = runCmd("uptime");
         writeLog($LOG_DIR."/uptime", $Uptime);
-        
+
         if(not $Opt{"AppImage"} and check_Cmd("cpupower"))
         { # TODO: Why doesn't work in AppImage?
             listProbe("logs", "cpupower");
@@ -7417,16 +7417,16 @@ sub writeLogs()
             $CPUpower .= "\n";
             $CPUpower .= "idle-info\n---------\n";
             $CPUpower .= runCmd("cpupower idle-info 2>&1");
-            
+
             if($CPUpower=~/cpupower not found/) {
                 $CPUpower = undef;
             }
-            
+
             if($CPUpower) {
                 writeLog($LOG_DIR."/cpupower", $CPUpower);
             }
         }
-        
+
         if(check_Cmd("dkms"))
         {
             listProbe("logs", "dkms_status");
@@ -7436,7 +7436,7 @@ sub writeLogs()
             }
             writeLog($LOG_DIR."/dkms_status", $DkmsStatus);
         }
-        
+
         if(check_Cmd("xdpyinfo"))
         {
             listProbe("logs", "xdpyinfo");
@@ -7444,83 +7444,83 @@ sub writeLogs()
                 writeLog($LOG_DIR."/xdpyinfo", clearLog_X11($Xdpyinfo));
             }
         }
-        
+
         if(check_Cmd("xinput"))
         {
             listProbe("logs", "xinput");
             my $XInput = runCmd("xinput list --long 2>&1");
             writeLog($LOG_DIR."/xinput", clearLog_X11($XInput));
         }
-        
+
         if(check_Cmd("rpm"))
         {
             listProbe("logs", "rpms");
             my $Rpms = runCmd("rpm -qa 2>/dev/null | sort");
-            
+
             if($Rpms) {
                 writeLog($LOG_DIR."/rpms", $Rpms);
             }
         }
-        
+
         if(check_Cmd("dpkg"))
         {
             listProbe("logs", "debs");
             my $Dpkgs = runCmd("dpkg -l 2>/dev/null | awk '/^[hi]i/{print \$2,\$3,\$4}'");
-            
+
             if($Dpkgs) {
                 writeLog($LOG_DIR."/debs", $Dpkgs);
             }
         }
-        
+
         if(check_Cmd("apk") and $Sys{"System"}=~/alpine/i)
         {
             listProbe("logs", "apk");
             my $Apk = runCmd("apk info 2>/dev/null");
-            
+
             if($Apk) {
                 writeLog($LOG_DIR."/apk", $Apk);
             }
         }
-        
+
         if(check_Cmd("pacman"))
         { # Arch
             listProbe("logs", "pkglist");
             my $Pkglist = runCmd("pacman -Q 2>/dev/null");
-            
+
             if($Pkglist) {
                 writeLog($LOG_DIR."/pkglist", $Pkglist);
             }
         }
-        
+
         if(not $Opt{"Docker"})
         {
             if(check_Cmd("rfkill"))
             {
                 listProbe("logs", "rfkill");
                 my $Rfkill = runCmd("rfkill list 2>&1");
-                
+
                 if($Opt{"Snap"} and $Rfkill=~/Permission denied/) {
                     $Rfkill = "";
                 }
-                
+
                 writeLog($LOG_DIR."/rfkill", $Rfkill);
             }
         }
-        
+
         if(check_Cmd("iw"))
         {
             listProbe("logs", "iw_list");
             my $IwList = runCmd("iw list 2>&1");
-            
+
             if($Opt{"Snap"} and $IwList=~/Permission denied/) {
                 $IwList = "";
             }
-            
+
             if($IwList) {
                 writeLog($LOG_DIR."/iw_list", $IwList);
             }
         }
-        
+
         if(check_Cmd("iwconfig"))
         {
             listProbe("logs", "iwconfig");
@@ -7529,7 +7529,7 @@ sub writeLogs()
             $IwConfig = hideTags($IwConfig, "ESSID");
             writeLog($LOG_DIR."/iwconfig", $IwConfig);
         }
-        
+
         if(check_Cmd("nm-tool"))
         {
             listProbe("logs", "nm-tool");
@@ -7538,7 +7538,7 @@ sub writeLogs()
                 writeLog($LOG_DIR."/nm-tool", $NmTool);
             }
         }
-        
+
         if(check_Cmd("nmcli"))
         {
             listProbe("logs", "nmcli");
@@ -7549,7 +7549,7 @@ sub writeLogs()
                 writeLog($LOG_DIR."/nmcli", $NmCli);
             }
         }
-        
+
         if(not $Opt{"Docker"})
         {
             listProbe("logs", "findmnt");
@@ -7564,12 +7564,12 @@ sub writeLogs()
                     $FindmntCmd .= " 2>&1";
                 }
                 $Findmnt = runCmd($FindmntCmd);
-                
+
                 if($Opt{"Snap"} and $Findmnt=~/Permission denied/) {
                     $Findmnt = "";
                 }
             }
-            
+
             if($Findmnt) {
                 writeLog($LOG_DIR."/findmnt", $Findmnt);
             }
@@ -7580,7 +7580,7 @@ sub writeLogs()
                 if(check_Cmd("mount"))
                 {
                     $Mount = runCmd("mount -v 2>&1");
-                    
+
                     if($Opt{"Snap"} and $Mount=~/Permission denied/) {
                         $Mount = "";
                     }
@@ -7588,7 +7588,7 @@ sub writeLogs()
                 writeLog($LOG_DIR."/mount", $Mount);
             }
         }
-        
+
         if($Admin)
         {
             listProbe("logs", "fdisk");
@@ -7602,12 +7602,12 @@ sub writeLogs()
             }
             writeLog($LOG_DIR."/fdisk", $Fdisk);
         }
-        
+
         if(my $InxiCmd = check_Cmd("inxi"))
         {
             listProbe("logs", "inxi");
             my $Inxi = undef;
-            
+
             if(readLine($InxiCmd)=~/perl/)
             { # The new Perl inxi
                 $Inxi = runCmd("inxi -Fxxxz --no-host 2>&1");
@@ -7616,32 +7616,32 @@ sub writeLogs()
             { # Old inxi
                 $Inxi = runCmd("inxi -Fxz -c 0 -! 31 2>&1");
             }
-            
+
             $Inxi=~s/\s+\w+\:\s*<filter>//g;
             writeLog($LOG_DIR."/inxi", $Inxi);
         }
-        
+
         if(check_Cmd("i2cdetect"))
         {
             listProbe("logs", "i2cdetect");
             my $I2cdetect = runCmd("i2cdetect -l 2>&1");
             writeLog($LOG_DIR."/i2cdetect", $I2cdetect);
         }
-        
+
         if(-e "/sys/firmware/efi") # defined $KernMod{"efivarfs"}
         { # installed in EFI mode
             if(check_Cmd("efivar"))
             {
                 listProbe("logs", "efivar");
                 my $Efivar = runCmd("efivar -l 2>&1");
-                
+
                 if($Efivar=~/error listing variables/i) {
                     $Efivar = "";
                 }
-                
+
                 writeLog($LOG_DIR."/efivar", $Efivar);
             }
-            
+
             if($Admin)
             {
                 if($Sys{"Arch"} eq "x86_64")
@@ -7654,7 +7654,7 @@ sub writeLogs()
                     }
                 }
             }
-            
+
             if(-d "/boot/efi")
             {
                 listProbe("logs", "boot_efi");
@@ -7662,7 +7662,7 @@ sub writeLogs()
                 writeLog($LOG_DIR."/boot_efi", $BootEfi);
             }
         }
-        
+
         my $Switch = "/sys/kernel/debug/vgaswitcheroo/switch";
         if(-e $Switch)
         {
@@ -7670,11 +7670,11 @@ sub writeLogs()
             my $SInfo = readFile($Switch);
             writeLog($LOG_DIR."/vgaswitcheroo", $SInfo);
         }
-        
+
         listProbe("logs", "input_devices");
         my $InputDevices = readFile("/proc/bus/input/devices");
         writeLog($LOG_DIR."/input_devices", $InputDevices);
-        
+
         if(not $Opt{"Docker"})
         {
             if(check_Cmd("systemctl"))
@@ -7685,7 +7685,7 @@ sub writeLogs()
                 writeLog($LOG_DIR."/systemctl", $Sctl);
             }
         }
-        
+
         if(check_Cmd("iostat"))
         {
             listProbe("logs", "iostat");
@@ -7693,20 +7693,20 @@ sub writeLogs()
             $Iostat=~s/\(.+\)/(...)/;
             writeLog($LOG_DIR."/iostat", $Iostat);
         }
-        
+
         if(check_Cmd("acpi"))
         {
             listProbe("logs", "acpi");
             my $Acpi = runCmd("acpi -V 2>/dev/null");
             writeLog($LOG_DIR."/acpi", $Acpi);
         }
-        
+
         if(defined $KernMod{"fglrx"} and $KernMod{"fglrx"}!=0)
         {
             listProbe("logs", "fglrxinfo");
             my $Fglrxinfo = runCmd("fglrxinfo -t 2>&1");
             writeLog($LOG_DIR."/fglrxinfo", $Fglrxinfo);
-            
+
             listProbe("logs", "amdconfig");
             my $AMDconfig = runCmd("amdconfig --list-adapters 2>&1");
             writeLog($LOG_DIR."/amdconfig", $AMDconfig);
@@ -7716,7 +7716,7 @@ sub writeLogs()
             foreach ("64", "")
             {
                 my $NvidiaSmi_Path = "/usr/lib".$_."/nvidia/bin/nvidia-smi";
-                
+
                 if(-e $NvidiaSmi_Path)
                 {
                     listProbe("logs", "nvidia-smi");
@@ -7726,7 +7726,7 @@ sub writeLogs()
                 }
             }
         }
-        
+
         if(check_Cmd("vulkaninfo"))
         {
             listProbe("logs", "vulkaninfo");
@@ -7735,7 +7735,7 @@ sub writeLogs()
                 writeLog($LOG_DIR."/vulkaninfo", $Vulkaninfo);
             }
         }
-        
+
         if(check_Cmd("vdpauinfo"))
         {
             listProbe("logs", "vdpauinfo");
@@ -7747,7 +7747,7 @@ sub writeLogs()
                 writeLog($LOG_DIR."/vdpauinfo", clearLog_X11($Vdpauinfo));
             }
         }
-        
+
         if(check_Cmd("vainfo"))
         {
             listProbe("logs", "vainfo");
@@ -7759,7 +7759,7 @@ sub writeLogs()
                 writeLog($LOG_DIR."/vainfo", clearLog_X11($Vainfo));
             }
         }
-        
+
         listProbe("logs", "lsblk");
         my $Lsblk = "";
         if(check_Cmd("lsblk"))
@@ -7772,33 +7772,33 @@ sub writeLogs()
                 $LsblkCmd .= " 2>&1";
             }
             $Lsblk = runCmd($LsblkCmd);
-            
+
             if($Lsblk=~/unknown column/)
             { # CentOS 6: no PARTUUID column
                 $LsblkCmd=~s/\,PARTUUID//g;
                 $Lsblk = runCmd($LsblkCmd);
             }
-            
+
             if($Opt{"Snap"} and $Lsblk=~/Permission denied/) {
                 $Lsblk = "";
             }
         }
         writeLog($LOG_DIR."/lsblk", $Lsblk);
-        
+
         if(not $Opt{"Docker"})
         {
             listProbe("logs", "fstab");
             my $Fstab = readFile("/etc/fstab");
             writeLog($LOG_DIR."/fstab", $Fstab);
         }
-        
+
         if(not $Opt{"Flatpak"})
         {
             listProbe("logs", "lscpu");
             my $Lscpu = runCmd("lscpu 2>&1");
             writeLog($LOG_DIR."/lscpu", $Lscpu);
         }
-        
+
         if(check_Cmd("cpuid"))
         {
             listProbe("logs", "cpuid");
@@ -7813,22 +7813,22 @@ sub writeLogs()
             $Cpuinfo=~s/\n\n(.|\n)+\Z/\n/g; # for one core
             writeLog($LOG_DIR."/cpuinfo", $Cpuinfo);
         }
-        
+
         listProbe("logs", "scsi");
         my $Scsi = readFile("/proc/scsi/scsi");
         if($Scsi)
         { # list all devices in RAID
             writeLog($LOG_DIR."/scsi", $Scsi);
         }
-        
+
         listProbe("logs", "ioports");
         my $IOports = readFile("/proc/ioports");
         writeLog($LOG_DIR."/ioports", $IOports);
-        
+
         listProbe("logs", "interrupts");
         my $Interrupts = readFile("/proc/interrupts");
         writeLog($LOG_DIR."/interrupts", $Interrupts);
-        
+
         listProbe("logs", "aplay");
         my $Aplay = "";
         if(check_Cmd("aplay"))
@@ -7839,7 +7839,7 @@ sub writeLogs()
             }
         }
         writeLog($LOG_DIR."/aplay", $Aplay);
-        
+
         listProbe("logs", "arecord");
         my $Arecord = "";
         if(check_Cmd("arecord"))
@@ -7850,13 +7850,13 @@ sub writeLogs()
             }
         }
         writeLog($LOG_DIR."/arecord", $Arecord);
-        
+
         listProbe("logs", "amixer");
         my %CardNums = ();
         while($Aplay=~/card\s+(\d+)/g) {
             $CardNums{$1} = 1;
         }
-        
+
         my $Amixer = "";
         foreach my $ACard (sort {int($a)<=>int($b)} keys(%CardNums))
         {
@@ -7865,20 +7865,20 @@ sub writeLogs()
             $Amixer .= "\n";
         }
         writeLog($LOG_DIR."/amixer", $Amixer);
-        
+
         listProbe("logs", "alsactl");
         system("alsactl store -f $TMP_DIR/alsactl 2>/dev/null");
         if(-f "$TMP_DIR/alsactl") {
             move("$TMP_DIR/alsactl", $LOG_DIR."/alsactl");
         }
-        
+
         if(check_Cmd("systemd-analyze"))
         {
             listProbe("logs", "systemd-analyze");
             my $SystemdAnalyze = runCmd("systemd-analyze blame 2>/dev/null");
             writeLog($LOG_DIR."/systemd-analyze", $SystemdAnalyze);
         }
-        
+
         if(-f "/var/log/gpu-manager.log")
         { # Ubuntu
             listProbe("logs", "gpu-manager.log");
@@ -7886,7 +7886,7 @@ sub writeLogs()
                 writeLog($LOG_DIR."/gpu-manager.log", $GpuManager);
             }
         }
-        
+
         if(not $Opt{"Docker"})
         {
             listProbe("logs", "modprobe.d");
@@ -7904,24 +7904,24 @@ sub writeLogs()
                 }
                 $Mprobe .= "\n";
                 my $Content = readFile("/etc/modprobe.d/".$Mp);
-                
+
                 $Content=~s&http(s|)://[^ ]+&&g;
-                
+
                 $Mprobe .= $Content;
                 $Mprobe .= "\n\n";
             }
             writeLog($LOG_DIR."/modprobe.d", $Mprobe);
         }
-        
+
         listProbe("logs", "xorg.conf.d");
         my $XConfig = "";
-        
+
         foreach my $XDir ("/etc/X11/xorg.conf.d", "/usr/share/X11/xorg.conf.d")
         {
             if(not -d $XDir) {
                 next;
             }
-            
+
             my @XorgConfD = listDir($XDir);
             foreach my $Xc (@XorgConfD)
             {
@@ -7937,11 +7937,11 @@ sub writeLogs()
                 $XConfig .= "\n\n";
             }
         }
-        
+
         if(not $Opt{"Docker"} or $XConfig) {
             writeLog($LOG_DIR."/xorg.conf.d", $XConfig);
         }
-        
+
         if($Opt{"Scanners"})
         {
             if(check_Cmd("sane-find-scanner"))
@@ -7950,7 +7950,7 @@ sub writeLogs()
                 my $FindScanner = runCmd("sane-find-scanner -q 2>/dev/null");
                 writeLog($LOG_DIR."/sane-find-scanner", $FindScanner);
             }
-            
+
             if(check_Cmd("scanimage"))
             {
                 listProbe("logs", "scanimage");
@@ -7962,7 +7962,7 @@ sub writeLogs()
             }
         }
     }
-    
+
     # level=maximal
     if($Opt{"LogLevel"} eq "maximal")
     {
@@ -7970,38 +7970,38 @@ sub writeLogs()
         my $Firmware = runCmd("find /lib/firmware -type f | sort");
         $Firmware=~s&/lib/firmware/&&g;
         writeLog($LOG_DIR."/firmware", $Firmware);
-        
+
         listProbe("logs", "top");
         my $TopInfo = runCmd("top -n 1 -b 2>&1");
         if($SessUser) {
             $TopInfo=~s/ \Q$SessUser\E / USER /g;
         }
         writeLog($LOG_DIR."/top", $TopInfo);
-        
+
         if(check_Cmd("pstree"))
         {
             listProbe("logs", "pstree");
             my $Pstree = runCmd("pstree 2>&1");
             writeLog($LOG_DIR."/pstree", $Pstree);
         }
-        
+
         if(check_Cmd("numactl"))
         {
             listProbe("logs", "numactl");
             my $Numactl = runCmd("numactl -H");
-            
+
             if($Numactl) {
                 writeLog($LOG_DIR."/numactl", $Numactl);
             }
         }
-        
+
         if(check_Cmd("slabtop"))
         {
             listProbe("logs", "slabtop");
             my $Slabtop = runCmd("slabtop -o");
             writeLog($LOG_DIR."/slabtop", $Slabtop);
         }
-        
+
         # scan for available WiFi networks
         if(check_Cmd("iw"))
         {
@@ -8024,7 +8024,7 @@ sub writeLogs()
             $IwScan = hideMACs($IwScan);
             writeLog($LOG_DIR."/iw_scan", $IwScan);
         }
-        
+
         # scan for available bluetooth connections
         if(check_Cmd("hcitool"))
         {
@@ -8038,19 +8038,19 @@ sub writeLogs()
                 writeLog($LOG_DIR."/hcitool_scan", $HciScan);
             }
         }
-        
+
         listProbe("logs", "route");
         my $Route = runCmd("route 2>&1");
         $Route = hideIPs($Route);
         writeLog($LOG_DIR."/route", $Route);
-        
+
         if(check_Cmd("xvinfo"))
         {
             listProbe("logs", "xvinfo");
             my $XVInfo = runCmd("xvinfo 2>&1");
             writeLog($LOG_DIR."/xvinfo", clearLog_X11($XVInfo));
         }
-        
+
         if(check_Cmd("lsinitrd"))
         {
             listProbe("logs", "lsinitrd");
@@ -8058,14 +8058,14 @@ sub writeLogs()
             $Lsinitrd=~s/.*?(\w+\s+\d+\s+\d\d\d\d\s+)/$1/g;
             writeLog($LOG_DIR."/lsinitrd", $Lsinitrd);
         }
-        
+
         if(check_Cmd("update-alternatives"))
         {
             listProbe("logs", "update-alternatives");
             my $Alternatives = runCmd("update-alternatives --list 2>/dev/null");
             writeLog($LOG_DIR."/update-alternatives", $Alternatives);
         }
-        
+
         if($Opt{"Printers"})
         {
             if($Admin)
@@ -8077,17 +8077,17 @@ sub writeLogs()
                     my $CupsError = readFile($ELog);
                     writeLog($LOG_DIR."/cups_error_log", $CupsError);
                 }
-                
+
                 my $ALog = "/var/log/cups/access_log";
                 if(-e $ALog)
                 {
                     listProbe("logs", "cups_access_log");
-                    my $CupsAccess = readFile($ALog); 
+                    my $CupsAccess = readFile($ALog);
                     writeLog($LOG_DIR."/cups_access_log", $CupsAccess);
                 }
             }
         }
-        
+
         # Disabled as it can hang your system
         # my $SuperIO = "";
         # if($Admin) {
@@ -8095,16 +8095,16 @@ sub writeLogs()
         # }
         # writeLog($LOG_DIR."/superiotool", $SuperIO);
     }
-    
+
     if($Opt{"DumpACPI"})
     {
         listProbe("logs", "acpidump");
         my $AcpiDump = "";
-        
+
         # To decode acpidump:
         #  1. acpixtract -a acpidump
         #  2. iasl -d ECDT.dat
-        
+
         if($Admin)
         {
             if(check_Cmd("acpidump")) {
@@ -8112,7 +8112,7 @@ sub writeLogs()
             }
         }
         writeLog($LOG_DIR."/acpidump", $AcpiDump);
-        
+
         if($Opt{"DecodeACPI"})
         {
             if(-s $LOG_DIR."/acpidump")
@@ -8123,7 +8123,7 @@ sub writeLogs()
             }
         }
     }
-    
+
     print "Ok\n";
 }
 
@@ -8134,12 +8134,12 @@ sub check_Cmd(@)
     if(@_) {
         $Verify = shift(@_);
     }
-    
+
     if(index($Cmd, "/")!=-1 and -x $Cmd)
     { # relative or absolute path
         return $Cmd;
     }
-    
+
     foreach my $Dir (sort {length($a)<=>length($b)} split(/:/, $ENV{"PATH"}))
     {
         if(-x $Dir."/".$Cmd)
@@ -8169,38 +8169,38 @@ sub decodeACPI($$)
 {
     my ($Dump, $Output) = @_;
     $Dump = abs_path($Dump);
-    
+
     if(not check_Cmd("acpixtract")
     or not check_Cmd("iasl")) {
         return 0;
     }
-    
+
     my $TmpDir = $TMP_DIR."/acpi";
     mkpath($TmpDir);
     chdir($TmpDir);
-    
+
     # list data
     my $DSL = runCmd("acpixtract -l \"$Dump\" 2>&1");
     $DSL .= "\n";
-    
+
     # extract *.dat
     system("acpixtract -a \"$Dump\" >/dev/null 2>&1");
-    
+
     # decode *.dat
     my @Files = listDir(".");
-    
+
     foreach my $File (@Files)
     {
         if($File=~/\A(.+)\.dat\Z/)
         {
             my $Name = $1;
-            
+
             if($Name=~/dsdt/i) {
                 # next;
             }
-            
+
             my $Log2 = runCmd("iasl -d \"$File\" 2>&1");
-            
+
             my $DslFile = $Name.".dsl";
             if(-f $DslFile)
             {
@@ -8212,25 +8212,25 @@ sub decodeACPI($$)
                 my $Data = readFile($DslFile);
                 $Data=~s&\A\s*/\*.*?\*/\s*&&sg;
                 $DSL .= $Data;
-                
+
                 $DSL .= "\n";
                 $DSL .= "\n";
             }
-            
+
             unlink($File);
             unlink($DslFile);
         }
     }
     chdir($ORIG_DIR);
-    
+
     writeFile($Output, $DSL);
-    
+
     if($DSL) {
         unlink($Dump);
     }
-    
+
     rmtree($TmpDir);
-    
+
     return 1;
 }
 
@@ -8240,24 +8240,24 @@ sub clearLog_X11($)
     and $_[0]=~/No protocol specified|Can't open display|unable to open display|Unable to connect to|cannot connect to/i) {
         return "";
     }
-    
+
     return $_[0];
 }
 
 sub clearLog($)
 {
     my $Log = $_[0];
-    
+
     my $Sc = chr(27);
     $Log=~s/$Sc\[.*?m//g;
-    
+
     return $Log;
 }
 
 sub showInfo()
 {
     my $ShowDir = $DATA_DIR;
-    
+
     if($Opt{"Source"})
     {
         if(-f $Opt{"Source"})
@@ -8268,13 +8268,13 @@ sub showInfo()
                 chdir($TMP_DIR);
                 system("tar", "-m", "-xJf", $Pkg);
                 chdir($ORIG_DIR);
-                
+
                 if($?)
                 {
                     print STDERR "ERROR: failed to extract package (".$?.")\n";
                     exitStatus(1);
                 }
-                
+
                 if(my @Dirs = listDir($TMP_DIR)) {
                     $ShowDir = $TMP_DIR."/".$Dirs[0];
                 }
@@ -8308,14 +8308,14 @@ sub showInfo()
             exitStatus(1);
         }
     }
-    
+
     my %Tbl;
     my %STbl;
-    
+
     foreach (split(/\s*\n\s*/, readFile($ShowDir."/devices")))
     {
         my @Info = split(";", $_);
-        
+
         my %Dev = (
             "ID"      => $Info[0],
             "Class"   => $Info[1],
@@ -8327,15 +8327,15 @@ sub showInfo()
             "SVendor" => $Info[7],
             "SDevice" => $Info[8]
         );
-        
+
         foreach my $Attr (keys(%Dev))
         {
             if(not defined $Tbl{$Attr}) {
                 $Tbl{$Attr} = [];
             }
-            
+
             my $Val = $Dev{$Attr};
-            
+
             if($Attr eq "ID")
             {
                 if(index($Val, "-serial-")!=-1)
@@ -8344,7 +8344,7 @@ sub showInfo()
                     $Val=~s/\-serial\-(.+?)\Z//;
                 }
             }
-            
+
             if($Opt{"Compact"})
             {
                 if($Attr eq "ID")
@@ -8376,17 +8376,17 @@ sub showInfo()
                     }
                 }
             }
-            
+
             push(@{$Tbl{$Attr}}, $Val);
         }
     }
-    
+
     foreach (split(/\s*\n\s*/, readFile($ShowDir."/host")))
     {
         if(/(\w+):(.*)/)
         {
             my ($Attr, $Val) = ($1, $2);
-            
+
             if($Opt{"Compact"})
             {
                 if($Attr eq "id")
@@ -8396,23 +8396,23 @@ sub showInfo()
                     }
                 }
             }
-            
+
             $STbl{$Attr} = $Val;
         }
     }
-    
+
     my $Rows = $#{$Tbl{"ID"}};
-    
+
     print "\n";
     print "Total devices: ".($Rows + 1)."\n";
-    
+
     if(defined $Opt{"Verbose"}) {
         showTable(\%Tbl, $Rows, "ID", "Class", "Status", "Type", "Vendor", "Device");
     }
     else {
         showTable(\%Tbl, $Rows, "ID", "Class", "Vendor", "Device");
     }
-    
+
     print "\n";
     print "Host Info\n";
     showHash(\%STbl, "system", "arch", "kernel", "vendor", "model", "year", "type", "id");
@@ -8422,15 +8422,15 @@ sub showTable(@)
 {
     my $Tbl = shift(@_);
     my $Num = shift(@_);
-    
+
     my %Max;
-    
+
     foreach my $Col (sort keys(%{$Tbl}))
     {
         if(not defined $Max{$Col}) {
             $Max{$Col} = 0;
         }
-        
+
         foreach my $El (@{$Tbl->{$Col}})
         {
             if(length($El) > $Max{$Col}) {
@@ -8438,10 +8438,10 @@ sub showTable(@)
             }
         }
     }
-    
+
     my $Br = "";
     my $Hd = "";
-    
+
     foreach my $Col (@_)
     {
         my $Hd_T = $Col;
@@ -8450,18 +8450,18 @@ sub showTable(@)
         }
         $Hd .= "| ".$Col;
         $Hd .= mulCh(" ", $Max{$Col} - length($Col) + 1);
-        
+
         $Br .= "+";
         $Br .= mulCh("-", $Max{$Col} + 2);
     }
-    
+
     $Br .= "+";
     $Hd .= "|";
-    
+
     print $Br."\n";
     print $Hd."\n";
     print $Br."\n";
-    
+
     foreach my $Row (0 .. $Num)
     {
         foreach my $Col (@_)
@@ -8472,23 +8472,23 @@ sub showTable(@)
         }
         print "|\n";
     }
-    
+
     print $Br."\n";
 }
 
 sub showHash(@)
 {
     my $Hash = shift(@_);
-    
+
     my $KMax = 0;
     my $VMax = 0;
-    
+
     foreach my $Key (sort keys(%{$Hash}))
     {
         if(not grep {$Key eq $_} @_) {
             next;
         }
-        
+
         my $Val = $Hash->{$Key};
         if(length($Val) > $VMax) {
             $VMax = length($Val);
@@ -8497,19 +8497,19 @@ sub showHash(@)
             $KMax = length($Key);
         }
     }
-    
+
     my $Br = "+";
     $Br .= mulCh("-", $KMax + 2);
     $Br .= "+";
     $Br .= mulCh("-", $VMax + 2);
     $Br .= "+";
-    
+
     foreach my $Key (@_)
     {
         my $Val = $Hash->{$Key};
-        
+
         print $Br."\n";
-        
+
         print "| ";
         print ucfirst($Key);
         print alignStr($Key, $KMax + 1);
@@ -8518,7 +8518,7 @@ sub showHash(@)
         print alignStr($Val, $VMax + 1);
         print "|\n";
     }
-    
+
     print $Br."\n";
     print "\n";
 }
@@ -8535,11 +8535,11 @@ sub mulCh($$)
 sub alignStr($$)
 {
     my $Align = "";
-    
+
     foreach (1 .. $_[1] - length($_[0])) {
         $Align .= " ";
     }
-    
+
     return $Align;
 }
 
@@ -8547,15 +8547,15 @@ sub checkGraphics()
 {
     print "Check graphics ... ";
     my $Glxgears = getGears();
-    
+
     listProbe("tests", "glxgears");
     my $Out_I = runCmd("vblank_mode=0 $Glxgears");
     $Out_I=~s/(\d+ frames)/\n$1/;
     $Out_I=~s/GL_EXTENSIONS =.*?\n//;
     writeLog($TEST_DIR."/glxgears", $Out_I);
-    
+
     my $Out_D = undef;
-    
+
     if(grep {defined $WorkMod{$_}} @G_DRIVERS_INTEL)
     {
         if(defined $WorkMod{"nvidia"})
@@ -8583,25 +8583,25 @@ sub checkGraphics()
             $Out_D = runCmd("DRI_PRIME=1 vblank_mode=0 $Glxgears");
         }
     }
-    
+
     if($Out_D)
     {
         $Out_D=~s/(\d+ frames)/\n$1/;
         $Out_D=~s/GL_EXTENSIONS =.*?\n//;
         writeLog($TEST_DIR."/glxgears_discrete", $Out_D);
     }
-    
+
     checkGraphicsCardOutput($Out_I, $Out_D);
-    
+
     print "Ok\n";
 }
 
 sub checkGraphicsCardOutput($$)
 {
     my ($Int, $Discrete) = @_;
-    
+
     my $Success = "frames in";
-    
+
     if(grep {defined $WorkMod{$_}} @G_DRIVERS_INTEL)
     {
         if(defined $WorkMod{"nvidia"})
@@ -8622,7 +8622,7 @@ sub checkGraphicsCardOutput($$)
                 setCardStatus("radeon", "works");
             }
         }
-        
+
         if($Int=~/$Success/ and $Int=~/GL_VENDOR.+Intel/i)
         {
             foreach (@G_DRIVERS_INTEL) {
@@ -8647,9 +8647,9 @@ sub checkGraphicsCardOutput($$)
 sub setCardStatus($$)
 {
     my ($Dr, $Status) = @_;
-    
+
     my $V = $DriverVendor{$Dr};
-    
+
     if(defined $GraphicsCards{$V})
     {
         foreach my $ID (sort keys(%{$GraphicsCards{$V}}))
@@ -8657,7 +8657,7 @@ sub setCardStatus($$)
             if($GraphicsCards{$V}{$ID} eq $Dr or $Status eq "detected")
             {
                 $HW{$ID}{"Status"} = $Status;
-                
+
                 if($Status eq "works") {
                     setAttachedStatus($ID, $Status);
                 }
@@ -8674,7 +8674,7 @@ sub checkHW()
             checkGraphics();
         }
     }
-    
+
     if($Opt{"CheckMemory"} and check_Cmd("memtester"))
     {
         print "Check memory ... ";
@@ -8684,7 +8684,7 @@ sub checkHW()
         writeLog($TEST_DIR."/memtester", $Memtester);
         print "Ok\n";
     }
-    
+
     if($Opt{"CheckHdd"} and check_Cmd("hdparm"))
     {
         print "Check HDDs ... ";
@@ -8699,20 +8699,20 @@ sub checkHW()
             $HDD_Read .= $Hdd_Info->{"Vendor"}." ".$Hdd_Info->{"Device"}."\n";
             $HDD_Read .= "$Cmd\n";
             $HDD_Read .= $Out."\n";
-            
+
             if(defined $Opt{"LimitCheckHdd"}
             and $HDD_Num++>=$Opt{"LimitCheckHdd"})
             {
                 last;
             }
         }
-        
+
         if($HDD_Read) {
             writeLog($TEST_DIR."/hdd_read", $HDD_Read);
         }
         print "Ok\n";
     }
-    
+
     if($Opt{"CheckCpu"} and check_Cmd("dd") and check_Cmd("md5sum"))
     {
         if(my @CPUs = grep {$_=~/\Acpu:/} keys(%HW))
@@ -8744,20 +8744,20 @@ sub writeLog($$)
 {
     my ($Path, $Content) = @_;
     my $Log = basename($Path);
-    
+
     if(not grep {$Log eq $_} @ProtectedLogs)
     {
         my $MaxSize = 2*$MAX_LOG_SIZE;
-        
+
         if(grep {$Log eq $_} @LARGE_LOGS) {
             $MaxSize = $MAX_LOG_SIZE;
         }
-        
+
         if(length($Content)>$MaxSize) {
             $Content = substr($Content, 0, $MaxSize-3)."...";
         }
     }
-    
+
     writeFile($Path, $Content);
 }
 
@@ -8787,22 +8787,22 @@ sub writeFile($$)
 sub readPciIds($$$)
 {
     my $List = readFile($_[0]);
-    
+
     my $Info = $_[1];
     my $Info_D = $_[2];
-    
+
     my ($V, $D, $SV, $SD) = ();
-    
+
     foreach (split(/\n/, $List))
     {
         if(/\A(\t*)(\w{4}) /)
         {
             my $L = length($1);
-            
+
             if($L==0)
             {
                 $V = $2;
-                
+
                 if(/\w{4}\s+(.*?)\Z/) {
                     $PciVendor{$V} = $1;
                 }
@@ -8810,7 +8810,7 @@ sub readPciIds($$$)
             elsif($L==1)
             {
                 $D = $2;
-                
+
                 if(/\t\w{4}\s+(.*?)\Z/) {
                     $Info->{$V}{$D} = $1;
                 }
@@ -8821,7 +8821,7 @@ sub readPciIds($$$)
                 {
                     $SV = $1;
                     $SD = $2;
-                    
+
                     $Info_D->{$V}{$D}{$SV}{$SD} = $3;
                 }
             }
@@ -8832,24 +8832,24 @@ sub readPciIds($$$)
 sub readUsbIds($$)
 {
     my $List = readFile($_[0]);
-    
+
     my $Info = $_[1];
-    
+
     my ($V, $D) = ();
-    
+
     foreach (split(/\n/, $List))
     {
         if(/\A(\t*)(\w{4}) /)
         {
             my $L = length($1);
-            
+
             if($L==0) {
                 $V = $2;
             }
             elsif($L==1)
             {
                 $D = $2;
-                
+
                 if(/\t\w{4}\s+(.*?)\Z/) {
                     $Info->{$V}{$D} = $1;
                 }
@@ -8867,24 +8867,24 @@ sub readSdioIds($$$)
     if(not -e $_[0]) {
         return;
     }
-    
+
     my $List = readFile($_[0]);
-    
+
     my $Info = $_[1];
     my $Vnds = $_[2];
-    
+
     my ($V, $D) = ();
-    
+
     foreach (split(/\n/, $List))
     {
         if(/\A(\t*)(\w{4}) /)
         {
             my $L = length($1);
-            
+
             if($L==0)
             {
                 $V = $2;
-                
+
                 if(/\A\w{4}\s+(.*?)\Z/) {
                     $Vnds->{$V} = $1;
                 }
@@ -8892,7 +8892,7 @@ sub readSdioIds($$$)
             elsif($L==1)
             {
                 $D = $2;
-                
+
                 if(/\t\w{4}\s+(.*?)\Z/) {
                     $Info->{$V}{$D} = $1;
                 }
@@ -8904,9 +8904,9 @@ sub readSdioIds($$$)
 sub downloadProbe($$)
 {
     my ($ID, $Dir) = @_;
-    
+
     my $Page = downloadFileContent("$URL/index.php?probe=$ID");
-    
+
     if(index($Page, "ERROR(3):")!=-1) {
         return -1;
     }
@@ -8921,13 +8921,13 @@ sub downloadProbe($$)
         print STDERR "ERROR: Internet connection is required\n";
         exitStatus(1);
     }
-    
+
     print "Importing probe $ID\n";
-    
+
     my %LogDir = ("log"=>$Dir."/logs", "test"=>$Dir."/tests");
     mkpath($LogDir{"log"});
     mkpath($LogDir{"test"});
-    
+
     my $NPage = "";
     foreach my $Line (split(/\n/, $Page))
     {
@@ -8935,13 +8935,13 @@ sub downloadProbe($$)
         {
             my $Href = $1;
             my $Url = $3;
-            
+
             if($Url=~/((css|js|images)\/[^?]+)/)
             {
                 my ($SPath, $Subj) = ($1, $2);
                 my $Content = downloadFileContent($URL."/".$Url);
                 writeFile($Dir."/".$SPath, $Content);
-                
+
                 if($Subj eq "css")
                 {
                     while($Content=~s!url\(['"]([^'"]+)['"]\)!!)
@@ -8957,20 +8957,20 @@ sub downloadProbe($$)
                 my ($LogType, $LogName) = ($1, $2);
                 my $LogPath = $LogDir{$LogType}."/".$LogName.".html";
                 my $Log = downloadFileContent($URL."/".$Url);
-                
+
                 if(index($Log, "ERROR(1):")!=-1)
                 {
                     print STDERR "ERROR: You are not allowed temporarily to download probes\n";
                     rmtree($Dir."/logs");
                     exitStatus(1);
                 }
-                
+
                 $Log = preparePage($Log);
                 $Log=~s!(['"])(css|js|images)\/!$1../$2\/!g;
                 $Log=~s!index.php\?probe=$ID!../index.html!;
-                
+
                 writeFile($LogPath, $Log);
-                
+
                 my $LogD = basename($LogDir{$LogType});
                 $Line=~s/\Q$Url\E/$LogD\/$LogName.html/;
             }
@@ -8981,12 +8981,12 @@ sub downloadProbe($$)
                 $Line=~s/\Q$Url\E/$URL\/$Url/g;
             }
         }
-        
+
         $NPage .= $Line."\n";
     }
     $NPage=~s&\Q<!-- descr -->\E(.|\n)+\Q<!-- descr end -->\E\n&This probe is available online by <a href=\'$URL/?probe=$ID\'>this URL</a> in the <a href=\'$URL\'>Hardware Database</a>.<p/>&;
     writeFile($Dir."/index.html", preparePage($NPage));
-    
+
     return 0;
 }
 
@@ -9007,7 +9007,7 @@ sub downloadFileContent($)
     {
         my $Cmd = getCurlCmd($Url);
         return `$Cmd`;
-        
+
     }
     else {
         return getRequest($Url, "NoSSL");
@@ -9022,7 +9022,7 @@ sub downloadFile($$)
     {
         my $Cmd = getCurlCmd($Url)." --output \"$Output\"";
         return `$Cmd`;
-        
+
     }
     else {
         writeFile($Output, getRequest($Url, "NoSSL"));
@@ -9043,27 +9043,27 @@ sub getCurlCmd($)
 sub importProbes($)
 {
     my $Dir = $_[0];
-    
+
     if($Opt{"Snap"}) {
         $Dir = $ENV{"SNAP_USER_COMMON"}."/".$Dir;
     }
     elsif($Opt{"Flatpak"}) {
         $Dir = $ENV{"XDG_DATA_HOME"}."/".$Dir;
     }
-    
+
     if(not -d $Dir)
     {
         mkpath($Dir);
         setPublic($Dir);
     }
-    
+
     my ($Imported, $OneProbe) = (undef, undef);
-    
+
     my $IndexInfo = eval(readFile($Dir."/index.info"));
     if(not $IndexInfo) {
         $IndexInfo = {};
     }
-    
+
     my @Paths = ();
     if(-d $PROBE_DIR)
     {
@@ -9071,7 +9071,7 @@ sub importProbes($)
             push(@Paths, $PROBE_DIR."/".$P);
         }
     }
-    
+
     my $OldProbes = getOldProbeDir();
     if($OldProbes and -d $OldProbes)
     { # ROSA: changed probe place in 1.3
@@ -9079,18 +9079,18 @@ sub importProbes($)
             push(@Paths, $OldProbes."/".$P);
         }
     }
-    
+
     foreach my $D (@Paths)
     {
         my $P = basename($D);
         if($P eq "LATEST" or not -d $D or not listDir($D)) {
             next;
         }
-        
+
         if(defined $IndexInfo->{"SkipProbes"}{$P}) {
             next;
         }
-        
+
         my $To = $Dir."/".$P;
         if(not -e $To or not -e $To."/logs")
         {
@@ -9098,7 +9098,7 @@ sub importProbes($)
             {
                 my $TmpDir = $TMP_DIR."/hw.info";
                 system("tar -xf $D/* -C $TMP_DIR");
-                
+
                 my %Prop = ();
                 foreach my $Line (split(/\n/, readFile($TmpDir."/host")))
                 {
@@ -9106,7 +9106,7 @@ sub importProbes($)
                         $Prop{$1} = $2;
                     }
                 }
-                
+
                 my @DStat = stat($TmpDir);
                 $Prop{"date"} = $DStat[9]; # last modify time
                 $Prop{"hwaddr"} = lc($Prop{"hwaddr"});
@@ -9120,14 +9120,14 @@ sub importProbes($)
             }
         }
     }
-    
+
     writeFile($Dir."/index.info", Data::Dumper::Dumper($IndexInfo));
     setPublic($Dir."/index.info");
-    
+
     if(not $Imported) {
         print "No probes to import\n";
     }
-    
+
     my %Indexed = ();
     foreach my $P (listDir($Dir))
     {
@@ -9139,11 +9139,11 @@ sub importProbes($)
         $Indexed{lc($Prop->{"hwaddr"})}{$P} = $Prop;
         $OneProbe = $P;
     }
-    
+
     if(not $OneProbe) {
         return -1;
     }
-    
+
     my $LIST = "";
     foreach my $HWaddr (sort keys(%Indexed))
     {
@@ -9171,7 +9171,7 @@ sub importProbes($)
                 $Title = "Computer (".getShortHWid($Hw->{"hwaddr"}).")";
             }
         }
-        
+
         $LIST .= "<h2>$Title</h2>\n";
         $LIST .= "<table class='tbl highlight local_timeline'>\n";
         $LIST .= "<tr>\n";
@@ -9184,44 +9184,44 @@ sub importProbes($)
             if($System=~s/\A(\w+)-/$1 /) {
                 $SystemClass = $1;
             }
-            
+
             $LIST .= "<tr class='pointer' onclick=\"document.location='$P/index.html'\">\n";
-            
+
             $LIST .= "<td>\n";
             $LIST .= "<a href=\'$P/index.html\'>$P</a>\n";
             $LIST .= "</td>\n";
-            
+
             $LIST .= "<td>\n";
             $LIST .= $Indexed{$HWaddr}{$P}->{"arch"};
             $LIST .= "</td>\n";
-            
+
             $LIST .= "<td>\n";
             $LIST .= "<span class=\'$SystemClass\'>&nbsp;</span> ".ucfirst($System);
             $LIST .= "</td>\n";
-            
+
             $LIST .= "<td title='".getTimeStamp($Indexed{$HWaddr}{$P}->{"date"})."'>\n";
             $LIST .= getDateStamp($Indexed{$HWaddr}{$P}->{"date"});
             $LIST .= "</td>\n";
-            
+
             $LIST .= "<td>\n";
             $LIST .= $Indexed{$HWaddr}{$P}->{"id"};
             $LIST .= "</td>\n";
-            
+
             $LIST .= "</tr>\n";
         }
         $LIST .= "</table>\n";
         $LIST .= "<br/>\n";
     }
-    
+
     my $Descr = "This is your collection of probes. See more probes and computers online in the <a href=\'$URL\'>Hardware Database</a>.";
     my $INDEX = readFile($Dir."/".$OneProbe."/index.html");
     $INDEX=~s&\Q<!-- body -->\E(.|\n)+\Q<!-- body end -->\E\n&<h1>Probes Timeline</h1>\n$Descr\n$LIST\n&;
     $INDEX=~s&(\Q<title>\E)(.|\n)+(\Q</title>\E)&$1 Probes Timeline $3&;
     $INDEX=~s!(['"])(css|js|images)\/!$1$OneProbe/$2\/!g;
-    
+
     writeFile($Dir."/index.html", $INDEX);
     setPublic($Dir."/index.html");
-    
+
     print "Created index: $Dir/index.html\n";
 }
 
@@ -9262,14 +9262,14 @@ sub setPublic($)
     if(@_) {
         $R = shift(@_);
     }
-    
+
     my @Chmod = ("chmod", "775");
     if($R) {
         push(@Chmod, $R);
     }
     push(@Chmod, $Path);
     system(@Chmod);
-    
+
     if(not $Opt{"Snap"})
     {
         if(my $SessUser = getUser())
@@ -9287,7 +9287,7 @@ sub setPublic($)
 sub fixLogs($)
 {
     my $Dir = $_[0];
-    
+
     if(-f $Dir."/hwinfo"
     and -s $Dir."/hwinfo" < 200)
     { # Support for HW Probe 1.4
@@ -9297,14 +9297,14 @@ sub fixLogs($)
             writeFile($Dir."/hwinfo", "");
         }
     }
-    
+
     if(-f $Dir."/iostat"
     and -s $Dir."/iostat" < 50)
     { # Support for HW Probe 1.3
       # iostat: command not found
         unlink($Dir."/iostat");
     }
-    
+
     if(-f $Dir."/dmidecode"
     and -s $Dir."/dmidecode" < 160)
     { # Support for HW Probe 1.3
@@ -9312,7 +9312,7 @@ sub fixLogs($)
       # No SMBIOS nor DMI entry point found
         writeFile($Dir."/dmidecode", "");
     }
-    
+
     foreach my $L ("glxinfo", "xdpyinfo", "xinput", "vdpauinfo", "xrandr")
     {
         if(-e $Dir."/".$L
@@ -9323,14 +9323,14 @@ sub fixLogs($)
             }
         }
     }
-    
+
     if(-f $Dir."/vulkaninfo")
     { # Support for HW Probe 1.3
         if(readFile($Dir."/vulkaninfo")=~/Cannot create/i) {
             unlink($Dir."/vulkaninfo");
         }
     }
-    
+
     if(-f $Dir."/vainfo"
     and -s $Dir."/vainfo" < 200)
     { # Support for HW Probe 1.4
@@ -9339,21 +9339,21 @@ sub fixLogs($)
             writeFile($Dir."/vainfo", "");
         }
     }
-    
+
     if(-f $Dir."/cpupower")
     { # Support for HW Probe 1.3
         if(readFile($Dir."/cpupower")=~/cpupower not found/) {
             unlink($Dir."/cpupower");
         }
     }
-    
+
     if(-f $Dir."/mcelog")
     { # Support for HW Probe 1.4
         if(readFile($Dir."/mcelog")=~/No such file or directory/) {
             writeFile($Dir."/mcelog", "");
         }
     }
-    
+
     if(-f $Dir."/rfkill"
     and -s $Dir."/rfkill" < 70)
     { # Support for HW Probe 1.4
@@ -9362,7 +9362,7 @@ sub fixLogs($)
             writeFile($Dir."/rfkill", "");
         }
     }
-    
+
     foreach my $L ("aplay", "arecord")
     {
         if(-e $Dir."/".$L
@@ -9373,7 +9373,7 @@ sub fixLogs($)
             }
         }
     }
-    
+
     foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all", "pstree", "lsblk")
     {
         if(-f $Dir."/".$L
@@ -9386,7 +9386,7 @@ sub fixLogs($)
             writeFile($Dir."/".$L, "");
         }
     }
-    
+
     if(-e $Dir."/lsusb")
     {
         my $Lsusb = readFile($Dir."/lsusb");
@@ -9403,7 +9403,7 @@ sub fixLogs($)
             writeFile($Dir."/lsusb", $Lsusb);
         }
     }
-    
+
     if(-e $Dir."/inxi"
     and -s $Dir."/inxi" < 100)
     { # Support for HW Probe 1.4
@@ -9420,36 +9420,36 @@ sub scenario()
         helpMsg();
         exitStatus(0);
     }
-    
+
     if($Opt{"DumpVersion"})
     {
         print $TOOL_VERSION."\n";
         exitStatus(0);
     }
-    
+
     if($Opt{"ShowVersion"})
     {
         print $ShortUsage;
         exitStatus(0);
     }
-    
+
     if(checkModule("Digest/SHA.pm"))
     {
         $USE_DIGEST = 1;
         require Digest::SHA;
     }
-    
+
     if(checkModule("Data/Dumper.pm"))
     {
         $USE_DUMPER = 1;
         require Data::Dumper;
         $Data::Dumper::Sortkeys = 1;
     }
-    
+
     if($Opt{"DecodeACPI"}) {
         $Opt{"DumpACPI"} = 1;
     }
-    
+
     if($Opt{"LogLevel"})
     {
         if($Opt{"LogLevel"}=~/\A(min|mini|minimum)\Z/i) {
@@ -9458,20 +9458,20 @@ sub scenario()
         elsif($Opt{"LogLevel"}=~/\A(max|maxi|maximum)\Z/i) {
             $Opt{"LogLevel"} = "maximal";
         }
-        
+
         if($Opt{"LogLevel"}!~/\A(minimal|default|maximal)\Z/i)
         {
             print STDERR "ERROR: unknown log level \'".$Opt{"LogLevel"}."\'\n";
             exitStatus(1);
         }
-        
+
         $Opt{"LogLevel"} = lc($Opt{"LogLevel"});
         $Opt{"Logs"} = 1;
     }
     else {
         $Opt{"LogLevel"} = "default";
     }
-    
+
     if($Opt{"HWInfoPath"})
     {
         if(not -f $Opt{"HWInfoPath"})
@@ -9480,7 +9480,7 @@ sub scenario()
             exitStatus(1);
         }
     }
-    
+
     if($Opt{"IdentifyDrive"} or $Opt{"IdentifyMonitor"})
     {
         if(not $USE_DUMPER)
@@ -9489,7 +9489,7 @@ sub scenario()
             exitStatus(1);
         }
     }
-    
+
     if($Opt{"IdentifyDrive"})
     {
         if(not -f $Opt{"IdentifyDrive"})
@@ -9497,19 +9497,19 @@ sub scenario()
             print STDERR "ERROR: can't access file \'".$Opt{"IdentifyDrive"}."\'\n";
             exitStatus(1);
         }
-        
+
         my $DriveDesc = readFile($Opt{"IdentifyDrive"});
         my $DriveDev = "";
-        
+
         if($DriveDesc=~/\A(.+)\n/) {
             $DriveDev = $1;
         }
-        
+
         detectDrive($DriveDesc, $DriveDev);
         print Data::Dumper::Dumper(\%HW);
         exitStatus(0);
     }
-    
+
     if($Opt{"IdentifyMonitor"})
     {
         if(not -f $Opt{"IdentifyMonitor"})
@@ -9517,12 +9517,12 @@ sub scenario()
             print STDERR "ERROR: can't access file \'".$Opt{"IdentifyMonitor"}."\'\n";
             exitStatus(1);
         }
-        
+
         detectMonitor(readFile($Opt{"IdentifyMonitor"}));
         print Data::Dumper::Dumper(\%HW);
         exitStatus(0);
     }
-    
+
     if($Opt{"DecodeACPI_From"} and $Opt{"DecodeACPI_To"})
     {
         if(not -f $Opt{"DecodeACPI_From"})
@@ -9533,23 +9533,23 @@ sub scenario()
         decodeACPI($Opt{"DecodeACPI_From"}, $Opt{"DecodeACPI_To"});
         exitStatus(0);
     }
-    
+
     if($Opt{"All"})
     {
         $Opt{"Probe"} = 1;
         $Opt{"Logs"} = 1;
     }
-    
+
     if($Opt{"Check"})
     {
         $Opt{"Probe"} = 1;
         $Opt{"Logs"} = 1;
     }
-    
+
     if($Opt{"Probe"}) {
         $HWLogs = 1;
     }
-    
+
     if($Opt{"Probe"} and not $Opt{"FixProbe"})
     {
         if(-d $DATA_DIR)
@@ -9562,7 +9562,7 @@ sub scenario()
             rmtree($DATA_DIR);
         }
     }
-    
+
     if($Opt{"Probe"})
     {
         if(not $Admin
@@ -9572,14 +9572,14 @@ sub scenario()
             exitStatus(1);
         }
     }
-    
+
     if($Opt{"FixProbe"})
     {
         $HWLogs = 0;
         $Opt{"Probe"} = 0;
         $Opt{"Logs"} = 0;
     }
-    
+
     if($Opt{"Check"})
     {
         $Opt{"CheckGraphics"} = 1;
@@ -9587,14 +9587,14 @@ sub scenario()
         $Opt{"CheckHdd"} = 1;
         $Opt{"CheckCpu"} = 1;
     }
-    
+
     if($Opt{"CheckGraphics"} or $Opt{"CheckMemory"}
     or $Opt{"CheckHdd"} or $Opt{"CheckCpu"})
     {
         $Opt{"Check"} = 1;
         $Opt{"Logs"} = 1;
     }
-    
+
     if($Opt{"PciIDs"})
     {
         if(not -e $Opt{"PciIDs"})
@@ -9603,12 +9603,12 @@ sub scenario()
             exitStatus(1);
         }
         readPciIds($Opt{"PciIDs"}, \%PciInfo, \%PciInfo_D);
-        
+
         if(-e $Opt{"PciIDs"}.".add") {
             readPciIds($Opt{"PciIDs"}.".add", \%AddPciInfo, \%AddPciInfo_D);
         }
     }
-    
+
     if($Opt{"UsbIDs"})
     {
         if(not -e $Opt{"UsbIDs"})
@@ -9617,12 +9617,12 @@ sub scenario()
             exitStatus(1);
         }
         readUsbIds($Opt{"UsbIDs"}, \%UsbInfo);
-        
+
         if(-e $Opt{"UsbIDs"}.".add") {
             readUsbIds($Opt{"UsbIDs"}.".add", \%AddUsbInfo);
         }
     }
-    
+
     if($Opt{"SdioIDs"})
     {
         if(not -e $Opt{"SdioIDs"})
@@ -9631,12 +9631,12 @@ sub scenario()
             exitStatus(1);
         }
         readSdioIds($Opt{"SdioIDs"}, \%SdioInfo, \%SdioVendor);
-        
+
         if(-e $Opt{"SdioIDs"}.".add") {
             readSdioIds($Opt{"SdioIDs"}.".add", \%AddSdioInfo, \%AddSdioVendor);
         }
     }
-    
+
     if($Opt{"PnpIDs"})
     {
         if(not -e $Opt{"PnpIDs"})
@@ -9645,7 +9645,7 @@ sub scenario()
             exitStatus(1);
         }
     }
-    
+
     if($Opt{"FixProbe"})
     {
         if(not -e $Opt{"FixProbe"})
@@ -9653,18 +9653,18 @@ sub scenario()
             print STDERR "ERROR: can't access \'".$Opt{"FixProbe"}."\'\n";
             exitStatus(1);
         }
-        
+
         if(isPkg($Opt{"FixProbe"}))
         { # package
             my $PName = basename($Opt{"FixProbe"});
             $FixProbe_Pkg = abs_path($Opt{"FixProbe"});
             $Opt{"FixProbe"} = $FixProbe_Pkg;
-            
+
             copy($Opt{"FixProbe"}, $TMP_DIR."/".$PName);
             chdir($TMP_DIR);
             system("tar", "-m", "-xJf", $PName);
             chdir($ORIG_DIR);
-            
+
             $Opt{"FixProbe"} = $TMP_DIR."/hw.info";
         }
         elsif(-f $Opt{"FixProbe"})
@@ -9672,11 +9672,11 @@ sub scenario()
             print STDERR "ERROR: unsupported probe format \'".$Opt{"FixProbe"}."\'\n";
             exitStatus(1);
         }
-        
+
         $Opt{"FixProbe"}=~s/[\/]+\Z//g;
         $FixProbe_Logs = $Opt{"FixProbe"}."/logs";
         $FixProbe_Tests = $Opt{"FixProbe"}."/tests";
-        
+
         if(-d $Opt{"FixProbe"})
         {
             if(not listDir($FixProbe_Logs))
@@ -9690,7 +9690,7 @@ sub scenario()
             print STDERR "ERROR: can't access \'".$Opt{"FixProbe"}."\'\n";
             exitStatus(1);
         }
-        
+
         if(-f $FixProbe_Logs."/media_urls")
         { # support for old probes
             foreach my $File ("journalctl", "journalctl.1", "lib_modules",
@@ -9703,9 +9703,9 @@ sub scenario()
             {
                 unlink($FixProbe_Logs."/".$File);
             }
-            
+
             my $Udevadm = $FixProbe_Logs."/udevadm";
-            
+
             if(-f $Udevadm)
             {
                 if(readFile($Udevadm)!~/sdio/i) {
@@ -9713,12 +9713,12 @@ sub scenario()
                 }
             }
         }
-        
+
         if($Opt{"RmLog"} and -f $FixProbe_Logs."/".$Opt{"RmLog"}
         and not grep {$Opt{"RmLog"} eq $_} @ProtectedLogs) {
             writeFile($FixProbe_Logs."/".$Opt{"RmLog"}, "");
         }
-        
+
         if($Opt{"TruncateLog"} and -f $FixProbe_Logs."/".$Opt{"TruncateLog"}
         and not grep {$Opt{"TruncateLog"} eq $_} @ProtectedLogs)
         {
@@ -9726,7 +9726,7 @@ sub scenario()
                 writeLog($FixProbe_Logs."/".$Opt{"TruncateLog"}, $Content);
             }
         }
-        
+
         foreach my $L (@LARGE_LOGS)
         {
             if(-s $FixProbe_Logs."/".$L > $MAX_LOG_SIZE)
@@ -9736,10 +9736,10 @@ sub scenario()
                 }
             }
         }
-        
+
         $Opt{"Logs"} = 0;
     }
-    
+
     if($Opt{"Save"})
     {
         if(not -d $Opt{"Save"})
@@ -9748,7 +9748,7 @@ sub scenario()
             exitStatus(1);
         }
     }
-    
+
     if($Opt{"Upload"})
     {
         if(not check_Cmd("curl"))
@@ -9758,27 +9758,27 @@ sub scenario()
             }
         }
     }
-    
+
     my $UsbLink = "/tmp/HW_PROBE_USB_";
     my $PciLink = "/tmp/HW_PROBE_PCI_";
-    
+
     if($Opt{"Flatpak"})
     {
         $UsbLink = "/var/tmp/P_USB";
         $PciLink = "/var/tmp/P_PCI";
     }
-    
+
     if($Opt{"Snap"} or $Opt{"Flatpak"})
     {
         if(-e $UsbLink) {
             unlink($UsbLink);
         }
-        
+
         if(-e $PciLink) {
             unlink($PciLink);
         }
     }
-    
+
     if($Opt{"Snap"} and my $SNAP_Dir = $ENV{"SNAP"})
     {
         symlink("$SNAP_Dir/usr/share/usb.ids", $UsbLink);
@@ -9789,32 +9789,32 @@ sub scenario()
         symlink("/app/share/usb.ids", $UsbLink);
         symlink("/app/share/pci.ids", $PciLink);
     }
-    
+
     if($Opt{"Probe"} or $Opt{"Check"})
     {
         probeSys();
         probeHWaddr();
         probeHW();
-        
+
         writeDevs();
         writeHost();
-        
+
         if($Opt{"Logs"}) {
             writeLogs();
         }
-        
+
         if($Opt{"Check"})
         {
             checkHW();
-            
+
             # Update
             writeDevs();
         }
-        
+
         if($Opt{"Key"}) {
             writeFile($DATA_DIR."/key", $Opt{"Key"});
         }
-        
+
         if(not $Opt{"Upload"} and not $Opt{"Show"}) {
             print "Local probe path: $DATA_DIR\n";
         }
@@ -9822,21 +9822,21 @@ sub scenario()
     elsif($Opt{"FixProbe"})
     {
         fixLogs($FixProbe_Logs);
-        
+
         readHost($Opt{"FixProbe"}); # instead of probeSys
-        
+
         fixChassis();
         probeHWaddr();
         probeHW();
-        
+
         checkGraphicsCardOutput(readFile($FixProbe_Tests."/glxgears"), readFile($FixProbe_Tests."/glxgears_discrete"));
-        
+
         if($Opt{"PC_Name"}) {
             $Sys{"Name"} = $Opt{"PC_Name"}; # fix PC name
         }
-        
+
         my ($Distr, $Rel) = probeDistr();
-        
+
         if(not $Distr)
         {
             if(-f $FixProbe_Logs."/issue")
@@ -9847,7 +9847,7 @@ sub scenario()
                 }
             }
         }
-        
+
         if(not $Distr or grep {$Distr eq $_} ("virtuozzo-7"))
         { # Support for old HW Probe
             if(-f $FixProbe_Logs."/rpms")
@@ -9861,17 +9861,17 @@ sub scenario()
                 }
             }
         }
-        
+
         if($Distr)
         { # fix system name
             $Sys{"System"} = $Distr;
         }
-        
+
         if($Rel)
         { # fix system name
             $Sys{"Systemrel"} = $Rel;
         }
-        
+
         if($Sys{"Kernel"}=~/\drosa\b/)
         {
             if(not $Sys{"System"})
@@ -9893,7 +9893,7 @@ sub scenario()
                     print STDERR "ERROR: failed to fix 'system' attribute (kernel is '".$Sys{"Kernel"}."')\n";
                 }
             }
-            
+
             if(not $Sys{"Systemrel"})
             {
                 if($Sys{"System"} eq "rosa-2012.1")
@@ -9910,10 +9910,10 @@ sub scenario()
                 }
             }
         }
-        
+
         $Sys{"Vendor"} = fixVendor($Sys{"Vendor"});
         $Sys{"Model"} = fixModel($Sys{"Vendor"}, $Sys{"Model"}, $Sys{"Version"});
-        
+
         if($Opt{"DecodeACPI"})
         {
             if(-s $FixProbe_Logs."/acpidump")
@@ -9923,20 +9923,20 @@ sub scenario()
                 }
             }
         }
-        
+
         if(-s $FixProbe_Logs."/acpidump"
         and -s $FixProbe_Logs."/acpidump_decoded") {
             unlink($FixProbe_Logs."/acpidump");
         }
-        
+
         writeDevs();
         writeHost();
-        
+
         if($FixProbe_Pkg)
         { # package
             my $PName = basename($FixProbe_Pkg);
             chdir($TMP_DIR);
-            
+
             my $Compress = ""; # default is XZ_OPT=-9
             if($Opt{"LowCompress"}) {
                 $Compress .= "XZ_OPT=-0 ";
@@ -9948,19 +9948,19 @@ sub scenario()
             qx/$Compress/;
             move($PName, $FixProbe_Pkg);
             chdir($ORIG_DIR);
-            
+
             if($?) {
                 print STDERR "ERROR: can't create a package\n";
             }
-            
+
             rmtree($TMP_DIR."/hw.info");
         }
     }
-    
+
     if($Opt{"Show"}) {
         showInfo();
     }
-    
+
     if($Opt{"Upload"})
     {
         uploadData();
@@ -9969,11 +9969,11 @@ sub scenario()
     elsif($Opt{"Save"}) {
         saveProbe($Opt{"Save"});
     }
-    
+
     if($Opt{"GetGroup"}) {
         getGroup();
     }
-    
+
     if($Opt{"ImportProbes"})
     {
         if(not $Admin)
@@ -9981,22 +9981,22 @@ sub scenario()
             print STDERR "ERROR: you should run as root (sudo or su)\n";
             exitStatus(1);
         }
-        
+
         if(not $USE_DUMPER)
         {
             print STDERR "ERROR: requires perl-Data-Dumper module\n";
             exitStatus(1);
         }
-        
+
         importProbes($Opt{"ImportProbes"});
     }
-    
+
     if($Opt{"Snap"} or $Opt{"Flatpak"})
     {
         unlink($UsbLink);
         unlink($PciLink);
     }
-    
+
     exitStatus(0);
 }
 
