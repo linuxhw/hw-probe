@@ -340,22 +340,22 @@ EOHM
 
 # Hardware
 my %HW;
-my %KernMod = ();
-my %WorkMod = ();
-my %WLanInterface = ();
-my %PermanentAddr = ();
-my %HDD = ();
-my %HDD_Info = ();
-my %MMC_Info = ();
-my %MMC = ();
-my %MON = ();
-my $MotherboardID = undef;
+my %KernMod;
+my %WorkMod;
+my %WLanInterface;
+my %PermanentAddr;
+my %HDD;
+my %HDD_Info;
+my %MMC_Info;
+my %MMC;
+my %MON;
+my $MotherboardID;
 
-my %DeviceIDByNum = ();
-my %DeviceNumByID = ();
-my %DeviceAttached = ();
-my %GraphicsCards = ();
-my %UsedNetworkDev = ();
+my %DeviceIDByNum;
+my %DeviceNumByID;
+my %DeviceAttached;
+my %GraphicsCards;
+my %UsedNetworkDev;
 
 my $MIN_BAT_CAPACITY = 30;
 
@@ -866,7 +866,7 @@ my @LARGE_LOGS = ("xorg.log", "xorg.log.1", "dmesg", "dmesg.1");
 sub getSha512L($$)
 {
     my $String = $_[0];
-    my $Hash = undef;
+    my $Hash;
 
     if($USE_DIGEST) {
         $Hash = Digest::SHA::sha512_hex($String);
@@ -891,17 +891,17 @@ sub encryptSerials(@)
     my $Content = shift(@_);
     my $Tag = shift(@_);
 
-    my $Name = undef;
+    my $Name;
     if(@_) {
         $Name = shift(@_);
     }
 
-    my $Lower = undef;
+    my $Lower;
     if(@_) {
         $Lower = shift(@_);
     }
 
-    my %Serials = ();
+    my %Serials;
     while($Content=~/\Q$Tag\E\s*[:=]\s*"?([^"]+?)"?\s*\n/g) {
         $Serials{$1} = 1;
     }
@@ -912,7 +912,7 @@ sub encryptSerials(@)
             next;
         }
 
-        my $Enc = undef;
+        my $Enc;
 
         if($Lower) {
             $Enc = clientHash(lc($Ser));
@@ -933,7 +933,7 @@ sub encryptSerials(@)
 sub encryptWWNs($)
 {
     my $Content = $_[0];
-    my %WWNs = ();
+    my %WWNs;
     while($Content=~/\/wwn-0x(.+?)\W/g) {
         $WWNs{$1} = 1;
     }
@@ -1037,7 +1037,7 @@ sub runCmd($)
 sub getOldProbeDir()
 {
     my $SubDir = "HW_PROBE";
-    my $Dir = undef;
+    my $Dir;
 
     if(my $Home = $ENV{"HOME"}) {
         $Dir = $Home."/".$SubDir;
@@ -1172,7 +1172,7 @@ sub uploadData()
 
     # upload package
     my @Cmd = ("curl", "-s", "-S", "-f", "-POST");
-    my %Data = ();
+    my %Data;
 
     @Cmd = (@Cmd, "-F file=\@".$Pkg);
     $Data{"file"} = [$Pkg];
@@ -1266,7 +1266,7 @@ sub uploadData()
     $Log=~s/\s*Private access:\s*http.+?token\=(\w+)\s*/\n/;
     print $Log;
 
-    my ($ID, $Token) = ();
+    my ($ID, $Token);
     if($Log=~/probe\=(\w+)/) {
         $ID = $1;
     }
@@ -1327,7 +1327,7 @@ sub readHostAttr($$)
 
 sub createPackage()
 {
-    my ($Pkg, $HWaddr) = ();
+    my ($Pkg, $HWaddr);
 
     if($Opt{"Source"})
     {
@@ -1603,7 +1603,7 @@ sub getPnpVendor($)
 
 sub readPnpIds()
 {
-    my $Path = undef;
+    my $Path;
 
     if($Opt{"PnpIDs"}) {
         $Path = $Opt{"PnpIDs"};
@@ -1881,7 +1881,7 @@ sub probeHW()
             $DevFiles=~s/(\A|\n).*?\s+\d+\s+\d\d:\d\d\s+/$1/g;
         }
 
-        my %DiskSer = ();
+        my %DiskSer;
         while($DevFiles=~/((\/|^)(ata|nvme|scsi)-[^\s]*_)(.+?)(\-part|[\s\n,])/mg) {
             $DiskSer{$4} = 1;
         }
@@ -1898,8 +1898,8 @@ sub probeHW()
         writeLog($LOG_DIR."/dev", $DevFiles);
     }
 
-    my %DevIdByName = ();
-    my %DevNameById = ();
+    my %DevIdByName;
+    my %DevNameById;
 
     my $InDevById = 0;
     foreach my $Line (split(/\n/, $DevFiles))
@@ -1979,7 +1979,7 @@ sub probeHW()
         }
     }
 
-    my @KernDrvs = ();
+    my @KernDrvs;
     foreach my $Line (split(/\n/, $Lsmod))
     {
         if($Line=~/(\w+)\s+(\d+)\s+(\d+)/)
@@ -1996,7 +1996,7 @@ sub probeHW()
 
     if($Sys{"System"}=~/Gentoo/i)
     { # Gentoo
-        %WorkMod = ();
+        %WorkMod;
     }
 
     if(not $Opt{"FixProbe"} and $Opt{"Logs"})
@@ -2045,13 +2045,13 @@ sub probeHW()
         }
     }
 
-    my %DriveKind = ();
+    my %DriveKind;
 
     if($Opt{"FixProbe"})
     { # Fix drive IDs after uploading
         my $Smart = readFile($FixProbe_Logs."/smartctl");
 
-        my $CurDev = undef;
+        my $CurDev;
         foreach my $SL (split(/\n/, $Smart))
         {
             if(index($SL, "/dev/")==0)
@@ -2071,7 +2071,7 @@ sub probeHW()
         }
     }
 
-    my $Cpu_ID = undef;
+    my $Cpu_ID;
 
     # HW Info
     my $HWInfo = "";
@@ -2137,14 +2137,14 @@ sub probeHW()
         }
     }
 
-    my %LongID = ();
+    my %LongID;
 
     foreach my $Info (split(/\n\n/, $HWInfo))
     {
-        my %Device = ();
-        my ($DevNum, $Bus) = ();
+        my %Device;
+        my ($DevNum, $Bus);
 
-        my ($V, $D, $SV, $SD, $C) = ();
+        my ($V, $D, $SV, $SD, $C);
 
         if($Info=~s/(\d+):\s*([^ ]+)//)
         { # 37: PCI 700.0: 0200 Ethernet controller
@@ -2261,7 +2261,7 @@ sub probeHW()
             }
             elsif($Key eq "Driver")
             {
-                my @Dr = ();
+                my @Dr;
                 while($Val=~s/\"([\w\-]+)\"//)
                 {
                     my $Dr = $1;
@@ -2821,7 +2821,7 @@ sub probeHW()
         }
     }
 
-    my %HDD_Serial = ();
+    my %HDD_Serial;
 
     # UDEV
     my $Udevadm = "";
@@ -2875,11 +2875,11 @@ sub probeHW()
             }
         }
 
-        my %Device = ();
+        my %Device;
 
-        my $Bus = undef;
-        my ($V, $D) = ();
-        my $ID = undef;
+        my $Bus;
+        my ($V, $D);
+        my $ID;
 
         if($DInfo{"DEVTYPE"} eq "disk"
         and $DInfo{"ID_TYPE"} eq "disk")
@@ -2976,8 +2976,8 @@ sub probeHW()
 
     foreach my $Info (split(/\n\n/, $Lspci_A))
     {
-        my ($V, $D) = ();
-        my @ID = ();
+        my ($V, $D);
+        my @ID;
 
         if($Info=~/\w+:\w+\.\w\s+(.*?)\s*\[\w+\]:.*?\[(\w+)\:(\w+)\]/) {
             ($V, $D) = ($2, $3);
@@ -3016,8 +3016,8 @@ sub probeHW()
 
     foreach my $Info (split(/\n\n/, $Lspci))
     {
-        my %Device = ();
-        my (@ID, @Class) = ();
+        my %Device;
+        my (@ID, @Class);
 
         while($Info=~s/(\w+):\s*(.*)//) {
             $Device{$1} = $2;
@@ -3165,8 +3165,8 @@ sub probeHW()
 
     foreach my $Info (split(/\n\n/, $Lsusb))
     {
-        my %Device = ();
-        my ($V, $D, @Class) = ();
+        my %Device;
+        my ($V, $D, @Class);
 
         if($Info=~/idVendor[ ]+0x(\w{4})[ ]+(.*)/)
         {
@@ -3382,7 +3382,7 @@ sub probeHW()
 
     foreach my $Info (split(/\n\n/, $Usb_devices))
     {
-        my ($V, $D) = ();
+        my ($V, $D);
 
         if($Info=~/Vendor=([^ ]+)/) {
             $V = $1;
@@ -3392,7 +3392,7 @@ sub probeHW()
             $D = $1;
         }
 
-        my %Driver = ();
+        my %Driver;
 
         while($Info=~s/Driver=([\w\-]+)//)
         {
@@ -3428,7 +3428,7 @@ sub probeHW()
             next;
         }
 
-        my %Drivers = ();
+        my %Drivers;
         my $Num = 0;
 
         foreach my $Dr (split(/\,\s+/, $Driver)) {
@@ -3475,7 +3475,7 @@ sub probeHW()
 
             foreach my $Dr (sort keys(%Drivers))
             {
-                my $CheckDr = undef;
+                my $CheckDr;
                 if($Dr=~/\Anvidia/)
                 { # nvidia346, nvidia_375, etc.
                     if(not defined $WorkMod{"nvidia"}) {
@@ -3499,7 +3499,7 @@ sub probeHW()
     foreach my $ID (sort keys(%HW))
     {
         my $Type = $HW{$ID}{"Type"};
-        my $Type_New = undef;
+        my $Type_New;
 
         if($Type eq "cdrom" or $Type eq "serial controller")
         {
@@ -3597,11 +3597,11 @@ sub probeHW()
     }
 
     my $MemIndex = 0;
-    my %MemIDs = ();
+    my %MemIDs;
 
     foreach my $Info (split(/\n\n/, $Dmidecode))
     {
-        my %Device = ();
+        my %Device;
         my $D = "";
         my $ID = "";
 
@@ -3649,7 +3649,7 @@ sub probeHW()
         }
         elsif($Info=~/Memory Device\n/) # $Info=~/Memory Module Information\n/
         {
-            my @Add = ();
+            my @Add;
 
             while($Info=~s/([\w ]+):[ \t]*(.+?)[ \t]*(\n|\Z)//)
             {
@@ -3814,7 +3814,7 @@ sub probeHW()
                 }
                 elsif($Key eq "Signature")
                 { # Family 6, Model 42, Stepping 7
-                    my @Model = ();
+                    my @Model;
 
                     if($Val=~/Family\s+(\w+),/) {
                         push(@Model, $1);
@@ -3935,9 +3935,9 @@ sub probeHW()
     {
         if($Line=~/Found device/)
         {
-            my %Device = ();
+            my %Device;
 
-            my %Attr = ();
+            my %Attr;
 
             while($Line=~s/\'([^']*?)\'\s*:\s*\'([^']*?)\'//)
             {
@@ -4062,11 +4062,11 @@ sub probeHW()
 
         if($Opt{"FixEdid"} and ($Edid or -s $XRandrLog or -s $XOrgLog))
         {
-            my %EdidHex = ();
-            my %FoundEdid = ();
+            my %EdidHex;
+            my %FoundEdid;
             if(-s $XRandrLog)
             {
-                my $RCard = undef;
+                my $RCard;
                 foreach my $L (split(/\n/, readFile($XRandrLog)))
                 {
                     if($L=~/([^\s]+)\s+connected /) {
@@ -4100,7 +4100,7 @@ sub probeHW()
 
             if(index($Edid, "edid-decode")!=-1)
             {
-                my %OldEdid = ();
+                my %OldEdid;
                 foreach my $Block (split(/edid-decode /, $Edid))
                 {
                     if($Block=~/\A\"(.+?)\"/)
@@ -4261,7 +4261,7 @@ sub probeHW()
         }
     }
 
-    my @Mons = ();
+    my @Mons;
     if(index($Edid, "edid-decode")!=-1) {
         @Mons = split(/edid\-decode /, $Edid);
     }
@@ -4298,7 +4298,7 @@ sub probeHW()
         {
             if($UPInfo=~/devices\/battery_/)
             {
-                my %Device = ();
+                my %Device;
 
                 $Device{"Type"} = "battery";
 
@@ -4404,12 +4404,12 @@ sub probeHW()
 
     if(not $Upower and $PowerSupply)
     {
-        my $PSPath = undef;
+        my $PSPath;
         foreach my $Block (split(/\n\n/, $PowerSupply))
         {
             if($Block=~/$PSDir\/BAT/i)
             {
-                my %Device = ();
+                my %Device;
 
                 $Device{"Type"} = "battery";
 
@@ -4575,8 +4575,8 @@ sub probeHW()
     {
         $Smartctl = readFile($FixProbe_Logs."/smartctl");
 
-        my $CurDev = undef;
-        my %DriveDesc = ();
+        my $CurDev;
+        my %DriveDesc;
         foreach my $SL (split(/\n/, $Smartctl))
         {
             if(index($SL, "/dev/")==0) {
@@ -4615,7 +4615,7 @@ sub probeHW()
         if($Admin and check_Cmd("smartctl"))
         {
             listProbe("logs", "smartctl");
-            my %CheckedScsi = ();
+            my %CheckedScsi;
             foreach my $Dev (sort keys(%HDD))
             {
                 my $Id = $HDD{$Dev};
@@ -4755,8 +4755,8 @@ sub probeHW()
     {
         $SmartctlMR = readFile($FixProbe_Logs."/smartctl_megaraid");
 
-        my ($CurDev, $CurDid) = (undef, undef);
-        my %DriveDesc = ();
+        my ($CurDev, $CurDid);
+        my %DriveDesc;
         foreach my $SL (split(/\n/, $SmartctlMR))
         {
             if(index($SL, "/dev/")==0)
@@ -4794,7 +4794,7 @@ sub probeHW()
     }
     else
     {
-        my $StorcliCmd = undef;
+        my $StorcliCmd;
 
         foreach my $Cmd ("storcli64", "storcli")
         {
@@ -4819,8 +4819,8 @@ sub probeHW()
 
             if($Storcli)
             {
-                my %DInfo = ();
-                my $Ctrl = undef;
+                my %DInfo;
+                my $Ctrl;
 
                 foreach my $L (split(/\n/, $Storcli))
                 {
@@ -4835,7 +4835,7 @@ sub probeHW()
                     }
                 }
 
-                my %DID = ();
+                my %DID;
                 foreach my $Controller (sort {int($a)<=>int($b)} keys(%DInfo))
                 {
                     if(my $NAA = $DInfo{$Controller}{"NAA"})
@@ -4890,7 +4890,7 @@ sub probeHW()
 
     if(not $Opt{"FixProbe"} and not $SmartctlMR)
     {
-        my $MegacliCmd = undef;
+        my $MegacliCmd;
 
         foreach my $Cmd ("megacli", "MegaCli64", "MegaCli")
         {
@@ -4911,7 +4911,7 @@ sub probeHW()
                 writeLog($LOG_DIR."/megacli", $Megacli);
             }
 
-            my %DIDs = ();
+            my %DIDs;
             while($Megacli=~/Device Id\s*:\s*(\d+)/g) {
                 $DIDs{$1} = 1;
             }
@@ -4936,7 +4936,7 @@ sub probeHW()
         { # Adaptec RAID
             listProbe("logs", "arcconf");
 
-            my @Controllers = ();
+            my @Controllers;
             my $ArcconfList = runCmd("arcconf LIST 2>&1");
             while($ArcconfList=~s/Controller\s+(\d+)//) {
                 push(@Controllers, $1);
@@ -5032,7 +5032,7 @@ sub probeHW()
     }
 
     my $CmdLine = "";
-    my ($Nomodeset, $ForceVESA) = (undef, undef);
+    my ($Nomodeset, $ForceVESA);
 
     if($XLog)
     {
@@ -5056,7 +5056,7 @@ sub probeHW()
 
             if(keys(%WorkMod) and defined $WorkMod{$D})
             {
-                my @Loaded = ();
+                my @Loaded;
                 my @Drs = ($D);
 
                 if(isIntelDriver($D)) {
@@ -5076,7 +5076,7 @@ sub probeHW()
 
                 if(@Loaded)
                 {
-                    my @Unloaded = ();
+                    my @Unloaded;
 
                     foreach my $Dr (@Loaded)
                     {
@@ -5206,7 +5206,7 @@ sub probeHW()
                 $Modems = "";
             }
 
-            my %MNums = ();
+            my %MNums;
             while($Modems=~s/Modem\/(\d+)//) {
                 $MNums{$1} = 1;
             }
@@ -5420,7 +5420,7 @@ sub detectBIOS($)
 
     cleanValues($Device);
 
-    my @Name = ();
+    my @Name;
 
     if($Device->{"Version"}) {
         push(@Name, $Device->{"Version"});
@@ -5458,8 +5458,8 @@ sub detectMonitor($)
 {
     my $Info = $_[0];
 
-    my ($V, $D) = ();
-    my %Device = ();
+    my ($V, $D);
+    my %Device;
 
     if($Info=~/Digital display/) {
         $Device{"Kind"} = "Digital";
@@ -5533,12 +5533,12 @@ sub detectMonitor($)
 
     $Info=~s/CTA extension block.+//s;
 
-    my %Resolutions = ();
+    my %Resolutions;
     while($Info=~s/(\d+)x(\d+)\@\d+//) {
         $Resolutions{$1} = $2;
     }
 
-    my ($W, $H) = ();
+    my ($W, $H);
     while($Info=~s/\n\s+(\d+)\s+.+?\s+hborder//)
     {
         my $W = $1;
@@ -5581,7 +5581,7 @@ sub detectMonitor($)
         $Device{"Device"} = "LCD Monitor";
     }
 
-    my $ID = undef;
+    my $ID;
 
     if($Device{"Vendor"})
     {
@@ -5651,8 +5651,8 @@ sub detectMonitor($)
 sub detectDrive(@)
 {
     my $Desc = shift(@_);
-    my $Dev = undef;
-    my $Raid = undef;
+    my $Dev;
+    my $Raid;
 
     if(@_) {
         $Dev = shift(@_);
@@ -5827,7 +5827,7 @@ sub fixDrive_Pre($)
             $Device->{"Vendor"} = $Vnd;
         }
 
-        my $FamilyVnd = undef;
+        my $FamilyVnd;
 
         if($Device->{"Family"}=~/\A([^ ]+)\s+/) {
             $FamilyVnd = $1;
@@ -6131,7 +6131,7 @@ sub computeInch($)
 {
     my $Info = $_[0];
 
-    my ($W, $H) = ();
+    my ($W, $H);
     if($Info=~/(\A|\s)(\d+)x(\d+)mm(\s|\Z)/) {
         ($W, $H) = ($2, $3);
     }
@@ -6218,7 +6218,7 @@ sub devSuffix($)
     {
         if($Device->{"Vendor"} eq "Intel")
         { # short suffix
-            my @Parts = ();
+            my @Parts;
 
             if($Device->{"Device"}=~/ CPU /)
             {
@@ -6504,7 +6504,7 @@ sub getChassisType($)
 
 sub fixChassis()
 {
-    my (%Bios, %Board) = ();
+    my (%Bios, %Board);
     foreach my $L (split(/\n/, readFile($FixProbe_Logs."/dmi_id")))
     {
         if($L=~/\A(\w+?):\s+(.+?)\Z/)
@@ -6563,7 +6563,7 @@ sub ipAddr2ifConfig($)
 
 sub probeHWaddr()
 {
-    my $IFConfig = undef;
+    my $IFConfig;
 
     if($Opt{"FixProbe"})
     {
@@ -6635,8 +6635,8 @@ sub probeHWaddr()
             require IO::Interface;
 
             my $Socket = IO::Socket::INET->new(Proto => "udp");
-            my @Ifs = ();
-            my %Addrs = ();
+            my @Ifs;
+            my %Addrs;
             foreach my $If ($Socket->if_list)
             {
                 if(my $Mac = $Socket->if_hwaddr($If))
@@ -6723,12 +6723,12 @@ sub detectHWaddr($)
 {
     my $IFConfig = $_[0];
 
-    my @Devs = ();
-    my %Addrs = ();
+    my @Devs;
+    my %Addrs;
 
     foreach my $Block (split(/[\n]\s*[\n]+/, $IFConfig))
     {
-        my $Addr = undef;
+        my $Addr;
 
         if($Block=~/\Adocker/) {
             next;
@@ -6752,7 +6752,7 @@ sub detectHWaddr($)
             $Addr=~s/:/-/g;
         }
 
-        my $NetDev = undef;
+        my $NetDev;
 
         if($Block=~/\A([^:]+):?\s/) {
             $NetDev = $1;
@@ -6773,7 +6773,7 @@ sub selectHWAddr($$)
     my $Devs = $_[0];
     my $Addrs = $_[1];
 
-    my (@Eth, @Wlan, @Other, @Wrong) = ();
+    my (@Eth, @Wlan, @Other, @Wrong);
 
     foreach my $NetDev (@{$Devs})
     {
@@ -6820,7 +6820,7 @@ sub selectHWAddr($$)
         }
     }
 
-    my $Sel = undef;
+    my $Sel;
 
     if(@Eth) {
         $Sel = $Eth[0];
@@ -6966,11 +6966,11 @@ sub probeDistr()
         }
     }
 
-    my ($Name, $Release, $FName) = ();
+    my ($Name, $Release, $FName);
 
     if($LSB_Rel)
     { # Desktop
-        my $Descr = undef;
+        my $Descr;
         if($LSB_Rel=~/ID:\s*(.*)/) {
             $Name = $1;
         }
@@ -7090,7 +7090,7 @@ sub probeDistr()
 
 sub devID(@)
 {
-    my @ID = ();
+    my @ID;
 
     foreach (@_)
     {
@@ -7126,7 +7126,7 @@ sub writeDevs()
             $HW{$ID}{$_}=~s/;/ /g;
         }
 
-        my @D = ();
+        my @D;
 
         push(@D, $ID);
         push(@D, $HW{$ID}{"Class"});
@@ -7598,7 +7598,7 @@ sub writeLogs()
         if(my $InxiCmd = check_Cmd("inxi"))
         {
             listProbe("logs", "inxi");
-            my $Inxi = undef;
+            my $Inxi;
 
             if(readLine($InxiCmd)=~/perl/)
             { # The new Perl inxi
@@ -7844,7 +7844,7 @@ sub writeLogs()
         writeLog($LOG_DIR."/arecord", $Arecord);
 
         listProbe("logs", "amixer");
-        my %CardNums = ();
+        my %CardNums;
         while($Aplay=~/card\s+(\d+)/g) {
             $CardNums{$1} = 1;
         }
@@ -8122,7 +8122,7 @@ sub writeLogs()
 sub check_Cmd(@)
 {
     my $Cmd = shift(@_);
-    my $Verify = undef;
+    my $Verify;
     if(@_) {
         $Verify = shift(@_);
     }
@@ -8546,7 +8546,7 @@ sub checkGraphics()
     $Out_I=~s/GL_EXTENSIONS =.*?\n//;
     writeLog($TEST_DIR."/glxgears", $Out_I);
 
-    my $Out_D = undef;
+    my $Out_D;
 
     if(grep {defined $WorkMod{$_}} @G_DRIVERS_INTEL)
     {
@@ -8783,7 +8783,7 @@ sub readPciIds($$$)
     my $Info = $_[1];
     my $Info_D = $_[2];
 
-    my ($V, $D, $SV, $SD) = ();
+    my ($V, $D, $SV, $SD);
 
     foreach (split(/\n/, $List))
     {
@@ -8827,7 +8827,7 @@ sub readUsbIds($$)
 
     my $Info = $_[1];
 
-    my ($V, $D) = ();
+    my ($V, $D);
 
     foreach (split(/\n/, $List))
     {
@@ -8865,7 +8865,7 @@ sub readSdioIds($$$)
     my $Info = $_[1];
     my $Vnds = $_[2];
 
-    my ($V, $D) = ();
+    my ($V, $D);
 
     foreach (split(/\n/, $List))
     {
@@ -9049,14 +9049,14 @@ sub importProbes($)
         setPublic($Dir);
     }
 
-    my ($Imported, $OneProbe) = (undef, undef);
+    my ($Imported, $OneProbe);
 
     my $IndexInfo = eval(readFile($Dir."/index.info"));
     if(not $IndexInfo) {
         $IndexInfo = {};
     }
 
-    my @Paths = ();
+    my @Paths;
     if(-d $PROBE_DIR)
     {
         foreach my $P (listDir($PROBE_DIR)) {
@@ -9091,7 +9091,7 @@ sub importProbes($)
                 my $TmpDir = $TMP_DIR."/hw.info";
                 system("tar -xf $D/* -C $TMP_DIR");
 
-                my %Prop = ();
+                my %Prop;
                 foreach my $Line (split(/\n/, readFile($TmpDir."/host")))
                 {
                     if($Line=~/(\w+):(.*)/) {
@@ -9120,7 +9120,7 @@ sub importProbes($)
         print "No probes to import\n";
     }
 
-    my %Indexed = ();
+    my %Indexed;
     foreach my $P (listDir($Dir))
     {
         if(not -d $Dir."/".$P) {
@@ -9141,7 +9141,7 @@ sub importProbes($)
     {
         my @Probes = sort {$Indexed{$HWaddr}{$b}->{"date"} cmp $Indexed{$HWaddr}{$a}->{"date"}} keys(%{$Indexed{$HWaddr}});
         my $Hw = $Indexed{$HWaddr}{$Probes[0]};
-        my $Title = undef;
+        my $Title;
         if($Hw->{"vendor"} and $Hw->{"model"}) {
             $Title = join(" ", $Hw->{"vendor"}, $Hw->{"model"});
         }
@@ -9250,7 +9250,7 @@ sub getTimeStamp($)
 sub setPublic($)
 {
     my $Path = shift(@_);
-    my $R = undef;
+    my $R;
     if(@_) {
         $R = shift(@_);
     }
