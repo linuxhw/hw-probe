@@ -863,8 +863,7 @@ my $SALT_CLIENT = "GN-4w?T]>r3FS/*_";
 my $MAX_LOG_SIZE = 1048576; # 1Mb
 my @LARGE_LOGS = ("xorg.log", "xorg.log.1", "dmesg", "dmesg.1");
 
-sub getSha512L($$)
-{
+sub getSha512L {
     my $String = $_[0];
     my $Hash;
 
@@ -880,14 +879,12 @@ sub getSha512L($$)
     return substr($Hash, 0, $_[1]);
 }
 
-sub clientHash($)
-{
+sub clientHash {
     my $Subj = $_[0];
     return uc(getSha512L($Subj."+".$SALT_CLIENT, $HASH_LEN_CLIENT));
 }
 
-sub encryptSerials(@)
-{
+sub encryptSerials {
     my $Content = shift(@_);
     my $Tag = shift(@_);
 
@@ -930,8 +927,7 @@ sub encryptSerials(@)
     return $Content;
 }
 
-sub encryptWWNs($)
-{
+sub encryptWWNs {
     my $Content = $_[0];
     my %WWNs;
     while($Content=~/\/wwn-0x(.+?)\W/g) {
@@ -945,30 +941,26 @@ sub encryptWWNs($)
     return $Content;
 }
 
-sub hideWWNs($)
-{
+sub hideWWNs {
     my $Content = $_[0];
     $Content=~s/(LU WWN Device Id:\s*\w \w{6} )\w+(\n|\Z)/$1...$2/;
     $Content=~s/(IEEE EUI-64:\s*\w{6}\s)\w+(\n|\Z)/$1...$2/;
     return $Content;
 }
 
-sub hideTags($$)
-{
+sub hideTags {
     my ($Content, $Tags) = @_;
     $Content=~s/(($Tags)\s*[:=]\s*).*?(\n|\Z)/$1...$3/g;
     return $Content;
 }
 
-sub hideHostname($)
-{
+sub hideHostname {
     my $Content = $_[0];
     $Content=~s/(Set hostname to) <.+>\./$1 <...>./g;
     return $Content;
 }
 
-sub hideIPs($)
-{
+sub hideIPs {
     my $Content = $_[0];
 
     # IPv4
@@ -981,15 +973,13 @@ sub hideIPs($)
     return $Content;
 }
 
-sub hideMACs($)
-{
+sub hideMACs {
     my $Content = $_[0];
     $Content=~s/[\da-f]{2}\:[\da-f]{2}\:[\da-f]{2}\:[\da-f]{2}\:[\da-f]{2}\:[\da-f]{2}/XX:XX:XX:XX:XX:XX/gi;
     return $Content;
 }
 
-sub encryptMACs($)
-{
+sub encryptMACs {
     my $Content = $_[0];
     my @MACs = ($Content=~/[\da-f]{2}\:[\da-f]{2}\:[\da-f]{2}\:[\da-f]{2}\:[\da-f]{2}\:[\da-f]{2}/gi);
     foreach my $MAC (@MACs)
@@ -1002,8 +992,7 @@ sub encryptMACs($)
     return $Content;
 }
 
-sub exitStatus($)
-{
+sub exitStatus {
     my $St = $_[0];
     if($Opt{"Flatpak"} and -d $TMP_DIR) {
         rmtree($TMP_DIR);
@@ -1011,8 +1000,7 @@ sub exitStatus($)
     exit($St);
 }
 
-sub checkModule($)
-{
+sub checkModule {
     foreach my $P (@INC)
     {
         if(-e $P."/".$_[0]) {
@@ -1023,8 +1011,7 @@ sub checkModule($)
     return 0;
 }
 
-sub runCmd($)
-{
+sub runCmd {
     my $Cmd = $_[0];
 
     if($Opt{"ListProbes"}) {
@@ -1034,8 +1021,7 @@ sub runCmd($)
     return `LC_ALL=$LOCALE $Cmd`;
 }
 
-sub getOldProbeDir()
-{
+sub getOldProbeDir {
     my $SubDir = "HW_PROBE";
     my $Dir;
 
@@ -1055,8 +1041,7 @@ sub getOldProbeDir()
     return $Dir;
 }
 
-sub getGroup()
-{
+sub getGroup {
     my $GroupURL = $URL."/get_group.php";
 
     my $Log = "";
@@ -1086,8 +1071,7 @@ sub getGroup()
     }
 }
 
-sub postRequest($$$)
-{
+sub postRequest {
     my ($UploadURL, $Data, $SSL) = @_;
 
     require LWP::UserAgent;
@@ -1115,8 +1099,7 @@ sub postRequest($$$)
     return $Out;
 }
 
-sub getRequest($$)
-{
+sub getRequest {
     my ($UploadURL, $SSL) = @_;
 
     require LWP::UserAgent;
@@ -1142,8 +1125,7 @@ sub getRequest($$)
     return $Out;
 }
 
-sub saveProbe($)
-{
+sub saveProbe {
     my $To = $_[0];
 
     $To=~s&/+\Z&&;
@@ -1159,8 +1141,7 @@ sub saveProbe($)
     print "Saved to: $To/".basename($Pkg)."\n";
 }
 
-sub uploadData()
-{
+sub uploadData {
     my ($Pkg, $HWaddr) = createPackage();
 
     if(not $Pkg) {
@@ -1303,8 +1284,7 @@ sub uploadData()
     }
 }
 
-sub cleanData()
-{
+sub cleanData {
     if($Opt{"Clean"})
     {
         if(-d $DATA_DIR) {
@@ -1313,8 +1293,7 @@ sub cleanData()
     }
 }
 
-sub readHostAttr($$)
-{
+sub readHostAttr {
     my ($Path, $Attr) = @_;
 
     if(readFile($Path."/host")=~/\Q$Attr\E\:([^\n]*)/)
@@ -1325,8 +1304,7 @@ sub readHostAttr($$)
     return "";
 }
 
-sub createPackage()
-{
+sub createPackage {
     my ($Pkg, $HWaddr);
 
     if($Opt{"Source"})
@@ -1443,12 +1421,11 @@ sub createPackage()
     return ($Pkg, $HWaddr);
 }
 
-sub ceilNum($) {
+sub ceilNum {
     return int($_[0]+0.99);
 }
 
-sub copyFiles($$)
-{
+sub copyFiles {
     my ($P1, $P2) = @_;
 
     mkpath($P2);
@@ -1476,14 +1453,12 @@ sub copyFiles($$)
     }
 }
 
-sub isPkg($)
-{
+sub isPkg {
     my $Path = $_[0];
     return ($Path=~/\.(tar\.xz|txz)\Z/ or `file \"$Path\"`=~/XZ compressed data/);
 }
 
-sub updateHost($$$)
-{
+sub updateHost {
     my ($Path, $Attr, $Val) = @_;
 
     if($Val)
@@ -1525,8 +1500,7 @@ sub updateHost($$$)
     return 0;
 }
 
-sub fmtVal($)
-{
+sub fmtVal {
     my $Val = $_[0];
 
     if(not defined $Val or $Val eq "" or $Val=~/\A\s+\Z/) {
@@ -1551,8 +1525,7 @@ sub fmtVal($)
     return $Val;
 }
 
-sub bytesToHuman($)
-{
+sub bytesToHuman {
     my $Bytes = $_[0];
 
     $Bytes /= 1000000; # MB
@@ -1574,8 +1547,7 @@ sub bytesToHuman($)
     return $Bytes."MB";
 }
 
-sub getPnpVendor($)
-{
+sub getPnpVendor {
     my $V = $_[0];
 
     if(defined $MonVendor{$V}) {
@@ -1601,8 +1573,7 @@ sub getPnpVendor($)
     return undef;
 }
 
-sub readPnpIds()
-{
+sub readPnpIds {
     my $Path;
 
     if($Opt{"PnpIDs"}) {
@@ -1628,8 +1599,7 @@ sub readPnpIds()
     }
 }
 
-sub getPciVendor($)
-{
+sub getPciVendor {
     my $V = $_[0];
 
     if(defined $PciVendor{$V}) {
@@ -1647,8 +1617,7 @@ sub getPciVendor($)
     return undef;
 }
 
-sub readVendorIds()
-{
+sub readVendorIds {
     my $Path = "/usr/share/hwdata/pci.ids";
 
     if($Opt{"PciIDs"}) {
@@ -1670,15 +1639,13 @@ sub readVendorIds()
     }
 }
 
-sub getSdioType($)
-{
+sub getSdioType {
     my $Class = $_[0];
 
     return $SdioType{$Class};
 }
 
-sub getClassType($$)
-{
+sub getClassType {
     my ($Bus, $Class) = @_;
 
     while($Class)
@@ -1704,8 +1671,7 @@ sub getClassType($$)
     return "";
 }
 
-sub getDefaultType($$)
-{
+sub getDefaultType {
     my ($Bus, $Device) = @_;
 
     foreach my $Name ($Device->{"Device"}, $Device->{"SDevice"})
@@ -1786,8 +1752,7 @@ sub getDefaultType($$)
     return "";
 }
 
-sub addCapacity($$)
-{
+sub addCapacity {
     my ($Device, $Capacity) = @_;
 
     $Capacity=~s/\.\d+//;
@@ -1804,8 +1769,7 @@ sub addCapacity($$)
     return "";
 }
 
-sub decodeEdid($)
-{
+sub decodeEdid {
     my $Edid = $_[0];
 
     my $TmpFile = $TMP_DIR."/hex-edid";
@@ -1817,8 +1781,7 @@ sub decodeEdid($)
     return $Res;
 }
 
-sub probeHW()
-{
+sub probeHW {
     if($Opt{"FixProbe"}) {
         print "Fixing probe ... ";
     }
@@ -5283,8 +5246,7 @@ sub probeHW()
     print "Ok\n";
 }
 
-sub fixCapacity($)
-{
+sub fixCapacity {
     my $Capacity = $_[0];
     if($Capacity=~/\A(31|63|127|255)GB\Z/)
     {
@@ -5295,12 +5257,11 @@ sub fixCapacity($)
     return $Capacity;
 }
 
-sub isIntelDriver($) {
+sub isIntelDriver {
     return grep {$_[0] eq $_} @G_DRIVERS_INTEL;
 }
 
-sub setAttachedStatus($$)
-{
+sub setAttachedStatus {
     my ($Id, $Status) = @_;
     if(my $DevNum = $DeviceNumByID{$Id})
     {
@@ -5314,8 +5275,7 @@ sub setAttachedStatus($$)
     }
 }
 
-sub shortModel($)
-{
+sub shortModel {
     my $Mdl = $_[0];
 
     $Mdl=~s/\AMotherboard\s+//g;
@@ -5332,8 +5292,7 @@ sub shortModel($)
     return $Mdl;
 }
 
-sub shortOS($)
-{
+sub shortOS {
     my $Name = $_[0];
     $Name=~s/\s+(linux|project|amd64|x86_64)\s+/ /i;
     $Name=~s/\s*(linux|project|amd64|x86_64)\Z//i;
@@ -5342,8 +5301,7 @@ sub shortOS($)
     return $Name;
 }
 
-sub detectBoard($)
-{
+sub detectBoard {
     my $Device = $_[0];
 
     $Device->{"Vendor"}=~s&\Ahttp://www.&&i; # http://www.abit.com.tw as vendor
@@ -5414,8 +5372,7 @@ sub detectBoard($)
     return $MID;
 }
 
-sub detectBIOS($)
-{
+sub detectBIOS {
     my $Device = $_[0];
 
     cleanValues($Device);
@@ -5454,8 +5411,7 @@ sub detectBIOS($)
     }
 }
 
-sub detectMonitor($)
-{
+sub detectMonitor {
     my $Info = $_[0];
 
     my ($V, $D);
@@ -5648,8 +5604,7 @@ sub detectMonitor($)
     }
 }
 
-sub detectDrive(@)
-{
+sub detectDrive {
     my $Desc = shift(@_);
     my $Dev;
     my $Raid;
@@ -5796,8 +5751,7 @@ sub detectDrive(@)
     return $HWId;
 }
 
-sub fixDrive_Pre($)
-{
+sub fixDrive_Pre {
     my $Device = $_[0];
 
     if(not $Device->{"Vendor"}
@@ -5899,8 +5853,7 @@ sub fixDrive_Pre($)
     }
 }
 
-sub fixDrive($)
-{
+sub fixDrive {
     my $Device = $_[0];
 
     if($Device->{"Vendor"}=~/\A(SSD|mSata)\Z/)
@@ -5998,8 +5951,7 @@ sub fixDrive($)
     }
 }
 
-sub guessDriveVendor($)
-{
+sub guessDriveVendor {
     my $Name = $_[0];
 
     foreach my $Len (6, 5, 4, 3)
@@ -6068,8 +6020,7 @@ sub guessDriveVendor($)
     return undef;
 }
 
-sub guessSerialVendor($)
-{
+sub guessSerialVendor {
     my $Serial = $_[0];
 
     if(not $Serial) {
@@ -6092,8 +6043,7 @@ sub guessSerialVendor($)
     return undef;
 }
 
-sub guessFirmwareVendor($)
-{
+sub guessFirmwareVendor {
     my $Firmware = $_[0];
 
     if(not $Firmware) {
@@ -6110,8 +6060,7 @@ sub guessFirmwareVendor($)
     return undef;
 }
 
-sub guessDeviceVendor($)
-{
+sub guessDeviceVendor {
     my $Device = $_[0];
 
     if($Device=~s/\A(WDC|Western Digital|Seagate|Samsung Electronics|SAMSUNG|Hitachi|TOSHIBA|Maxtor|SanDisk|Kingston|ADATA|Lite-On|OCZ|Smartbuy|SK hynix|GOODRAM|LDLC|A\-DATA|KingFast|ExcelStor Technology|i-FlashDisk)([\s_\-]|\Z)//i)
@@ -6127,8 +6076,7 @@ sub guessDeviceVendor($)
     return undef;
 }
 
-sub computeInch($)
-{
+sub computeInch {
     my $Info = $_[0];
 
     my ($W, $H);
@@ -6146,8 +6094,7 @@ sub computeInch($)
     return undef;
 }
 
-sub getXRes($)
-{
+sub getXRes {
     if($_[0]=~/\A(\d+)/) {
         return $1;
     }
@@ -6155,8 +6102,7 @@ sub getXRes($)
     return undef;
 }
 
-sub duplVendor($$)
-{
+sub duplVendor {
     my ($Vendor, $Device) = @_;
 
     if($Vendor)
@@ -6175,8 +6121,7 @@ sub duplVendor($$)
     return $Device;
 }
 
-sub roundToNearest($)
-{
+sub roundToNearest {
     my $Num = $_[0];
 
     my $Delta = $Num - int($Num);
@@ -6188,8 +6133,7 @@ sub roundToNearest($)
     return int($Num);
 }
 
-sub cleanValues($)
-{
+sub cleanValues {
     my $Hash = $_[0];
     foreach my $Key (keys(%{$Hash}))
     {
@@ -6208,8 +6152,7 @@ sub cleanValues($)
     }
 }
 
-sub devSuffix($)
-{
+sub devSuffix {
     my $Device = $_[0];
 
     my $Suffix = $Device->{"Device"};
@@ -6261,8 +6204,7 @@ sub devSuffix($)
     return $Suffix;
 }
 
-sub fmtID($)
-{
+sub fmtID {
     my $ID = $_[0];
 
     $ID=~s/[\W]+\Z//g;
@@ -6274,8 +6216,7 @@ sub fmtID($)
     return $ID;
 }
 
-sub nameID($)
-{
+sub nameID {
     my $Name = $_[0];
 
     $Name=~s/\s*\([^()]*\)//g;
@@ -6294,15 +6235,13 @@ sub nameID($)
     return $Name;
 }
 
-sub fixVendor($)
-{
+sub fixVendor {
     my $Vendor = $_[0];
     $Vendor=~s/\s+\Z//g;
     return $Vendor;
 }
 
-sub fixModel($$$)
-{
+sub fixModel {
     my ($Vendor, $Model, $Version) = @_;
 
     $Model=~s/\A\-//;
@@ -6369,8 +6308,7 @@ sub fixModel($$$)
     return $Model;
 }
 
-sub listDir($)
-{
+sub listDir {
     my $Dir = $_[0];
 
     if(not $Dir) {
@@ -6391,8 +6329,7 @@ sub listDir($)
     return @Contents;
 }
 
-sub probeSys()
-{
+sub probeSys {
     my ($Distr, $Rel) = probeDistr();
 
     $Sys{"System"} = $Distr;
@@ -6490,8 +6427,7 @@ sub probeSys()
     }
 }
 
-sub getChassisType($)
-{
+sub getChassisType {
     my $CType = lc($_[0]);
     $CType=~s/ chassis//i;
 
@@ -6502,8 +6438,7 @@ sub getChassisType($)
     return undef;
 }
 
-sub fixChassis()
-{
+sub fixChassis {
     my (%Bios, %Board);
     foreach my $L (split(/\n/, readFile($FixProbe_Logs."/dmi_id")))
     {
@@ -6542,8 +6477,7 @@ sub fixChassis()
     $MotherboardID = detectBoard(\%Board);
 }
 
-sub ipAddr2ifConfig($)
-{
+sub ipAddr2ifConfig {
     my $IPaddr = $_[0];
 
     my $IFConfig = "";
@@ -6561,8 +6495,7 @@ sub ipAddr2ifConfig($)
     return $IFConfig;
 }
 
-sub probeHWaddr()
-{
+sub probeHWaddr {
     my $IFConfig;
 
     if($Opt{"FixProbe"})
@@ -6702,14 +6635,12 @@ sub probeHWaddr()
     }
 }
 
-sub warnSnapInterfaces()
-{
+sub warnSnapInterfaces {
     warn "\nMake sure required Snap interfaces are connected:\n\n";
     warn "    for i in hardware-observe mount-observe network-observe system-observe upower-observe log-observe raw-usb physical-memory-observe opengl;do sudo snap connect hw-probe:\$i :\$i; done\n";
 }
 
-sub countStr($$)
-{
+sub countStr {
     my ($Str, $Target) = @_;
 
     my $Count = 0;
@@ -6719,8 +6650,7 @@ sub countStr($$)
     return $Count;
 }
 
-sub detectHWaddr($)
-{
+sub detectHWaddr {
     my $IFConfig = $_[0];
 
     my @Devs;
@@ -6768,8 +6698,7 @@ sub detectHWaddr($)
     return selectHWAddr(\@Devs, \%Addrs);
 }
 
-sub selectHWAddr($$)
-{
+sub selectHWAddr {
     my $Devs = $_[0];
     my $Addrs = $_[1];
 
@@ -6841,8 +6770,7 @@ sub selectHWAddr($$)
     return $Sel;
 }
 
-sub getRealHWaddr($)
-{
+sub getRealHWaddr {
     my $Dev = $_[0];
 
     if(check_Cmd("ethtool"))
@@ -6864,8 +6792,7 @@ sub getRealHWaddr($)
     return undef;
 }
 
-sub readFileHex($)
-{
+sub readFileHex {
     my $Path = $_[0];
     local $/ = undef;
     open(FILE, $Path);
@@ -6875,8 +6802,7 @@ sub readFileHex($)
     return unpack('H*', $Data);
 }
 
-sub readFile($)
-{
+sub readFile {
     my $Path = $_[0];
     open(FILE, $Path);
     local $/ = undef;
@@ -6885,8 +6811,7 @@ sub readFile($)
     return $Content;
 }
 
-sub readLine($)
-{
+sub readLine {
     my $Path = $_[0];
     open (FILE, $Path);
     my $Line = <FILE>;
@@ -6894,8 +6819,7 @@ sub readLine($)
     return $Line;
 }
 
-sub probeDistr()
-{
+sub probeDistr {
     my $LSB_Rel = "";
 
     if($Opt{"FixProbe"}) {
@@ -7088,8 +7012,7 @@ sub probeDistr()
     return ("", "");
 }
 
-sub devID(@)
-{
+sub devID {
     my @ID;
 
     foreach (@_)
@@ -7102,8 +7025,7 @@ sub devID(@)
     return lc(join("-", @ID));
 }
 
-sub fNum($)
-{
+sub fNum {
     my $N = $_[0];
 
     if(length($N)==1) {
@@ -7113,12 +7035,11 @@ sub fNum($)
     return $N;
 }
 
-sub devSort($$) {
+sub devSort {
     return ($_[0]=~/\A(pci|usb)/ cmp $_[1]=~/\A(pci|usb)/);
 }
 
-sub writeDevs()
-{
+sub writeDevs {
     my $HWData = "";
     foreach my $ID (sort {devSort($b, $a)} sort keys(%HW))
     {
@@ -7164,8 +7085,7 @@ sub writeDevs()
     }
 }
 
-sub writeHost()
-{
+sub writeHost {
     my $Host = "";
     if($Sys{"Probe_ver"}) {
         $Host .= "probe_ver:".$Sys{"Probe_ver"}."\n";
@@ -7210,8 +7130,7 @@ sub writeHost()
     }
 }
 
-sub readHost($)
-{
+sub readHost {
     my $Path = $_[0];
 
     my $Content = readFile($Path."/host");
@@ -7235,8 +7154,7 @@ sub readHost($)
     }
 }
 
-sub getUser()
-{
+sub getUser {
     foreach my $Var ("SUDO_USER", "USERNAME", "USER")
     {
         if(defined $ENV{$Var} and $ENV{$Var} ne "root") {
@@ -7247,8 +7165,7 @@ sub getUser()
     return undef;
 }
 
-sub writeLogs()
-{
+sub writeLogs {
     print "Reading logs ... ";
 
     if($Opt{"ListProbes"}) {
@@ -8119,8 +8036,7 @@ sub writeLogs()
     print "Ok\n";
 }
 
-sub check_Cmd(@)
-{
+sub check_Cmd {
     my $Cmd = shift(@_);
     my $Verify;
     if(@_) {
@@ -8148,8 +8064,7 @@ sub check_Cmd(@)
     return undef;
 }
 
-sub find_Cmd($)
-{
+sub find_Cmd {
     my $Cmd = $_[0];
     if(my $Path = check_Cmd($Cmd, 1)) {
         return $Path;
@@ -8157,8 +8072,7 @@ sub find_Cmd($)
     return $Cmd;
 }
 
-sub decodeACPI($$)
-{
+sub decodeACPI {
     my ($Dump, $Output) = @_;
     $Dump = abs_path($Dump);
 
@@ -8226,8 +8140,7 @@ sub decodeACPI($$)
     return 1;
 }
 
-sub clearLog_X11($)
-{
+sub clearLog_X11 {
     if(length($_[0])<100
     and $_[0]=~/No protocol specified|Can't open display|unable to open display|Unable to connect to|cannot connect to/i) {
         return "";
@@ -8236,8 +8149,7 @@ sub clearLog_X11($)
     return $_[0];
 }
 
-sub clearLog($)
-{
+sub clearLog {
     my $Log = $_[0];
 
     my $Sc = chr(27);
@@ -8246,8 +8158,7 @@ sub clearLog($)
     return $Log;
 }
 
-sub showInfo()
-{
+sub showInfo {
     my $ShowDir = $DATA_DIR;
 
     if($Opt{"Source"})
@@ -8410,8 +8321,7 @@ sub showInfo()
     showHash(\%STbl, "system", "arch", "kernel", "vendor", "model", "year", "type", "id");
 }
 
-sub showTable(@)
-{
+sub showTable {
     my $Tbl = shift(@_);
     my $Num = shift(@_);
 
@@ -8468,8 +8378,7 @@ sub showTable(@)
     print $Br."\n";
 }
 
-sub showHash(@)
-{
+sub showHash {
     my $Hash = shift(@_);
 
     my $KMax = 0;
@@ -8515,8 +8424,7 @@ sub showHash(@)
     print "\n";
 }
 
-sub mulCh($$)
-{
+sub mulCh {
     my $Str = "";
     foreach (1 .. $_[1]) {
         $Str .= $_[0];
@@ -8524,8 +8432,7 @@ sub mulCh($$)
     return $Str;
 }
 
-sub alignStr($$)
-{
+sub alignStr {
     my $Align = "";
 
     foreach (1 .. $_[1] - length($_[0])) {
@@ -8535,8 +8442,7 @@ sub alignStr($$)
     return $Align;
 }
 
-sub checkGraphics()
-{
+sub checkGraphics {
     print "Check graphics ... ";
     my $Glxgears = getGears();
 
@@ -8588,8 +8494,7 @@ sub checkGraphics()
     print "Ok\n";
 }
 
-sub checkGraphicsCardOutput($$)
-{
+sub checkGraphicsCardOutput {
     my ($Int, $Discrete) = @_;
 
     my $Success = "frames in";
@@ -8636,8 +8541,7 @@ sub checkGraphicsCardOutput($$)
     }
 }
 
-sub setCardStatus($$)
-{
+sub setCardStatus {
     my ($Dr, $Status) = @_;
 
     my $V = $DriverVendor{$Dr};
@@ -8658,8 +8562,8 @@ sub setCardStatus($$)
     }
 }
 
-sub checkHW()
-{ # TODO: test operability, set status to "works", "malfunc" or "failed"
+sub checkHW {
+    # TODO: test operability, set status to "works", "malfunc" or "failed"
     if($Opt{"CheckGraphics"} and check_Cmd("glxgears"))
     {
         if(defined $ENV{"WAYLAND_DISPLAY"} or $ENV{"XDG_SESSION_TYPE"} eq "wayland" or defined $ENV{"DISPLAY"}) {
@@ -8721,19 +8625,17 @@ sub checkHW()
     }
 }
 
-sub getGears() {
+sub getGears {
     return "glxgears -info 2>/dev/null & sleep 17 ; killall glxgears 2>/dev/null";
 }
 
-sub listProbe($$)
-{
+sub listProbe {
     if($Opt{"ListProbes"}) {
         print $_[0]."/".$_[1]."\n";
     }
 }
 
-sub writeLog($$)
-{
+sub writeLog {
     my ($Path, $Content) = @_;
     my $Log = basename($Path);
 
@@ -8753,8 +8655,7 @@ sub writeLog($$)
     writeFile($Path, $Content);
 }
 
-sub appendFile($$)
-{
+sub appendFile {
     my ($Path, $Content) = @_;
     if(my $Dir = dirname($Path)) {
         mkpath($Dir);
@@ -8764,8 +8665,7 @@ sub appendFile($$)
     close(FILE);
 }
 
-sub writeFile($$)
-{
+sub writeFile {
     my ($Path, $Content) = @_;
     return if(not $Path);
     if(my $Dir = dirname($Path)) {
@@ -8776,8 +8676,7 @@ sub writeFile($$)
     close(FILE);
 }
 
-sub readPciIds($$$)
-{
+sub readPciIds {
     my $List = readFile($_[0]);
 
     my $Info = $_[1];
@@ -8821,8 +8720,7 @@ sub readPciIds($$$)
     }
 }
 
-sub readUsbIds($$)
-{
+sub readUsbIds {
     my $List = readFile($_[0]);
 
     my $Info = $_[1];
@@ -8850,12 +8748,11 @@ sub readUsbIds($$)
     }
 }
 
-sub readSdioIds_Sys() {
+sub readSdioIds_Sys {
     readSdioIds("/usr/share/hwdata/sdio.ids", \%SdioInfo, \%SdioVendor);
 }
 
-sub readSdioIds($$$)
-{
+sub readSdioIds {
     if(not -e $_[0]) {
         return;
     }
@@ -8893,8 +8790,7 @@ sub readSdioIds($$$)
     }
 }
 
-sub downloadProbe($$)
-{
+sub downloadProbe {
     my ($ID, $Dir) = @_;
 
     my $Page = downloadFileContent("$URL/index.php?probe=$ID");
@@ -8982,8 +8878,7 @@ sub downloadProbe($$)
     return 0;
 }
 
-sub preparePage($)
-{
+sub preparePage {
     my $Content = $_[0];
     $Content=~s&\Q<!-- meta -->\E(.|\n)+\Q<!-- meta end -->\E\n&&;
     $Content=~s&\Q<!-- menu -->\E(.|\n)+\Q<!-- menu end -->\E\n&&;
@@ -8991,8 +8886,7 @@ sub preparePage($)
     return $Content;
 }
 
-sub downloadFileContent($)
-{
+sub downloadFileContent {
     my $Url = $_[0];
     $Url=~s/&amp;/&/g;
     if(check_Cmd("curl"))
@@ -9006,8 +8900,7 @@ sub downloadFileContent($)
     }
 }
 
-sub downloadFile($$)
-{
+sub downloadFile {
     my ($Url, $Output) = @_;
     $Url=~s/&amp;/&/g;
     if(check_Cmd("curl"))
@@ -9021,8 +8914,7 @@ sub downloadFile($$)
     }
 }
 
-sub getCurlCmd($)
-{
+sub getCurlCmd {
     my $Url = $_[0];
     my $Cmd = "curl -s -L \"$Url\"";
     $Cmd .= " --ipv4 --compressed";
@@ -9032,8 +8924,7 @@ sub getCurlCmd($)
     return $Cmd;
 }
 
-sub importProbes($)
-{
+sub importProbes {
     my $Dir = $_[0];
 
     if($Opt{"Snap"}) {
@@ -9217,8 +9108,7 @@ sub importProbes($)
     print "Created index: $Dir/index.html\n";
 }
 
-sub getShortHWid($)
-{
+sub getShortHWid {
     my $HWid = $_[0];
     if(length($HWid) eq $HASH_LEN_CLIENT) {
         $HWid = substr($HWid, 0, 5);
@@ -9229,8 +9119,7 @@ sub getShortHWid($)
     return $HWid;
 }
 
-sub getDateStamp($)
-{
+sub getDateStamp {
     my $Date = localtime($_[0]);
     if($Date=~/\w+ (\w+ \d+) \d+:\d+:\d+ (\d+)/) {
         return "$1, $2";
@@ -9238,8 +9127,7 @@ sub getDateStamp($)
     return $Date;
 }
 
-sub getTimeStamp($)
-{
+sub getTimeStamp {
     my $Date = localtime($_[0]);
     if($Date=~/\w+ \w+ \d+ (\d+:\d+):\d+ \d+/) {
         return $1;
@@ -9247,8 +9135,7 @@ sub getTimeStamp($)
     return $Date;
 }
 
-sub setPublic($)
-{
+sub setPublic {
     my $Path = shift(@_);
     my $R;
     if(@_) {
@@ -9276,8 +9163,7 @@ sub setPublic($)
     }
 }
 
-sub fixLogs($)
-{
+sub fixLogs {
     my $Dir = $_[0];
 
     if(-f $Dir."/hwinfo"
@@ -9405,8 +9291,7 @@ sub fixLogs($)
     }
 }
 
-sub scenario()
-{
+sub scenario {
     if($Opt{"Help"})
     {
 	print $HelpMessage;
