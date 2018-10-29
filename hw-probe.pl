@@ -1037,7 +1037,7 @@ sub checkModule($)
 {
     foreach my $P (@INC)
     {
-        if(-e $P."/".$_[0]) {
+        if(-e "$P/$_[0]") {
             return 1;
         }
     }
@@ -1435,7 +1435,7 @@ sub createPackage()
     {
         if(-d $DATA_DIR)
         {
-            if(not -f $DATA_DIR."/devices")
+            if(not -f "$DATA_DIR/devices")
             {
                 print STDERR "ERROR: \'./".$DATA_DIR."/devices\' file is not found, please make probe first\n";
                 exitStatus(1);
@@ -1477,7 +1477,7 @@ sub copyFiles($$)
     
     foreach my $Top (listDir($P1))
     {
-        if(-d $P1."/".$Top)
+        if(-d "$P1/$Top")
         { # copy subdirectory
             foreach my $Sub (listDir($P1."/".$Top))
             {
@@ -1510,7 +1510,7 @@ sub updateHost($$$)
     
     if($Val)
     {
-        if(not -f $Path."/host")
+        if(not -f "$Path/host")
         { # internal error
             return 0;
         }
@@ -2118,11 +2118,11 @@ sub probeHW()
         {
             my $HWInfoDir = dirname(dirname($Opt{"HWInfoPath"}));
             $HWInfoCmd = $Opt{"HWInfoPath"};
-            
-            if(-d $HWInfoDir."/lib64") {
+
+            if(-d "$HWInfoDir/lib64") {
                 $HWInfoCmd = "LD_LIBRARY_PATH=\"".$HWInfoDir."/lib64\" ".$HWInfoCmd;
             }
-            elsif(-d $HWInfoDir."/lib") {
+            elsif(-d "$HWInfoDir/lib") {
                 $HWInfoCmd = "LD_LIBRARY_PATH=\"".$HWInfoDir."/lib\" ".$HWInfoCmd;
             }
         }
@@ -4009,7 +4009,7 @@ sub probeHW()
     
     if($Opt{"FixProbe"})
     {
-        if(-f $FixProbe_Logs."/hp-probe")
+        if(-f "$FixProbe_Logs/hp-probe")
         { # i.e. executed with -printers option (-fix)
             $Avahi = readFile($FixProbe_Logs."/avahi");
         }
@@ -8138,7 +8138,7 @@ sub writeLogs()
         
         if($Opt{"DecodeACPI"})
         {
-            if(-s $LOG_DIR."/acpidump")
+            if(-s "$LOG_DIR/acpidump")
             {
                 if(decodeACPI($LOG_DIR."/acpidump", $LOG_DIR."/acpidump_decoded")) {
                     unlink($LOG_DIR."/acpidump");
@@ -8165,7 +8165,7 @@ sub check_Cmd(@)
     
     foreach my $Dir (sort {length($a)<=>length($b)} split(/:/, $ENV{"PATH"}))
     {
-        if(-x $Dir."/".$Cmd)
+        if(-x "$Dir/$Cmd")
         {
             if($Verify)
             {
@@ -9109,7 +9109,7 @@ sub importProbes($)
         }
         
         my $To = $Dir."/".$P;
-        if(not -e $To or not -e $To."/logs")
+        if(not -e $To or not -e "$To/logs")
         {
             if(downloadProbe($P, $To)!=-1)
             {
@@ -9148,7 +9148,7 @@ sub importProbes($)
     my %Indexed = ();
     foreach my $P (listDir($Dir))
     {
-        if(not -d $Dir."/".$P) {
+        if(not -d "$Dir/$P") {
             next;
         }
         my $D = $Dir."/".$P;
@@ -9304,9 +9304,9 @@ sub setPublic($)
 sub fixLogs($)
 {
     my $Dir = $_[0];
-    
-    if(-f $Dir."/hwinfo"
-    and -s $Dir."/hwinfo" < 200)
+
+    if(-f "$Dir/hwinfo"
+    and -s "$Dir/hwinfo" < 200)
     { # Support for HW Probe 1.4
         if(readFile($Dir."/hwinfo")=~/unrecognized arguments|error while loading shared libraries/)
         { # hwinfo: error: unrecognized arguments: --all
@@ -9314,16 +9314,16 @@ sub fixLogs($)
             writeFile($Dir."/hwinfo", "");
         }
     }
-    
-    if(-f $Dir."/iostat"
-    and -s $Dir."/iostat" < 50)
+
+    if(-f "$Dir/iostat"
+    and -s "$Dir/iostat" < 50)
     { # Support for HW Probe 1.3
       # iostat: command not found
         unlink($Dir."/iostat");
     }
-    
-    if(-f $Dir."/dmidecode"
-    and -s $Dir."/dmidecode" < 160)
+
+    if(-f "$Dir/dmidecode"
+    and -s "$Dir/dmidecode" < 160)
     { # Support for HW Probe 1.3
       # dmidecode: command not found
       # No SMBIOS nor DMI entry point found
@@ -9332,47 +9332,47 @@ sub fixLogs($)
     
     foreach my $L ("glxinfo", "xdpyinfo", "xinput", "vdpauinfo", "xrandr")
     {
-        if(-e $Dir."/".$L
-        and -s $Dir."/".$L < 100)
+        if(-e "$Dir/$L"
+        and -s "$Dir/$L" < 100)
         {
             if(not clearLog_X11(readFile($Dir."/".$L))) {
                 writeFile($Dir."/".$L, "");
             }
         }
     }
-    
-    if(-f $Dir."/vulkaninfo")
+
+    if(-f "$Dir/vulkaninfo")
     { # Support for HW Probe 1.3
         if(readFile($Dir."/vulkaninfo")=~/Cannot create/i) {
             unlink($Dir."/vulkaninfo");
         }
     }
-    
-    if(-f $Dir."/vainfo"
-    and -s $Dir."/vainfo" < 200)
+
+    if(-f "$Dir/vainfo"
+    and -s "$Dir/vainfo" < 200)
     { # Support for HW Probe 1.4
       # error: failed to initialize display
         if(readFile($Dir."/vainfo")=~/failed to initialize/) {
             writeFile($Dir."/vainfo", "");
         }
     }
-    
-    if(-f $Dir."/cpupower")
+
+    if(-f "$Dir/cpupower")
     { # Support for HW Probe 1.3
         if(readFile($Dir."/cpupower")=~/cpupower not found/) {
             unlink($Dir."/cpupower");
         }
     }
-    
-    if(-f $Dir."/mcelog")
+
+    if(-f "$Dir/mcelog")
     { # Support for HW Probe 1.4
         if(readFile($Dir."/mcelog")=~/No such file or directory/) {
             writeFile($Dir."/mcelog", "");
         }
     }
-    
-    if(-f $Dir."/rfkill"
-    and -s $Dir."/rfkill" < 70)
+
+    if(-f "$Dir/rfkill"
+    and -s "$Dir/rfkill" < 70)
     { # Support for HW Probe 1.4
       # Can't open RFKILL control device: No such file or directory
         if(readFile($Dir."/rfkill")=~/No such file or directory/) {
@@ -9382,8 +9382,8 @@ sub fixLogs($)
     
     foreach my $L ("aplay", "arecord")
     {
-        if(-e $Dir."/".$L
-        and -s $Dir."/".$L < 50)
+        if(-e "$Dir/$L"
+        and -s "$Dir/$L" < 50)
         {
             if(readFile($Dir."/".$L)=~/command not found/) {
                 writeFile($Dir."/".$L, "");
@@ -9393,8 +9393,8 @@ sub fixLogs($)
     
     foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all", "pstree", "lsblk", "efibootmgr")
     {
-        if(-f $Dir."/".$L
-        and -s $Dir."/".$L < 100)
+        if(-f "$Dir/$L"
+        and -s "$Dir/$L" < 100)
         { # Support for HW Probe 1.4
           # sh: XXX: command not found
           # pcilib: Cannot open /proc/bus/pci
@@ -9403,8 +9403,8 @@ sub fixLogs($)
             writeFile($Dir."/".$L, "");
         }
     }
-    
-    if(-e $Dir."/lsusb")
+
+    if(-e "$Dir/lsusb")
     {
         my $Lsusb = readFile($Dir."/lsusb");
         if(index($Lsusb, "Resource temporarily unavailable")!=-1)
@@ -9420,9 +9420,9 @@ sub fixLogs($)
             writeFile($Dir."/lsusb", $Lsusb);
         }
     }
-    
-    if(-e $Dir."/inxi"
-    and -s $Dir."/inxi" < 100)
+
+    if(-e "$Dir/inxi"
+    and -s "$Dir/inxi" < 100)
     { # Support for HW Probe 1.4
         if(readFile($Dir."/inxi")=~/Unsupported option/) {
             writeFile($Dir."/inxi", "");
@@ -9620,8 +9620,8 @@ sub scenario()
             exitStatus(1);
         }
         readPciIds($Opt{"PciIDs"}, \%PciInfo, \%PciInfo_D);
-        
-        if(-e $Opt{"PciIDs"}.".add") {
+
+        if(-e "$Opt{PciIDs}.add") {
             readPciIds($Opt{"PciIDs"}.".add", \%AddPciInfo, \%AddPciInfo_D);
         }
     }
@@ -9634,8 +9634,8 @@ sub scenario()
             exitStatus(1);
         }
         readUsbIds($Opt{"UsbIDs"}, \%UsbInfo);
-        
-        if(-e $Opt{"UsbIDs"}.".add") {
+
+        if(-e "$Opt{UsbIDs}.add") {
             readUsbIds($Opt{"UsbIDs"}.".add", \%AddUsbInfo);
         }
     }
@@ -9648,8 +9648,8 @@ sub scenario()
             exitStatus(1);
         }
         readSdioIds($Opt{"SdioIDs"}, \%SdioInfo, \%SdioVendor);
-        
-        if(-e $Opt{"SdioIDs"}.".add") {
+
+        if(-e "$Opt{SdioIDs}.add") {
             readSdioIds($Opt{"SdioIDs"}.".add", \%AddSdioInfo, \%AddSdioVendor);
         }
     }
@@ -9707,8 +9707,8 @@ sub scenario()
             print STDERR "ERROR: can't access \'".$Opt{"FixProbe"}."\'\n";
             exitStatus(1);
         }
-        
-        if(-f $FixProbe_Logs."/media_urls")
+
+        if(-f "$FixProbe_Logs/media_urls")
         { # support for old probes
             foreach my $File ("journalctl", "journalctl.1", "lib_modules",
             "ld.so.cache", "sys_module", "media_active", "media_urls",
@@ -9730,13 +9730,13 @@ sub scenario()
                 }
             }
         }
-        
-        if($Opt{"RmLog"} and -f $FixProbe_Logs."/".$Opt{"RmLog"}
+
+        if($Opt{"RmLog"} and -f "$FixProbe_Logs/$Opt{RmLog}"
         and not grep {$Opt{"RmLog"} eq $_} @ProtectedLogs) {
             writeFile($FixProbe_Logs."/".$Opt{"RmLog"}, "");
         }
-        
-        if($Opt{"TruncateLog"} and -f $FixProbe_Logs."/".$Opt{"TruncateLog"}
+
+        if($Opt{"TruncateLog"} and -f "$FixProbe_Logs/$Opt{TruncateLog}"
         and not grep {$Opt{"TruncateLog"} eq $_} @ProtectedLogs)
         {
             if(my $Content = readFile($FixProbe_Logs."/".$Opt{"TruncateLog"})) {
@@ -9746,7 +9746,7 @@ sub scenario()
         
         foreach my $L (@LARGE_LOGS)
         {
-            if(-s $FixProbe_Logs."/".$L > $MAX_LOG_SIZE)
+            if(-s "$FixProbe_Logs/$L" > $MAX_LOG_SIZE)
             {
                 if(my $Content = readFile($FixProbe_Logs."/".$L)) {
                     writeLog($FixProbe_Logs."/".$L, $Content);
@@ -9856,7 +9856,7 @@ sub scenario()
         
         if(not $Distr)
         {
-            if(-f $FixProbe_Logs."/issue")
+            if(-f "$FixProbe_Logs/issue")
             { # Support for old HW Probe
                 my $Issue = readLine($FixProbe_Logs."/issue");
                 if($Issue=~/ROSA Enterprise Linux Server release ([\d\.]+)/i) {
@@ -9867,7 +9867,7 @@ sub scenario()
         
         if(not $Distr or grep {$Distr eq $_} ("virtuozzo-7"))
         { # Support for old HW Probe
-            if(-f $FixProbe_Logs."/rpms")
+            if(-f "$FixProbe_Logs/rpms")
             {
                 my $Rpm = readLine($FixProbe_Logs."/rpms");
                 if($Rpm=~/\.([a-z]\w+)\.\w+\Z/i)
@@ -9933,16 +9933,16 @@ sub scenario()
         
         if($Opt{"DecodeACPI"})
         {
-            if(-s $FixProbe_Logs."/acpidump")
+            if(-s "$FixProbe_Logs/acpidump")
             {
                 if(decodeACPI($FixProbe_Logs."/acpidump", $FixProbe_Logs."/acpidump_decoded")) {
                     unlink($FixProbe_Logs."/acpidump");
                 }
             }
         }
-        
-        if(-s $FixProbe_Logs."/acpidump"
-        and -s $FixProbe_Logs."/acpidump_decoded") {
+
+        if(-s "$FixProbe_Logs/acpidump"
+        and -s "$FixProbe_Logs/acpidump_decoded") {
             unlink($FixProbe_Logs."/acpidump");
         }
         
