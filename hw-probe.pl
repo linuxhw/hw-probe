@@ -875,7 +875,7 @@ sub getSha512L {
     }
     else
     { # No module installed
-        $Hash = qx/echo -n \'$String\' | sha512sum/;
+        $Hash = qx/echo -n '$String' | sha512sum/;
         $Hash=~s/\A([\da-f]+).*?\Z/$1/;
     }
 
@@ -1196,20 +1196,20 @@ sub uploadData {
 
     if($Opt{"PC_Name"})
     {
-        @Cmd = (@Cmd, "-F id=\'".$Opt{"PC_Name"}."\'");
+        @Cmd = (@Cmd, "-F id='".$Opt{"PC_Name"}."'");
         $Data{"id"} = $Opt{"PC_Name"};
     }
 
     if($Opt{"Group"})
     {
-        @Cmd = (@Cmd, "-F group=\'".$Opt{"Group"}."\'");
+        @Cmd = (@Cmd, "-F group='".$Opt{"Group"}."'");
         $Data{"group"} = $Opt{"Group"};
     }
 
-    @Cmd = (@Cmd, "-F tool_ver=\'$TOOL_VERSION\'");
+    @Cmd = (@Cmd, "-F tool_ver='$TOOL_VERSION'");
     $Data{"tool_ver"} = $TOOL_VERSION;
 
-    @Cmd = (@Cmd, "-F salt=\'$Salt\'");
+    @Cmd = (@Cmd, "-F salt='$Salt'");
     $Data{"salt"} = $Salt;
 
     # fix curl error 22: "The requested URL returned error: 417 Expectation Failed"
@@ -1265,7 +1265,7 @@ sub uploadData {
 
         if(-d $NewProbe)
         {
-            warn "ERROR: the probe with ID \'$ID\' already exists, overwriting ...\n";
+            warn "ERROR: the probe with ID '$ID' already exists, overwriting ...\n";
             unlink($NewProbe."/hw.info.txz");
         }
         else {
@@ -1386,7 +1386,7 @@ sub createPackage {
         }
         else
         {
-            warn "ERROR: can't access \'".$Opt{"Source"}."\'\n";
+            warn "ERROR: can't access '".$Opt{"Source"}."'\n";
             exitStatus(1);
         }
     }
@@ -1396,7 +1396,7 @@ sub createPackage {
         {
             if(not -f $DATA_DIR."/devices")
             {
-                warn "ERROR: \'./".$DATA_DIR."/devices\' file is not found, please make probe first\n";
+                warn "ERROR: './".$DATA_DIR."/devices' file is not found, please make probe first\n";
                 exitStatus(1);
             }
 
@@ -1412,10 +1412,10 @@ sub createPackage {
         else
         {
             if($Admin) {
-                warn "ERROR: can't access \'".$DATA_DIR."\', please make probe first\n";
+                warn "ERROR: can't access '".$DATA_DIR."', please make probe first\n";
             }
             else {
-                warn "ERROR: can't access \'".$DATA_DIR."\', please run as root\n";
+                warn "ERROR: can't access '".$DATA_DIR."', please run as root\n";
             }
             exitStatus(1);
         }
@@ -1495,7 +1495,7 @@ sub updateHost {
         if($Chg)
         {
             writeFile($Path."/host", $Content);
-            print "Added \'$Attr\' to host info\n";
+            print "Added '$Attr' to host info\n";
             return 1;
         }
     }
@@ -3905,7 +3905,7 @@ sub probeHW {
 
             my %Attr;
 
-            while($Line=~s/\'([^']*?)\'\s*:\s*\'([^']*?)\'//)
+            while($Line=~s/'([^']*?)'\s*:\s*'([^']*?)'//)
             {
                 my ($Key, $Val) = ($1, $2);
 
@@ -6974,11 +6974,11 @@ sub probeDistr {
 
     if((not $Name or not $Release) and $OS_Rel)
     {
-        if($OS_Rel=~/\bID=\s*[\"\']*([^"'\n]+)/) {
+        if($OS_Rel=~/\bID=\s*["']*([^"'\n]+)/) {
             $Name = $1;
         }
 
-        if($OS_Rel=~/\bVERSION_ID=\s*[\"\']*([^"'\n]+)/) {
+        if($OS_Rel=~/\bVERSION_ID=\s*["']*([^"'\n]+)/) {
             $Release = lc($1);
         }
 
@@ -8202,7 +8202,7 @@ sub showInfo {
         }
         else
         {
-            warn "ERROR: can't access \'".$Opt{"Source"}."\'\n";
+            warn "ERROR: can't access '".$Opt{"Source"}."'\n";
             exitStatus(1);
         }
     }
@@ -8210,7 +8210,7 @@ sub showInfo {
     {
         if(not -d $DATA_DIR)
         {
-            warn "ERROR: \'".$DATA_DIR."\' is not found, please make probe first\n";
+            warn "ERROR: '".$DATA_DIR."' is not found, please make probe first\n";
             exitStatus(1);
         }
     }
@@ -8663,7 +8663,7 @@ sub appendFile {
     if(my $Dir = dirname($Path)) {
         mkpath($Dir);
     }
-    open(FILE, ">>", $Path) || die ("can't open file \'$Path\': $!\n");
+    open(FILE, ">>", $Path) || die ("can't open file '$Path': $!\n");
     print FILE $Content;
     close(FILE);
 }
@@ -8674,7 +8674,7 @@ sub writeFile {
     if(my $Dir = dirname($Path)) {
         mkpath($Dir);
     }
-    open(FILE, ">", $Path) || die ("can't open file \'$Path\': $!\n");
+    open(FILE, ">", $Path) || die ("can't open file '$Path': $!\n");
     print FILE $Content;
     close(FILE);
 }
@@ -8875,7 +8875,8 @@ sub downloadProbe {
 
         $NPage .= $Line."\n";
     }
-    $NPage=~s&\Q<!-- descr -->\E(.|\n)+\Q<!-- descr end -->\E\n&This probe is available online by <a href=\'$URL/?probe=$ID\'>this URL</a> in the <a href=\'$URL\'>Hardware Database</a>.<p/>&;
+    $NPage=~s{\Q<!-- descr -->\E(.|\n)+\Q<!-- descr end -->\E\n}
+             {This probe is available online by <a href='$URL/?probe=$ID'>this URL</a> in the <a href='$URL'>Hardware Database</a>.<p/>};
     writeFile($Dir."/index.html", preparePage($NPage));
 
     return 0;
@@ -8883,9 +8884,10 @@ sub downloadProbe {
 
 sub preparePage {
     my $Content = $_[0];
-    $Content=~s&\Q<!-- meta -->\E(.|\n)+\Q<!-- meta end -->\E\n&&;
-    $Content=~s&\Q<!-- menu -->\E(.|\n)+\Q<!-- menu end -->\E\n&&;
-    $Content=~s&\Q<!-- sign -->\E(.|\n)+\Q<!-- sign end -->\E\n&<hr/>\n<div align='right'><a class='sign' href=\'$GITHUB\'>Linux Hardware Project</a></div><br/>\n&;
+    $Content=~s{\Q<!-- meta -->\E(.|\n)+\Q<!-- meta end -->\E\n}{};
+    $Content=~s{\Q<!-- menu -->\E(.|\n)+\Q<!-- menu end -->\E\n}{};
+    $Content=~s{\Q<!-- sign -->\E(.|\n)+\Q<!-- sign end -->\E\n}
+               {<hr/>\n<div align='right'><a class='sign' href='$GITHUB'>Linux Hardware Project</a></div><br/>\n};
     return $Content;
 }
 
@@ -9074,7 +9076,7 @@ sub importProbes {
             $LIST .= "<tr class='pointer' onclick=\"document.location='$P/index.html'\">\n";
 
             $LIST .= "<td>\n";
-            $LIST .= "<a href=\'$P/index.html\'>$P</a>\n";
+            $LIST .= "<a href='$P/index.html'>$P</a>\n";
             $LIST .= "</td>\n";
 
             $LIST .= "<td>\n";
@@ -9082,7 +9084,7 @@ sub importProbes {
             $LIST .= "</td>\n";
 
             $LIST .= "<td>\n";
-            $LIST .= "<span class=\'$SystemClass\'>&nbsp;</span> ".ucfirst($System);
+            $LIST .= "<span class='$SystemClass'>&nbsp;</span> ".ucfirst($System);
             $LIST .= "</td>\n";
 
             $LIST .= "<td title='".getTimeStamp($Indexed{$HWaddr}{$P}->{"date"})."'>\n";
@@ -9099,7 +9101,7 @@ sub importProbes {
         $LIST .= "<br/>\n";
     }
 
-    my $Descr = "This is your collection of probes. See more probes and computers online in the <a href=\'$URL\'>Hardware Database</a>.";
+    my $Descr = "This is your collection of probes. See more probes and computers online in the <a href='$URL'>Hardware Database</a>.";
     my $INDEX = readFile($Dir."/".$OneProbe."/index.html");
     $INDEX=~s&\Q<!-- body -->\E(.|\n)+\Q<!-- body end -->\E\n&<h1>Probes Timeline</h1>\n$Descr\n$LIST\n&;
     $INDEX=~s&(\Q<title>\E)(.|\n)+(\Q</title>\E)&$1 Probes Timeline $3&;
@@ -9341,7 +9343,7 @@ sub scenario {
 
         if($Opt{"LogLevel"}!~/\A(minimal|default|maximal)\Z/i)
         {
-            warn "ERROR: unknown log level \'".$Opt{"LogLevel"}."\'\n";
+            warn "ERROR: unknown log level '".$Opt{"LogLevel"}."'\n";
             exitStatus(1);
         }
 
@@ -9356,7 +9358,7 @@ sub scenario {
     {
         if(not -f $Opt{"HWInfoPath"})
         {
-            warn "ERROR: can't access file \'".$Opt{"HWInfoPath"}."\'\n";
+            warn "ERROR: can't access file '".$Opt{"HWInfoPath"}."'\n";
             exitStatus(1);
         }
     }
@@ -9374,7 +9376,7 @@ sub scenario {
     {
         if(not -f $Opt{"IdentifyDrive"})
         {
-            warn "ERROR: can't access file \'".$Opt{"IdentifyDrive"}."\'\n";
+            warn "ERROR: can't access file '".$Opt{"IdentifyDrive"}."'\n";
             exitStatus(1);
         }
 
@@ -9394,7 +9396,7 @@ sub scenario {
     {
         if(not -f $Opt{"IdentifyMonitor"})
         {
-            warn "ERROR: can't access file \'".$Opt{"IdentifyMonitor"}."\'\n";
+            warn "ERROR: can't access file '".$Opt{"IdentifyMonitor"}."'\n";
             exitStatus(1);
         }
 
@@ -9407,7 +9409,7 @@ sub scenario {
     {
         if(not -f $Opt{"DecodeACPI_From"})
         {
-            warn "ERROR: can't access file \'".$Opt{"DecodeACPI_From"}."\'\n";
+            warn "ERROR: can't access file '".$Opt{"DecodeACPI_From"}."'\n";
             exitStatus(1);
         }
         decodeACPI($Opt{"DecodeACPI_From"}, $Opt{"DecodeACPI_To"});
@@ -9436,7 +9438,7 @@ sub scenario {
         {
             if(not -w $DATA_DIR)
             {
-                warn "ERROR: can't write to \'$DATA_DIR\', please run as root\n";
+                warn "ERROR: can't write to '$DATA_DIR', please run as root\n";
                 exitStatus(1);
             }
             rmtree($DATA_DIR);
@@ -9479,7 +9481,7 @@ sub scenario {
     {
         if(not -e $Opt{"PciIDs"})
         {
-            warn "ERROR: can't access \'".$Opt{"PciIDs"}."\'\n";
+            warn "ERROR: can't access '".$Opt{"PciIDs"}."'\n";
             exitStatus(1);
         }
         readPciIds($Opt{"PciIDs"}, \%PciInfo, \%PciInfo_D);
@@ -9493,7 +9495,7 @@ sub scenario {
     {
         if(not -e $Opt{"UsbIDs"})
         {
-            warn "ERROR: can't access \'".$Opt{"UsbIDs"}."\'\n";
+            warn "ERROR: can't access '".$Opt{"UsbIDs"}."'\n";
             exitStatus(1);
         }
         readUsbIds($Opt{"UsbIDs"}, \%UsbInfo);
@@ -9507,7 +9509,7 @@ sub scenario {
     {
         if(not -e $Opt{"SdioIDs"})
         {
-            warn "ERROR: can't access \'".$Opt{"SdioIDs"}."\'\n";
+            warn "ERROR: can't access '".$Opt{"SdioIDs"}."'\n";
             exitStatus(1);
         }
         readSdioIds($Opt{"SdioIDs"}, \%SdioInfo, \%SdioVendor);
@@ -9521,7 +9523,7 @@ sub scenario {
     {
         if(not -e $Opt{"PnpIDs"})
         {
-            warn "ERROR: can't access \'".$Opt{"PnpIDs"}."\'\n";
+            warn "ERROR: can't access '".$Opt{"PnpIDs"}."'\n";
             exitStatus(1);
         }
     }
@@ -9530,7 +9532,7 @@ sub scenario {
     {
         if(not -e $Opt{"FixProbe"})
         {
-            warn "ERROR: can't access \'".$Opt{"FixProbe"}."\'\n";
+            warn "ERROR: can't access '".$Opt{"FixProbe"}."'\n";
             exitStatus(1);
         }
 
@@ -9549,7 +9551,7 @@ sub scenario {
         }
         elsif(-f $Opt{"FixProbe"})
         {
-            warn "ERROR: unsupported probe format \'".$Opt{"FixProbe"}."\'\n";
+            warn "ERROR: unsupported probe format '".$Opt{"FixProbe"}."'\n";
             exitStatus(1);
         }
 
@@ -9561,13 +9563,13 @@ sub scenario {
         {
             if(not listDir($FixProbe_Logs))
             {
-                warn "ERROR: can't find logs in \'".$Opt{"FixProbe"}."\'\n";
+                warn "ERROR: can't find logs in '".$Opt{"FixProbe"}."'\n";
                 exitStatus(1);
             }
         }
         else
         {
-            warn "ERROR: can't access \'".$Opt{"FixProbe"}."\'\n";
+            warn "ERROR: can't access '".$Opt{"FixProbe"}."'\n";
             exitStatus(1);
         }
 
