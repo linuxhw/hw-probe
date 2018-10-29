@@ -70,6 +70,9 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA  02110-1301 USA
 #########################################################################
+use strict;
+use warnings;
+
 use Getopt::Long;
 Getopt::Long::Configure ("posix_default", "no_ignore_case");
 use File::Path qw(mkpath rmtree);
