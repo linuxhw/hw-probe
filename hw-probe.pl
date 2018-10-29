@@ -116,8 +116,7 @@ if($#ARGV==0 and grep { $ARGV[0] eq $_ } ("-snap", "-flatpak"))
 
 if($#ARGV==-1)
 {
-    print $ShortUsage;
-    exit(1);
+    die $ShortUsage;
 }
 
 my %Opt;
@@ -176,13 +175,7 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "truncate-log=s" => \$Opt{"TruncateLog"},
 # Security
   "key=s" => \$Opt{"Key"}
-) or errMsg();
-
-sub errMsg()
-{
-    print "\n".$ShortUsage;
-    exit(1);
-}
+) or die "\n".$ShortUsage;
 
 my $PROBE_DIR = "/root/HW_PROBE";
 
@@ -1082,7 +1075,7 @@ sub getGroup()
     if($?)
     {
         my $ECode = $?>>8;
-        print STDERR "ERROR: failed to get group, curl error code \"".$ECode."\"\n";
+        warn "ERROR: failed to get group, curl error code \"".$ECode."\"\n";
         exitStatus(1);
     }
 
@@ -1252,10 +1245,10 @@ sub uploadData()
         {
             if(index($WWWLog, "probe=")==-1)
             {
-                print STDERR $WWWLog."\n";
-                print STDERR "ERROR: failed to upload data\n";
+                warn $WWWLog."\n";
+                warn "ERROR: failed to upload data\n";
                 if(index($WWWLog, "Can't locate HTML/HeadParser.pm")!=-1) {
-                    print STDERR "ERROR: please add 'libhtml-parser-perl' or 'perl-HTML-Parser' package to your system\n";
+                    warn "ERROR: please add 'libhtml-parser-perl' or 'perl-HTML-Parser' package to your system\n";
                 }
                 exitStatus(1);
             }
@@ -1265,8 +1258,8 @@ sub uploadData()
         else
         {
             my $ECode = $Err>>8;
-            print STDERR $Log."\n";
-            print STDERR "ERROR: failed to upload data, curl error code \"".$ECode."\"\n";
+            warn $Log."\n";
+            warn "ERROR: failed to upload data, curl error code \"".$ECode."\"\n";
             exitStatus(1);
         }
     }
@@ -1289,7 +1282,7 @@ sub uploadData()
 
         if(-d $NewProbe)
         {
-            print STDERR "ERROR: the probe with ID \'$ID\' already exists, overwriting ...\n";
+            warn "ERROR: the probe with ID \'$ID\' already exists, overwriting ...\n";
             unlink($NewProbe."/hw.info.txz");
         }
         else {
@@ -1348,7 +1341,7 @@ sub createPackage()
                 system("tar", "--directory", $TMP_DIR, "-xJf", $Pkg);
                 if($?)
                 {
-                    print STDERR "ERROR: failed to extract package (".$?.")\n";
+                    warn "ERROR: failed to extract package (".$?.")\n";
                     exitStatus(1);
                 }
 
@@ -1378,7 +1371,7 @@ sub createPackage()
 
                         if($?)
                         {
-                            print STDERR "ERROR: failed to create a package (".$?.")\n";
+                            warn "ERROR: failed to create a package (".$?.")\n";
                             exitStatus(1);
                         }
 
@@ -1388,7 +1381,7 @@ sub createPackage()
             }
             else
             {
-                print STDERR "ERROR: not a package\n";
+                warn "ERROR: not a package\n";
                 exitStatus(1);
             }
         }
@@ -1405,7 +1398,7 @@ sub createPackage()
 
             if($?)
             {
-                print STDERR "ERROR: failed to create a package (".$?.")\n";
+                warn "ERROR: failed to create a package (".$?.")\n";
                 exitStatus(1);
             }
 
@@ -1413,7 +1406,7 @@ sub createPackage()
         }
         else
         {
-            print STDERR "ERROR: can't access \'".$Opt{"Source"}."\'\n";
+            warn "ERROR: can't access \'".$Opt{"Source"}."\'\n";
             exitStatus(1);
         }
     }
@@ -1423,7 +1416,7 @@ sub createPackage()
         {
             if(not -f $DATA_DIR."/devices")
             {
-                print STDERR "ERROR: \'./".$DATA_DIR."/devices\' file is not found, please make probe first\n";
+                warn "ERROR: \'./".$DATA_DIR."/devices\' file is not found, please make probe first\n";
                 exitStatus(1);
             }
 
@@ -1439,10 +1432,10 @@ sub createPackage()
         else
         {
             if($Admin) {
-                print STDERR "ERROR: can't access \'".$DATA_DIR."\', please make probe first\n";
+                warn "ERROR: can't access \'".$DATA_DIR."\', please make probe first\n";
             }
             else {
-                print STDERR "ERROR: can't access \'".$DATA_DIR."\', please run as root\n";
+                warn "ERROR: can't access \'".$DATA_DIR."\', please run as root\n";
             }
             exitStatus(1);
         }
@@ -1834,7 +1827,7 @@ sub probeHW()
     {
         if(not defined $Opt{"HWInfoPath"} and not check_Cmd("hwinfo"))
         {
-            print STDERR "ERROR: 'hwinfo' is not installed\n";
+            warn "ERROR: 'hwinfo' is not installed\n";
             exitStatus(1);
         }
 
@@ -1843,20 +1836,20 @@ sub probeHW()
             foreach my $Prog ("dmidecode", "edid-decode")
             {
                 if(not check_Cmd($Prog)) {
-                    print STDERR "WARNING: '".$Prog."' package is not installed\n";
+                    warn "WARNING: '".$Prog."' package is not installed\n";
                 }
             }
 
             if(not check_Cmd("smartctl")) {
-                print STDERR "WARNING: 'smartmontools' package is not installed\n";
+                warn "WARNING: 'smartmontools' package is not installed\n";
             }
 
             if(not check_Cmd("lspci")) {
-                print STDERR "WARNING: 'pciutils' package is not installed\n";
+                warn "WARNING: 'pciutils' package is not installed\n";
             }
 
             if(not check_Cmd("lsusb")) {
-                print STDERR "WARNING: 'usbutils' package is not installed\n";
+                warn "WARNING: 'usbutils' package is not installed\n";
             }
         }
 
@@ -2131,7 +2124,7 @@ sub probeHW()
 
         if(not $HWInfo)
         { # incorrect option
-            print STDERR "WARNING: incorrect hwinfo option passed, using --all\n";
+            warn "WARNING: incorrect hwinfo option passed, using --all\n";
             $HWInfo = runCmd($HWInfoCmd." --all 2>&1");
         }
 
@@ -4206,10 +4199,10 @@ sub probeHW()
             else
             {
                 if($Edid) {
-                    print STDERR "WARNING: failed to fix EDID\n";
+                    warn "WARNING: failed to fix EDID\n";
                 }
                 else {
-                    print STDERR "WARNING: failed to create EDID\n";
+                    warn "WARNING: failed to create EDID\n";
                 }
             }
         }
@@ -6408,7 +6401,7 @@ sub probeSys()
 
     if(not $Sys{"System"})
     {
-        print STDERR "ERROR: failed to detect Linux distribution\n";
+        warn "ERROR: failed to detect Linux distribution\n";
         if($Opt{"Snap"})
         {
             warnSnapInterfaces();
@@ -6662,7 +6655,7 @@ sub probeHWaddr()
         }
         else
         {
-            print STDERR "ERROR: can't find 'ifconfig' or 'ip'\n";
+            warn "ERROR: can't find 'ifconfig' or 'ip'\n";
             exitStatus(1);
         }
 
@@ -6684,7 +6677,7 @@ sub probeHWaddr()
 
         if(not $Sys{"HWaddr"})
         {
-            print STDERR "ERROR: failed to detect hwid\n";
+            warn "ERROR: failed to detect hwid\n";
 
             if($Opt{"Snap"}) {
                 warnSnapInterfaces();
@@ -6712,8 +6705,8 @@ sub probeHWaddr()
 
 sub warnSnapInterfaces()
 {
-    print STDERR "\nMake sure required Snap interfaces are connected:\n\n";
-    print STDERR "    for i in hardware-observe mount-observe network-observe system-observe upower-observe log-observe raw-usb physical-memory-observe opengl;do sudo snap connect hw-probe:\$i :\$i; done\n";
+    warn "\nMake sure required Snap interfaces are connected:\n\n";
+    warn "    for i in hardware-observe mount-observe network-observe system-observe upower-observe log-observe raw-usb physical-memory-observe opengl;do sudo snap connect hw-probe:\$i :\$i; done\n";
 }
 
 sub countStr($$)
@@ -7367,7 +7360,7 @@ sub writeLogs()
         $Glxinfo = clearLog_X11($Glxinfo);
 
         if(not clearLog_X11($Glxinfo)) {
-            print STDERR "WARNING: X11-related logs are not collected (try to run 'xhost +local:' to enable access or run as root by su)\n";
+            warn "WARNING: X11-related logs are not collected (try to run 'xhost +local:' to enable access or run as root by su)\n";
         }
 
         writeLog($LOG_DIR."/glxinfo", $Glxinfo);
@@ -8271,7 +8264,7 @@ sub showInfo()
 
                 if($?)
                 {
-                    print STDERR "ERROR: failed to extract package (".$?.")\n";
+                    warn "ERROR: failed to extract package (".$?.")\n";
                     exitStatus(1);
                 }
 
@@ -8280,13 +8273,13 @@ sub showInfo()
                 }
                 else
                 {
-                    print STDERR "ERROR: failed to extract package\n";
+                    warn "ERROR: failed to extract package\n";
                     exitStatus(1);
                 }
             }
             else
             {
-                print STDERR "ERROR: not a package\n";
+                warn "ERROR: not a package\n";
                 exitStatus(1);
             }
         }
@@ -8296,7 +8289,7 @@ sub showInfo()
         }
         else
         {
-            print STDERR "ERROR: can't access \'".$Opt{"Source"}."\'\n";
+            warn "ERROR: can't access \'".$Opt{"Source"}."\'\n";
             exitStatus(1);
         }
     }
@@ -8304,7 +8297,7 @@ sub showInfo()
     {
         if(not -d $DATA_DIR)
         {
-            print STDERR "ERROR: \'".$DATA_DIR."\' is not found, please make probe first\n";
+            warn "ERROR: \'".$DATA_DIR."\' is not found, please make probe first\n";
             exitStatus(1);
         }
     }
@@ -8571,7 +8564,7 @@ sub checkGraphics()
             listProbe("tests", "glxgears (Nouveau)");
             system("xrandr --setprovideroffloadsink 1 0"); # nouveau Intel
             if($?) {
-                print STDERR "ERROR: failed to run glxgears test on discrete card\n";
+                warn "ERROR: failed to run glxgears test on discrete card\n";
             }
             else {
                 $Out_D = runCmd("DRI_PRIME=1 vblank_mode=0 $Glxgears");
@@ -8912,13 +8905,13 @@ sub downloadProbe($$)
     }
     elsif(index($Page, "ERROR(1):")!=-1)
     {
-        print STDERR "ERROR: You are not allowed temporarily to download probes\n";
+        warn "ERROR: You are not allowed temporarily to download probes\n";
         rmtree($Dir."/logs");
         exitStatus(1);
     }
     elsif(not $Page)
     {
-        print STDERR "ERROR: Internet connection is required\n";
+        warn "ERROR: Internet connection is required\n";
         exitStatus(1);
     }
 
@@ -8960,7 +8953,7 @@ sub downloadProbe($$)
 
                 if(index($Log, "ERROR(1):")!=-1)
                 {
-                    print STDERR "ERROR: You are not allowed temporarily to download probes\n";
+                    warn "ERROR: You are not allowed temporarily to download probes\n";
                     rmtree($Dir."/logs");
                     exitStatus(1);
                 }
@@ -9417,7 +9410,7 @@ sub scenario()
 {
     if($Opt{"Help"})
     {
-        helpMsg();
+	print $HelpMessage;
         exitStatus(0);
     }
 
@@ -9461,7 +9454,7 @@ sub scenario()
 
         if($Opt{"LogLevel"}!~/\A(minimal|default|maximal)\Z/i)
         {
-            print STDERR "ERROR: unknown log level \'".$Opt{"LogLevel"}."\'\n";
+            warn "ERROR: unknown log level \'".$Opt{"LogLevel"}."\'\n";
             exitStatus(1);
         }
 
@@ -9476,7 +9469,7 @@ sub scenario()
     {
         if(not -f $Opt{"HWInfoPath"})
         {
-            print STDERR "ERROR: can't access file \'".$Opt{"HWInfoPath"}."\'\n";
+            warn "ERROR: can't access file \'".$Opt{"HWInfoPath"}."\'\n";
             exitStatus(1);
         }
     }
@@ -9485,7 +9478,7 @@ sub scenario()
     {
         if(not $USE_DUMPER)
         {
-            print STDERR "ERROR: requires perl-Data-Dumper module\n";
+            warn "ERROR: requires perl-Data-Dumper module\n";
             exitStatus(1);
         }
     }
@@ -9494,7 +9487,7 @@ sub scenario()
     {
         if(not -f $Opt{"IdentifyDrive"})
         {
-            print STDERR "ERROR: can't access file \'".$Opt{"IdentifyDrive"}."\'\n";
+            warn "ERROR: can't access file \'".$Opt{"IdentifyDrive"}."\'\n";
             exitStatus(1);
         }
 
@@ -9514,7 +9507,7 @@ sub scenario()
     {
         if(not -f $Opt{"IdentifyMonitor"})
         {
-            print STDERR "ERROR: can't access file \'".$Opt{"IdentifyMonitor"}."\'\n";
+            warn "ERROR: can't access file \'".$Opt{"IdentifyMonitor"}."\'\n";
             exitStatus(1);
         }
 
@@ -9527,7 +9520,7 @@ sub scenario()
     {
         if(not -f $Opt{"DecodeACPI_From"})
         {
-            print STDERR "ERROR: can't access file \'".$Opt{"DecodeACPI_From"}."\'\n";
+            warn "ERROR: can't access file \'".$Opt{"DecodeACPI_From"}."\'\n";
             exitStatus(1);
         }
         decodeACPI($Opt{"DecodeACPI_From"}, $Opt{"DecodeACPI_To"});
@@ -9556,7 +9549,7 @@ sub scenario()
         {
             if(not -w $DATA_DIR)
             {
-                print STDERR "ERROR: can't write to \'$DATA_DIR\', please run as root\n";
+                warn "ERROR: can't write to \'$DATA_DIR\', please run as root\n";
                 exitStatus(1);
             }
             rmtree($DATA_DIR);
@@ -9568,7 +9561,7 @@ sub scenario()
         if(not $Admin
         and not $SNAP_DESKTOP and not $FLATPAK_DESKTOP)
         {
-            print STDERR "ERROR: you should run as root (sudo or su)\n";
+            warn "ERROR: you should run as root (sudo or su)\n";
             exitStatus(1);
         }
     }
@@ -9599,7 +9592,7 @@ sub scenario()
     {
         if(not -e $Opt{"PciIDs"})
         {
-            print STDERR "ERROR: can't access \'".$Opt{"PciIDs"}."\'\n";
+            warn "ERROR: can't access \'".$Opt{"PciIDs"}."\'\n";
             exitStatus(1);
         }
         readPciIds($Opt{"PciIDs"}, \%PciInfo, \%PciInfo_D);
@@ -9613,7 +9606,7 @@ sub scenario()
     {
         if(not -e $Opt{"UsbIDs"})
         {
-            print STDERR "ERROR: can't access \'".$Opt{"UsbIDs"}."\'\n";
+            warn "ERROR: can't access \'".$Opt{"UsbIDs"}."\'\n";
             exitStatus(1);
         }
         readUsbIds($Opt{"UsbIDs"}, \%UsbInfo);
@@ -9627,7 +9620,7 @@ sub scenario()
     {
         if(not -e $Opt{"SdioIDs"})
         {
-            print STDERR "ERROR: can't access \'".$Opt{"SdioIDs"}."\'\n";
+            warn "ERROR: can't access \'".$Opt{"SdioIDs"}."\'\n";
             exitStatus(1);
         }
         readSdioIds($Opt{"SdioIDs"}, \%SdioInfo, \%SdioVendor);
@@ -9641,7 +9634,7 @@ sub scenario()
     {
         if(not -e $Opt{"PnpIDs"})
         {
-            print STDERR "ERROR: can't access \'".$Opt{"PnpIDs"}."\'\n";
+            warn "ERROR: can't access \'".$Opt{"PnpIDs"}."\'\n";
             exitStatus(1);
         }
     }
@@ -9650,7 +9643,7 @@ sub scenario()
     {
         if(not -e $Opt{"FixProbe"})
         {
-            print STDERR "ERROR: can't access \'".$Opt{"FixProbe"}."\'\n";
+            warn "ERROR: can't access \'".$Opt{"FixProbe"}."\'\n";
             exitStatus(1);
         }
 
@@ -9669,7 +9662,7 @@ sub scenario()
         }
         elsif(-f $Opt{"FixProbe"})
         {
-            print STDERR "ERROR: unsupported probe format \'".$Opt{"FixProbe"}."\'\n";
+            warn "ERROR: unsupported probe format \'".$Opt{"FixProbe"}."\'\n";
             exitStatus(1);
         }
 
@@ -9681,13 +9674,13 @@ sub scenario()
         {
             if(not listDir($FixProbe_Logs))
             {
-                print STDERR "ERROR: can't find logs in \'".$Opt{"FixProbe"}."\'\n";
+                warn "ERROR: can't find logs in \'".$Opt{"FixProbe"}."\'\n";
                 exitStatus(1);
             }
         }
         else
         {
-            print STDERR "ERROR: can't access \'".$Opt{"FixProbe"}."\'\n";
+            warn "ERROR: can't access \'".$Opt{"FixProbe"}."\'\n";
             exitStatus(1);
         }
 
@@ -9744,7 +9737,7 @@ sub scenario()
     {
         if(not -d $Opt{"Save"})
         {
-            print STDERR "ERROR: please create directory first\n";
+            warn "ERROR: please create directory first\n";
             exitStatus(1);
         }
     }
@@ -9754,7 +9747,7 @@ sub scenario()
         if(not check_Cmd("curl"))
         {
             if(not $Opt{"Snap"} and not $Opt{"Flatpak"}) {
-                print STDERR "WARNING: 'curl' package is not installed\n";
+                warn "WARNING: 'curl' package is not installed\n";
             }
         }
     }
@@ -9890,7 +9883,7 @@ sub scenario()
                 }
                 else
                 {
-                    print STDERR "ERROR: failed to fix 'system' attribute (kernel is '".$Sys{"Kernel"}."')\n";
+                    warn "ERROR: failed to fix 'system' attribute (kernel is '".$Sys{"Kernel"}."')\n";
                 }
             }
 
@@ -9950,7 +9943,7 @@ sub scenario()
             chdir($ORIG_DIR);
 
             if($?) {
-                print STDERR "ERROR: can't create a package\n";
+                warn "ERROR: can't create a package\n";
             }
 
             rmtree($TMP_DIR."/hw.info");
@@ -9978,13 +9971,13 @@ sub scenario()
     {
         if(not $Admin)
         {
-            print STDERR "ERROR: you should run as root (sudo or su)\n";
+            warn "ERROR: you should run as root (sudo or su)\n";
             exitStatus(1);
         }
 
         if(not $USE_DUMPER)
         {
-            print STDERR "ERROR: requires perl-Data-Dumper module\n";
+            warn "ERROR: requires perl-Data-Dumper module\n";
             exitStatus(1);
         }
 
