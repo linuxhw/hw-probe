@@ -91,14 +91,17 @@ my $ORIG_DIR = cwd();
 my $HWLogs = 0;
 my $TMP_DIR = tempdir(CLEANUP=>1);
 
-my $ShortUsage = "Hardware Probe Tool $TOOL_VERSION
+my $ShortUsage = <<"EOSU";
+Hardware Probe Tool $TOOL_VERSION
 A tool to probe for hardware and upload result to the Linux hardware DB
 License: GNU LGPL 2.1+
 
-Usage: sudo $CmdName [options]
+Usage:   sudo $CmdName [options]
 Example: sudo $CmdName -all -upload
 
-DESC — any description of the probe.\n\n";
+DESC — any description of the probe.
+
+EOSU
 
 my $SNAP_DESKTOP = (defined $ENV{"BAMF_DESKTOP_FILE_HINT"});
 my $FLATPAK_DESKTOP = ($#ARGV==0 and $ARGV[0] eq "-flatpak");
@@ -195,7 +198,7 @@ my $LOG_DIR = $DATA_DIR."/logs";
 my $TEST_DIR = $DATA_DIR."/tests";
 my $PROBE_LOG = $PROBE_DIR."/LOG";
 
-my $HelpMessage="
+my $HelpMessage = <<"EOHM";
 NAME:
   Hardware Probe Tool ($CmdName)
   A tool to probe for hardware and upload result to the Linux hardware DB
@@ -204,8 +207,8 @@ DESCRIPTION:
   Hardware Probe Tool (HW Probe) is a tool to probe for hardware,
   check its operability and upload result to the Linux hardware DB.
 
-  By creating probes you contribute to the \"HDD/SSD Real-Life Reliability
-  Test\" study: https://github.com/linuxhw/SMART
+  By creating probes you contribute to the "HDD/SSD Real-Life Reliability
+  Test" study: https://github.com/linuxhw/SMART
 
   This tool is free software: you can redistribute it and/or modify it
   under the terms of the GNU LGPL 2.1+.
@@ -333,11 +336,7 @@ OTHER OPTIONS:
 DATA LOCATION:
   Probes are saved in the $PROBE_DIR directory.
 
-";
-
-sub helpMsg() {
-    print $HelpMessage;
-}
+EOHM
 
 # Hardware
 my %HW;
