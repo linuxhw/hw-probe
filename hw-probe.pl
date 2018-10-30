@@ -1501,7 +1501,7 @@ sub copyFiles($$)
 sub isPkg($)
 {
     my $Path = $_[0];
-    return ($Path=~/\.(tar\.xz|txz)\Z/ or `file \"$Path\"`=~/XZ compressed data/);
+    return ($Path=~/\.(tar\.xz|txz)\Z/ or `file "$Path"`=~/XZ compressed data/);
 }
 
 sub updateHost($$$)
