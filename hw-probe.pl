@@ -9095,15 +9095,12 @@ sub importProbes($)
         mkpath($Dir);
         setPublic($Dir);
     }
-    
-    my ($Imported, $OneProbe) = (undef, undef);
-    
-    my $IndexInfo = eval(readFile($Dir."/index.info"));
-    if(not $IndexInfo) {
-        $IndexInfo = {};
-    }
-    
-    my @Paths = ();
+
+    my ($Imported, $OneProbe);
+
+    my $IndexInfo = eval { readFile($Dir."/index.info") } || {};
+
+    my @Paths;
     if(-d $PROBE_DIR)
     {
         foreach my $P (listDir($PROBE_DIR)) {
@@ -9174,7 +9171,7 @@ sub importProbes($)
             next;
         }
         my $D = $Dir."/".$P;
-        my $Prop = eval(readFile($D."/probe.info"));
+        my $Prop = eval { readFile($D."/probe.info") } || {};
         $Indexed{lc($Prop->{"hwaddr"})}{$P} = $Prop;
         $OneProbe = $P;
     }
