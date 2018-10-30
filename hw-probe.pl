@@ -1479,7 +1479,7 @@ sub updateHost {
 
         my $Chg = 0;
 
-        if($Content!~/(\A|\n)$Attr:/)
+        if($Content!~/(?:\A|\n)$Attr:/)
         {
             if($Content!~/\n\Z/) {
                 $Content .= "\n";
@@ -1487,11 +1487,11 @@ sub updateHost {
             $Content .= $Attr.":".$Val."\n";
             $Chg = 1;
         }
-        elsif($Content=~/(\A|\n)$Attr:(.*)/)
+        elsif($Content=~/(?:\A|\n)$Attr:(.*)/)
         {
-            if($2 ne $Val)
+            if($1 ne $Val)
             {
-                $Content=~s/(\A|\n)$Attr:(.*)/$1$Attr:$Val/;
+                $Content=~s/(\A|\n)$Attr:.*/$1$Attr:$Val/;
                 $Chg = 1;
             }
         }
@@ -1518,8 +1518,8 @@ sub fmtVal {
         return "";
     }
 
-    $Val=~s/\((R|TM)\)\-/-/gi;
-    $Val=~s/\((R|TM)\)/ /gi;
+    $Val=~s/\((?:R|TM)\)\-/-/gi;
+    $Val=~s/\((?:R|TM)\)/ /gi;
 
     $Val=~s/\342\204\242|\302\256|\302\251//g; # TM (trade mark), R (registered), C (copyright) special symbols
     $Val=~s/\303\227/x/g; # multiplication sign
@@ -1767,7 +1767,7 @@ sub addCapacity {
     if($Capacity)
     {
         $Capacity=~s/\s+//g;
-        if($Device!~/(\A|\s)[\d\.\,]+\s*(MB|GB|TB|PB|[MGT])(\s|\Z)/
+        if($Device!~/(?:\A|\s)[\d\.\,]+\s*(?:MB|GB|TB|PB|[MGT])(?:\s|\Z)/
         and $Device!~/reader|bridge|\/sd\/|adapter/i) {
             return " ".$Capacity;
         }
@@ -5903,7 +5903,7 @@ sub fixDrive {
         elsif($Device->{"Device"}=~/\A(\d{3})\Z/) {
             $Device->{"Device"} = "SSD $1";
         }
-        elsif($Device->{"Device"}=~/\A\d+\s*(GB|TB|G|T)\Z/) {
+        elsif($Device->{"Device"}=~/\A\d+\s*(?:GB|TB|G|T)\Z/) {
             $Device->{"Device"} = "SSD ".$Device->{"Device"};
         }
     }
@@ -5924,7 +5924,7 @@ sub fixDrive {
                     $S2 += 1;
                 }
                 my $S3 = $S2 + 2;
-                if($Device->{"Device"}!~/[^1-9]+($S1|$S2|$S3|16|24|32|120|128|256|512|1024|2048)([^\d]+|\Z)/) { # TODO: fix expression (add '\A')
+                if($Device->{"Device"}!~/[^1-9]+(?:$S1|$S2|$S3|16|24|32|120|128|256|512|1024|2048)(?:[^\d]+|\Z)/) { # TODO: fix expression (add '\A')
                     $Device->{"Device"} .= addCapacity($Device->{"Device"}, $Device->{"Capacity"});
                 }
             }
@@ -5938,8 +5938,8 @@ sub fixDrive {
     if(not $Device->{"Vendor"})
     {
         if(grep {$Device->{"Device"} eq $_} ("OOS500G", "T60", "T120")
-        or $Device->{"Device"}=~/\A\d+(G|GB|T|TB) SSD\Z/ or $Device->{"Device"}=~/\ASSD\s*\d+(G|GB|T|TB)\Z/
-        or $Device->{"Device"}=~/\A(RTMMB|TP00)\d+/)
+        or $Device->{"Device"}=~/\A\d+(?:G|GB|T|TB) SSD\Z/ or $Device->{"Device"}=~/\ASSD\s*\d+(?:G|GB|T|TB)\Z/
+        or $Device->{"Device"}=~/\A(?:RTMMB|TP00)\d+/)
         { # SSD32G, SSD60G
           # 64GB SSD
           # RTMMB256VBV4KFY
@@ -6392,19 +6392,19 @@ sub probeSys {
 
         if($File eq "sys_vendor")
         {
-            if($Value!~/\b(System manufacturer|to be filled)\b/i) {
+            if($Value!~/\b(?:System manufacturer|to be filled)\b/i) {
                 $Sys{"Vendor"} = $Value;
             }
         }
         elsif($File eq "product_name")
         {
-            if($Value!~/\b(Name|to be filled)\b/i) {
+            if($Value!~/\b(?:Name|to be filled)\b/i) {
                 $Sys{"Model"} = $Value;
             }
         }
         elsif($File eq "product_version")
         {
-            if($Value!~/\b(Version|to be filled)\b/i) {
+            if($Value!~/\b(?:Version|to be filled)\b/i) {
                 $Sys{"Version"} = $Value;
             }
         }
@@ -9335,14 +9335,14 @@ sub scenario {
 
     if($Opt{"LogLevel"})
     {
-        if($Opt{"LogLevel"}=~/\A(min|mini|minimum)\Z/i) {
+        if($Opt{"LogLevel"}=~/\A(?:min|mini|minimum)\Z/i) {
             $Opt{"LogLevel"} = "minimal";
         }
-        elsif($Opt{"LogLevel"}=~/\A(max|maxi|maximum)\Z/i) {
+        elsif($Opt{"LogLevel"}=~/\A(?:max|maxi|maximum)\Z/i) {
             $Opt{"LogLevel"} = "maximal";
         }
 
-        if($Opt{"LogLevel"}!~/\A(minimal|default|maximal)\Z/i)
+        if($Opt{"LogLevel"}!~/\A(?:minimal|default|maximal)\Z/i)
         {
             warn "ERROR: unknown log level '".$Opt{"LogLevel"}."'\n";
             exitStatus(1);
