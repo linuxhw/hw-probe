@@ -474,7 +474,7 @@ my $DEFAULT_VENDOR = "China";
 my %DistSuffix = (
     "res7" => "rels-7",
     "res6" => "rels-6",
-    "vl6"  => "virtuozzo-7",
+    "vl7"  => "virtuozzo-7",
     "vl6"  => "virtuozzo-6"
 );
 
@@ -565,7 +565,7 @@ my %MonVendor = (
     "CND" => "CND",
     "CPT" => "CPT",
     "CPQ" => "Compaq",
-    "CPQ" => "Compaq Computer",
+#   "CPQ" => "Compaq Computer",
     "CTL" => "CTL",
     "CTX" => "CTX",
     "DEL" => "Dell",
