@@ -2624,7 +2624,7 @@ sub probeHW {
         {
             $ID = devID($V, $D, $SV, $SD);
 
-            if($SV, $SD) {
+            if($SV and $SD) { # was if($SV, $SD) but that makes no sense
                 $LongID{devID($V, $D)}{$ID} = 1;
             }
 
