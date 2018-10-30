@@ -2284,7 +2284,6 @@ sub probeHW()
             }
             elsif($Key eq "Driver")
             {
-                my @Dr = ();
                 while($Val=~s/\"([\w\-]+)\"//)
                 {
                     my $Dr = $1;
@@ -2433,7 +2432,7 @@ sub probeHW()
         if(not $Device{"Device"})
         {
             if(my $Model = $Device{"Model"}) {
-                $Device{"Device"} = $Device{"Model"};
+                $Device{"Device"} = $Model;
             }
             elsif(my $Platform = $Device{"Platform"}
             and $Device{"Type"} eq "cpu") {
@@ -3331,18 +3330,13 @@ sub probeHW()
                 if(my $SubVendor = fmtVal($1))
                 {
                     $SubVendor=~s/\AManufacturer\s+//ig;
-                    
-                    my $V1 = nameID($Vendor);
-                    my $V2 = nameID($SubVendor);
-                    
+
                     if($Vendor
                     and $SubVendor!~/usb/i and $SubVendor!~/generic/
                     and $SubVendor ne $Device{"SDevice"}
                     and $SubVendor ne $FinalName)
                     {
-                        #if($V1!~/\Q$V2\E/i and $V2!~/\Q$V1\E/i) {
-                            $Device{"SVendor"} = $SubVendor;
-                        #}
+                        $Device{"SVendor"} = $SubVendor;
                     }
                 }
             }
@@ -3498,7 +3492,6 @@ sub probeHW()
             
             foreach my $Dr (sort keys(%Drivers))
             {
-                my $CheckDr = undef;
                 if($Dr=~/\Anvidia/)
                 { # nvidia346, nvidia_375, etc.
                     if(not defined $WorkMod{"nvidia"}) {
@@ -4427,7 +4420,6 @@ sub probeHW()
     
     if(not $Upower and $PowerSupply)
     {
-        my $PSPath = undef;
         foreach my $Block (split(/\n\n/, $PowerSupply))
         {
             if($Block=~/$PSDir\/BAT/i)
@@ -5198,9 +5190,8 @@ sub probeHW()
         {
             if(index($HCI, "UP RUNNING ")!=-1)
             {
-                if($HCI=~/\A([^:]+):?\s/)
+                if($HCI=~/\A[^:]+:?\s/)
                 {
-                    my $F = $1;
                     foreach my $ID (sort grep {defined $HW{$_}{"Type"} and $HW{$_}{"Type"} eq "bluetooth"} keys(%HW))
                     { # TODO: identify particular bt devices by lsusb
                         if($HW{$ID}{"Driver"})
@@ -5398,7 +5389,7 @@ sub detectBoard($)
     }
     
     if(my $Ver = $Device->{"Version"}) {
-        $Device->{"Device"} .= " ".$Device->{"Version"};
+        $Device->{"Device"} .= " ".$Ver;
     }
     
     if(my $Vendor = $Device->{"Vendor"}) {
@@ -5563,8 +5554,6 @@ sub detectMonitor($)
     while($Info=~s/(\d+)x(\d+)\@\d+//) {
         $Resolutions{$1} = $2;
     }
-    
-    my ($W, $H) = ();
     while($Info=~s/\n\s+(\d+)\s+.+?\s+hborder//)
     {
         my $W = $1;
@@ -6374,13 +6363,8 @@ sub fixModel($$$)
             
             if($Version)
             {
-<<<<<<< HEAD
-                while($Model=~s/\A\Q$Version\E\s+//i){};
-                
-=======
                 while($Model=~s/\A\Q$Version\E\s+//i) {}
 
->>>>>>> 66259f4... Null statements
                 if($Model!~/\Q$Version\E/i) {
                     $Model = $Version." ".$Model;
                 }
@@ -7285,14 +7269,9 @@ sub writeLogs()
     if($Opt{"ListProbes"}) {
         print "\n";
     }
-    
-    my $SessUser = getUser();
-    if(not $SessUser) {
-        $SessUser = $ENV{"USER"};
-    }
-    
-    my $KRel = $Sys{"Kernel"};
-    
+
+    my $SessUser = getUser() || $ENV{USER};
+
     # level=minimal
     if($Admin)
     {
@@ -7314,7 +7293,7 @@ sub writeLogs()
     
     if(not $XLog_Old)
     {
-        if(my $SessUser = getUser())
+        if($SessUser)
         { # Old Xorg log in XWayland (Ubuntu 18.04)
             $XLog_Old = readFile("/home/".$SessUser."/.local/share/xorg/Xorg.0.log.old");
         }
@@ -8242,9 +8221,9 @@ sub decodeACPI($$)
             if($Name=~/dsdt/i) {
                 # next;
             }
-            
-            my $Log2 = runCmd("iasl -d \"$File\" 2>&1");
-            
+
+            runCmd("iasl -d \"$File\" 2>&1");
+
             my $DslFile = $Name.".dsl";
             if(-f $DslFile)
             {
@@ -8975,11 +8954,10 @@ sub downloadProbe($$)
     my $NPage = "";
     foreach my $Line (split(/\n/, $Page))
     {
-        if($Line=~/((href|src)=['"]([^"']+?)['"])/)
+        if($Line=~/((?:href|src)=['"]([^"']+?)['"])/)
         {
-            my $Href = $1;
-            my $Url = $3;
-            
+            my $Url  = $2;
+
             if($Url=~/((css|js|images)\/[^?]+)/)
             {
                 my ($SPath, $Subj) = ($1, $2);
