@@ -10,22 +10,22 @@ See more info in the [README.md](https://github.com/linuxhw/hw-probe/).
 Contents
 --------
 
-1.  [ Run without Installing ](#run-without-installing)
-2.  [ Install from Source    ](#install-from-source)
-3.  [ Install on Ubuntu      ](#install-on-ubuntu)
-4.  [ Install on Debian      ](#install-on-debian)
-5.  [ Install on openSUSE    ](#install-on-opensuse)
-6.  [ Install on Arch Linux  ](#install-on-arch-linux)
-7.  [ Install on Fedora      ](#install-on-fedora)
-8.  [ Install on CentOS 7    ](#install-on-centos-7)
-9.  [ Install on CentOS 6    ](#install-on-centos-6)
-10. [ Build Debian package   ](#build-debian-package)
+* [ Run without Installing ](#run-without-installing)
+* [ Install from Source    ](#install-from-source)
+* [ Install on Ubuntu      ](#install-on-ubuntu)
+* [ Install on Debian      ](#install-on-debian)
+* [ Install on openSUSE    ](#install-on-opensuse)
+* [ Install on Arch Linux  ](#install-on-arch-linux)
+* [ Install on Fedora      ](#install-on-fedora)
+* [ Install on CentOS 7    ](#install-on-centos-7)
+* [ Install on CentOS 6    ](#install-on-centos-6)
+* [ Build Debian package   ](#build-debian-package)
 
 
 Run without Installing
 ----------------------
 
-You can probe your computer by [AppImage](https://github.com/linuxhw/hw-probe#appimage), [Docker image](https://github.com/linuxhw/hw-probe#docker) or [Live CD](https://github.com/linuxhw/hw-probe#live-cd) without the need to install anything on your host.
+You can probe your computer by [AppImage](https://github.com/linuxhw/hw-probe#appimage), [Docker image](https://github.com/linuxhw/hw-probe#docker), [Snap](https://github.com/linuxhw/hw-probe#snap), [Flatpak](https://github.com/linuxhw/hw-probe#flatpak) or [Live CD](https://github.com/linuxhw/hw-probe#live-cd) without the need to install anything on your host.
 
 Install from Source
 -------------------

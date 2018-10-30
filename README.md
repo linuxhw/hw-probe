@@ -6,18 +6,19 @@ Hardware Probe Tool (HW Probe) — a tool to probe for hardware, check its opera
 Contents
 --------
 
-1.  [ About        ](#about)
-2.  [ Install      ](#install)
-3.  [ Usage        ](#usage)
-4.  [ AppImage     ](#appimage)
-5.  [ Docker       ](#docker)
-6.  [ Live CD      ](#live-cd)
-7.  [ Snap         ](#snap)
-8.  [ Inventory    ](#inventory)
-9.  [ Offline view ](#offline-view)
-10. [ ACPI dump    ](#acpi-dump)
-11. [ Operability  ](#operability)
-12. [ Privacy      ](#privacy)
+* [ About        ](#about)
+* [ Install      ](#install)
+* [ Usage        ](#usage)
+* [ AppImage     ](#appimage)
+* [ Docker       ](#docker)
+* [ Live CD      ](#live-cd)
+* [ Snap         ](#snap)
+* [ Flatpak      ](#flatpak)
+* [ Inventory    ](#inventory)
+* [ Offline view ](#offline-view)
+* [ ACPI dump    ](#acpi-dump)
+* [ Operability  ](#operability)
+* [ Privacy      ](#privacy)
 
 
 About
@@ -29,7 +30,7 @@ Sample probe: https://linux-hardware.org/?probe=b394035f90
 
 Share your probes and logs with Linux developers in order to debug and fix problems on your computer. Simplify inventory of hardware in your company.
 
-You can make a probe of your computer with the help of [AppImage](#appimage), [Docker image](#docker), [Snap](#snap), [Live CD](#live-cd) or RPM/DEB package.
+You can make a probe of your computer with the help of [AppImage](#appimage), [Docker image](#docker), [Snap](#snap), [Flatpak](#flatpak), [Live CD](#live-cd) or RPM/DEB package.
 
 By creating probes you contribute to the "HDD/SSD Real-Life Reliability Test" study: https://github.com/linuxhw/SMART
 
@@ -37,7 +38,7 @@ By creating probes you contribute to the "HDD/SSD Real-Life Reliability Test" st
 Install
 -------
 
-You can probe your computer by [AppImage](#appimage), [Docker image](#docker), [Snap](#snap) or [Live CD](#live-cd).
+You can probe your computer by [AppImage](#appimage), [Docker image](#docker), [Snap](#snap), [Flatpak](#flatpak) or [Live CD](#live-cd).
 
 Also you can install native RPM/DEB package for your Linux distribution or install from source. See all install instructions in the [INSTALL.md](https://github.com/linuxhw/hw-probe/blob/master/INSTALL.md) file.
 
@@ -149,6 +150,29 @@ Now you can create computer probes:
 * Debian 9 and later
 * Fedora 26 and later
 
+
+Flatpak
+-------
+
+Add a remote:
+
+    flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+Install universal package:
+
+    flatpak install flathub org.linux_hardware.hw-probe
+
+Now you can create computer probes:
+
+    sudo flatpak run org.linux_hardware.hw-probe -all -upload
+
+###### App Center
+
+Find the `Hardware Probe` application in your App Center, install it and click on the desktop icon to make a probe. Enable Flatpak plugin if needed (`gnome-software-plugin-flatpak` package for Debian/Ubuntu).
+
+###### Flathub
+
+The app is available in the Flathub: https://flathub.org/apps/details/org.linux_hardware.hw-probe
 
 Inventory
 ---------

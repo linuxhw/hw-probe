@@ -19,11 +19,11 @@
     </p>
     <p>
       The tool is intended to simplify collecting of logs necessary for
-      investigating hardware related problems. Just ask user to run one
+      investigating hardware related problems. Just ask a user to run one
       simple command to collect all the system logs at once:
     </p>
     <p>
-      sudo hw-probe -all -upload
+      sudo flatpak run org.linux_hardware.hw-probe -all -upload
     </p>
     <p>
       By creating probes you contribute to the HDD/SSD Real-Life

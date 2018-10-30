@@ -971,7 +971,14 @@ sub hideTags($$)
 sub hideHostname($)
 {
     my $Content = $_[0];
-    $Content=~s/(Set hostname to) <.+>\./$1 <...>./g;
+    $Content=~s/(Set hostname to\s+).+/$1.../g;
+    return $Content;
+}
+
+sub hidePaths($)
+{
+    my $Content = $_[0];
+    $Content=~s&/(media|home|mnt)/[^\s]+&/$1/XXX&g;
     return $Content;
 }
 
@@ -986,6 +993,13 @@ sub hideIPs($)
     $Content=~s/[\da-f]+\:\:[\da-f]+\:[\da-f]+\:[\da-f]+\:[\da-f]+/XXXX::XXX:XXX:XXX:XXX/gi;
     $Content=~s/[\da-f]+\:[\da-f]+\:[\da-f]+\:[\da-f]+\:[\da-f]+\:[\da-f]+\:[\da-f]+\:[\da-f]+/XXXX:XXXX:XXXX:XXXX:XXXX:XXXX:XXXX:XXXX/gi;
     
+    return $Content;
+}
+
+sub hideUrls($)
+{
+    my $Content = $_[0];
+    $Content=~s&/(\w+\:)//[\w\-\.]+&$1//XXX&g;
     return $Content;
 }
 
@@ -2014,8 +2028,9 @@ sub probeHW()
             listProbe("logs", "modinfo");
             my $Modinfo = runCmd("modinfo ".join(" ", @KernDrvs)." 2>&1");
             $Modinfo=~s/\n(filename:)/\n\n$1/g;
-            $Modinfo=~s/\n(author|signer|sig_key|sig_hashalgo):.+//g;
+            $Modinfo=~s/\n(author|signer|sig_key|sig_hashalgo|vermagic):.+//g;
             $Modinfo=~s/\ndepends:\s+\n/\n/g;
+            $Modinfo=~s&/lib/modules/[^\/]+/kernel/&&g;
             writeLog($LOG_DIR."/modinfo", $Modinfo);
         }
     }
@@ -5000,6 +5015,7 @@ sub probeHW()
         $Dmesg = runCmd("dmesg 2>&1");
         $Dmesg = hideTags($Dmesg, "SerialNumber");
         $Dmesg = hideHostname($Dmesg);
+        $Dmesg = hideIPs($Dmesg);
         $Dmesg = hideMACs($Dmesg);
         writeLog($LOG_DIR."/dmesg", $Dmesg);
     }
@@ -5264,7 +5280,9 @@ sub probeHW()
         {
             listProbe("logs", "opensc-tool");
             $OpenscTool = runCmd("opensc-tool --list-readers");
-            if($OpenscTool and $OpenscTool!~/No smart card readers/) {
+            if($OpenscTool and $OpenscTool!~/No smart card readers/)
+            {
+                $OpenscTool=~s/ \([^\(\)]+\)//g;
                 writeLog($LOG_DIR."/opensc-tool", $OpenscTool);
             }
         }
@@ -7280,6 +7298,7 @@ sub writeLogs()
             $Dmesg_Old=~s/\]\s+.*?\s+kernel:/]/g;
             $Dmesg_Old = hideTags($Dmesg_Old, "SerialNumber");
             $Dmesg_Old = hideHostname($Dmesg_Old);
+            $Dmesg_Old = hideIPs($Dmesg_Old);
             $Dmesg_Old = hideMACs($Dmesg_Old);
             writeLog($LOG_DIR."/dmesg.1", $Dmesg_Old);
         }
@@ -7346,6 +7365,7 @@ sub writeLogs()
     {
         listProbe("logs", "boot.log");
         my $BootLog = clearLog(readFile("/var/log/boot.log"));
+        $BootLog=~s/(Mounted|Mounting)\s+.+/$1 XXXXX/g;
         writeLog($LOG_DIR."/boot.log", $BootLog);
     }
     
@@ -7389,6 +7409,9 @@ sub writeLogs()
     {
         listProbe("logs", "df");
         my $Df = runCmd("df -h 2>&1");
+        $Df = hidePaths($Df);
+        $Df = hideIPs($Df);
+        $Df = hideUrls($Df);
         writeLog($LOG_DIR."/df", $Df);
     }
     
@@ -7396,14 +7419,36 @@ sub writeLogs()
     my $Meminfo = readFile("/proc/meminfo");
     writeLog($LOG_DIR."/meminfo", $Meminfo);
     
+    listProbe("logs", "sensors");
+    my $Sensors = runCmd("sensors 2>/dev/null");
+    writeLog($LOG_DIR."/sensors", $Sensors);
+    
+    if(check_Cmd("cpuid"))
+    {
+        listProbe("logs", "cpuid");
+        my $Cpuid = runCmd("cpuid -1 2>&1");
+        $Cpuid = encryptSerials($Cpuid, "serial number");
+        writeLog($LOG_DIR."/cpuid", $Cpuid);
+    }
+    else
+    {
+        listProbe("logs", "cpuinfo");
+        my $Cpuinfo = readFile("/proc/cpuinfo");
+        $Cpuinfo=~s/\n\n(.|\n)+\Z/\n/g; # for one core
+        writeLog($LOG_DIR."/cpuinfo", $Cpuinfo);
+    }
+    
+    if(not $Opt{"Flatpak"})
+    {
+        listProbe("logs", "lscpu");
+        my $Lscpu = runCmd("lscpu 2>&1");
+        writeLog($LOG_DIR."/lscpu", $Lscpu);
+    }
+    
     # level=default
     if($Opt{"LogLevel"} eq "default"
     or $Opt{"LogLevel"} eq "maximal")
     {
-        listProbe("logs", "sensors");
-        my $Sensors = runCmd("sensors 2>/dev/null");
-        writeLog($LOG_DIR."/sensors", $Sensors);
-        
         listProbe("logs", "uptime");
         my $Uptime = runCmd("uptime");
         writeLog($LOG_DIR."/uptime", $Uptime);
@@ -7550,45 +7595,6 @@ sub writeLogs()
             }
         }
         
-        if(not $Opt{"Docker"})
-        {
-            listProbe("logs", "findmnt");
-            my $Findmnt = "";
-            if(check_Cmd("findmnt"))
-            {
-                my $FindmntCmd = "findmnt";
-                if($Opt{"Flatpak"}) {
-                    $FindmntCmd .= " 2>/dev/null";
-                }
-                else {
-                    $FindmntCmd .= " 2>&1";
-                }
-                $Findmnt = runCmd($FindmntCmd);
-                
-                if($Opt{"Snap"} and $Findmnt=~/Permission denied/) {
-                    $Findmnt = "";
-                }
-            }
-            
-            if($Findmnt) {
-                writeLog($LOG_DIR."/findmnt", $Findmnt);
-            }
-            else
-            {
-                listProbe("logs", "mount");
-                my $Mount = "";
-                if(check_Cmd("mount"))
-                {
-                    $Mount = runCmd("mount -v 2>&1");
-                    
-                    if($Opt{"Snap"} and $Mount=~/Permission denied/) {
-                        $Mount = "";
-                    }
-                }
-                writeLog($LOG_DIR."/mount", $Mount);
-            }
-        }
-        
         if($Admin)
         {
             listProbe("logs", "fdisk");
@@ -7650,12 +7656,15 @@ sub writeLogs()
                     {
                         listProbe("logs", "efibootmgr");
                         my $Efibootmgr = runCmd("efibootmgr -v 2>&1");
+                        if($Opt{"Snap"} and $Efibootmgr=~/Permission denied/) {
+                            $Efibootmgr = "";
+                        }
                         writeLog($LOG_DIR."/efibootmgr", $Efibootmgr);
                     }
                 }
             }
             
-            if(-d "/boot/efi")
+            if(-d "/boot/efi" and not $Opt{"Snap"})
             {
                 listProbe("logs", "boot_efi");
                 my $BootEfi = runCmd("find /boot/efi 2>/dev/null | sort");
@@ -7764,7 +7773,7 @@ sub writeLogs()
         my $Lsblk = "";
         if(check_Cmd("lsblk"))
         {
-            my $LsblkCmd = "lsblk -al -o NAME,SIZE,TYPE,FSTYPE,LABEL,UUID,MOUNTPOINT,MODEL,PARTUUID";
+            my $LsblkCmd = "lsblk -al -o NAME,SIZE,TYPE,FSTYPE,UUID,MOUNTPOINT,MODEL,PARTUUID";
             if($Opt{"Flatpak"}) {
                 $LsblkCmd .= " 2>/dev/null";
             }
@@ -7782,6 +7791,7 @@ sub writeLogs()
             if($Opt{"Snap"} and $Lsblk=~/Permission denied/) {
                 $Lsblk = "";
             }
+            $Lsblk = hidePaths($Lsblk);
         }
         writeLog($LOG_DIR."/lsblk", $Lsblk);
         
@@ -7789,29 +7799,10 @@ sub writeLogs()
         {
             listProbe("logs", "fstab");
             my $Fstab = readFile("/etc/fstab");
+            $Fstab = hidePaths($Fstab);
+            $Fstab = hideIPs($Fstab);
+            $Fstab = hideUrls($Fstab);
             writeLog($LOG_DIR."/fstab", $Fstab);
-        }
-        
-        if(not $Opt{"Flatpak"})
-        {
-            listProbe("logs", "lscpu");
-            my $Lscpu = runCmd("lscpu 2>&1");
-            writeLog($LOG_DIR."/lscpu", $Lscpu);
-        }
-        
-        if(check_Cmd("cpuid"))
-        {
-            listProbe("logs", "cpuid");
-            my $Cpuid = runCmd("cpuid -1 2>&1");
-            $Cpuid = encryptSerials($Cpuid, "serial number");
-            writeLog($LOG_DIR."/cpuid", $Cpuid);
-        }
-        else
-        {
-            listProbe("logs", "cpuinfo");
-            my $Cpuinfo = readFile("/proc/cpuinfo");
-            $Cpuinfo=~s/\n\n(.|\n)+\Z/\n/g; # for one core
-            writeLog($LOG_DIR."/cpuinfo", $Cpuinfo);
         }
         
         listProbe("logs", "scsi");
@@ -7966,6 +7957,54 @@ sub writeLogs()
     # level=maximal
     if($Opt{"LogLevel"} eq "maximal")
     {
+        if(not $Opt{"Docker"})
+        {
+            listProbe("logs", "findmnt");
+            my $Findmnt = "";
+            if(check_Cmd("findmnt"))
+            {
+                my $FindmntCmd = "findmnt";
+                if($Opt{"Flatpak"}) {
+                    $FindmntCmd .= " 2>/dev/null";
+                }
+                else {
+                    $FindmntCmd .= " 2>&1";
+                }
+                $Findmnt = runCmd($FindmntCmd);
+                
+                if($Opt{"Snap"} and $Findmnt=~/Permission denied/) {
+                    $Findmnt = "";
+                }
+                
+                $Findmnt=~s/\[[^\s]+\]/[XXXXX]/g;
+                $Findmnt = hidePaths($Findmnt);
+                $Findmnt = hideIPs($Findmnt);
+                $Findmnt = hideUrls($Findmnt);
+            }
+            
+            if($Findmnt) {
+                writeLog($LOG_DIR."/findmnt", $Findmnt);
+            }
+            else
+            {
+                listProbe("logs", "mount");
+                my $Mount = "";
+                if(check_Cmd("mount"))
+                {
+                    $Mount = runCmd("mount -v 2>&1");
+                    
+                    if($Opt{"Snap"} and $Mount=~/Permission denied/) {
+                        $Mount = "";
+                    }
+                    
+                    $Mount = hidePaths($Mount);
+                    $Mount = hideIPs($Mount);
+                    $Mount = hideUrls($Mount);
+                }
+                writeLog($LOG_DIR."/mount", $Mount);
+            }
+        }
+        
         listProbe("logs", "firmware");
         my $Firmware = runCmd("find /lib/firmware -type f | sort");
         $Firmware=~s&/lib/firmware/&&g;
@@ -9374,7 +9413,7 @@ sub fixLogs($)
         }
     }
     
-    foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all", "pstree", "lsblk")
+    foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all", "pstree", "lsblk", "efibootmgr")
     {
         if(-f $Dir."/".$L
         and -s $Dir."/".$L < 100)
