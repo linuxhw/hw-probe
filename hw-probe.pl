@@ -2671,8 +2671,8 @@ sub probeHW()
         if($Bus eq "usb" or $Bus eq "pci")
         {
             $ID = devID($V, $D, $SV, $SD);
-            
-            if($SV, $SD) {
+
+            if($SD) {
                 $LongID{devID($V, $D)}{$ID} = 1;
             }
             
