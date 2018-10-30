@@ -8215,7 +8215,7 @@ sub showInfo {
 
     foreach (split(/\s*\n\s*/, readFile($ShowDir."/devices")))
     {
-        my @Info = split(";", $_);
+        my @Info = split(/;/);
 
         my %Dev = (
             "ID"      => $Info[0],
