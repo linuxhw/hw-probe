@@ -1619,8 +1619,8 @@ sub getPnpVendor($)
     #         return $PnpVendor{$V};
     #     }
     # }
-    
-    return undef;
+
+    return;
 }
 
 sub readPnpIds()
@@ -1665,8 +1665,8 @@ sub getPciVendor($)
     if(defined $PciVendor{$V}) {
         return $PciVendor{$V};
     }
-    
-    return undef;
+
+    return;
 }
 
 sub readVendorIds()
@@ -5377,7 +5377,7 @@ sub detectBoard($)
     
     if($Device->{"Device"}=~/\bName\d*\b/i)
     { # no info
-        return undef;
+        return;
     }
     
     if(not $Device->{"Vendor"})
@@ -5417,7 +5417,7 @@ sub detectBoard($)
     }
     
     if(not $Device->{"Vendor"} or not $Device->{"Device"}) {
-        return undef;
+        return;
     }
     
     my $ID = devID(nameID($Device->{"Vendor"}), devSuffix($Device));
@@ -5455,7 +5455,7 @@ sub detectBIOS($)
     $Device->{"Device"} = join(" ", @Name);
     
     if(not $Device->{"Vendor"} or not $Device->{"Device"}) {
-        return undef;
+        return;
     }
     
     $Device->{"Type"} = "bios";
@@ -5784,7 +5784,7 @@ sub detectDrive(@)
     if(not $Opt{"IdentifyDrive"})
     {
         if(not $Device->{"Vendor"} or not $Device->{"Device"}) {
-            return undef;
+            return;
         }
     }
     
@@ -6079,8 +6079,8 @@ sub guessDriveVendor($)
       # OCZ-VERTEX
         return $1;
     }
-    
-    return undef;
+
+    return;
 }
 
 sub guessSerialVendor($)
@@ -6088,7 +6088,7 @@ sub guessSerialVendor($)
     my $Serial = $_[0];
     
     if(not $Serial) {
-        return undef;
+        return;
     }
     
     if($Serial=~/\A([A-Z]+)\-/)
@@ -6103,8 +6103,8 @@ sub guessSerialVendor($)
             return $SerialVendor{$1};
         }
     }
-    
-    return undef;
+
+    return;
 }
 
 sub guessFirmwareVendor($)
@@ -6112,7 +6112,7 @@ sub guessFirmwareVendor($)
     my $Firmware = $_[0];
     
     if(not $Firmware) {
-        return undef;
+        return;
     }
     
     if($Firmware=~/\A(\w{4})/)
@@ -6121,8 +6121,8 @@ sub guessFirmwareVendor($)
             return $FirmwareVendor{$1};
         }
     }
-    
-    return undef;
+
+    return;
 }
 
 sub guessDeviceVendor($)
@@ -6138,8 +6138,8 @@ sub guessDeviceVendor($)
     { # printers
         return $1;
     }
-    
-    return undef;
+
+    return;
 }
 
 sub computeInch($)
@@ -6157,8 +6157,8 @@ sub computeInch($)
     if($W and $H) {
         return sprintf("%.1f", sqrt($W*$W + $H*$H)/25.4);
     }
-    
-    return undef;
+
+    return;
 }
 
 sub getXRes($)
@@ -6166,8 +6166,8 @@ sub getXRes($)
     if($_[0]=~/\A(\d+)/) {
         return $1;
     }
-    
-    return undef;
+
+    return;
 }
 
 sub duplVendor($$)
@@ -6513,8 +6513,8 @@ sub getChassisType($)
     if($CType!~/unknown|other/) {
         return $CType;
     }
-    
-    return undef;
+
+    return;
 }
 
 sub fixChassis()
@@ -6850,7 +6850,7 @@ sub selectHWAddr($$)
         $Sel = $Wrong[0];
     }
     else {
-        return undef;
+        return;
     }
     
     return $Sel;
@@ -6875,8 +6875,8 @@ sub getRealHWaddr($)
             }
         }
     }
-    
-    return undef;
+
+    return;
 }
 
 sub readFileHex($)
@@ -7258,8 +7258,8 @@ sub getUser()
             return $ENV{$Var};
         }
     }
-    
-    return undef;
+
+    return;
 }
 
 sub writeLogs()
@@ -8176,7 +8176,7 @@ sub check_Cmd(@)
             return $Dir."/".$Cmd;
         }
     }
-    return undef;
+    return;
 }
 
 sub find_Cmd($)
