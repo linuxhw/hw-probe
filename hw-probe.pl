@@ -6229,11 +6229,11 @@ sub nameID {
     $Name=~s/\s*\([^()]*\)//g;
     $Name=~s/\s*\[[^\[\]]*\]//g;
 
-    while ($Name=~s/\s*(\,\s*|\s+)(Inc|Ltd|Co|GmbH|Corp|Pte|LLC|Sdn|Bhd|BV|RSS|PLC|s\.r\.l\.|srl|S\.P\.A\.|B\.V\.)(\.|\Z)//ig){};
+    while ($Name=~s/\s*(\,\s*|\s+)(Inc|Ltd|Co|GmbH|Corp|Pte|LLC|Sdn|Bhd|BV|RSS|PLC|s\.r\.l\.|srl|S\.P\.A\.|B\.V\.)(\.|\Z)//ig) {}
     $Name=~s/,?\s+[a-z]{2,4}\.//ig;
     $Name=~s/,(.+)\Z//ig;
 
-    while ($Name=~s/\s+(Corporation|Computer|Computers|Electric|Company|Electronics|Electronic|Elektronik|Technologies|Technology)\Z//ig){};
+    while ($Name=~s/\s+(Corporation|Computer|Computers|Electric|Company|Electronics|Electronic|Elektronik|Technologies|Technology)\Z//ig) {}
 
     $Name=~s/[\.\,]/ /g;
     $Name=~s/\s*\Z//g;
@@ -6294,7 +6294,7 @@ sub fixModel {
 
             if($Version)
             {
-                while($Model=~s/\A\Q$Version\E\s+//i){};
+                while($Model=~s/\A\Q$Version\E\s+//i) {}
 
                 if($Model!~/\Q$Version\E/i) {
                     $Model = $Version." ".$Model;
@@ -8583,7 +8583,7 @@ sub checkHW {
         print "Check memory ... ";
         my $Memtester = runCmd("memtester 8 1");
         $Memtester=~s/\A(.|\n)*(Loop)/$2/g;
-        while($Memtester=~s/[^\cH]\cH//g){};
+        while($Memtester=~s/[^\cH]\cH//g) {}
         writeLog($TEST_DIR."/memtester", $Memtester);
         print "Ok\n";
     }
