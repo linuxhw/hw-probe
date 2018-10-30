@@ -859,7 +859,11 @@ my @WrongAddr = (
     "E5A433E40C7D5C05E1F82A0C86983656",
 );
 
-my @ProtectedLogs = ("hwinfo", "biosdecode", "acpidump", "acpidump_decoded", "dmidecode", "smartctl", "smartctl_megaraid", "lspci", "lspci_all", "lsusb", "usb-devices", "ifconfig", "ip_addr", "hciconfig", "mmcli", "xrandr", "edid", "os-release", "lsb_release", "system-release", "opensc-tool");
+my @ProtectedLogs = (
+    "hwinfo", "biosdecode", "acpidump", "acpidump_decoded", "dmidecode", "smartctl",
+    "smartctl_megaraid", "lspci", "lspci_all", "lsusb", "usb-devices", "ifconfig",
+    "ip_addr", "hciconfig", "mmcli", "xrandr", "edid", "os-release", "lsb_release",
+    "system-release", "opensc-tool");
 
 my $USE_DIGEST = 0;
 my $USE_DUMPER = 0;
@@ -2387,10 +2391,12 @@ sub probeHW {
         }
 
         if(defined $Device{"ActiveDriver"}) {
-            $Device{"Driver"} = join(", ", sort {$Device{"ActiveDriver"}{$a} <=> $Device{"ActiveDriver"}{$b}} keys(%{$Device{"ActiveDriver"}}));
+            $Device{"Driver"} = join(", ", sort {$Device{"ActiveDriver"}{$a} <=> $Device{"ActiveDriver"}{$b}}
+                keys(%{$Device{"ActiveDriver"}}));
         }
         elsif(defined $Device{"ActiveDriver_Common"}) {
-            $Device{"Driver"} = join(", ", sort {$Device{"ActiveDriver_Common"}{$a} <=> $Device{"ActiveDriver_Common"}{$b}} keys(%{$Device{"ActiveDriver_Common"}}));
+            $Device{"Driver"} = join(", ", sort {$Device{"ActiveDriver_Common"}{$a} <=> $Device{"ActiveDriver_Common"}{$b}}
+                keys(%{$Device{"ActiveDriver_Common"}}));
         }
 
         if($Device{"Type"} eq "cpu") {
@@ -3495,7 +3501,9 @@ sub probeHW {
                 $GraphicsCards{$1}{$ID} = $HW{$ID}{"Driver"};
             }
         }
-        elsif(grep { $HW{$ID}{"Type"} eq $_ } ("network", "modem", "sound", "storage", "camera", "chipcard", "fingerprint reader", "card reader", "dvb card", "tv card"))
+        elsif(grep { $HW{$ID}{"Type"} eq $_ } (
+                "network", "modem", "sound", "storage", "camera", "chipcard",
+                "fingerprint reader", "card reader", "dvb card", "tv card" ))
         {
             if($ID=~/\A(usb|pci|ide):/)
             {
@@ -5905,8 +5913,10 @@ sub fixDrive {
     if($Device->{"Kind"} eq "SSD"
     or $Device->{"Kind"} eq "NVMe")
     {
-        if(grep {$Device->{"Device"} eq $_} ("SSD", "SATA SSD", "SATA-III SSD", "Solid State Disk",
-        "SSD Sata III", "DISK", "SSD DISK") or grep {uc($Device->{"Vendor"}) eq $_} ("OCZ", "ADATA", "A-DATA", "PATRIOT", "SPCC", "SAMSUNG", "CORSAIR", "HYPERDISK", "TOSHIBA"))
+        if(grep {$Device->{"Device"} eq $_}
+          ("SSD", "SATA SSD", "SATA-III SSD", "Solid State Disk", "SSD Sata III", "DISK", "SSD DISK")
+        or grep {uc($Device->{"Vendor"}) eq $_}
+          ("OCZ", "ADATA", "A-DATA", "PATRIOT", "SPCC", "SAMSUNG", "CORSAIR", "HYPERDISK", "TOSHIBA"))
         {
             if($Device->{"Capacity"}=~/\A([\d\.]+)/)
             {
@@ -6064,7 +6074,13 @@ sub guessFirmwareVendor {
 sub guessDeviceVendor {
     my $Device = $_[0];
 
-    if($Device=~s/\A(WDC|Western Digital|Seagate|Samsung Electronics|SAMSUNG|Hitachi|TOSHIBA|Maxtor|SanDisk|Kingston|ADATA|Lite-On|OCZ|Smartbuy|SK hynix|GOODRAM|LDLC|A\-DATA|KingFast|ExcelStor Technology|i-FlashDisk)([\s_\-]|\Z)//i)
+    if($Device=~s{\A
+      ( WDC | Western Digital | Seagate | Samsung Electronics | SAMSUNG | Hitachi
+      | TOSHIBA | Maxtor | SanDisk | Kingston | ADATA | Lite-On | OCZ | Smartbuy
+      | SK hynix | GOODRAM | LDLC | A\-DATA | KingFast | ExcelStor Technology
+      | i-FlashDisk
+      )([\s_\-] | \Z)
+      }{}xi)
     { # drives
         return $1;
     }
@@ -6374,7 +6390,8 @@ sub probeSys {
     listProbe("logs", "dmi_id");
 
     my $Dmi = "";
-    foreach my $File ("sys_vendor", "product_name", "product_version", "chassis_type", "board_vendor", "board_name", "board_version", "bios_vendor", "bios_version", "bios_date")
+    foreach my $File ("sys_vendor", "product_name", "product_version", "chassis_type",
+       "board_vendor", "board_name", "board_version", "bios_vendor", "bios_version", "bios_date")
     {
         my $Value = readFile("/sys/class/dmi/id/".$File);
 
@@ -6638,7 +6655,9 @@ sub probeHWaddr {
 
 sub warnSnapInterfaces {
     warn "\nMake sure required Snap interfaces are connected:\n\n";
-    warn "    for i in hardware-observe mount-observe network-observe system-observe upower-observe log-observe raw-usb physical-memory-observe opengl;do sudo snap connect hw-probe:\$i :\$i; done\n";
+    warn "    for i in hardware-observe mount-observe network-observe system-observe ".
+         "upower-observe log-observe raw-usb physical-memory-observe opengl;do ".
+         "sudo snap connect hw-probe:\$i :\$i; done\n";
 }
 
 sub countStr {
@@ -9291,7 +9310,7 @@ sub fixLogs {
 sub scenario {
     if($Opt{"Help"})
     {
-	print $HelpMessage;
+        print $HelpMessage;
         exitStatus(0);
     }
 
