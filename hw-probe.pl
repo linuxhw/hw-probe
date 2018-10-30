@@ -8947,10 +8947,7 @@ sub importProbes {
 
     my ($Imported, $OneProbe);
 
-    my $IndexInfo = eval(readFile($Dir."/index.info"));
-    if(not $IndexInfo) {
-        $IndexInfo = {};
-    }
+    my $IndexInfo = eval { readFile($Dir."/index.info") } || {};
 
     my @Paths;
     if(-d $PROBE_DIR)
@@ -9023,7 +9020,7 @@ sub importProbes {
             next;
         }
         my $D = $Dir."/".$P;
-        my $Prop = eval(readFile($D."/probe.info"));
+        my $Prop = eval { readFile($D."/probe.info") } || {};
         $Indexed{lc($Prop->{"hwaddr"})}{$P} = $Prop;
         $OneProbe = $P;
     }
