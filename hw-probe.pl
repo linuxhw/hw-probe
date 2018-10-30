@@ -9018,7 +9018,7 @@ sub downloadProbe($$)
                 my $LogD = basename($LogDir{$LogType});
                 $Line=~s/\Q$Url\E/$LogD\/$LogName.html/;
             }
-            elsif($Url eq "index.php\?probe=$ID") {
+            elsif($Url eq "index.php?probe=$ID") {
                 $Line=~s/\Q$Url\E/index.html/;
             }
             else {
