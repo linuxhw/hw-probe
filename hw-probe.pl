@@ -184,7 +184,7 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "rm-log=s" => \$Opt{"RmLog"},
   "truncate-log=s" => \$Opt{"TruncateLog"},
 # Security
-  "key=s" => \$Opt{"Key"}
+  "key=s" => \$Opt{"Key"},
 ) or die "\n".$ShortUsage;
 
 my $PROBE_DIR = "/root/HW_PROBE";
@@ -375,7 +375,7 @@ my %DriverVendor = (
     "nvidia"  => "10de",
     "radeon"  => "1002",
     "amdgpu"  => "1002",
-    "fglrx"   => "1002"
+    "fglrx"   => "1002",
 );
 
 foreach (@G_DRIVERS_INTEL) {
@@ -402,7 +402,7 @@ my %UsbInfo;
 my %PciVendor = (
     "17aa" => "Lenovo",
     "144d" => "Samsung",
-    "14a4" => "Lite-On"
+    "14a4" => "Lite-On",
 );
 
 my %DiskVendor = (
@@ -439,7 +439,7 @@ my %DiskVendor = (
     "S10T" => "Chiprex",
     "IM2S" => "ADATA",
     "IC35" => "IBM/Hitachi",
-    "PH6-CE" => "Plextor"
+    "PH6-CE" => "Plextor",
 );
 
 # http://standards-oui.ieee.org/oui.txt
@@ -455,17 +455,17 @@ my %IeeeOui = (
     "0026b7" => "Kingston",
     "00000e" => "Fujitsu",
     "5cd2e4" => "Intel",
-    "002303" => "Lite-On"
+    "002303" => "Lite-On",
 );
 
 my %SerialVendor = (
     "WD" => "WDC",
     "OCZ" => "OCZ",
-    "PNY" => "PNY"
+    "PNY" => "PNY",
 );
 
 my %FirmwareVendor = (
-    "MZ4O" => "Toshiba"
+    "MZ4O" => "Toshiba",
 );
 
 my $DEFAULT_VENDOR = "China";
@@ -474,7 +474,7 @@ my %DistSuffix = (
     "res7" => "rels-7",
     "res6" => "rels-6",
     "vl7"  => "virtuozzo-7",
-    "vl6"  => "virtuozzo-6"
+    "vl6"  => "virtuozzo-6",
 );
 
 my %ChassisType = (
@@ -513,7 +513,7 @@ my %ChassisType = (
     33 => "IoT Gateway",
     34 => "Embedded PC",
     35 => "Mini PC",
-    36 => "Stick PC"
+    36 => "Stick PC",
 );
 
 # SDIO IDs
@@ -541,7 +541,7 @@ my %SdioType = (
     "06" => "phs",
     "07" => "network",
     "08" => "ata",
-    "09" => "bluetooth"
+    "09" => "bluetooth",
 );
 
 # Fix monitor vendor
@@ -667,7 +667,7 @@ my %MonVendor = (
     "VES" => "Vestel Elektronik",
     "VIZ" => "Vizio",
     "VSC" => "ViewSonic",
-    "WDT" => "Westinghouse"
+    "WDT" => "Westinghouse",
 );
 
 my @UnknownVendors = (
@@ -729,7 +729,7 @@ my @UnknownVendors = (
     "DVI",
     "XXX",
     "XYY",
-    "___"
+    "___",
 );
 
 # Repair vendor of some motherboards and mmc devices
@@ -747,7 +747,7 @@ my %VendorModels = (
 
     "Samsung"  => ["AWMB3R", "CJNB4R", "MAG2GC", "MCG8GA", "MCG8GC"],
     "SanDisk"  => ["DF4032", "DF4064", "DF4128", "SDW64G", "SL32G"],
-    "SK hynix" => ["HBG4a", "HBG4e", "HCG8e"]
+    "SK hynix" => ["HBG4a", "HBG4e", "HCG8e"],
 );
 
 my %VendorByModel;
@@ -791,7 +791,7 @@ my %PciClassType = (
     "0f" => "communications controller",
     "10" => "encryption controller",
     "11" => "signal processing",
-    "12" => "processing accelerators"
+    "12" => "processing accelerators",
 );
 
 my %UsbClassType = (
@@ -815,7 +815,7 @@ my %UsbClassType = (
     "e0" => "wireless",
     "e0-01-01" => "bluetooth",
     "ef" => "miscellaneous",
-    "58" => "xbox"
+    "58" => "xbox",
 );
 
 my @WrongAddr = (
@@ -856,7 +856,7 @@ my @WrongAddr = (
     "00-00-00-00-00-10",
     "CB29E07B8A25732D808E4DF3B26718E2",
     "00-13-74-00-00-00",
-    "E5A433E40C7D5C05E1F82A0C86983656"
+    "E5A433E40C7D5C05E1F82A0C86983656",
 );
 
 my @ProtectedLogs = ("hwinfo", "biosdecode", "acpidump", "acpidump_decoded", "dmidecode", "smartctl", "smartctl_megaraid", "lspci", "lspci_all", "lsusb", "usb-devices", "ifconfig", "ip_addr", "hciconfig", "mmcli", "xrandr", "edid", "os-release", "lsb_release", "system-release", "opensc-tool");
@@ -1094,8 +1094,7 @@ sub postRequest {
     my $Res = $UAgent->post(
         $UploadURL,
         Content_Type => "form-data",
-        Content => $Data
-    );
+        Content => $Data);
 
     my $Out = $Res->{"_content"};
 
@@ -8227,7 +8226,7 @@ sub showInfo {
             "Vendor"  => $Info[5],
             "Device"  => $Info[6],
             "SVendor" => $Info[7],
-            "SDevice" => $Info[8]
+            "SDevice" => $Info[8],
         );
 
         foreach my $Attr (keys(%Dev))
