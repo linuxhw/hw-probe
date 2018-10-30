@@ -9334,7 +9334,7 @@ sub scenario {
     {
         $USE_DUMPER = 1;
         require Data::Dumper;
-        $Data::Dumper::Sortkeys = 1;
+        $Data::Dumper::Sortkeys = $Data::Dumper::Sortkeys = 1;
     }
 
     if($Opt{"DecodeACPI"}) {
