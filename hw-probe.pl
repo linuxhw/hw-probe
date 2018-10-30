@@ -1969,7 +1969,7 @@ sub probeHW {
 
     if($Sys{"System"}=~/Gentoo/i)
     { # Gentoo
-        %WorkMod;
+        # %WorkMod; # Useless use of private hash in void context
     }
 
     if(not $Opt{"FixProbe"} and $Opt{"Logs"})
