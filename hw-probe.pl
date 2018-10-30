@@ -6798,27 +6798,27 @@ sub getRealHWaddr {
 sub readFileHex {
     my $Path = $_[0];
     local $/ = undef;
-    open(FILE, $Path);
-    binmode FILE;
-    my $Data = <FILE>;
-    close FILE;
+    open my $fh, "<", $Path or return;
+    binmode $fh;
+    my $Data = <$fh>;
+    close $fh;
     return unpack('H*', $Data);
 }
 
 sub readFile {
     my $Path = $_[0];
-    open(FILE, $Path);
+    open my $fh, "<", $Path or return;
     local $/ = undef;
-    my $Content = <FILE>;
-    close(FILE);
+    my $Content = <$fh>;
+    close $fh;
     return $Content;
 }
 
 sub readLine {
     my $Path = $_[0];
-    open (FILE, $Path);
-    my $Line = <FILE>;
-    close(FILE);
+    open my $fh, "<", $Path or return;
+    my $Line = <$fh>;
+    close $fh;
     return $Line;
 }
 
@@ -8663,9 +8663,9 @@ sub appendFile {
     if(my $Dir = dirname($Path)) {
         mkpath($Dir);
     }
-    open(FILE, ">>", $Path) || die ("can't open file '$Path': $!\n");
-    print FILE $Content;
-    close(FILE);
+    open my $fh, ">>", $Path or die ("can't open file '$Path': $!\n");
+    print $fh $Content;
+    close $fh;
 }
 
 sub writeFile {
@@ -8674,9 +8674,9 @@ sub writeFile {
     if(my $Dir = dirname($Path)) {
         mkpath($Dir);
     }
-    open(FILE, ">", $Path) || die ("can't open file '$Path': $!\n");
-    print FILE $Content;
-    close(FILE);
+    open my $fh, ">", $Path or die ("can't open file '$Path': $!\n");
+    print $fh $Content;
+    close $fh;
 }
 
 sub readPciIds {
