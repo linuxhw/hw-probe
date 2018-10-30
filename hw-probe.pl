@@ -1138,7 +1138,7 @@ sub getRequest {
 sub saveProbe {
     my $To = $_[0];
 
-    $To=~s&/+\Z&&;
+    $To=~s{/+\Z}{};
 
     my ($Pkg, $HWaddr) = createPackage();
 
@@ -5314,7 +5314,7 @@ sub shortOS {
 sub detectBoard {
     my $Device = $_[0];
 
-    $Device->{"Vendor"}=~s&\Ahttp://www.&&i; # http://www.abit.com.tw as vendor
+    $Device->{"Vendor"}=~s{\Ahttp://www.}{}i; # http://www.abit.com.tw as vendor
 
     if($Device->{"Version"}=~/\b(n\/a|Not)\b/i) {
         $Device->{"Version"} = undef;
@@ -7831,7 +7831,7 @@ sub writeLogs {
                 $Mprobe .= "\n";
                 my $Content = readFile("/etc/modprobe.d/".$Mp);
 
-                $Content=~s&http(s|)://[^ ]+&&g;
+                $Content=~s{http(s|)://[^ ]+}{}g;
 
                 $Mprobe .= $Content;
                 $Mprobe .= "\n\n";
@@ -7894,7 +7894,7 @@ sub writeLogs {
     {
         listProbe("logs", "firmware");
         my $Firmware = runCmd("find /lib/firmware -type f | sort");
-        $Firmware=~s&/lib/firmware/&&g;
+        $Firmware=~s{/lib/firmware/}{}g;
         writeLog($LOG_DIR."/firmware", $Firmware);
 
         listProbe("logs", "top");
@@ -8133,7 +8133,7 @@ sub decodeACPI {
                 }
                 $DSL .= "\n";
                 my $Data = readFile($DslFile);
-                $Data=~s&\A\s*/\*.*?\*/\s*&&sg;
+                $Data=~s{\A\s*/\*.*?\*/\s*}{}sg;
                 $DSL .= $Data;
 
                 $DSL .= "\n";
@@ -8847,7 +8847,7 @@ sub downloadProbe {
 
                 if($Subj eq "css")
                 {
-                    while($Content=~s!url\(['"]([^'"]+)['"]\)!!)
+                    while($Content=~s{url\(['"]([^'"]+)['"]\)}{})
                     {
                         my $FPath = dirname($SPath)."/".$1;
                         mkpath($Dir."/".dirname($FPath));
@@ -8869,8 +8869,8 @@ sub downloadProbe {
                 }
 
                 $Log = preparePage($Log);
-                $Log=~s!(['"])(css|js|images)\/!$1../$2\/!g;
-                $Log=~s!index.php\?probe=$ID!../index.html!;
+                $Log=~s{(['"])(css|js|images)\/}{$1../$2\/}g;
+                $Log=~s{index.php\?probe=$ID}{../index.html};
 
                 writeFile($LogPath, $Log);
 
@@ -9112,9 +9112,9 @@ sub importProbes {
 
     my $Descr = "This is your collection of probes. See more probes and computers online in the <a href='$URL'>Hardware Database</a>.";
     my $INDEX = readFile($Dir."/".$OneProbe."/index.html");
-    $INDEX=~s&\Q<!-- body -->\E(.|\n)+\Q<!-- body end -->\E\n&<h1>Probes Timeline</h1>\n$Descr\n$LIST\n&;
-    $INDEX=~s&(\Q<title>\E)(.|\n)+(\Q</title>\E)&$1 Probes Timeline $3&;
-    $INDEX=~s!(['"])(css|js|images)\/!$1$OneProbe/$2\/!g;
+    $INDEX=~s{\Q<!-- body -->\E(.|\n)+\Q<!-- body end -->\E\n}{<h1>Probes Timeline</h1>\n$Descr\n$LIST\n};
+    $INDEX=~s{(\Q<title>\E)(.|\n)+(\Q</title>\E)}{$1 Probes Timeline $3};
+    $INDEX=~s{(['"])(css|js|images)\/}{$1$OneProbe/$2\/}g;
 
     writeFile($Dir."/index.html", $INDEX);
     setPublic($Dir."/index.html");
