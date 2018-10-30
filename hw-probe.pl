@@ -8628,7 +8628,7 @@ sub checkHW {
 
     if($Opt{"CheckCpu"} and check_Cmd("dd") and check_Cmd("md5sum"))
     {
-        if(my @CPUs = grep {$_=~/\Acpu:/} keys(%HW))
+        if(my @CPUs = grep {/\Acpu:/} keys(%HW))
         {
             print "Check CPU ... ";
             my $CPU_Info = $HW{$CPUs[0]};
@@ -8770,14 +8770,12 @@ sub readSdioIds_Sys {
 }
 
 sub readSdioIds {
-    if(not -e $_[0]) {
+    my ($File, $Info, $Vnds) = @_;
+    if(not -e $File) {
         return;
     }
 
-    my $List = readFile($_[0]);
-
-    my $Info = $_[1];
-    my $Vnds = $_[2];
+    my $List = readFile($File);
 
     my ($V, $D);
 
