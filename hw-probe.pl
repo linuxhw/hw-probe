@@ -1,6 +1,12 @@
 #!/usr/bin/perl
+
+use strict;
+use warnings;
+
+our $VERSION = "1.4";
+
 #########################################################################
-# Hardware Probe Tool 1.4
+# Hardware Probe Tool
 # A tool to probe for hardware and upload result to the Linux Hardware DB
 #
 # WWW: https://linux-hardware.org
@@ -70,8 +76,6 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA  02110-1301 USA
 #########################################################################
-use strict;
-use warnings;
 
 use Getopt::Long;
 Getopt::Long::Configure ("posix_default", "no_ignore_case");
