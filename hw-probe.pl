@@ -176,13 +176,7 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "truncate-log=s" => \$Opt{"TruncateLog"},
 # Security
   "key=s" => \$Opt{"Key"}
-) or errMsg();
-
-sub errMsg()
-{
-    print "\n".$ShortUsage;
-    exit(1);
-}
+) or die "\n".$ShortUsage;
 
 my $PROBE_DIR = "/root/HW_PROBE";
 
@@ -342,28 +336,24 @@ DATA LOCATION:
 
 ";
 
-sub helpMsg() {
-    print $HelpMessage;
-}
-
 # Hardware
 my %HW;
-my %KernMod = ();
-my %WorkMod = ();
-my %WLanInterface = ();
-my %PermanentAddr = ();
-my %HDD = ();
-my %HDD_Info = ();
-my %MMC_Info = ();
-my %MMC = ();
-my %MON = ();
+my %KernMod;
+my %WorkMod;
+my %WLanInterface;
+my %PermanentAddr;
+my %HDD;
+my %HDD_Info;
+my %MMC_Info;
+my %MMC;
+my %MON;
 my $MotherboardID = undef;
 
-my %DeviceIDByNum = ();
-my %DeviceNumByID = ();
-my %DeviceAttached = ();
-my %GraphicsCards = ();
-my %UsedNetworkDev = ();
+my %DeviceIDByNum;
+my %DeviceNumByID;
+my %DeviceAttached;
+my %GraphicsCards;
+my %UsedNetworkDev;
 
 my $MIN_BAT_CAPACITY = 30;
 
@@ -564,8 +554,7 @@ my %MonVendor = (
     "CMO" => "Chi Mei Optoelectronics",
     "CND" => "CND",
     "CPT" => "CPT",
-    "CPQ" => "Compaq",
-#   "CPQ" => "Compaq Computer",
+    "CPQ" => "Compaq Computer",
     "CTL" => "CTL",
     "CTX" => "CTX",
     "DEL" => "Dell",
@@ -873,7 +862,7 @@ my @LARGE_LOGS = ("xorg.log", "xorg.log.1", "dmesg", "dmesg.1");
 
 sub getSha512L($$)
 {
-    my $String = $_[0];
+    my ($String, $Len) = @_;
     my $Hash = undef;
     
     if($USE_DIGEST) {
@@ -885,7 +874,7 @@ sub getSha512L($$)
         $Hash=~s/\A([\da-f]+).*?\Z/$1/;
     }
     
-    return substr($Hash, 0, $_[1]);
+    return substr($Hash, 0, $Len);
 }
 
 sub clientHash($)
@@ -978,7 +967,7 @@ sub hideHostname($)
 sub hidePaths($)
 {
     my $Content = $_[0];
-    $Content=~s&/(media|home|mnt)/[^\s]+&/$1/XXX&g;
+    $Content=~s&/(media|home|mnt|mount)/[^\s]+&/$1/XXX&g;
     return $Content;
 }
 
@@ -1033,11 +1022,29 @@ sub exitStatus($)
     exit($St);
 }
 
+sub printMsg($$)
+{
+    my ($Type, $Msg) = @_;
+    if($Type!~/\AINFO/) {
+        $Msg = $Type.": ".$Msg;
+    }
+    if($Type!~/_C\Z/) {
+        $Msg .= "\n";
+    }
+    if(grep { $Type eq $_ } ("ERROR", "WARNING")) {
+        print STDERR $Msg;
+    }
+    else {
+        print $Msg;
+    }
+}
+
 sub checkModule($)
 {
+    my $Name = $_[0];
     foreach my $P (@INC)
     {
-        if(-e "$P/$_[0]") {
+        if(-e "$P/$Name") {
             return 1;
         }
     }
@@ -1096,7 +1103,7 @@ sub getGroup()
     if($?)
     {
         my $ECode = $?>>8;
-        print STDERR "ERROR: failed to get group, curl error code \"".$ECode."\"\n";
+        printMsg("ERROR", "failed to get group, curl error code \"".$ECode."\"");
         exitStatus(1);
     }
     
@@ -1234,13 +1241,13 @@ sub uploadData()
     
     if($Opt{"PC_Name"})
     {
-        @Cmd = (@Cmd, "-F id=\'".$Opt{"PC_Name"}."\'");
+        @Cmd = (@Cmd, "-F id='".$Opt{"PC_Name"}."'");
         $Data{"id"} = $Opt{"PC_Name"};
     }
     
     if($Opt{"Group"})
     {
-        @Cmd = (@Cmd, "-F group=\'".$Opt{"Group"}."\'");
+        @Cmd = (@Cmd, "-F group='".$Opt{"Group"}."'");
         $Data{"group"} = $Opt{"Group"};
     }
     
@@ -1267,9 +1274,9 @@ sub uploadData()
             if(index($WWWLog, "probe=")==-1)
             {
                 print STDERR $WWWLog."\n";
-                print STDERR "ERROR: failed to upload data\n";
+                printMsg("ERROR", "failed to upload data");
                 if(index($WWWLog, "Can't locate HTML/HeadParser.pm")!=-1) {
-                    print STDERR "ERROR: please add 'libhtml-parser-perl' or 'perl-HTML-Parser' package to your system\n";
+                    printMsg("ERROR", "please add 'libhtml-parser-perl' or 'perl-HTML-Parser' package to your system");
                 }
                 exitStatus(1);
             }
@@ -1280,7 +1287,7 @@ sub uploadData()
         {
             my $ECode = $Err>>8;
             print STDERR $Log."\n";
-            print STDERR "ERROR: failed to upload data, curl error code \"".$ECode."\"\n";
+            printMsg("ERROR", "failed to upload data, curl error code \"".$ECode."\"");
             exitStatus(1);
         }
     }
@@ -1303,7 +1310,7 @@ sub uploadData()
         
         if(-d $NewProbe)
         {
-            print STDERR "ERROR: the probe with ID \'$ID\' already exists, overwriting ...\n";
+            printMsg("ERROR", "the probe with ID \'$ID\' already exists, overwriting ...");
             unlink($NewProbe."/hw.info.txz");
         }
         else {
@@ -1362,7 +1369,7 @@ sub createPackage()
                 system("tar", "--directory", $TMP_DIR, "-xJf", $Pkg);
                 if($?)
                 {
-                    print STDERR "ERROR: failed to extract package (".$?.")\n";
+                    printMsg("ERROR", "failed to extract package (".$?.")");
                     exitStatus(1);
                 }
                 
@@ -1392,7 +1399,7 @@ sub createPackage()
                         
                         if($?)
                         {
-                            print STDERR "ERROR: failed to create a package (".$?.")\n";
+                            printMsg("ERROR", "failed to create a package (".$?.")");
                             exitStatus(1);
                         }
                         
@@ -1402,7 +1409,7 @@ sub createPackage()
             }
             else
             {
-                print STDERR "ERROR: not a package\n";
+                printMsg("ERROR", "not a package");
                 exitStatus(1);
             }
         }
@@ -1419,7 +1426,7 @@ sub createPackage()
             
             if($?)
             {
-                print STDERR "ERROR: failed to create a package (".$?.")\n";
+                printMsg("ERROR", "failed to create a package (".$?.")");
                 exitStatus(1);
             }
             
@@ -1427,7 +1434,7 @@ sub createPackage()
         }
         else
         {
-            print STDERR "ERROR: can't access \'".$Opt{"Source"}."\'\n";
+            printMsg("ERROR", "can't access '".$Opt{"Source"}."'");
             exitStatus(1);
         }
     }
@@ -1437,7 +1444,7 @@ sub createPackage()
         {
             if(not -f "$DATA_DIR/devices")
             {
-                print STDERR "ERROR: \'./".$DATA_DIR."/devices\' file is not found, please make probe first\n";
+                printMsg("ERROR", "\'./$DATA_DIR/devices\' file is not found, please make probe first");
                 exitStatus(1);
             }
             
@@ -1453,10 +1460,10 @@ sub createPackage()
         else
         {
             if($Admin) {
-                print STDERR "ERROR: can't access \'".$DATA_DIR."\', please make probe first\n";
+                printMsg("ERROR", "can't access '".$DATA_DIR."', please make probe first");
             }
             else {
-                print STDERR "ERROR: can't access \'".$DATA_DIR."\', please run as root\n";
+                printMsg("ERROR", "can't access '".$DATA_DIR."', please run as root");
             }
             exitStatus(1);
         }
@@ -1479,13 +1486,13 @@ sub copyFiles($$)
     {
         if(-d "$P1/$Top")
         { # copy subdirectory
-            foreach my $Sub (listDir($P1."/".$Top))
+            foreach my $Sub (listDir("$P1/$Top"))
             {
                 if($Sub=~/~\Z/) {
                     next;
                 }
-                mkpath($P2."/".$Top);
-                copy($P1."/".$Top."/".$Sub, $P2."/".$Top."/".$Sub);
+                mkpath("$P2/$Top");
+                copy("$P1/$Top/$Sub", "$P2/$Top/$Sub");
             }
         }
         else
@@ -1493,7 +1500,7 @@ sub copyFiles($$)
             if($Top=~/~\Z/) {
                 next;
             }
-            copy($P1."/".$Top, $P2."/".$Top);
+            copy("$P1/$Top", "$P2/$Top");
         }
     }
 }
@@ -1848,7 +1855,7 @@ sub probeHW()
     {
         if(not defined $Opt{"HWInfoPath"} and not check_Cmd("hwinfo"))
         {
-            print STDERR "ERROR: 'hwinfo' is not installed\n";
+            printMsg("ERROR", "'hwinfo' is not installed");
             exitStatus(1);
         }
         
@@ -1857,20 +1864,20 @@ sub probeHW()
             foreach my $Prog ("dmidecode", "edid-decode")
             {
                 if(not check_Cmd($Prog)) {
-                    print STDERR "WARNING: '".$Prog."' package is not installed\n";
+                    printMsg("WARNING", "'".$Prog."' package is not installed");
                 }
             }
             
             if(not check_Cmd("smartctl")) {
-                print STDERR "WARNING: 'smartmontools' package is not installed\n";
+                printMsg("WARNING", "'smartmontools' package is not installed");
             }
             
             if(not check_Cmd("lspci")) {
-                print STDERR "WARNING: 'pciutils' package is not installed\n";
+                printMsg("WARNING", "'pciutils' package is not installed");
             }
             
             if(not check_Cmd("lsusb")) {
-                print STDERR "WARNING: 'usbutils' package is not installed\n";
+                printMsg("WARNING", "'usbutils' package is not installed");
             }
         }
         
@@ -2120,10 +2127,10 @@ sub probeHW()
             $HWInfoCmd = $Opt{"HWInfoPath"};
 
             if(-d "$HWInfoDir/lib64") {
-                $HWInfoCmd = "LD_LIBRARY_PATH=\"".$HWInfoDir."/lib64\" ".$HWInfoCmd;
+                $HWInfoCmd = "LD_LIBRARY_PATH=\"$HWInfoDir/lib64\" ".$HWInfoCmd;
             }
             elsif(-d "$HWInfoDir/lib") {
-                $HWInfoCmd = "LD_LIBRARY_PATH=\"".$HWInfoDir."/lib\" ".$HWInfoCmd;
+                $HWInfoCmd = "LD_LIBRARY_PATH=\"$HWInfoDir/lib\" ".$HWInfoCmd;
             }
         }
         
@@ -2146,7 +2153,7 @@ sub probeHW()
         
         if(not $HWInfo)
         { # incorrect option
-            print STDERR "WARNING: incorrect hwinfo option passed, using --all\n";
+            printMsg("WARNING", "incorrect hwinfo option passed, using --all");
             $HWInfo = runCmd($HWInfoCmd." --all 2>&1");
         }
         
@@ -2579,7 +2586,7 @@ sub probeHW()
                 or $Device{"Type"} eq "mouse")
                 {
                     if($Device{"Device"}=~s/(\w+) (DualPoint Touchpad)/$2/i)
-                    { # AlpsPS/2 ALPS DualPoint TouchPad 
+                    { # AlpsPS/2 ALPS DualPoint TouchPad
                         $Device{"Vendor"} = $1;
                     }
                     elsif($Device{"Device"}=~s/(\w+) (Touchpad|TrackPoint|GlidePoint)/$2/i) {
@@ -2671,7 +2678,7 @@ sub probeHW()
         if($Bus eq "usb" or $Bus eq "pci")
         {
             $ID = devID($V, $D, $SV, $SD);
-
+            
             if($SD) {
                 $LongID{devID($V, $D)}{$ID} = 1;
             }
@@ -4011,7 +4018,7 @@ sub probeHW()
     {
         if(-f "$FixProbe_Logs/hp-probe")
         { # i.e. executed with -printers option (-fix)
-            $Avahi = readFile($FixProbe_Logs."/avahi");
+            $Avahi = readFile("$FixProbe_Logs/avahi");
         }
     }
     elsif($Opt{"Printers"} and $Opt{"LogLevel"} eq "maximal")
@@ -4214,10 +4221,10 @@ sub probeHW()
             else
             {
                 if($Edid) {
-                    print STDERR "WARNING: failed to fix EDID\n";
+                    printMsg("WARNING", "failed to fix EDID");
                 }
                 else {
-                    print STDERR "WARNING: failed to create EDID\n";
+                    printMsg("WARNING", "failed to create EDID");
                 }
             }
         }
@@ -5363,7 +5370,7 @@ sub detectBoard($)
 {
     my $Device = $_[0];
 
-    $Device->{"Vendor"}=~s{\Ahttp://www.}{}i; # http://www.abit.com.tw as vendor
+    $Device->{"Vendor"}=~s{\Ahttp://www\.}{}i; # http://www.abit.com.tw as vendor
 
     if($Device->{"Version"}=~/\b(n\/a|Not)\b/i) {
         $Device->{"Version"} = undef;
@@ -5554,6 +5561,7 @@ sub detectMonitor($)
     while($Info=~s/(\d+)x(\d+)\@\d+//) {
         $Resolutions{$1} = $2;
     }
+
     while($Info=~s/\n\s+(\d+)\s+.+?\s+hborder//)
     {
         my $W = $1;
@@ -6029,52 +6037,52 @@ sub guessDriveVendor($)
     and defined $DiskVendor{$1}) {
         return $DiskVendor{$1};
     }
-    elsif($Name=~/\A[A-Z\d]{2,}\-([A-Z]{3})[A-Z\d]+/
+    if($Name=~/\A[A-Z\d]{2,}\-([A-Z]{3})[A-Z\d]+/
     and defined $DiskVendor{$1})
     { # C400-MTFDDAT064MAM
         return $DiskVendor{$1};
     }
-    elsif($Name=~/\A[A-Z\d]{2,}\-([A-Z]{2})[A-Z\d]+/
+    if($Name=~/\A[A-Z\d]{2,}\-([A-Z]{2})[A-Z\d]+/
     and defined $DiskVendor{$1})
     { # M4-CT256M4SSD2
         return $DiskVendor{$1};
     }
-    elsif($Name=~/\A(ZALMAN|FASTDISK)/) {
+    if($Name=~/\A(ZALMAN|FASTDISK)/) {
         return $1;
     }
-    elsif($Name=~/\A(InM2)/) {
+    if($Name=~/\A(InM2)/) {
         return "Indilinx";
     }
-    elsif($Name=~/\AQ200 EX/) {
+    if($Name=~/\AQ200 EX/) {
         return "Toshiba";
     }
-    elsif($Name=~/\AOOS2000G/) {
+    if($Name=~/\AOOS2000G/) {
         return "Seagate";
     }
-    elsif($Name=~/\ASSDPAMM/) {
+    if($Name=~/\ASSDPAMM/) {
         return "Intel";
     }
-    elsif($Name=~/\ASSD2SC\d+/) {
+    if($Name=~/\ASSD2SC\d+/) {
         return "PNY";
     }
-    elsif($Name=~/\AMB1000/) {
+    if($Name=~/\AMB1000/) {
         return "HP";
     }
-    elsif($Name=~/\ACHN25SATA/) {
+    if($Name=~/\ACHN25SATA/) {
         return "Zheino";
     }
-    elsif($Name=~/\ACF Card/) {
+    if($Name=~/\ACF Card/) {
         return "SanDisk";
     }
-    elsif($Name=~/\A(SSDPR_CX|IR_SSDPR|IR\-SSDPR)/) {
+    if($Name=~/\A(SSDPR_CX|IR_SSDPR|IR\-SSDPR)/) {
         return "Goodram";
     }
-    elsif($Name=~/\A(MT|MSH|P3|P3D|T)\-(60|64|120|128|240|256|512|1TB|2TB)\Z/
+    if($Name=~/\A(MT|MSH|P3|P3D|T)\-(60|64|120|128|240|256|512|1TB|2TB)\Z/
     or grep { $Name eq $_ } ("V-32", "NT-256", "NT-512", "Q-360"))
     { # MT-64 MSH-256 P3-128 P3D-240 P3-2TB T-60 V-32
         return "KingSpec";
     }
-    elsif($Name=~s/\A([a-z]{3,})[\-\_ ]//i)
+    if($Name=~s/\A([a-z]{3,})[\-\_ ]//i)
     { # Crucial_CT240M500SSD3
       # OCZ-VERTEX
         return $1;
@@ -6415,7 +6423,7 @@ sub probeSys()
     
     if(not $Sys{"System"})
     {
-        print STDERR "ERROR: failed to detect Linux distribution\n";
+        printMsg("ERROR", "failed to detect Linux distribution");
         if($Opt{"Snap"})
         {
             warnSnapInterfaces();
@@ -6669,7 +6677,7 @@ sub probeHWaddr()
         }
         else
         {
-            print STDERR "ERROR: can't find 'ifconfig' or 'ip'\n";
+            printMsg("ERROR", "can't find 'ifconfig' or 'ip'");
             exitStatus(1);
         }
         
@@ -6691,7 +6699,7 @@ sub probeHWaddr()
         
         if(not $Sys{"HWaddr"})
         {
-            print STDERR "ERROR: failed to detect hwid\n";
+            printMsg("ERROR", "failed to detect hwid");
             
             if($Opt{"Snap"}) {
                 warnSnapInterfaces();
@@ -6849,9 +6857,6 @@ sub selectHWAddr($$)
     elsif(@Wrong) {
         $Sel = $Wrong[0];
     }
-    else {
-        return;
-    }
     
     return $Sel;
 }
@@ -6883,7 +6888,7 @@ sub readFileHex($)
 {
     my $Path = $_[0];
     local $/ = undef;
-    open(FILE, $Path);
+    open(FILE, "<", $Path);
     binmode FILE;
     my $Data = <FILE>;
     close FILE;
@@ -6893,7 +6898,7 @@ sub readFileHex($)
 sub readFile($)
 {
     my $Path = $_[0];
-    open(FILE, $Path);
+    open(FILE, "<", $Path);
     local $/ = undef;
     my $Content = <FILE>;
     close(FILE);
@@ -6903,7 +6908,7 @@ sub readFile($)
 sub readLine($)
 {
     my $Path = $_[0];
-    open (FILE, $Path);
+    open(FILE, "<", $Path);
     my $Line = <FILE>;
     close(FILE);
     return $Line;
@@ -7105,15 +7110,7 @@ sub probeDistr()
 
 sub devID(@)
 {
-    my @ID = ();
-    
-    foreach (@_)
-    {
-        if($_) {
-            push(@ID,  $_);
-        }
-    }
-    
+    my @ID = grep { $_ } @_;
     return lc(join("-", @ID));
 }
 
@@ -7270,7 +7267,7 @@ sub writeLogs()
         print "\n";
     }
 
-    my $SessUser = getUser() || $ENV{USER};
+    my $SessUser = getUser() || $ENV{"USER"};
 
     # level=minimal
     if($Admin)
@@ -7293,9 +7290,9 @@ sub writeLogs()
     
     if(not $XLog_Old)
     {
-        if($SessUser)
+        if(my $SUser = getUser())
         { # Old Xorg log in XWayland (Ubuntu 18.04)
-            $XLog_Old = readFile("/home/".$SessUser."/.local/share/xorg/Xorg.0.log.old");
+            $XLog_Old = readFile("/home/".$SUser."/.local/share/xorg/Xorg.0.log.old");
         }
     }
     
@@ -7349,7 +7346,7 @@ sub writeLogs()
     {
         listProbe("logs", "boot.log");
         my $BootLog = clearLog(readFile("/var/log/boot.log"));
-        $BootLog=~s/(Mounted|Mounting)\s+.+/$1 XXXXX/g;
+        $BootLog=~s&(Mounted|Mounting)\s+/.+&$1 XXXXX&g;
         writeLog($LOG_DIR."/boot.log", $BootLog);
     }
     
@@ -7371,7 +7368,7 @@ sub writeLogs()
         $Glxinfo = clearLog_X11($Glxinfo);
         
         if(not clearLog_X11($Glxinfo)) {
-            print STDERR "WARNING: X11-related logs are not collected (try to run 'xhost +local:' to enable access or run as root by su)\n";
+            printMsg("WARNING", "X11-related logs are not collected (try to run 'xhost +local:' to enable access or run as root by su)");
         }
         
         writeLog($LOG_DIR."/glxinfo", $Glxinfo);
@@ -8105,7 +8102,7 @@ sub writeLogs()
                 if(-e $ALog)
                 {
                     listProbe("logs", "cups_access_log");
-                    my $CupsAccess = readFile($ALog); 
+                    my $CupsAccess = readFile($ALog);
                     writeLog($LOG_DIR."/cups_access_log", $CupsAccess);
                 }
             }
@@ -8140,8 +8137,8 @@ sub writeLogs()
         {
             if(-s "$LOG_DIR/acpidump")
             {
-                if(decodeACPI($LOG_DIR."/acpidump", $LOG_DIR."/acpidump_decoded")) {
-                    unlink($LOG_DIR."/acpidump");
+                if(decodeACPI("$LOG_DIR/acpidump", "$LOG_DIR/acpidump_decoded")) {
+                    unlink("$LOG_DIR/acpidump");
                 }
             }
         }
@@ -8173,7 +8170,7 @@ sub check_Cmd(@)
                     next;
                 }
             }
-            return $Dir."/".$Cmd;
+            return "$Dir/$Cmd";
         }
     }
     return;
@@ -8294,7 +8291,7 @@ sub showInfo()
                 
                 if($?)
                 {
-                    print STDERR "ERROR: failed to extract package (".$?.")\n";
+                    printMsg("ERROR", "failed to extract package (".$?.")");
                     exitStatus(1);
                 }
                 
@@ -8303,13 +8300,13 @@ sub showInfo()
                 }
                 else
                 {
-                    print STDERR "ERROR: failed to extract package\n";
+                    printMsg("ERROR", "failed to extract package");
                     exitStatus(1);
                 }
             }
             else
             {
-                print STDERR "ERROR: not a package\n";
+                printMsg("ERROR", "not a package");
                 exitStatus(1);
             }
         }
@@ -8319,7 +8316,7 @@ sub showInfo()
         }
         else
         {
-            print STDERR "ERROR: can't access \'".$Opt{"Source"}."\'\n";
+            printMsg("ERROR", "can't access '".$Opt{"Source"}."'");
             exitStatus(1);
         }
     }
@@ -8327,7 +8324,7 @@ sub showInfo()
     {
         if(not -d $DATA_DIR)
         {
-            print STDERR "ERROR: \'".$DATA_DIR."\' is not found, please make probe first\n";
+            printMsg("ERROR", "'".$DATA_DIR."' is not found, please make probe first");
             exitStatus(1);
         }
     }
@@ -8335,9 +8332,9 @@ sub showInfo()
     my %Tbl;
     my %STbl;
     
-    foreach (split(/\s*\n\s*/, readFile($ShowDir."/devices")))
+    foreach my $L (split(/\s*\n\s*/, readFile($ShowDir."/devices")))
     {
-        my @Info = split(/;/);
+        my @Info = split(/;/, $L);
 
         my %Dev = (
             "ID"      => $Info[0],
@@ -8404,9 +8401,9 @@ sub showInfo()
         }
     }
     
-    foreach (split(/\s*\n\s*/, readFile($ShowDir."/host")))
+    foreach my $L (split(/\s*\n\s*/, readFile($ShowDir."/host")))
     {
-        if(/(\w+):(.*)/)
+        if($L=~/(\w+):(.*)/)
         {
             my ($Attr, $Val) = ($1, $2);
             
@@ -8443,8 +8440,7 @@ sub showInfo()
 
 sub showTable(@)
 {
-    my $Tbl = shift(@_);
-    my $Num = shift(@_);
+    my ($Tbl, $Num, @Columns) = @_;
     
     my %Max;
     
@@ -8465,7 +8461,7 @@ sub showTable(@)
     my $Br = "";
     my $Hd = "";
     
-    foreach my $Col (@_)
+    foreach my $Col (@Columns)
     {
         my $Hd_T = $Col;
         if(not $Hd) {
@@ -8487,7 +8483,7 @@ sub showTable(@)
     
     foreach my $Row (0 .. $Num)
     {
-        foreach my $Col (@_)
+        foreach my $Col (@Columns)
         {
             my $El = $Tbl->{$Col}[$Row];
             print "| ".$El;
@@ -8501,14 +8497,14 @@ sub showTable(@)
 
 sub showHash(@)
 {
-    my $Hash = shift(@_);
+    my ($Hash, @Keys) = @_;
     
     my $KMax = 0;
     my $VMax = 0;
     
     foreach my $Key (sort keys(%{$Hash}))
     {
-        if(not grep {$Key eq $_} @_) {
+        if(not grep {$Key eq $_} @Keys) {
             next;
         }
         
@@ -8527,7 +8523,7 @@ sub showHash(@)
     $Br .= mulCh("-", $VMax + 2);
     $Br .= "+";
     
-    foreach my $Key (@_)
+    foreach my $Key (@Keys)
     {
         my $Val = $Hash->{$Key};
         
@@ -8559,7 +8555,7 @@ sub alignStr($$)
 {
     my $Align = "";
     
-    foreach (1 .. $_[1] - length($_[0])) {
+    foreach (1 .. ($_[1] - length($_[0]))) {
         $Align .= " ";
     }
     
@@ -8594,7 +8590,7 @@ sub checkGraphics()
             listProbe("tests", "glxgears (Nouveau)");
             system("xrandr --setprovideroffloadsink 1 0"); # nouveau Intel
             if($?) {
-                print STDERR "ERROR: failed to run glxgears test on discrete card\n";
+                printMsg("ERROR", "failed to run glxgears test on discrete card");
             }
             else {
                 $Out_D = runCmd("DRI_PRIME=1 vblank_mode=0 $Glxgears");
@@ -8738,7 +8734,7 @@ sub checkHW()
     
     if($Opt{"CheckCpu"} and check_Cmd("dd") and check_Cmd("md5sum"))
     {
-        if(my @CPUs = grep {/\Acpu:/} keys(%HW))
+        if(my @CPUs = grep { /\Acpu:/ } keys(%HW))
         {
             print "Check CPU ... ";
             my $CPU_Info = $HW{$CPUs[0]};
@@ -8887,12 +8883,13 @@ sub readSdioIds_Sys() {
 
 sub readSdioIds($$$)
 {
-    my ($File, $Info, $Vnds) = @_;
-    if(not -e $File) {
+    my ($Path, $Info, $Vnds) = @_;
+
+    if(not -e $Path) {
         return;
     }
 
-    my $List = readFile($File);
+    my $List = readFile($Path);
 
     my ($V, $D);
 
@@ -8931,15 +8928,17 @@ sub downloadProbe($$)
     if(index($Page, "ERROR(3):")!=-1) {
         return -1;
     }
-    elsif(index($Page, "ERROR(1):")!=-1)
+    
+    if(index($Page, "ERROR(1):")!=-1)
     {
-        print STDERR "ERROR: You are not allowed temporarily to download probes\n";
+        printMsg("ERROR", "You are not allowed temporarily to download probes");
         rmtree($Dir."/logs");
         exitStatus(1);
     }
-    elsif(not $Page)
+    
+    if(not $Page)
     {
-        print STDERR "ERROR: Internet connection is required\n";
+        printMsg("ERROR", "Internet connection is required");
         exitStatus(1);
     }
     
@@ -8952,9 +8951,9 @@ sub downloadProbe($$)
     my $NPage = "";
     foreach my $Line (split(/\n/, $Page))
     {
-        if($Line=~/((?:href|src)=['"]([^"']+?)['"])/)
+        if($Line=~/(href|src)=['"]([^"']+?)['"]/)
         {
-            my $Url  = $2;
+            my $Url = $2;
 
             if($Url=~/((css|js|images)\/[^?]+)/)
             {
@@ -8980,13 +8979,13 @@ sub downloadProbe($$)
                 
                 if(index($Log, "ERROR(1):")!=-1)
                 {
-                    print STDERR "ERROR: You are not allowed temporarily to download probes\n";
+                    printMsg("ERROR", "You are not allowed temporarily to download probes");
                     rmtree($Dir."/logs");
                     exitStatus(1);
                 }
 
                 $Log = preparePage($Log);
-                $Log=~s{(['"])(css|js|images)\/}{$1../$2\/}g;
+                $Log=~s{(['"])(css|js|images)/}{$1../$2/}g;
                 $Log=~s{index.php\?probe=$ID}{../index.html};
 
                 writeFile($LogPath, $Log);
@@ -9077,11 +9076,11 @@ sub importProbes($)
         setPublic($Dir);
     }
 
-    my ($Imported, $OneProbe);
+    my ($Imported, $OneProbe) = (undef, undef);
 
     my $IndexInfo = eval { readFile($Dir."/index.info") } || {};
 
-    my @Paths;
+    my @Paths = ();
     if(-d $PROBE_DIR)
     {
         foreach my $P (listDir($PROBE_DIR)) {
@@ -9205,7 +9204,7 @@ sub importProbes($)
             $LIST .= "<tr class='pointer' onclick=\"document.location='$P/index.html'\">\n";
             
             $LIST .= "<td>\n";
-            $LIST .= "<a href=\'$P/index.html\'>$P</a>\n";
+            $LIST .= "<a href='$P/index.html'>$P</a>\n";
             $LIST .= "</td>\n";
             
             $LIST .= "<td>\n";
@@ -9234,7 +9233,7 @@ sub importProbes($)
     my $INDEX = readFile($Dir."/".$OneProbe."/index.html");
     $INDEX=~s{\Q<!-- body -->\E(.|\n)+\Q<!-- body end -->\E\n}{<h1>Probes Timeline</h1>\n$Descr\n$LIST\n};
     $INDEX=~s{(\Q<title>\E)(.|\n)+(\Q</title>\E)}{$1 Probes Timeline $3};
-    $INDEX=~s{(['"])(css|js|images)\/}{$1$OneProbe/$2\/}g;
+    $INDEX=~s{(['"])(css|js|images)/}{$1$OneProbe/$2/}g;
 
     writeFile($Dir."/index.html", $INDEX);
     setPublic($Dir."/index.html");
@@ -9272,7 +9271,7 @@ sub getTimeStamp($)
     return $Date;
 }
 
-sub setPublic($)
+sub setPublic(@)
 {
     my $Path = shift(@_);
     my $R = undef;
@@ -9308,10 +9307,10 @@ sub fixLogs($)
     if(-f "$Dir/hwinfo"
     and -s "$Dir/hwinfo" < 200)
     { # Support for HW Probe 1.4
-        if(readFile($Dir."/hwinfo")=~/unrecognized arguments|error while loading shared libraries/)
+        if(readFile("$Dir/hwinfo")=~/unrecognized arguments|error while loading shared libraries/)
         { # hwinfo: error: unrecognized arguments: --all
           # hwinfo: error while loading shared libraries: libhd.so.21: cannot open shared object file: No such file or directory
-            writeFile($Dir."/hwinfo", "");
+            writeFile("$Dir/hwinfo", "");
         }
     }
 
@@ -9329,22 +9328,22 @@ sub fixLogs($)
       # No SMBIOS nor DMI entry point found
         writeFile($Dir."/dmidecode", "");
     }
-    
+
     foreach my $L ("glxinfo", "xdpyinfo", "xinput", "vdpauinfo", "xrandr")
     {
         if(-e "$Dir/$L"
         and -s "$Dir/$L" < 100)
         {
-            if(not clearLog_X11(readFile($Dir."/".$L))) {
-                writeFile($Dir."/".$L, "");
+            if(not clearLog_X11(readFile("$Dir/$L"))) {
+                writeFile("$Dir/$L", "");
             }
         }
     }
 
     if(-f "$Dir/vulkaninfo")
     { # Support for HW Probe 1.3
-        if(readFile($Dir."/vulkaninfo")=~/Cannot create/i) {
-            unlink($Dir."/vulkaninfo");
+        if(readFile("$Dir/vulkaninfo")=~/Cannot create/i) {
+            unlink("$Dir/vulkaninfo");
         }
     }
 
@@ -9352,22 +9351,22 @@ sub fixLogs($)
     and -s "$Dir/vainfo" < 200)
     { # Support for HW Probe 1.4
       # error: failed to initialize display
-        if(readFile($Dir."/vainfo")=~/failed to initialize/) {
-            writeFile($Dir."/vainfo", "");
+        if(readFile("$Dir/vainfo")=~/failed to initialize/) {
+            writeFile("$Dir/vainfo", "");
         }
     }
 
     if(-f "$Dir/cpupower")
     { # Support for HW Probe 1.3
-        if(readFile($Dir."/cpupower")=~/cpupower not found/) {
-            unlink($Dir."/cpupower");
+        if(readFile("$Dir/cpupower")=~/cpupower not found/) {
+            unlink("$Dir/cpupower");
         }
     }
 
     if(-f "$Dir/mcelog")
     { # Support for HW Probe 1.4
-        if(readFile($Dir."/mcelog")=~/No such file or directory/) {
-            writeFile($Dir."/mcelog", "");
+        if(readFile("$Dir/mcelog")=~/No such file or directory/) {
+            writeFile("$Dir/mcelog", "");
         }
     }
 
@@ -9375,22 +9374,22 @@ sub fixLogs($)
     and -s "$Dir/rfkill" < 70)
     { # Support for HW Probe 1.4
       # Can't open RFKILL control device: No such file or directory
-        if(readFile($Dir."/rfkill")=~/No such file or directory/) {
-            writeFile($Dir."/rfkill", "");
+        if(readFile("$Dir/rfkill")=~/No such file or directory/) {
+            writeFile("$Dir/rfkill", "");
         }
     }
-    
+
     foreach my $L ("aplay", "arecord")
     {
         if(-e "$Dir/$L"
         and -s "$Dir/$L" < 50)
         {
-            if(readFile($Dir."/".$L)=~/command not found/) {
-                writeFile($Dir."/".$L, "");
+            if(readFile("$Dir/$L")=~/command not found/) {
+                writeFile("$Dir/$L", "");
             }
         }
     }
-    
+
     foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all", "pstree", "lsblk", "efibootmgr")
     {
         if(-f "$Dir/$L"
@@ -9400,32 +9399,32 @@ sub fixLogs($)
           # pcilib: Cannot open /proc/bus/pci
           # lspci: Cannot find any working access method.
           # lsblk: Permission denied
-            writeFile($Dir."/".$L, "");
+            writeFile("$Dir/$L", "");
         }
     }
 
     if(-e "$Dir/lsusb")
     {
-        my $Lsusb = readFile($Dir."/lsusb");
+        my $Lsusb = readFile("$Dir/lsusb");
         if(index($Lsusb, "Resource temporarily unavailable")!=-1)
         {
             $Lsusb=~s/can't get device qualifier: Resource temporarily unavailable\n//g;
             $Lsusb=~s/can't get debug descriptor: Resource temporarily unavailable\n//g;
             $Lsusb=~s/Couldn't open device, some information will be missing\n//g;
-            writeFile($Dir."/lsusb", $Lsusb);
+            writeFile("$Dir/lsusb", $Lsusb);
         }
         elsif(index($Lsusb, "some information will be missing")!=-1)
         {
             $Lsusb=~s/Couldn't open device, some information will be missing\n//g;
-            writeFile($Dir."/lsusb", $Lsusb);
+            writeFile("$Dir/lsusb", $Lsusb);
         }
     }
 
     if(-e "$Dir/inxi"
     and -s "$Dir/inxi" < 100)
     { # Support for HW Probe 1.4
-        if(readFile($Dir."/inxi")=~/Unsupported option/) {
-            writeFile($Dir."/inxi", "");
+        if(readFile("$Dir/inxi")=~/Unsupported option/) {
+            writeFile("$Dir/inxi", "");
         }
     }
 }
@@ -9434,7 +9433,7 @@ sub scenario()
 {
     if($Opt{"Help"})
     {
-        helpMsg();
+        print $HelpMessage;
         exitStatus(0);
     }
     
@@ -9478,7 +9477,7 @@ sub scenario()
         
         if($Opt{"LogLevel"}!~/\A(minimal|default|maximal)\Z/i)
         {
-            print STDERR "ERROR: unknown log level \'".$Opt{"LogLevel"}."\'\n";
+            printMsg("ERROR", "unknown log level '".$Opt{"LogLevel"}."'");
             exitStatus(1);
         }
         
@@ -9493,7 +9492,7 @@ sub scenario()
     {
         if(not -f $Opt{"HWInfoPath"})
         {
-            print STDERR "ERROR: can't access file \'".$Opt{"HWInfoPath"}."\'\n";
+            printMsg("ERROR", "can't access file '".$Opt{"HWInfoPath"}."'");
             exitStatus(1);
         }
     }
@@ -9502,7 +9501,7 @@ sub scenario()
     {
         if(not $USE_DUMPER)
         {
-            print STDERR "ERROR: requires perl-Data-Dumper module\n";
+            printMsg("ERROR", "requires perl-Data-Dumper module");
             exitStatus(1);
         }
     }
@@ -9511,7 +9510,7 @@ sub scenario()
     {
         if(not -f $Opt{"IdentifyDrive"})
         {
-            print STDERR "ERROR: can't access file \'".$Opt{"IdentifyDrive"}."\'\n";
+            printMsg("ERROR", "can't access file '".$Opt{"IdentifyDrive"}."'");
             exitStatus(1);
         }
         
@@ -9531,7 +9530,7 @@ sub scenario()
     {
         if(not -f $Opt{"IdentifyMonitor"})
         {
-            print STDERR "ERROR: can't access file \'".$Opt{"IdentifyMonitor"}."\'\n";
+            printMsg("ERROR", "can't access file '".$Opt{"IdentifyMonitor"}."'");
             exitStatus(1);
         }
         
@@ -9544,7 +9543,7 @@ sub scenario()
     {
         if(not -f $Opt{"DecodeACPI_From"})
         {
-            print STDERR "ERROR: can't access file \'".$Opt{"DecodeACPI_From"}."\'\n";
+            printMsg("ERROR", "can't access file '".$Opt{"DecodeACPI_From"}."'");
             exitStatus(1);
         }
         decodeACPI($Opt{"DecodeACPI_From"}, $Opt{"DecodeACPI_To"});
@@ -9573,7 +9572,7 @@ sub scenario()
         {
             if(not -w $DATA_DIR)
             {
-                print STDERR "ERROR: can't write to \'$DATA_DIR\', please run as root\n";
+                printMsg("ERROR", "can't write to '".$DATA_DIR."', please run as root");
                 exitStatus(1);
             }
             rmtree($DATA_DIR);
@@ -9585,7 +9584,7 @@ sub scenario()
         if(not $Admin
         and not $SNAP_DESKTOP and not $FLATPAK_DESKTOP)
         {
-            print STDERR "ERROR: you should run as root (sudo or su)\n";
+            printMsg("ERROR", "you should run as root (sudo or su)");
             exitStatus(1);
         }
     }
@@ -9612,45 +9611,45 @@ sub scenario()
         $Opt{"Logs"} = 1;
     }
     
-    if($Opt{"PciIDs"})
+    if(my $PciIDs = $Opt{"PciIDs"})
     {
-        if(not -e $Opt{"PciIDs"})
+        if(not -e $PciIDs)
         {
-            print STDERR "ERROR: can't access \'".$Opt{"PciIDs"}."\'\n";
+            printMsg("ERROR", "can't access '".$PciIDs."'");
             exitStatus(1);
         }
-        readPciIds($Opt{"PciIDs"}, \%PciInfo, \%PciInfo_D);
+        readPciIds($PciIDs, \%PciInfo, \%PciInfo_D);
 
-        if(-e "$Opt{PciIDs}.add") {
-            readPciIds($Opt{"PciIDs"}.".add", \%AddPciInfo, \%AddPciInfo_D);
+        if(-e "$PciIDs.add") {
+            readPciIds("$PciIDs.add", \%AddPciInfo, \%AddPciInfo_D);
         }
     }
     
-    if($Opt{"UsbIDs"})
+    if(my $UsbIDs = $Opt{"UsbIDs"})
     {
-        if(not -e $Opt{"UsbIDs"})
+        if(not -e $UsbIDs)
         {
-            print STDERR "ERROR: can't access \'".$Opt{"UsbIDs"}."\'\n";
+            printMsg("ERROR", "can't access '".$UsbIDs."'");
             exitStatus(1);
         }
-        readUsbIds($Opt{"UsbIDs"}, \%UsbInfo);
+        readUsbIds($UsbIDs, \%UsbInfo);
 
-        if(-e "$Opt{UsbIDs}.add") {
-            readUsbIds($Opt{"UsbIDs"}.".add", \%AddUsbInfo);
+        if(-e "$UsbIDs.add") {
+            readUsbIds("$UsbIDs.add", \%AddUsbInfo);
         }
     }
     
-    if($Opt{"SdioIDs"})
+    if(my $SdioIDs = $Opt{"SdioIDs"})
     {
-        if(not -e $Opt{"SdioIDs"})
+        if(not -e $SdioIDs)
         {
-            print STDERR "ERROR: can't access \'".$Opt{"SdioIDs"}."\'\n";
+            printMsg("ERROR", "can't access '".$SdioIDs."'");
             exitStatus(1);
         }
-        readSdioIds($Opt{"SdioIDs"}, \%SdioInfo, \%SdioVendor);
+        readSdioIds($SdioIDs, \%SdioInfo, \%SdioVendor);
 
-        if(-e "$Opt{SdioIDs}.add") {
-            readSdioIds($Opt{"SdioIDs"}.".add", \%AddSdioInfo, \%AddSdioVendor);
+        if(-e "$SdioIDs.add") {
+            readSdioIds("$SdioIDs.add", \%AddSdioInfo, \%AddSdioVendor);
         }
     }
     
@@ -9658,7 +9657,7 @@ sub scenario()
     {
         if(not -e $Opt{"PnpIDs"})
         {
-            print STDERR "ERROR: can't access \'".$Opt{"PnpIDs"}."\'\n";
+            printMsg("ERROR", "can't access '".$Opt{"PnpIDs"}."'");
             exitStatus(1);
         }
     }
@@ -9667,7 +9666,7 @@ sub scenario()
     {
         if(not -e $Opt{"FixProbe"})
         {
-            print STDERR "ERROR: can't access \'".$Opt{"FixProbe"}."\'\n";
+            printMsg("ERROR", "can't access '".$Opt{"FixProbe"}."'");
             exitStatus(1);
         }
         
@@ -9686,7 +9685,7 @@ sub scenario()
         }
         elsif(-f $Opt{"FixProbe"})
         {
-            print STDERR "ERROR: unsupported probe format \'".$Opt{"FixProbe"}."\'\n";
+            printMsg("ERROR", "unsupported probe format '".$Opt{"FixProbe"}."'");
             exitStatus(1);
         }
         
@@ -9698,13 +9697,13 @@ sub scenario()
         {
             if(not listDir($FixProbe_Logs))
             {
-                print STDERR "ERROR: can't find logs in \'".$Opt{"FixProbe"}."\'\n";
+                printMsg("ERROR", "can't find logs in '".$Opt{"FixProbe"}."'");
                 exitStatus(1);
             }
         }
         else
         {
-            print STDERR "ERROR: can't access \'".$Opt{"FixProbe"}."\'\n";
+            printMsg("ERROR", "can't access '".$Opt{"FixProbe"}."'");
             exitStatus(1);
         }
 
@@ -9731,16 +9730,22 @@ sub scenario()
             }
         }
 
-        if($Opt{"RmLog"} and -f "$FixProbe_Logs/$Opt{RmLog}"
-        and not grep {$Opt{"RmLog"} eq $_} @ProtectedLogs) {
-            writeFile($FixProbe_Logs."/".$Opt{"RmLog"}, "");
+        if(my $RmLog = $Opt{"RmLog"})
+        {
+            if(-f "$FixProbe_Logs/$RmLog"
+            and not grep {$RmLog eq $_} @ProtectedLogs) {
+                writeFile("$FixProbe_Logs/$RmLog", "");
+            }
         }
 
-        if($Opt{"TruncateLog"} and -f "$FixProbe_Logs/$Opt{TruncateLog}"
-        and not grep {$Opt{"TruncateLog"} eq $_} @ProtectedLogs)
+        if(my $TrLog = $Opt{"TruncateLog"})
         {
-            if(my $Content = readFile($FixProbe_Logs."/".$Opt{"TruncateLog"})) {
-                writeLog($FixProbe_Logs."/".$Opt{"TruncateLog"}, $Content);
+            if(-f "$FixProbe_Logs/$TrLog"
+            and not grep {$TrLog eq $_} @ProtectedLogs)
+            {
+                if(my $Content = readFile("$FixProbe_Logs/$TrLog")) {
+                    writeLog("$FixProbe_Logs/$TrLog", $Content);
+                }
             }
         }
         
@@ -9748,8 +9753,8 @@ sub scenario()
         {
             if(-s "$FixProbe_Logs/$L" > $MAX_LOG_SIZE)
             {
-                if(my $Content = readFile($FixProbe_Logs."/".$L)) {
-                    writeLog($FixProbe_Logs."/".$L, $Content);
+                if(my $Content = readFile("$FixProbe_Logs/$L")) {
+                    writeLog("$FixProbe_Logs/$L", $Content);
                 }
             }
         }
@@ -9761,7 +9766,7 @@ sub scenario()
     {
         if(not -d $Opt{"Save"})
         {
-            print STDERR "ERROR: please create directory first\n";
+            printMsg("ERROR", "please create directory first");
             exitStatus(1);
         }
     }
@@ -9771,7 +9776,7 @@ sub scenario()
         if(not check_Cmd("curl"))
         {
             if(not $Opt{"Snap"} and not $Opt{"Flatpak"}) {
-                print STDERR "WARNING: 'curl' package is not installed\n";
+                printMsg("WARNING", "'curl' package is not installed");
             }
         }
     }
@@ -9858,7 +9863,7 @@ sub scenario()
         {
             if(-f "$FixProbe_Logs/issue")
             { # Support for old HW Probe
-                my $Issue = readLine($FixProbe_Logs."/issue");
+                my $Issue = readLine("$FixProbe_Logs/issue");
                 if($Issue=~/ROSA Enterprise Linux Server release ([\d\.]+)/i) {
                     $Distr = "rels-".$1;
                 }
@@ -9869,7 +9874,7 @@ sub scenario()
         { # Support for old HW Probe
             if(-f "$FixProbe_Logs/rpms")
             {
-                my $Rpm = readLine($FixProbe_Logs."/rpms");
+                my $Rpm = readLine("$FixProbe_Logs/rpms");
                 if($Rpm=~/\.([a-z]\w+)\.\w+\Z/i)
                 {
                     if(defined $DistSuffix{$1}) {
@@ -9907,7 +9912,7 @@ sub scenario()
                 }
                 else
                 {
-                    print STDERR "ERROR: failed to fix 'system' attribute (kernel is '".$Sys{"Kernel"}."')\n";
+                    printMsg("ERROR", "failed to fix 'system' attribute (kernel is '".$Sys{"Kernel"}."')");
                 }
             }
             
@@ -9935,15 +9940,15 @@ sub scenario()
         {
             if(-s "$FixProbe_Logs/acpidump")
             {
-                if(decodeACPI($FixProbe_Logs."/acpidump", $FixProbe_Logs."/acpidump_decoded")) {
-                    unlink($FixProbe_Logs."/acpidump");
+                if(decodeACPI("$FixProbe_Logs/acpidump", "$FixProbe_Logs/acpidump_decoded")) {
+                    unlink("$FixProbe_Logs/acpidump");
                 }
             }
         }
 
         if(-s "$FixProbe_Logs/acpidump"
         and -s "$FixProbe_Logs/acpidump_decoded") {
-            unlink($FixProbe_Logs."/acpidump");
+            unlink("$FixProbe_Logs/acpidump");
         }
         
         writeDevs();
@@ -9967,7 +9972,7 @@ sub scenario()
             chdir($ORIG_DIR);
             
             if($?) {
-                print STDERR "ERROR: can't create a package\n";
+                printMsg("ERROR", "can't create a package");
             }
             
             rmtree($TMP_DIR."/hw.info");
@@ -9995,13 +10000,13 @@ sub scenario()
     {
         if(not $Admin)
         {
-            print STDERR "ERROR: you should run as root (sudo or su)\n";
+            printMsg("ERROR", "you should run as root (sudo or su)");
             exitStatus(1);
         }
         
         if(not $USE_DUMPER)
         {
-            print STDERR "ERROR: requires perl-Data-Dumper module\n";
+            printMsg("ERROR", "requires perl-Data-Dumper module");
             exitStatus(1);
         }
         
