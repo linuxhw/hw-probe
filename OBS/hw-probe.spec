@@ -18,7 +18,9 @@ Requires:   smartmontools
 Requires:   hdparm
 Requires:   sysstat
 Requires:   util-linux
+%ifarch %ix86 x86_64
 Requires:   mcelog
+%endif
 %if 0%{?suse_version} || 0%{?sle_version}
 Requires:   sensors
 Requires:   lsb-release
