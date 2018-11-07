@@ -967,7 +967,7 @@ sub hideHostname($)
 sub hidePaths($)
 {
     my $Content = $_[0];
-    $Content=~s&/(media|home|mnt|mount)/[^\s]+&/$1/XXX&g;
+    $Content=~s&(mnt|mount|home|media|data)/[^\s]+&$1/XXX&g;
     return $Content;
 }
 
@@ -989,6 +989,13 @@ sub hideUrls($)
 {
     my $Content = $_[0];
     $Content=~s&/(\w+\:)//[\w\-\.]+&$1//XXX&g;
+    return $Content;
+}
+
+sub hidePass($)
+{
+    my $Content = $_[0];
+    $Content=~s/.*password.*/XXXXXXXXXX/gi;
     return $Content;
 }
 
@@ -7781,6 +7788,7 @@ sub writeLogs()
             $Fstab = hidePaths($Fstab);
             $Fstab = hideIPs($Fstab);
             $Fstab = hideUrls($Fstab);
+            $Fstab = hidePass($Fstab);
             writeLog($LOG_DIR."/fstab", $Fstab);
         }
         
@@ -9281,7 +9289,7 @@ sub setPublic(@)
         return;
     }
     
-    my @Chmod = ("chmod", "775");
+    my @Chmod = ("chmod", "777");
     if($R) {
         push(@Chmod, $R);
     }
@@ -9792,16 +9800,13 @@ sub scenario()
         $PciLink = "/var/tmp/P_PCI";
     }
     
-    if($Opt{"Snap"} or $Opt{"Flatpak"})
+    if($Opt{"Snap"})
     {
-        setPublic($UsbLink);
-        setPublic($PciLink);
-    }
-    
-    if($Opt{"Snap"} and my $SNAP_Dir = $ENV{"SNAP"})
-    {
-        symlink("$SNAP_Dir/usr/share/usb.ids", $UsbLink);
-        symlink("$SNAP_Dir/usr/share/pci.ids", $PciLink);
+        if(my $SNAP_Dir = $ENV{"SNAP"})
+        {
+            symlink("$SNAP_Dir/usr/share/usb.ids", $UsbLink);
+            symlink("$SNAP_Dir/usr/share/pci.ids", $PciLink);
+        }
     }
     elsif($Opt{"Flatpak"})
     {
@@ -9976,7 +9981,7 @@ sub scenario()
         }
     }
     
-    if($Admin and ($Opt{"Snap"} or $Opt{"Flatpak"}))
+    if($Admin and $Opt{"Flatpak"})
     { # Allow to mix root and non-root runs
         setPublic($PROBE_DIR, "-R");
     }
