@@ -51,7 +51,7 @@ parts:
     prime:
       - usr/bin/edid-decode
   dmidecode:
-    source: https://download-mirror.savannah.gnu.org/releases/dmidecode/dmidecode-3.1.tar.xz
+    source: https://download-mirror.savannah.gnu.org/releases/dmidecode/dmidecode-3.2.tar.xz
     source-type: tar
     plugin: make
     override-build: |
@@ -157,7 +157,7 @@ parts:
       - usr/bin/iasl
       - usr/bin/acpixtract
   hdparm:
-    source: https://github.com/linuxhw/build-stuff/releases/download/1.4/hdparm-9.56.tar.gz
+    source: https://github.com/linuxhw/build-stuff/releases/download/1.4/hdparm-9.58.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -235,11 +235,11 @@ parts:
       - make
   hwinfo:
     after: [libx86emu]
-    source: https://github.com/openSUSE/hwinfo/archive/21.57.tar.gz
+    source: https://github.com/openSUSE/hwinfo/archive/21.61.tar.gz
     source-type: tar
     plugin: make
     override-build: |
-      echo '21.57' > VERSION
+      echo '21.61' > VERSION
       rm -f git2log
       sed -i -e 's/ -g / -s /' Makefile.common
       CFLAGS='-I'$SNAPCRAFT_STAGE'/usr/include' LDFLAGS='-L'$SNAPCRAFT_STAGE'/usr/lib64 -L'$SNAPCRAFT_STAGE'/usr/lib -lx86emu' make

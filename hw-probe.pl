@@ -101,7 +101,7 @@ Example: sudo $CmdName -all -upload
 DESC — any description of the probe.\n\n";
 
 my $SNAP_DESKTOP = (defined $ENV{"BAMF_DESKTOP_FILE_HINT"});
-my $FLATPAK_DESKTOP = ($#ARGV==0 and $ARGV[0] eq "-flatpak");
+my $FLATPAK_DESKTOP = (grep { $_ eq "-flatpak" } @ARGV);
 
 if($#ARGV==0 and grep { $ARGV[0] eq $_ } ("-snap", "-flatpak"))
 { # Run by desktop file
@@ -218,9 +218,9 @@ PRIVACY:
   Private information (including the username, machine's hostname, IP addresses,
   MAC addresses and serial numbers) is NOT uploaded to the database.
   
-  The tool uploads SHA512 hash of MAC addresses and serial numbers to properly
-  identify unique computers and hard drives. All the data is uploaded securely
-  via HTTPS.
+  The tool uploads salted SHA512 hash of MAC addresses and serial numbers to
+  properly identify unique computers and hard drives. All the data is uploaded
+  securely via HTTPS.
 
 EXAMPLES:
   sudo $CmdName -all -upload -id DESC
@@ -6955,15 +6955,13 @@ sub probeDistr()
         }
         elsif($Opt{"Flatpak"})
         {
-            my $OSRelHostFs = "/run/host/etc/os-release";
-            if(-e $OSRelHostFs) {
-                $OS_Rel = readFile($OSRelHostFs);
-            }
-            else
+            foreach my $OSRelHost ("/run/host/etc/os-release", "/run/host/usr/lib/os-release",
+            "/var/run/host/etc/os-release", "/var/run/host/usr/lib/os-release")
             {
-                $OSRelHostFs = "/run/host/usr/lib/os-release";
-                if(-e $OSRelHostFs) {
-                    $OS_Rel = readFile($OSRelHostFs);
+                if(-e $OSRelHost)
+                {
+                    $OS_Rel = readFile($OSRelHost);
+                    last;
                 }
             }
         }
@@ -9279,6 +9277,10 @@ sub setPublic(@)
         $R = shift(@_);
     }
     
+    if(not check_Cmd("chmod")) {
+        return;
+    }
+    
     my @Chmod = ("chmod", "775");
     if($R) {
         push(@Chmod, $R);
@@ -9286,7 +9288,7 @@ sub setPublic(@)
     push(@Chmod, $Path);
     system(@Chmod);
     
-    if(not $Opt{"Snap"})
+    if(not $Opt{"Snap"} and not $Opt{"Flatpak"})
     {
         if(my $SessUser = getUser())
         {
@@ -9792,13 +9794,8 @@ sub scenario()
     
     if($Opt{"Snap"} or $Opt{"Flatpak"})
     {
-        if(-e $UsbLink) {
-            unlink($UsbLink);
-        }
-        
-        if(-e $PciLink) {
-            unlink($PciLink);
-        }
+        setPublic($UsbLink);
+        setPublic($PciLink);
     }
     
     if($Opt{"Snap"} and my $SNAP_Dir = $ENV{"SNAP"})
@@ -9979,6 +9976,11 @@ sub scenario()
         }
     }
     
+    if($Admin and ($Opt{"Snap"} or $Opt{"Flatpak"}))
+    { # Allow to mix root and non-root runs
+        setPublic($PROBE_DIR, "-R");
+    }
+    
     if($Opt{"Show"}) {
         showInfo();
     }
@@ -10011,12 +10013,6 @@ sub scenario()
         }
         
         importProbes($Opt{"ImportProbes"});
-    }
-    
-    if($Opt{"Snap"} or $Opt{"Flatpak"})
-    {
-        unlink($UsbLink);
-        unlink($PciLink);
     }
     
     exitStatus(0);

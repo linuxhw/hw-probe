@@ -111,8 +111,8 @@ modules:
       - make install prefix=/ DESTDIR=$FLATPAK_DEST
     sources:
       - type: archive
-        url: https://download-mirror.savannah.gnu.org/releases/dmidecode/dmidecode-3.1.tar.xz
-        sha256: d766ce9b25548c59b1e7e930505b4cad9a7bb0b904a1a391fbb604d529781ac0
+        url: https://download-mirror.savannah.gnu.org/releases/dmidecode/dmidecode-3.2.tar.xz
+        sha256: 077006fa2da0d06d6383728112f2edef9684e9c8da56752e97cd45a11f838edd
   - name: iproute2
     buildsystem: simple
     build-commands:
@@ -199,8 +199,8 @@ modules:
       - install -D INST/sbin/hdparm $FLATPAK_DEST/sbin/hdparm
     sources:
       - type: archive
-        url: https://github.com/linuxhw/build-stuff/releases/download/1.4/hdparm-9.56.tar.gz
-        sha256: 6ff9ed695f1017396eec4101f990f114b7b0e0a04c5aa6369c0394053d16e4da
+        url: https://github.com/linuxhw/build-stuff/releases/download/1.4/hdparm-9.58.tar.gz
+        sha256: 9ae78e883f3ce071d32ee0f1b9a2845a634fc4dd94a434e653fdbef551c5e10f
   - name: smartmontools
     buildsystem: simple
     build-commands:
@@ -256,7 +256,7 @@ modules:
       - aarch64
     buildsystem: simple
     build-commands:
-      - echo '21.57' > VERSION
+      - echo '21.61' > VERSION
       - rm -f git2log
       - sed -i -e 's/ -g / -s /' Makefile.common
       - CFLAGS='-I'$FLATPAK_DEST'/include' LDFLAGS='-L'$FLATPAK_DEST'/lib64 -L'$FLATPAK_DEST'/lib -lx86emu' LD_LIBRARY_PATH=$FLATPAK_DEST'/lib64:'$FLATPAK_DEST'/lib' make
@@ -264,14 +264,14 @@ modules:
       - cp -fr INST/usr/* $FLATPAK_DEST/
     sources:
       - type: archive
-        url: https://github.com/openSUSE/hwinfo/archive/21.57.tar.gz
-        sha256: ef7c716447490a594fee09ffb6fc7827e418073af6cbf48bacfc64b2428b5703
+        url: https://github.com/openSUSE/hwinfo/archive/21.61.tar.gz
+        sha256: dacd5d6f058cf0f39948f96e9265054d9ccea735a6098cec6aceb22365d097b4
   - name: hwinfo
     only-arches:
       - aarch64
     buildsystem: simple
     build-commands:
-      - echo '21.57' > VERSION
+      - echo '21.61' > VERSION
       - rm -f git2log
       - sed -i -e 's/ -g / -s /' Makefile.common
       - make
@@ -279,8 +279,8 @@ modules:
       - cp -fr INST/usr/* $FLATPAK_DEST/
     sources:
       - type: archive
-        url: https://github.com/openSUSE/hwinfo/archive/21.57.tar.gz
-        sha256: ef7c716447490a594fee09ffb6fc7827e418073af6cbf48bacfc64b2428b5703
+        url: https://github.com/openSUSE/hwinfo/archive/21.61.tar.gz
+        sha256: dacd5d6f058cf0f39948f96e9265054d9ccea735a6098cec6aceb22365d097b4
   - name: perl-uri
     buildsystem: simple
     build-commands:
@@ -421,7 +421,7 @@ modules:
     sources:
       - type: archive
         url: https://github.com/linuxhw/build-stuff/releases/download/1.4/hw-probe-1.4-AI.tar.gz
-        sha256: 50dff85abd6f647ae5916bae672db7db14e195cc62fb4dc9b3d126cd44ba7b37
+        sha256: fda58b601344b5892ace2b8ffc6aecb07f4b0c70bef17400699f80cbfc571c00
   - name: perl-base
     buildsystem: simple
     build-commands:
