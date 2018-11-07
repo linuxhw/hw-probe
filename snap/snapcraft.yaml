@@ -86,7 +86,7 @@ parts:
       - etc/sensors3.conf
       - usr/lib/libsensors*
   libkmod:
-    source: http://ftp.riken.jp/Linux/kernel.org/linux/utils/kernel/kmod/kmod-12.tar.gz
+    source: http://ftp.riken.jp/Linux/kernel.org/linux/utils/kernel/kmod/kmod-25.tar.xz
     source-type: tar
     plugin: make
     override-build: |
