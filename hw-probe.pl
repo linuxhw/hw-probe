@@ -390,6 +390,7 @@ my $FixProbe_Tests;
 my %PciInfo;
 my %PciInfo_D;
 my %UsbInfo;
+
 my %PciVendor = (
     "17aa" => "Lenovo",
     "144d" => "Samsung",
@@ -397,40 +398,78 @@ my %PciVendor = (
 );
 
 my %DiskVendor = (
-    "HT"  => "Hitachi",
-    "ST"  => "Seagate",
-    "WD"  => "WDC",
-    "CT"  => "Crucial",
-    "TS"  => "Transcend",
-    "MKN" => "Mushkin",
-    "MTF" => "Micron",
-    "R3S" => "AMD",
-    "R5S" => "AMD",
-    "WL"  => "WD MediaMax",
-    "MD0" => "Magnetic Data",
-    "SG9" => "Samsung",
-    "MZM" => "Samsung",
-    "GB0" => "HP",
-    "FB0" => "HP",
-    "VK0" => "HP",
-    "FLD" => "Foxline",
-    "PH2" => "LITEON",
-    "TE2" => "SanDisk",
-    "MD"  => "MicroData",
-    "HFS" => "SK hynix",
-    "S8M" => "Chiprex",
-    "S9M" => "Chiprex",
-    "DEN" => "OCZ",
-    "D2R" => "OCZ",
-    "RDM" => "Ramaxel",
-    "ACJ" => "KingSpec",
-    "ACS" => "KingSpec",
-    "CHA" => "KingSpec",
-    "SPK" => "KingSpec",
-    "S10T" => "Chiprex",
-    "IM2S" => "ADATA",
-    "IC35" => "IBM/Hitachi",
-    "PH6-CE" => "Plextor"
+    "ACJ"       => "KingSpec",
+    "ACS"       => "KingSpec",
+    "AXM"       => "ADATA",
+    "C3-60G"    => "SenDisk",
+    "CF Card"   => "SanDisk",
+    "CHA"       => "KingSpec",
+    "CHN25SATA" => "Zheino",
+    "CT"        => "Crucial",
+    "D2C"       => "OCZ",
+    "D2R"       => "OCZ",
+    "DB40"      => "SanDisk",
+    "DEN"       => "OCZ",
+    "FASTDISK"  => "FASTDISK",
+    "FB0"       => "HP",
+    "FLD"       => "Foxline",
+    "G2242"     => "BIWIN",
+    "GB0"       => "HP",
+    "GB1000EA"  => "HP",
+    "GOODRAM"   => "GOODRAM",
+    "HDS"       => "Hitachi",
+    "HDT"       => "Hitachi",
+    "HUA"       => "Hitachi",
+    "HFS"       => "SK hynix",
+    "HT"        => "Hitachi",
+    "IC25"      => "IBM/Hitachi",
+    "IC35"      => "IBM/Hitachi",
+    "IM2S"      => "ADATA",
+    "InM2"      => "Indilinx",
+    "IR_SSDPR"  => "Goodram",
+    "IR-SSDPR"  => "Goodram",
+    "M4-CT"     => "Crucial",
+    "MB1000"    => "HP",
+    "MB2000G"   => "HP",
+    "MBG4"      => "Samsung",
+    "MD0"       => "Magnetic Data",
+    "MD"        => "MicroData",
+    "MKN"       => "Mushkin",
+    "MTF"       => "Micron",
+    "MZM"       => "Samsung",
+    "OOS500G"   => "Seagate",
+    "OOS1000G"  => "Seagate",
+    "OOS2000G"  => "Seagate",
+    "PH2"       => "LITEON",
+    "PH6-CE"    => "Plextor",
+    "Q200 EX"   => "Toshiba",
+    "Q-360"     => "KingSpec",
+    "R3S"       => "AMD",
+    "R5S"       => "AMD",
+    "RDM"       => "Ramaxel",
+    "RTMMB"     => "China",
+    "S10T"      => "Chiprex",
+    "S8M"       => "Chiprex",
+    "S9M"       => "Chiprex",
+    "SG9"       => "Samsung",
+    "SPK"       => "KingSpec",
+    "SSD2SC\\d+" => "PNY",
+    "SSDPAMM"   => "Intel",
+    "SSDPR_CX"  => "Goodram",
+    "SSDSA2S"   => "Intel",
+    "ST"        => "Seagate",
+    "SU04G"     => "SanDisk",
+    "SU08G"     => "SanDisk",
+    "TE2"       => "SanDisk",
+    "TP00"      => "China",
+    "TS"        => "Transcend",
+    "USDU1"     => "Transcend",
+    "VB0"       => "HP",
+    "VK0"       => "HP",
+    "WD"        => "WDC",
+    "WL"        => "WD MediaMax",
+    "XUNZHE"    => "XUNZHE",
+    "ZALMAN"    => "ZALMAN"
 );
 
 # http://standards-oui.ieee.org/oui.txt
@@ -546,9 +585,12 @@ my %MonVendor = (
     "AOC" => "AOC",
     "APP" => "Apple Computer",
     "AUO" => "AU Optronics",
+    "AUS" => "ASUS",
     "BBK" => "BBK",
+    "BBY" => "Insignia",
     "BNQ" => "BenQ",
     "BOE" => "BOE",
+    "BTC" => "RS",
     "CMI" => "InnoLux Display",
     "CMN" => "Chimei Innolux",
     "CMO" => "Chi Mei Optoelectronics",
@@ -593,6 +635,7 @@ my %MonVendor = (
     "IVO" => "InfoVision",
     "JEN" => "Jean",
     "KOA" => "Konka",
+    "KTC" => "KTC",
     "LCA" => "Lacie",
     "LCD" => "Toshiba",
     "LCS" => "Lenovo",
@@ -614,8 +657,10 @@ my %MonVendor = (
     "MTC" => "Mitac",
     "MZI" => "Digital Vision",
     "NEC" => "NEC",
+    "NON" => "Positivo",
     "NVD" => "Nvidia",
     "NVT" => "Novatek",
+    "ONK" => "Onkyo",
     "ORN" => "Orion",
     "PEA" => "Pegatron",
     "PHL" => "Philips",
@@ -667,6 +712,7 @@ my @UnknownVendors = (
     "ARS",
     "ATV",
     "AVO",
+    "AQU",
     "BBY",
     "BGT",
     "CDR",
@@ -808,6 +854,12 @@ my %UsbClassType = (
     "58" => "xbox"
 );
 
+my %BatType = (
+    "lithium-ion" => "Li-ion",
+    "LiIon" => "Li-ion",
+    "lithium-polymer" => "Li-poly"
+);
+
 my @WrongAddr = (
     # MAC/clientHash(MAC)
     "00-00-00-00-00-00",
@@ -858,7 +910,8 @@ my $HASH_LEN_CLIENT = 32;
 my $SALT_CLIENT = "GN-4w?T]>r3FS/*_";
 
 my $MAX_LOG_SIZE = 1048576; # 1Mb
-my @LARGE_LOGS = ("xorg.log", "xorg.log.1", "dmesg", "dmesg.1");
+my @LARGE_LOGS = ("xorg.log", "xorg.log.1", "dmesg", "dmesg.1", "boot.log");
+my $EMPTY_LOG_SIZE = 150;
 
 sub getSha512L($$)
 {
@@ -881,6 +934,26 @@ sub clientHash($)
 {
     my $Subj = $_[0];
     return uc(getSha512L($Subj."+".$SALT_CLIENT, $HASH_LEN_CLIENT));
+}
+
+sub encryptSerialsInPaths($)
+{
+    my $Content = $_[0];
+    
+    my %DiskSer = ();
+    while($Content=~/((\/|^)(ata|nvme|scsi)-[^\s]*_)(.+?)(\-part|[\s\n,])/mg) {
+        $DiskSer{$4} = 1;
+    }
+    
+    foreach my $Ser (sort keys(%DiskSer))
+    {
+        my $Enc = clientHash($Ser);
+        $Content=~s/_\Q$Ser\E\b/_$Enc/g; # /dev/disk/by-id/ata-Samsung_SSD_850_EVO_250GB_XXXXXXXXXXXXXXX
+    }
+    
+    $Content=~s/(\/usb-[^\s]*_).+?([\s\n,]|\-[\da-z])/$1...$2/g;
+    
+    return $Content;
 }
 
 sub encryptSerials(@)
@@ -967,7 +1040,7 @@ sub hideHostname($)
 sub hidePaths($)
 {
     my $Content = $_[0];
-    $Content=~s&(mnt|mount|home|media|data)/[^\s]+&$1/XXX&g;
+    $Content=~s&(mnt|mount|home|media|data|shares|vhosts|mapper)/[^\s]+&$1/XXX&g;
     return $Content;
 }
 
@@ -988,7 +1061,8 @@ sub hideIPs($)
 sub hideUrls($)
 {
     my $Content = $_[0];
-    $Content=~s&/(\w+\:)//[\w\-\.]+&$1//XXX&g;
+    $Content=~s{[\w\-]+\.[\w\.\-]+\:\/[^\s]+}{XXX:/XXX}g;
+    $Content=~s{(\w+\:\/+)[^\s]+}{$1\XXX}g;
     return $Content;
 }
 
@@ -1324,7 +1398,12 @@ sub uploadData()
             mkpath($NewProbe);
         }
         
-        move($Pkg, $NewProbe);
+        if($Opt{"Source"}) {
+            copy($Pkg, $NewProbe);
+        }
+        else {
+            move($Pkg, $NewProbe);
+        }
         
         my $Time = time;
         my $ProbeUrl = "$URL/?probe=$ID";
@@ -1767,7 +1846,7 @@ sub getDefaultType($$)
             elsif($Name=~/bluetooth/i) {
                 return "bluetooth";
             }
-            elsif($Name=~/(\A| )WLAN( |\Z)|Wireless Adapter|WiMAX|WiFi/i) {
+            elsif($Name=~/(\A| )WLAN( |\Z)|Wireless Adapter|Wireless Network|WiMAX|WiFi/i) {
                 return "network";
             }
             elsif($Name=~/converter/i) {
@@ -1917,18 +1996,7 @@ sub probeHW()
             $DevFiles=~s/(\A|\n).*?\s+\d+\s+\d\d:\d\d\s+/$1/g;
         }
         
-        my %DiskSer = ();
-        while($DevFiles=~/((\/|^)(ata|nvme|scsi)-[^\s]*_)(.+?)(\-part|[\s\n,])/mg) {
-            $DiskSer{$4} = 1;
-        }
-        
-        foreach my $Ser (sort keys(%DiskSer))
-        {
-            my $Enc = clientHash($Ser);
-            $DevFiles=~s/_\Q$Ser\E\b/_$Enc/g; # /dev/disk/by-id/ata-Samsung_SSD_850_EVO_250GB_XXXXXXXXXXXXXXX
-        }
-        
-        $DevFiles=~s/(\/usb-[^\s]*_).+?([\s\n,]|\-[\da-z])/$1...$2/g;
+        $DevFiles = encryptSerialsInPaths($DevFiles);
         $DevFiles = encryptWWNs($DevFiles);
         
         writeLog($LOG_DIR."/dev", $DevFiles);
@@ -1952,8 +2020,11 @@ sub probeHW()
             
             if($Line=~/\A(\/dev\/disk\/by-id\/|)((ata|usb|nvme|wwn)\-[^\/]+)\s+\-\>\s+.*?(\w+)\Z/)
             {
-                $DevIdByName{$4} = $2;
-                $DevNameById{$2} = "/dev/".$4;
+                my ($DFile, $DIdent) = ($4, $2);
+                if($DIdent!~/\Awwn\-/) {
+                    $DevIdByName{$DFile} = $DIdent;
+                }
+                $DevNameById{$DIdent} = "/dev/".$DFile;
             }
         }
     }
@@ -2166,7 +2237,13 @@ sub probeHW()
         
         $HWInfo = hideMACs($HWInfo);
         $HWInfo = hideTags($HWInfo, "UUID|Asset Tag");
-        $HWInfo = encryptSerials($HWInfo, "Serial ID", "hwinfo");
+        if(index($HWInfo, "Serial ID:")) {
+            $HWInfo = encryptSerials($HWInfo, "Serial ID", "hwinfo");
+        }
+        else
+        { # Snap
+            $HWInfo = encryptSerialsInPaths($HWInfo);
+        }
         $HWInfo = encryptWWNs($HWInfo);
         
         if($HWLogs) {
@@ -2388,6 +2465,11 @@ sub probeHW()
                 if($Val=~/by-id\/(.*?)(,|\Z)/) {
                     $Device{"FsId"} = $1;
                 }
+                
+                foreach my $F (split(/,\s*/, $Val))
+                {
+                    $Device{"AllFiles"}{$F} = 1;
+                }
             }
             elsif($Key eq "Device File")
             {
@@ -2579,6 +2661,12 @@ sub probeHW()
                 $Device{"Type"} = "mfp";
             }
         }
+        elsif($Device{"Type"} eq "disk")
+        {
+            if(defined $Device{"AllFiles"}{"/dev/cdrom"}) {
+                $Device{"Type"} = "cdrom";
+            }
+        }
         
         # fix vendor
         if($V eq "1d6b") {
@@ -2647,8 +2735,16 @@ sub probeHW()
                         $Device{"Device"} .= $Suffix;
                     }
                 }
-                elsif($FsId=~/\Q$N\E(.*?)_/) {
-                    $Device{"Device"} .= $1;
+                elsif($FsId=~/\Q$N\E(.*)_(.*?)\Z/)
+                {
+                    my $Suffix = $1;
+                    my $Ser = $2;
+                    
+                    $Suffix=~s/[_]+/ /g;
+                    $Device{"Device"} .= $Suffix;
+                    if(not $Device{"Serial"}) {
+                        $Device{"Serial"} = $Ser;
+                    }
                 }
             }
             
@@ -2961,7 +3057,7 @@ sub probeHW()
     }
     
     # fix incomplete HDD ids (if not root)
-    if(not $Admin and keys(%HDD_Serial))
+    if((not $Admin or $Opt{"FixProbe"}) and keys(%HDD_Serial))
     {
         foreach my $ID (sort keys(%HW))
         {
@@ -3685,7 +3781,7 @@ sub probeHW()
             {
                 my ($Key, $Val) = ($1, fmtVal($2));
                 
-                if(lc($Val) eq "unknown") {
+                if(grep { lc($Val) eq $_ } ("unknown", "other")) {
                     next;
                 }
                 
@@ -3700,7 +3796,9 @@ sub probeHW()
                 elsif($Key eq "Serial Number") {
                     $Device{"Serial"} = $Val;
                 }
-                elsif($Key eq "Type") {
+                elsif($Key eq "Type")
+                {
+                    $Device{"Kind"} = $Val;
                     push(@Add, $Val);
                 }
                 elsif($Key eq "Size")
@@ -3712,6 +3810,8 @@ sub probeHW()
                 }
                 elsif($Key eq "Speed")
                 {
+                    $Device{"Speed"} = $Val;
+                    
                     $Val=~s/ //g;
                     push(@Add, $Val);
                 }
@@ -3727,6 +3827,8 @@ sub probeHW()
                 }
                 elsif($Key eq "Current Speed")
                 {
+                    $Device{"Speed"} = $Val;
+                    
                     $Val=~s/ //g;
                     push(@Add, $Val);
                 }
@@ -3764,11 +3866,39 @@ sub probeHW()
                 $Inc = 1;
             }
             
+            $Device{"Size"}=~s/ //g;
+            $Device{"Speed"}=~s/ (MHz|MT\/s)//;
+            
             if($Inc) {
                 $MemIndex++;
             }
             
-            $ID = devID(nameID($Device{"Vendor"}), devSuffix(\%Device));
+            $Device{"Vendor"}=~s/\A(Mfg \d+|Manufacturer\d+|0x[\dA-F]+)\Z//i;
+            
+            if($Device{"Device"}=~/\A(SODIMM)\d+\Z/i
+            or $Device{"Device"}=~/\AArray\d+_(Part)Number\d+\Z/i
+            or $Device{"Device"}=~/\A(Part)Num\d+\Z/i
+            or $Device{"Device"}=~/\A(0x)[\dA-F]+\Z/i
+            or $Device{"Device"}=~/\A(0)0+\Z/i)
+            {
+                $Device{"Device"} = $1;
+                if(grep { lc($Device{"Device"}) eq $_ } ("part", "0x", "0")) {
+                    $Device{"Device"} = "RAM Module";
+                }
+                
+                $ID = devID(nameID($Device{"Vendor"}), $Device{"Device"});
+                if($Device{"Size"} or $Device{"Kind"} or $Device{"Speed"}) {
+                    $ID = devID($ID, $Device{"Size"}, $Device{"Kind"}, $Device{"Speed"});
+                }
+                if($Device{"Serial"}) {
+                    $ID = devID($ID, "serial", $Device{"Serial"});
+                }
+            }
+            else
+            {
+                $ID = devID(nameID($Device{"Vendor"}), devSuffix(\%Device));
+                $Device{"Device"} = "RAM ".$Device{"Device"};
+            }
             $ID = fmtID($ID);
             
             if(defined $MemIDs{$ID})
@@ -3783,8 +3913,6 @@ sub probeHW()
                 $Device{"Device"} .= " ".join(" ", @Add);
                 $Device{"Device"}=~s/\A\s+//g;
             }
-            
-            $Device{"Device"} = "RAM ".$Device{"Device"};
             
             if($ID) {
                 $HW{"mem:".$ID} = \%Device;
@@ -4363,47 +4491,7 @@ sub probeHW()
                 
                 cleanValues(\%Device);
                 
-                #if($Device{"Vendor"}=~/customer/i
-                #or length($Device{"Vendor"})>20 and $Device{"Vendor"}!~/\s/)
-                #{
-                #    $Device{"Vendor"} = ""; # vnd0
-                #}
-                #
-                #if(length($Device{"Device"})>20
-                #and $Device{"Device"}!~/\s/)
-                #{
-                #    $Device{"Device"} = ""; # model0
-                #}
-                
-                if($Device{"Vendor"} and $Device{"Device"})
-                {
-                    my $ID = devID(nameID($Device{"Vendor"}), devSuffix(\%Device));
-                    $ID = fmtID($ID);
-                    
-                    $Device{"Device"} = "Battery ".$Device{"Device"};
-                    
-                    if($Device{"Technology"}) {
-                        $Device{"Device"} .= " ".$Device{"Technology"};
-                    }
-                    
-                    if($Device{"Size"}) {
-                        $Device{"Device"} .= " ".$Device{"Size"};
-                    }
-                    
-                    if($Device{"Capacity"}=~/\A(\d+)/)
-                    {
-                        if($1>$MIN_BAT_CAPACITY) {
-                            $Device{"Status"} = "works";
-                        }
-                        else {
-                            $Device{"Status"} = "malfunc";
-                        }
-                    }
-                    
-                    if($ID) {
-                        $HW{"bat:".$ID} = \%Device;
-                    }
-                }
+                registerBattery(\%Device);
             }
         }
     }
@@ -4456,11 +4544,13 @@ sub probeHW()
                 
                 if($Block=~/POWER_SUPPLY_ENERGY_FULL_DESIGN=(.+)/i)
                 {
-                    my $EFullDesign = $1;
-                    $Device{"Size"} = ($EFullDesign/1000000)."Wh";
-                    
-                    if($Block=~/POWER_SUPPLY_ENERGY_FULL=(.+)/i) {
-                        $Device{"Capacity"} = $1*100/$EFullDesign;
+                    if(my $EFullDesign = $1)
+                    {
+                        $Device{"Size"} = ($EFullDesign/1000000)." Wh";
+                        
+                        if($Block=~/POWER_SUPPLY_ENERGY_FULL=(.+)/i) {
+                            $Device{"Capacity"} = $1*100/$EFullDesign;
+                        }
                     }
                 }
                 
@@ -4484,39 +4574,11 @@ sub probeHW()
                 if(not $Device{"Size"})
                 {
                     if($Device{"Voltage"} and $Device{"Change"}) {
-                        $Device{"Size"} = (($Device{"Change"}/1000000)*($Device{"Voltage"}/1000000))."Wh";
+                        $Device{"Size"} = (($Device{"Change"}/1000000)*($Device{"Voltage"}/1000000))." Wh";
                     }
                 }
                 
-                if($Device{"Vendor"} and $Device{"Device"})
-                {
-                    my $ID = devID(nameID($Device{"Vendor"}), devSuffix(\%Device));
-                    $ID = fmtID($ID);
-                    
-                    $Device{"Device"} = "Battery ".$Device{"Device"};
-                    
-                    if($Device{"Technology"}) {
-                        $Device{"Device"} .= " ".$Device{"Technology"};
-                    }
-                    
-                    if($Device{"Size"}) {
-                        $Device{"Device"} .= " ".$Device{"Size"};
-                    }
-                    
-                    if($Device{"Capacity"}=~/\A(\d+)/)
-                    {
-                        if($1>$MIN_BAT_CAPACITY) {
-                            $Device{"Status"} = "works";
-                        }
-                        else {
-                            $Device{"Status"} = "malfunc";
-                        }
-                    }
-                    
-                    if($ID) {
-                        $HW{"bat:".$ID} = \%Device;
-                    }
-                }
+                registerBattery(\%Device);
             }
         }
     }
@@ -5314,6 +5376,70 @@ sub probeHW()
     print "Ok\n";
 }
 
+sub registerBattery($)
+{
+    my $Device = $_[0];
+    
+    if(defined $BatType{$Device->{"Technology"}}) {
+        $Device->{"Technology"} = $BatType{$Device->{"Technology"}};
+    }
+    
+    if(not $Device->{"Device"}) {
+        $Device->{"Device"} = "Battery";
+    }
+    
+    if($Device->{"Size"}=~/(.+)( Wh)/) {
+        $Device->{"Size"} = sprintf("%.1f", $1).$2;
+    }
+    
+    if($Device->{"Vendor"})
+    {
+        my $ID = undef;
+        
+        if($Device->{"Device"}=~/\A(Battery|Primary|Dell|Bat)\d*\Z/i)
+        {
+            $Device->{"Device"} = $1;
+            
+            if($Device->{"Size"}=~/(.+)( Wh)/) {
+                $Device->{"Size"} = sprintf("%.0f", $1).$2;
+            }
+            $ID = devID(nameID($Device->{"Vendor"}), lc($Device->{"Device"}), $Device->{"Technology"}, $Device->{"Size"});
+            if($Device->{"Serial"}) {
+                $ID = devID($ID, "serial", $Device->{"Serial"});
+            }
+        }
+        else
+        {
+            $ID = devID(nameID($Device->{"Vendor"}), devSuffix($Device));
+            $Device->{"Device"} = "Battery ".$Device->{"Device"};
+        }
+        
+        $ID = fmtID($ID);
+        
+        if($Device->{"Technology"}) {
+            $Device->{"Device"} .= " ".$Device->{"Technology"};
+        }
+        
+        if($Device->{"Size"}) {
+            $Device->{"Device"} .= " ".$Device->{"Size"};
+        }
+        
+        if($Device->{"Capacity"}=~/\A(\d+)/)
+        {
+            if($1>$MIN_BAT_CAPACITY) {
+                $Device->{"Status"} = "works";
+            }
+            else {
+                $Device->{"Status"} = "malfunc";
+            }
+        }
+        
+        if($ID) {
+            $HW{"bat:".$ID} = $Device;
+        }
+    }
+}
+
 sub fixCapacity($)
 {
     my $Capacity = $_[0];
@@ -5952,7 +6078,10 @@ sub fixDrive($)
     if($Device->{"Vendor"}=~/\A(WD|ST)\d+/)
     { # model name instead of vendor name
         $Device->{"Device"} = $Device->{"Vendor"}." ".$Device->{"Device"};
-        $Device->{"Vendor"} = $DiskVendor{$1};
+        
+        if(defined $DiskVendor{$1}) {
+            $Device->{"Vendor"} = $DiskVendor{$1};
+        }
     }
     
     if(not $Device->{"Device"})
@@ -6007,12 +6136,10 @@ sub fixDrive($)
     
     if(not $Device->{"Vendor"})
     {
-        if(grep {$Device->{"Device"} eq $_} ("OOS500G", "T60", "T120")
-        or $Device->{"Device"}=~/\A\d+(G|GB|T|TB) SSD\Z/ or $Device->{"Device"}=~/\ASSD\s*\d+(G|GB|T|TB)\Z/
-        or $Device->{"Device"}=~/\A(RTMMB|TP00)\d+/)
+        if(grep {$Device->{"Device"} eq $_} ("T60", "T120")
+        or $Device->{"Device"}=~/\A\d+(G|GB|T|TB) SSD\Z/ or $Device->{"Device"}=~/\ASSD\s*\d+(G|GB|T|TB)\Z/)
         { # SSD32G, SSD60G
           # 64GB SSD
-          # RTMMB256VBV4KFY
             $Device->{"Vendor"} = $DEFAULT_VENDOR;
         }
     }
@@ -6044,51 +6171,33 @@ sub guessDriveVendor($)
     and defined $DiskVendor{$1}) {
         return $DiskVendor{$1};
     }
-    if($Name=~/\A[A-Z\d]{2,}\-([A-Z]{3})[A-Z\d]+/
-    and defined $DiskVendor{$1})
-    { # C400-MTFDDAT064MAM
-        return $DiskVendor{$1};
+    
+    foreach my $Len (3, 2)
+    {
+        if($Name=~/\A[A-Z\d]{2,}\-([A-Z]{$Len})[A-Z\d]+/
+        and defined $DiskVendor{$1})
+        { # C400-MTFDDAT064MAM
+          # M4-CT256M4SSD2
+            return $DiskVendor{$1};
+        }
     }
-    if($Name=~/\A[A-Z\d]{2,}\-([A-Z]{2})[A-Z\d]+/
-    and defined $DiskVendor{$1})
-    { # M4-CT256M4SSD2
-        return $DiskVendor{$1};
+    
+    foreach my $P (sort {$b cmp $a} keys(%DiskVendor))
+    {
+        if(length($P)>=4)
+        {
+            if($Name=~/\A$P/) {
+                return $DiskVendor{$P};
+            }
+        }
     }
-    if($Name=~/\A(ZALMAN|FASTDISK)/) {
-        return $1;
-    }
-    if($Name=~/\A(InM2)/) {
-        return "Indilinx";
-    }
-    if($Name=~/\AQ200 EX/) {
-        return "Toshiba";
-    }
-    if($Name=~/\AOOS2000G/) {
-        return "Seagate";
-    }
-    if($Name=~/\ASSDPAMM/) {
-        return "Intel";
-    }
-    if($Name=~/\ASSD2SC\d+/) {
-        return "PNY";
-    }
-    if($Name=~/\AMB1000/) {
-        return "HP";
-    }
-    if($Name=~/\ACHN25SATA/) {
-        return "Zheino";
-    }
-    if($Name=~/\ACF Card/) {
-        return "SanDisk";
-    }
-    if($Name=~/\A(SSDPR_CX|IR_SSDPR|IR\-SSDPR)/) {
-        return "Goodram";
-    }
+    
     if($Name=~/\A(MT|MSH|P3|P3D|T)\-(60|64|120|128|240|256|512|1TB|2TB)\Z/
     or grep { $Name eq $_ } ("V-32", "NT-256", "NT-512", "Q-360"))
     { # MT-64 MSH-256 P3-128 P3D-240 P3-2TB T-60 V-32
         return "KingSpec";
     }
+    
     if($Name=~s/\A([a-z]{3,})[\-\_ ]//i)
     { # Crucial_CT240M500SSD3
       # OCZ-VERTEX
@@ -6144,7 +6253,7 @@ sub guessDeviceVendor($)
 {
     my $Device = $_[0];
     
-    if($Device=~s/\A(WDC|Western Digital|Seagate|Samsung Electronics|SAMSUNG|Hitachi|TOSHIBA|Maxtor|SanDisk|Kingston|ADATA|Lite-On|OCZ|Smartbuy|SK hynix|GOODRAM|LDLC|A\-DATA|KingFast|ExcelStor Technology|i-FlashDisk)([\s_\-]|\Z)//i)
+    if($Device=~s/\A(WDC|Western Digital|Seagate|Samsung Electronics|SAMSUNG|Hitachi|TOSHIBA|Maxtor|SanDisk|Kingston|ADATA|Lite-On|OCZ|Smartbuy|SK hynix|GOODRAM|LDLC|A\-DATA|KingFast|LDLC|INTENSO|ExcelStor Technology|i-FlashDisk|e2e4)([\s_\-]|\Z)//i)
     { # drives
         return $1;
     }
@@ -6225,7 +6334,7 @@ sub cleanValues($)
     {
         if(my $Val = $Hash->{$Key})
         {
-            if($Val=~/\A[\[\(]*(not specified|not defined|invalid|error|unknown|unknow|uknown|empty|none|default string)[\)\]]*\Z/i
+            if($Val=~/\A[\[\(]*(not specified|not defined|invalid|error|unknown|unknow|uknown|empty|n\/a|none|default string)[\)\]]*\Z/i
             or $Val=~/(\A|\b|\d)(to be filled|unclassified device|not defined)(\b|\Z)/i) {
                 delete($Hash->{$Key});
             }
@@ -6311,7 +6420,7 @@ sub nameID($)
     $Name=~s/\s*\([^()]*\)//g;
     $Name=~s/\s*\[[^\[\]]*\]//g;
     
-    while ($Name=~s/\s*(\,\s*|\s+)(Inc|Ltd|Co|GmbH|Corp|Pte|LLC|Sdn|Bhd|BV|RSS|PLC|s\.r\.l\.|srl|S\.P\.A\.|B\.V\.)(\.|\Z)//ig) {}
+    while ($Name=~s/\s*(\,\s*|\s+)(Inc|Ltd|Co|GmbH|Corp|Pte|LLC|Sdn|Bhd|BV|RSS|PLC|s\.r\.l\.|srl|S\.P\.A\.|S\.p\.A\.|B\.V\.)(\.|\Z)//ig) {}
     $Name=~s/,?\s+[a-z]{2,4}\.//ig;
     $Name=~s/,(.+)\Z//ig;
     
@@ -6370,6 +6479,10 @@ sub fixModel($$$)
     {
         if($Model=~/\A\s*INVALID\s*\Z/) {
             $Model = "";
+        }
+        
+        if($Version=~/\A\s*INVALID\s*\Z/) {
+            $Version = "";
         }
         
         if($Version=~/[A-Z]/i)
@@ -6736,6 +6849,16 @@ sub warnSnapInterfaces()
 {
     print STDERR "\nMake sure required Snap interfaces are connected:\n\n";
     print STDERR "    for i in hardware-observe mount-observe network-observe system-observe upower-observe log-observe raw-usb physical-memory-observe opengl;do sudo snap connect hw-probe:\$i :\$i; done\n";
+    
+    # auto-connected:
+    #
+    #   hardware-observe
+    #   mount-observe
+    #   network-observe
+    #   system-observe
+    #   upower-observe
+    #   log-observe
+    #   opengl
 }
 
 sub countStr($$)
@@ -7352,6 +7475,7 @@ sub writeLogs()
         listProbe("logs", "boot.log");
         my $BootLog = clearLog(readFile("/var/log/boot.log"));
         $BootLog=~s&(Mounted|Mounting)\s+/.+&$1 XXXXX&g;
+        $BootLog=~s&(Setting hostname\s+).+:&$1XXXXX:&g;
         writeLog($LOG_DIR."/boot.log", $BootLog);
     }
     
@@ -7789,6 +7913,7 @@ sub writeLogs()
             $Fstab = hideIPs($Fstab);
             $Fstab = hideUrls($Fstab);
             $Fstab = hidePass($Fstab);
+            $Fstab=~s/LABEL=[^\s]+/LABEL=XXXX/g;
             writeLog($LOG_DIR."/fstab", $Fstab);
         }
         
@@ -8262,7 +8387,7 @@ sub decodeACPI($$)
 
 sub clearLog_X11($)
 {
-    if(length($_[0])<100
+    if(length($_[0])<$EMPTY_LOG_SIZE
     and $_[0]=~/No protocol specified|Can't open display|unable to open display|Unable to connect to|cannot connect to/i) {
         return "";
     }
@@ -8276,7 +8401,7 @@ sub clearLog($)
     
     my $Sc = chr(27);
     $Log=~s/$Sc\[.*?m//g;
-    
+    $Log=~s/$Sc%G//g;
     return $Log;
 }
 
@@ -8765,6 +8890,22 @@ sub listProbe($$)
     }
 }
 
+sub getMaxLogSize($)
+{
+    my $Log = $_[0];
+    my $MaxSize = 2*$MAX_LOG_SIZE;
+    
+    if(grep {$Log eq $_} @LARGE_LOGS) {
+        $MaxSize = $MAX_LOG_SIZE;
+    }
+    
+    if($Log eq "boot.log") {
+        $MaxSize = $MAX_LOG_SIZE/8;
+    }
+    
+    return $MaxSize;
+}
+
 sub writeLog($$)
 {
     my ($Path, $Content) = @_;
@@ -8772,14 +8913,19 @@ sub writeLog($$)
     
     if(not grep {$Log eq $_} @ProtectedLogs)
     {
-        my $MaxSize = 2*$MAX_LOG_SIZE;
+        my $MaxSize = getMaxLogSize($Log);
         
-        if(grep {$Log eq $_} @LARGE_LOGS) {
-            $MaxSize = $MAX_LOG_SIZE;
-        }
-        
-        if(length($Content)>$MaxSize) {
-            $Content = substr($Content, 0, $MaxSize-3)."...";
+        if(length($Content)>$MaxSize)
+        {
+            if($Log eq "boot.log")
+            { # Save end of log
+                $Content = substr($Content, -$MaxSize+4);
+                $Content=~s/\A.*?\n//;
+                $Content = "...\n".$Content;
+            }
+            else {
+                $Content = substr($Content, 0, $MaxSize-3)."...";
+            }
         }
     }
     
@@ -9084,7 +9230,7 @@ sub importProbes($)
 
     my ($Imported, $OneProbe) = (undef, undef);
 
-    my $IndexInfo = eval { readFile($Dir."/index.info") } || {};
+    my $IndexInfo = eval ( readFile($Dir."/index.info") ) || {};
 
     my @Paths = ();
     if(-d $PROBE_DIR)
@@ -9157,7 +9303,7 @@ sub importProbes($)
             next;
         }
         my $D = $Dir."/".$P;
-        my $Prop = eval { readFile($D."/probe.info") } || {};
+        my $Prop = eval ( readFile($D."/probe.info") ) || {};
         $Indexed{lc($Prop->{"hwaddr"})}{$P} = $Prop;
         $OneProbe = $P;
     }
@@ -9315,7 +9461,7 @@ sub fixLogs($)
     my $Dir = $_[0];
 
     if(-f "$Dir/hwinfo"
-    and -s "$Dir/hwinfo" < 200)
+    and -s "$Dir/hwinfo" < 2*$EMPTY_LOG_SIZE)
     { # Support for HW Probe 1.4
         if(readFile("$Dir/hwinfo")=~/unrecognized arguments|error while loading shared libraries/)
         { # hwinfo: error: unrecognized arguments: --all
@@ -9342,7 +9488,7 @@ sub fixLogs($)
     foreach my $L ("glxinfo", "xdpyinfo", "xinput", "vdpauinfo", "xrandr")
     {
         if(-e "$Dir/$L"
-        and -s "$Dir/$L" < 100)
+        and -s "$Dir/$L" < $EMPTY_LOG_SIZE)
         {
             if(not clearLog_X11(readFile("$Dir/$L"))) {
                 writeFile("$Dir/$L", "");
@@ -9358,7 +9504,7 @@ sub fixLogs($)
     }
 
     if(-f "$Dir/vainfo"
-    and -s "$Dir/vainfo" < 200)
+    and -s "$Dir/vainfo" < $EMPTY_LOG_SIZE)
     { # Support for HW Probe 1.4
       # error: failed to initialize display
         if(readFile("$Dir/vainfo")=~/failed to initialize/) {
@@ -9366,17 +9512,11 @@ sub fixLogs($)
         }
     }
 
-    if(-f "$Dir/cpupower")
+    if(-f "$Dir/cpupower"
+    and -s "$Dir/cpupower" < $EMPTY_LOG_SIZE)
     { # Support for HW Probe 1.3
         if(readFile("$Dir/cpupower")=~/cpupower not found/) {
             unlink("$Dir/cpupower");
-        }
-    }
-
-    if(-f "$Dir/mcelog")
-    { # Support for HW Probe 1.4
-        if(readFile("$Dir/mcelog")=~/No such file or directory/) {
-            writeFile("$Dir/mcelog", "");
         }
     }
 
@@ -9400,41 +9540,108 @@ sub fixLogs($)
         }
     }
 
-    foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all", "pstree", "lsblk", "efibootmgr")
+    foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all")
     {
         if(-f "$Dir/$L"
-        and -s "$Dir/$L" < 100)
+        and -s "$Dir/$L" < 2*$EMPTY_LOG_SIZE)
         { # Support for HW Probe 1.4
           # sh: XXX: command not found
           # pcilib: Cannot open /proc/bus/pci
           # lspci: Cannot find any working access method.
+          # lsusb: error while loading shared libraries: libusb-1.0.so.0: cannot open shared object file: No such file or directory
+          # ERROR: ld.so: object '/usr/lib/arm-linux-gnueabihf/libarmmem.so' from /etc/ld.so.preload cannot be preloaded
+            writeFile("$Dir/$L", "");
+        }
+    }
+    
+    foreach my $L ("pstree", "lsblk", "efibootmgr")
+    {
+        if(-f "$Dir/$L"
+        and -s "$Dir/$L" < $EMPTY_LOG_SIZE)
+        { # Support for HW Probe 1.4
+          # sh: XXX: command not found
           # lsblk: Permission denied
             writeFile("$Dir/$L", "");
         }
     }
-
-    if(-e "$Dir/lsusb")
+    
+    foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all")
     {
-        my $Lsusb = readFile("$Dir/lsusb");
-        if(index($Lsusb, "Resource temporarily unavailable")!=-1)
+        if(-e "$Dir/$L")
         {
-            $Lsusb=~s/can't get device qualifier: Resource temporarily unavailable\n//g;
-            $Lsusb=~s/can't get debug descriptor: Resource temporarily unavailable\n//g;
-            $Lsusb=~s/Couldn't open device, some information will be missing\n//g;
-            writeFile("$Dir/lsusb", $Lsusb);
-        }
-        elsif(index($Lsusb, "some information will be missing")!=-1)
-        {
-            $Lsusb=~s/Couldn't open device, some information will be missing\n//g;
-            writeFile("$Dir/lsusb", $Lsusb);
+            my $Content = readFile("$Dir/$L");
+            
+            if($L eq "lsusb")
+            {
+                if(index($Content, "Resource temporarily unavailable")!=-1)
+                {
+                    $Content=~s/can't get device qualifier: Resource temporarily unavailable\n//g;
+                    $Content=~s/cannot read device status, Resource temporarily unavailable \(11\)\n//g;
+                    $Content=~s/can't get debug descriptor: Resource temporarily unavailable\n//g;
+                    writeFile("$Dir/$L", $Content);
+                }
+                
+                if(index($Content, "some information will be missing")!=-1)
+                {
+                    $Content=~s/Couldn't open device, some information will be missing\n//g;
+                    writeFile("$Dir/$L", $Content);
+                }
+            }
+            elsif($L eq "lspci" or $L eq "lspci_all")
+            {
+                if(index($Content, "lspci: Unable to load libkmod resources: error -12")!=-1)
+                {
+                    $Content=~s/lspci: Unable to load libkmod resources: error -12\n//g;
+                    writeFile("$Dir/$L", $Content);
+                }
+            }
+            
+            if(index($Content, "ERROR: ld.so:")!=-1)
+            { # ERROR: ld.so: object '/usr/lib/arm-linux-gnueabihf/libarmmem.so' from /etc/ld.so.preload cannot be preloaded (cannot open shared object file): ignored.
+              # ERROR: ld.so: object 'libesets_pac.so' from /etc/ld.so.preload cannot be preloaded (cannot open shared object file): ignored.
+                $Content=~s/ERROR: ld\.so:.+?: ignored\.\n//g;
+                writeFile("$Dir/$L", $Content);
+            }
         }
     }
 
     if(-e "$Dir/inxi"
-    and -s "$Dir/inxi" < 100)
+    and -s "$Dir/inxi" < $EMPTY_LOG_SIZE)
     { # Support for HW Probe 1.4
         if(readFile("$Dir/inxi")=~/Unsupported option/) {
             writeFile("$Dir/inxi", "");
+        }
+    }
+    
+    foreach my $L (@LARGE_LOGS)
+    {
+        if(-s "$FixProbe_Logs/$L" > getMaxLogSize($L))
+        {
+            if(my $Content = readFile("$FixProbe_Logs/$L")) {
+                writeLog("$FixProbe_Logs/$L", $Content);
+            }
+        }
+    }
+    
+    if($Sys{"Probe_ver"} eq "1.4" or not $Sys{"Probe_ver"})
+    { # HW Probe <= 1.4
+        if(-e "$FixProbe_Logs/boot.log"
+        and my $Content = readFile("$FixProbe_Logs/boot.log")) {
+            writeLog("$FixProbe_Logs/boot.log", clearLog($Content));
+        }
+        
+        if(-e "$FixProbe_Logs/rpms"
+        and my $Content = readFile("$FixProbe_Logs/rpms"))
+        {
+            my @Rpms = sort { "\L$a" cmp "\L$b" } split(/\n/, $Content);
+            writeLog("$FixProbe_Logs/rpms", join("\n", @Rpms));
+        }
+        
+        if(-f "$Dir/mcelog")
+        {
+            if(readFile("$Dir/mcelog")=~/No such file or directory/) {
+                writeFile("$Dir/mcelog", "");
+            }
         }
     }
 }
@@ -9759,16 +9966,6 @@ sub scenario()
             }
         }
         
-        foreach my $L (@LARGE_LOGS)
-        {
-            if(-s "$FixProbe_Logs/$L" > $MAX_LOG_SIZE)
-            {
-                if(my $Content = readFile("$FixProbe_Logs/$L")) {
-                    writeLog("$FixProbe_Logs/$L", $Content);
-                }
-            }
-        }
-        
         $Opt{"Logs"} = 0;
     }
     
@@ -9845,9 +10042,8 @@ sub scenario()
     }
     elsif($Opt{"FixProbe"})
     {
-        fixLogs($FixProbe_Logs);
-        
         readHost($Opt{"FixProbe"}); # instead of probeSys
+        fixLogs($FixProbe_Logs);
         
         fixChassis();
         probeHWaddr();
