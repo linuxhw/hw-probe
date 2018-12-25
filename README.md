@@ -164,11 +164,13 @@ Install universal package:
 
 Now you can create computer probes:
 
-    sudo flatpak run org.linux_hardware.hw-probe -all -upload
+    flatpak run org.linux_hardware.hw-probe -all -upload
 
 ###### App Center
 
 Find the `Hardware Probe` application in your App Center, install it and click on the desktop icon to make a probe. Enable Flatpak plugin if needed (`gnome-software-plugin-flatpak` package for Debian/Ubuntu).
+
+NOTE: The 'Launch' button doesn't display the probe window currently due to [bug 552](https://gitlab.gnome.org/GNOME/gnome-software/issues/552) in GNOME Software, but the probe is still created silently in the background process. Use desktop icon instead to lauch the hardware probe properly or see probe log in `$HOME/.var/app/org.linux_hardware.hw-probe/data/HW_PROBE/LOG`.
 
 ###### Flathub
 
