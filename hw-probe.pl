@@ -1040,7 +1040,9 @@ sub hideHostname($)
 sub hidePaths($)
 {
     my $Content = $_[0];
-    $Content=~s&(mnt|mount|home|media|data|shares|vhosts|mapper)/[^\s]+&$1/XXX&g;
+    foreach my $Dir ("mnt", "mount", "home", "media", "data", "shares", "vhosts", "mapper") {
+        $Content = hideByRegexp($Content, qr/$Dir\/([^\s]+)/);
+    }
     return $Content;
 }
 
@@ -1091,6 +1093,49 @@ sub encryptMACs($)
         $Enc = clientHash($Enc);
         $Content=~s/\Q$MAC\E/$Enc/gi;
     }
+    return $Content;
+}
+
+sub hideByRegexp(@)
+{
+    my ($Content, $Regexp) = @_;
+    
+    my $Subj = undef;
+    if(@_) {
+        $Subj = shift(@_);
+    }
+    
+    my @Matches = ($Content=~/$Regexp/gi);
+    foreach my $Match (@Matches)
+    {
+        $Content = hideStr($Content, $Match);
+        
+        if($Subj)
+        {
+            if($Subj eq "systemd")
+            {
+                if($Match=~s/\x2d/-/g) {
+                    $Content = hideStr($Content, $Match);
+                }
+            }
+        }
+    }
+    
+    return $Content;
+}
+
+sub hideStr($$)
+{
+    my ($Content, $Str) = @_;
+    my $Hide = "X" x length($Str);
+    $Content=~s/\Q$Str\E/$Hide/g;
+    return $Content;
+}
+
+sub decorateSystemd($)
+{
+    my $Content = $_[0];
+    $Content = hideByRegexp($Content, qr/systemd-cryptsetup@(.+?)\.service/, "systemd");
     return $Content;
 }
 
@@ -1998,6 +2043,7 @@ sub probeHW()
         
         $DevFiles = encryptSerialsInPaths($DevFiles);
         $DevFiles = encryptWWNs($DevFiles);
+        $DevFiles = hideByRegexp($DevFiles, qr/\/by-partlabel\/([^\s]+)/);
         
         writeLog($LOG_DIR."/dev", $DevFiles);
     }
@@ -5085,6 +5131,7 @@ sub probeHW()
         $Dmesg = hideHostname($Dmesg);
         $Dmesg = hideIPs($Dmesg);
         $Dmesg = hideMACs($Dmesg);
+        $Dmesg = hidePaths($Dmesg);
         writeLog($LOG_DIR."/dmesg", $Dmesg);
     }
     
@@ -5115,6 +5162,7 @@ sub probeHW()
         }
         
         $XLog = hideTags($XLog, "Serial#");
+        $XLog = hidePaths($XLog);
         if(my $HostName = $ENV{"HOSTNAME"}) {
             $XLog=~s/ $HostName / NODE /g;
         }
@@ -7409,6 +7457,7 @@ sub writeLogs()
             $Dmesg_Old = hideHostname($Dmesg_Old);
             $Dmesg_Old = hideIPs($Dmesg_Old);
             $Dmesg_Old = hideMACs($Dmesg_Old);
+            $Dmesg_Old = hidePaths($Dmesg_Old);
             writeLog($LOG_DIR."/dmesg.1", $Dmesg_Old);
         }
     }
@@ -7425,6 +7474,7 @@ sub writeLogs()
     }
     
     $XLog_Old = hideTags($XLog_Old, "Serial#");
+    $XLog_Old = hidePaths($XLog_Old);
     if(my $HostName = $ENV{"HOSTNAME"}) {
         $XLog_Old=~s/ $HostName / NODE /g;
     }
@@ -7716,6 +7766,7 @@ sub writeLogs()
                     $Fdisk = "";
                 }
             }
+            $Fdisk = hidePaths($Fdisk);
             writeLog($LOG_DIR."/fdisk", $Fdisk);
         }
         
@@ -7801,6 +7852,7 @@ sub writeLogs()
                 listProbe("logs", "systemctl");
                 my $Sctl = runCmd("systemctl 2>/dev/null");
                 $Sctl=~s/( of user)\s+\Q$SessUser\E/$1 USER/g;
+                $Sctl = decorateSystemd($Sctl);
                 writeLog($LOG_DIR."/systemctl", $Sctl);
             }
         }
@@ -7901,6 +7953,7 @@ sub writeLogs()
             if($Opt{"Snap"} and $Lsblk=~/Permission denied/) {
                 $Lsblk = "";
             }
+            $Lsblk = hideByRegexp($Lsblk, qr/(.+?)\s+[^\s]+?\s+crypt\s+/);
             $Lsblk = hidePaths($Lsblk);
         }
         writeLog($LOG_DIR."/lsblk", $Lsblk);
@@ -7979,6 +8032,7 @@ sub writeLogs()
         {
             listProbe("logs", "systemd-analyze");
             my $SystemdAnalyze = runCmd("systemd-analyze blame 2>/dev/null");
+            $SystemdAnalyze = decorateSystemd($SystemdAnalyze);
             writeLog($LOG_DIR."/systemd-analyze", $SystemdAnalyze);
         }
         
