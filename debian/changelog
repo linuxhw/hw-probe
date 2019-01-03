@@ -1,3 +1,14 @@
+hw-probe (1.4-6-git20190103) unstable; urgency=low
+
+  * Merged upstream git (commit 10b51160da6a5f9b0ad957d6d79a902e19140d9a)
+  * Updated PPA build script (as in https://github.com/mikhailnov/pulseeffects):
+    * Workaround Launchpad not accepting *.git as a source
+    * Improved handling of errors
+    * Don't upload (dput) not relevant sources
+    * Build for Ubuntu 14.04, 16.04, 18.04, 18.10 and 19.04
+
+ -- Mikhail Novosyolov <mikhailnov@dumalogiya.ru>  Thu, 03 Jan 2019 11:31:00 +0300
+ 
 hw-probe (1.4-5-git20180614) unstable; urgency=low
 
   * Fixed Lintian warnings
