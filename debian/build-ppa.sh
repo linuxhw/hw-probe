@@ -5,26 +5,27 @@
 
 pkg_name="hw-probe"
 
-# override different ls aliases that may break this script
-alias ls="$(which ls)"
-
 # this allows the script to be ran both from the root of the source tree and from ./debian directory
 dir_start="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [ "$(basename "${dir_start}")" = 'debian' ]; then
 	cd ..
 fi
+
 dir0="$(pwd)"
 old_header=$(head -1 ./debian/changelog)
+old_format_source=$(cat ./debian/source/format)
 
-for i in trusty xenial artful bionic
+for i in trusty xenial artful bionic cosmic
 do
 	old_version="$(cat ./debian/changelog | head -n 1 | awk -F "(" '{print $2}' | awk -F ")" '{print $1}')"
 	new_version="${old_version}~${i}1"
 	sed -i -re "s/${old_version}/${new_version}/g" ./debian/changelog
 	sed -i -re "1s/unstable/$i/" ./debian/changelog
+	rm -fv ./debian/source/format
 	# -I to exclude .git; -d to allow building .changes file without build dependencies installed
 	dpkg-buildpackage -I -S -sa -d
 	sed  -i -re "1s/.*/${old_header}/" ./debian/changelog
+	echo "$old_format_source" >./debian/source/format
 	cd ..
 	
 	# change PPA names to yours, you may leave only one PPA; I upload hw-probe to 2 different PPAs at the same time
