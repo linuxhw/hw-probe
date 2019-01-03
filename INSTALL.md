@@ -196,7 +196,9 @@ Install build scripts:
 
     sudo apt install devscripts
      
-You may want to manually update the version of hw-probe in `debian/changelog`, just edit it in any text editor and save. Install build dependencies as a dummy package `hw-probe-build-deps`, which will denpend from other build dependencies:
+You may want to manually update the version of hw-probe in `debian/changelog`, just edit it in any text editor, save and run `git add .`. Note that you have to stage all changes in git by running e.g. `git add .` or `git commit -a`, because it is `3.0 (git)` in `debian/source/format` and `dpkg-buildpackage` will want to have all changes staged or commited in git before building the deb package.
+
+Install build dependencies as a dummy package `hw-probe-build-deps`, which will denpend from other build dependencies:
 
     sudo mk-build-deps -r --install debian/control
      
