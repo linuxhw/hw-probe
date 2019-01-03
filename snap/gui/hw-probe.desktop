@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Hardware Probe
+Comment=Probe for hardware and upload result to the Linux hardware database
+Exec=hw-probe
+Icon=$SNAP/meta/gui/icon.png
+Terminal=true
+Type=Application
+StartupNotify=true
+Categories=System;
+Keywords=HW Probe;Hardware;Probe;

@@ -1,0 +1,19 @@
+# Maintainer: Andrey Ponomarenko <andrewponomarenko [at] yandex [dot] ru>
+
+pkgname=hw-probe
+pkgver=1.4
+pkgrel=1
+pkgdesc="A tool to check operability of computer hardware"
+arch=('any')
+url="https://github.com/linuxhw/hw-probe"
+license=('LGPLv2.1+')
+source=("$pkgname-$pkgver.tar.gz")
+sha256sums=('90f3ea83bf641348b209e4a2a910f65d836ae7828c0be0f660236ea413bc46bb')
+depends=('perl>=5' 'curl' 'hwinfo' 'dmidecode' 'pciutils' 'usbutils' 'smartmontools' 'hdparm' 'net-tools' 'mesa-demos' 'glew' 'lm_sensors' 'lsb-release')
+optdepends=('acpica' 'sysstat' 'iw' 'ethtool' 'alsa-utils' 'efibootmgr')
+
+package() {
+  cd "$srcdir"/$pkgname-$pkgver
+  install -dm755 "$pkgdir"/usr
+  DESTDIR="$pkgdir" make install prefix=/usr
+}

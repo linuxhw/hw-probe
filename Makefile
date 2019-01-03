@@ -1,4 +1,6 @@
 prefix ?= /usr
+tool = hw-probe
+tool_dir = $(DESTDIR)$(prefix)/bin
 
 .PHONY: all
 
@@ -6,10 +8,11 @@ all:
 	echo "Nothing to build."
 
 install:
-	perl Makefile.pl -install -prefix "$(prefix)"
+	mkdir -p $(tool_dir)
+	install -m 755 $(tool).pl $(tool_dir)/$(tool)
 
 uninstall:
-	perl Makefile.pl -remove -prefix "$(prefix)"
+	rm -f $(tool_dir)/$(tool)
 
 clean:
 	echo "Nothing to clean up."

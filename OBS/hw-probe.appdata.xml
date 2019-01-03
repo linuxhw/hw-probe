@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<component type="desktop-application">
+  <id>org.linux_hardware.hw-probe</id>
+  <metadata_license>CC-BY-3.0</metadata_license>
+  <project_license>LGPL-2.1+</project_license>
+  <name>Hardware Probe</name>
+  <summary>Check operability of computer hardware</summary>
+
+  <description>
+    <p>
+      A tool to check operability of computer hardware and upload result
+      to the Linux hardware database.
+    </p>
+    <p>
+      Probe — is a snapshot of your computer hardware state and system
+      logs. The tool returns a permanent URL to view the probe of the
+      computer.
+    </p>
+    <p>
+      The tool is intended to simplify collecting of logs necessary for
+      investigating hardware related problems. Just ask user to run one
+      simple command to collect all the system logs at once:
+    </p>
+    <p>
+      sudo hw-probe -all -upload
+    </p>
+    <p>
+      By creating probes you contribute to the HDD/SSD Real-Life
+      Reliability Test study: https://github.com/linuxhw/SMART
+    </p>
+  </description>
+
+  <categories>
+      <category>System</category>
+  </categories>
+
+  <launchable type="desktop-id">org.linux_hardware.hw-probe.desktop</launchable>
+
+  <screenshots>
+    <screenshot type="default">
+      <image>https://github.com/linuxhw/build-stuff/releases/download/1.4/image-2.png</image>
+    </screenshot>
+    <screenshot>
+      <image>https://github.com/linuxhw/build-stuff/releases/download/1.4/image-3.png</image>
+    </screenshot>
+    <screenshot>
+      <image>https://github.com/linuxhw/build-stuff/releases/download/1.4/image-1.png</image>
+    </screenshot>
+  </screenshots>
+
+  <url type="homepage">https://github.com/linuxhw/hw-probe</url>
+  <project_group>Linux Hardware</project_group>
+
+  <provides>
+    <binary>hw-probe</binary>
+  </provides>
+</component>

@@ -1,9 +1,0 @@
-# Dolphin file manager creates the file .directory to save some folder-specific settings
-*.directory
-
-dpkg-sign*
-*-build-deps*.deb
-
-# symlink to debian/build-ppa.sh
-build-ppa.sh
-!debian/build-ppa.sh
