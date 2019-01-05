@@ -414,8 +414,10 @@ my %DiskVendor = (
     "FB0"       => "HP",
     "FLD"       => "Foxline",
     "G2242"     => "BIWIN",
+    "G3 Series" => "Myung",
     "GB0"       => "HP",
     "GB1000EA"  => "HP",
+    "Gen2A400"  => "Anobit",
     "GOODRAM"   => "GOODRAM",
     "HDS"       => "Hitachi",
     "HDT"       => "Hitachi",
@@ -3807,16 +3809,16 @@ sub probeHW()
             }
             
             # clear
-            if($Sys{"Vendor"}=~/\b(System manufacturer|to be filled)\b/i) {
+            if(emptyProduct($Sys{"Vendor"})) {
                 $Sys{"Vendor"} = "";
             }
             
-            if($Sys{"Model"}=~/\b(Name|to be filled)\b/i) {
+            if(emptyProduct($Sys{"Model"})) {
                 $Sys{"Model"} = "";
             }
             
-            if($Sys{"Version"}=~/\b(Version|to be filled)\b/i) {
-                $Sys{"Version"} = $Sys{"Version"};
+            if(emptyProduct($Sys{"Version"})) {
+                $Sys{"Version"} = "";
             }
         }
         elsif($Info=~/Memory Device\n/) # $Info=~/Memory Module Information\n/
@@ -6024,7 +6026,7 @@ sub fixDrive_Pre($)
     }
     
     if(not $Device->{"Vendor"} and $Device->{"Device"})
-    { # guess vendor
+    {
         if(my $Vnd = guessDeviceVendor($Device->{"Device"}))
         {
             $Device->{"Device"}=~s/\A\Q$Vnd\E([\s_\-]+|\Z)//i;
@@ -6107,7 +6109,7 @@ sub fixDrive($)
 {
     my $Device = $_[0];
     
-    if($Device->{"Vendor"}=~/\A(SSD|mSata)\Z/)
+    if($Device->{"Vendor"}=~/\A(SSD|mSata|SATAIII)\Z/)
     { # SSD/mSata instead of vendor name
       # Device Model: SSD Smartbuy 120GB
         my $OldVnd = $Device->{"Vendor"};
@@ -6301,7 +6303,7 @@ sub guessDeviceVendor($)
 {
     my $Device = $_[0];
     
-    if($Device=~s/\A(WDC|Western Digital|Seagate|Samsung Electronics|SAMSUNG|Hitachi|TOSHIBA|Maxtor|SanDisk|Kingston|ADATA|Lite-On|OCZ|Smartbuy|SK hynix|GOODRAM|LDLC|A\-DATA|KingFast|LDLC|INTENSO|ExcelStor Technology|i-FlashDisk|e2e4)([\s_\-]|\Z)//i)
+    if($Device=~s/\A(WDC|Western Digital|Seagate|Samsung Electronics|SAMSUNG|Hitachi|TOSHIBA|Maxtor|SanDisk|Kingston|ADATA|Lite-On|OCZ|Smartbuy|SK hynix|GOODRAM|LDLC|A\-DATA|KingFast|LDLC|INTENSO|ExcelStor Technology|i-FlashDisk|e2e4|Anobit)([\s_\-]|\Z)//i)
     { # drives
         return $1;
     }
@@ -6348,12 +6350,15 @@ sub duplVendor($$)
     
     if($Vendor)
     { # do not duplicate vendor name
-        if(not $Device=~s/\A\Q$Vendor\E([\s\-\_]+|\Z)//gi)
+        if(not $Device=~s/\A\Q$Vendor\E([\s\-\_]+|\Z)//gi
+        and not $Device=~s/\s+\Q$Vendor\E\s+/ /gi)
         {
             if(my $ShortVendor = nameID($Vendor))
             {
-                if($ShortVendor ne $Vendor) {
+                if($ShortVendor ne $Vendor)
+                {
                     $Device=~s/\A\Q$ShortVendor\E[\s\-\_]+//gi;
+                    $Device=~s/\s+\Q$ShortVendor\E\s+/ /gi;
                 }
             }
         }
@@ -6382,17 +6387,24 @@ sub cleanValues($)
     {
         if(my $Val = $Hash->{$Key})
         {
-            if($Val=~/\A[\[\(]*(not specified|not defined|invalid|error|unknown|unknow|uknown|empty|n\/a|none|default string)[\)\]]*\Z/i
-            or $Val=~/(\A|\b|\d)(to be filled|unclassified device|not defined)(\b|\Z)/i) {
-                delete($Hash->{$Key});
-            }
-            
-            if($Val=~/\A(vendor|device|unknown vendor|customer|model)\Z/i)
-            {
+            if(emptyVal($Val)) {
                 delete($Hash->{$Key});
             }
         }
     }
+}
+
+sub emptyVal($)
+{
+    my $Val = $_[0];
+    
+    if($Val=~/\A[\[\(]*(not specified|not defined|invalid|error|unknown|unknow|uknown|empty|n\/a|none|default string)[\)\]]*\Z/i
+    or $Val=~/(\A|\b|\d)(to be filled|unclassified device|not defined)(\b|\Z)/i
+    or $Val=~/\A(vendor|device|unknown vendor|customer|model)\Z/i) {
+        return 1;
+    }
+    
+    return 0;
 }
 
 sub devSuffix($)
@@ -6639,19 +6651,19 @@ sub probeSys()
         
         if($File eq "sys_vendor")
         {
-            if($Value!~/\b(System manufacturer|to be filled)\b/i) {
+            if(not emptyProduct($Value)) {
                 $Sys{"Vendor"} = $Value;
             }
         }
         elsif($File eq "product_name")
         {
-            if($Value!~/\b(Name|to be filled)\b/i) {
+            if(not emptyProduct($Value)) {
                 $Sys{"Model"} = $Value;
             }
         }
         elsif($File eq "product_version")
         {
-            if($Value!~/\b(Version|to be filled)\b/i) {
+            if(not emptyProduct($Value)) {
                 $Sys{"Version"} = $Value;
             }
         }
@@ -6681,6 +6693,16 @@ sub probeSys()
     }
 }
 
+sub emptyProduct($)
+{
+    my $Val = $_[0];
+    if($Val=~/\b(System manufacturer|Name|Version|to be filled|empty|Not Specified)\b/i) {
+        return 1;
+    }
+    
+    return 0;
+}
+
 sub getChassisType($)
 {
     my $CType = lc($_[0]);
@@ -6691,6 +6713,16 @@ sub getChassisType($)
     }
 
     return;
+}
+
+sub fixProduct()
+{
+    foreach my $Attr ("Vendor", "Version", "Model")
+    {
+        if(emptyProduct($Sys{$Attr})) {
+            $Sys{$Attr} = "";
+        }
+    }
 }
 
 sub fixChassis()
@@ -7181,6 +7213,10 @@ sub probeDistr()
         
         if($Release eq "n/a") {
             $Release = "";
+        }
+        
+        if($Release and $Name) {
+            $Release=~s/\A$Name[\s\-]+//i;
         }
         
         if($LSB_Rel=~/NAME:\s*(.*)/) {
@@ -10099,6 +10135,7 @@ sub scenario()
         readHost($Opt{"FixProbe"}); # instead of probeSys
         fixLogs($FixProbe_Logs);
         
+        fixProduct();
         fixChassis();
         probeHWaddr();
         probeHW();
@@ -10216,7 +10253,7 @@ sub scenario()
                 $Compress .= "XZ_OPT=-0 ";
             }
             elsif($Opt{"HighCompress"}) {
-                $Compress .= "XZ_OPT=-9e ";
+                $Compress .= "XZ_OPT=-9 ";
             }
             $Compress .= "tar -cJf ".$PName." hw.info";
             qx/$Compress/;
