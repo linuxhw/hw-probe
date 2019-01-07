@@ -5,7 +5,7 @@
 #
 # WWW: https://linux-hardware.org
 #
-# Copyright (C) 2014-2018 Andrey Ponomarenko's Linux Hardware Project
+# Copyright (C) 2014-2019 Andrey Ponomarenko's Linux Hardware Project
 #
 # Written by Andrey Ponomarenko
 # LinkedIn: https://www.linkedin.com/in/andreyponomarenko
@@ -30,6 +30,7 @@
 #
 # RECOMMENDS
 # ==========
+#  libwww-perl (if curl is missed)
 #  mcelog
 #  hdparm
 #  systemd-tools (systemd-analyze)
@@ -48,7 +49,6 @@
 #
 # SUGGESTS
 # ========
-#  libwww-perl (to use instead of curl)
 #  hplip (hp-probe)
 #  sane-backends (sane-find-scanner)
 #  pnputils (lspnp)
@@ -96,9 +96,7 @@ A tool to probe for hardware and upload result to the Linux hardware DB
 License: GNU LGPL 2.1+
 
 Usage: sudo $CmdName [options]
-Example: sudo $CmdName -all -upload
-
-DESC — any description of the probe.\n\n";
+Example: sudo $CmdName -all -upload\n\n";
 
 my $SNAP_DESKTOP = (defined $ENV{"BAMF_DESKTOP_FILE_HINT"});
 my $FLATPAK_DESKTOP = (grep { $_ eq "-flatpak" } @ARGV);
@@ -130,6 +128,10 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "probe!" => \$Opt{"Probe"},
   "logs!" => \$Opt{"Logs"},
   "log-level=s" => \$Opt{"LogLevel"},
+  "minimal|mini|min!" => \$Opt{"Minimal"},
+  "maximal|maxi|max!" => \$Opt{"Maximal"},
+  "enable=s" => \$Opt{"Enable"},
+  "disable=s" => \$Opt{"Disable"},
   "printers!" => \$Opt{"Printers"},
   "scanners!" => \$Opt{"Scanners"},
   "check!" => \$Opt{"Check"},
@@ -255,6 +257,22 @@ GENERAL OPTIONS:
         - minimal
         - default
         - maximal
+  
+  -minimal|-min
+      Collect minimal number of logs. Equal to --log-level=min.
+  
+  -maximal|-max
+      Collect maximal number of logs. Equal to --log-level=max.
+  
+  -enable LIST
+      Comma separated list of logs to enable in addition to
+      current log level.
+  
+  -disable LIST
+      Comma separated list of logs to disable in current
+      log level. Some logs cannot be disabled. For example,
+      you can disable collecting of 'fstab', but you cannot
+      disable logging of 'smartctl'.
   
   -printers
       Probe for printers.
@@ -903,7 +921,38 @@ my @WrongAddr = (
     "E5A433E40C7D5C05E1F82A0C86983656"
 );
 
-my @ProtectedLogs = ("hwinfo", "biosdecode", "acpidump", "acpidump_decoded", "dmidecode", "smartctl", "smartctl_megaraid", "lspci", "lspci_all", "lsusb", "usb-devices", "ifconfig", "ip_addr", "hciconfig", "mmcli", "xrandr", "edid", "os-release", "lsb_release", "system-release", "opensc-tool");
+my @ProtectedLogs = (
+    "acpidump",
+    "acpidump_decoded",
+    "biosdecode",
+    "cpuid",
+    "dev",
+    "dmidecode",
+    "dmi_id",
+    "edid",
+    "ethtool_p",
+    "hciconfig",
+    "hdparm",
+    "hwinfo",
+    "ifconfig",
+    "ip_addr",
+    "lsb_release",
+    "lsmod",
+    "lspci",
+    "lspci_all",
+    "lsusb",
+    "mmcli",
+    "opensc-tool",
+    "os-release",
+    "power_supply",
+    "smartctl",
+    "smartctl_megaraid",
+    "system-release",
+    "upower",
+    "usb-devices",
+    "xrandr",
+    "xrandr_providers"
+);
 
 my $USE_DIGEST = 0;
 my $USE_DUMPER = 0;
@@ -1218,7 +1267,7 @@ sub getGroup()
     
     my $Log = "";
     
-    if(check_Cmd("curl"))
+    if(checkCmd("curl"))
     {
         my $CurlCmd = "curl -s -S -f -POST -F get=group -H \"Expect:\" --http1.0 $GroupURL";
         $Log = qx/$CurlCmd 2>&1/;
@@ -1986,7 +2035,7 @@ sub probeHW()
     }
     else
     {
-        if(not defined $Opt{"HWInfoPath"} and not check_Cmd("hwinfo"))
+        if(not defined $Opt{"HWInfoPath"} and not checkCmd("hwinfo"))
         {
             printMsg("ERROR", "'hwinfo' is not installed");
             exitStatus(1);
@@ -1996,20 +2045,20 @@ sub probeHW()
         {
             foreach my $Prog ("dmidecode", "edid-decode")
             {
-                if(not check_Cmd($Prog)) {
+                if(not checkCmd($Prog)) {
                     printMsg("WARNING", "'".$Prog."' package is not installed");
                 }
             }
             
-            if(not check_Cmd("smartctl")) {
+            if(not checkCmd("smartctl")) {
                 printMsg("WARNING", "'smartmontools' package is not installed");
             }
             
-            if(not check_Cmd("lspci")) {
+            if(not checkCmd("lspci")) {
                 printMsg("WARNING", "'pciutils' package is not installed");
             }
             
-            if(not check_Cmd("lsusb")) {
+            if(not checkCmd("lsusb")) {
                 printMsg("WARNING", "'usbutils' package is not installed");
             }
         }
@@ -2156,7 +2205,8 @@ sub probeHW()
     
     if(not $Opt{"FixProbe"} and $Opt{"Logs"})
     {
-        if(check_Cmd("modinfo"))
+        if(enabledLog("modinfo")
+        and checkCmd("modinfo"))
         {
             listProbe("logs", "modinfo");
             my $Modinfo = runCmd("modinfo ".join(" ", @KernDrvs)." 2>&1");
@@ -3018,14 +3068,13 @@ sub probeHW()
             $Udevadm = readFile($FixProbe_Logs."/sdio");
         }
     }
-    elsif(check_Cmd("udevadm") and $Opt{"Logs"})
+    elsif(checkCmd("udevadm") and $Opt{"Logs"})
     {
         listProbe("logs", "udev-db");
         $Udevadm = runCmd("udevadm info --export-db 2>/dev/null");
         $Udevadm = hideTags($Udevadm, "ID_NET_NAME_MAC|ID_SERIAL|ID_SERIAL_SHORT|DEVLINKS|ID_WWN|ID_WWN_WITH_EXTENSION");
         $Udevadm=~s/(by\-id\/(ata|usb|nvme|wwn)\-).+/$1.../g;
-        if($Opt{"LogLevel"} eq "maximal")
-        {
+        if(enabledLog("udev-db")) {
             writeLog($LOG_DIR."/udev-db", $Udevadm);
         }
         else
@@ -3139,15 +3188,11 @@ sub probeHW()
     if($Opt{"FixProbe"}) {
         $Lspci_A = readFile($FixProbe_Logs."/lspci_all");
     }
-    else
+    elsif(checkCmd("lspci"))
     {
         listProbe("logs", "lspci_all");
-        
-        if(check_Cmd("lspci"))
-        {
-            $Lspci_A = runCmd("lspci -vvnn");
-            $Lspci_A=~s/(Serial Number:?\s+|Manufacture ID:\s+).+/$1.../gi;
-        }
+        $Lspci_A = runCmd("lspci -vvnn");
+        $Lspci_A=~s/(Serial Number:?\s+|Manufacture ID:\s+).+/$1.../gi;
         
         if($HWLogs) {
             writeLog($LOG_DIR."/lspci_all", $Lspci_A);
@@ -3182,10 +3227,9 @@ sub probeHW()
     }
     else
     {
-        listProbe("logs", "lspci");
-        
-        if(check_Cmd("lspci"))
+        if(checkCmd("lspci"))
         {
+            listProbe("logs", "lspci");
             $Lspci = runCmd("lspci -vmnnk");
         }
         
@@ -3326,16 +3370,15 @@ sub probeHW()
     }
     else
     {
-        listProbe("logs", "lsusb");
-        
-        if(check_Cmd("lsusb"))
+        if(checkCmd("lsusb"))
         {
+            listProbe("logs", "lsusb");
             $Lsusb = runCmd("lsusb -v");
             $Lsusb=~s/(iSerial\s+\d+\s*)[^\s]+$/$1.../mg;
-        }
-        
-        if(length($Lsusb)<60 and $Lsusb=~/unable to initialize/i) {
-            $Lsusb = "";
+            
+            if(length($Lsusb)<60 and $Lsusb=~/unable to initialize/i) {
+                $Lsusb = "";
+            }
         }
         
         if($HWLogs) {
@@ -3542,10 +3585,9 @@ sub probeHW()
     }
     else
     {
-        listProbe("logs", "usb-devices");
-        
-        if(check_Cmd("usb-devices"))
+        if(checkCmd("usb-devices"))
         {
+            listProbe("logs", "usb-devices");
             $Usb_devices = runCmd("usb-devices -v 2>&1");
             $Usb_devices = encryptSerials($Usb_devices, "SerialNumber");
         }
@@ -3756,10 +3798,9 @@ sub probeHW()
     }
     else
     {
-        listProbe("logs", "dmidecode");
-        
-        if(check_Cmd("dmidecode"))
+        if(checkCmd("dmidecode"))
         {
+            listProbe("logs", "dmidecode");
             $Dmidecode = runCmd("dmidecode 2>&1");
             $Dmidecode = hideTags($Dmidecode, "UUID|Asset Tag");
             $Dmidecode = encryptSerials($Dmidecode, "Serial Number");
@@ -4119,7 +4160,8 @@ sub probeHW()
     if($Opt{"FixProbe"}) {
         $HP_probe = readFile($FixProbe_Logs."/hp-probe");
     }
-    elsif($Opt{"Printers"})
+    elsif($Opt{"Printers"} and enabledLog("hp-probe")
+    and checkCmd("hp-probe"))
     {
         listProbe("logs", "hp-probe");
         
@@ -4204,16 +4246,14 @@ sub probeHW()
             $Avahi = readFile("$FixProbe_Logs/avahi");
         }
     }
-    elsif($Opt{"Printers"} and $Opt{"LogLevel"} eq "maximal")
+    elsif($Opt{"Printers"} and enabledLog("avahi")
+    and checkCmd("avahi-browse"))
     {
-        if(check_Cmd("avahi-browse"))
-        {
-            listProbe("logs", "avahi-browse");
-            $Avahi = runCmd("avahi-browse -a -t 2>&1 | grep 'PDL Printer'");
-            
-            if($HWLogs and $Avahi) {
-                writeLog($LOG_DIR."/avahi", $Avahi);
-            }
+        listProbe("logs", "avahi-browse");
+        $Avahi = runCmd("avahi-browse -a -t 2>&1 | grep 'PDL Printer'");
+        
+        if($HWLogs and $Avahi) {
+            writeLog($LOG_DIR."/avahi", $Avahi);
         }
     }
     
@@ -4416,8 +4456,7 @@ sub probeHW()
     { # NOTE: works for KMS video drivers only
         listProbe("logs", "edid");
         
-        my $EdidDecode = check_Cmd("edid-decode");
-        my $MonEdid = check_Cmd("monitor-get-edid");
+        my $EdidDecode = checkCmd("edid-decode");
         
         my $MDir = "/sys/class/drm";
         foreach my $Dir (listDir($MDir))
@@ -4446,7 +4485,7 @@ sub probeHW()
         
         if(not $Edid)
         { # for nvidia, fglrx
-            if($MonEdid)
+            if(my $MonEdid = checkCmd("monitor-get-edid"))
             {
                 if($Admin)
                 {
@@ -4485,16 +4524,13 @@ sub probeHW()
     if($Opt{"FixProbe"}) {
         $Upower = readFile($FixProbe_Logs."/upower");
     }
-    else
+    elsif(checkCmd("upower"))
     {
-        if(check_Cmd("upower"))
-        {
-            listProbe("logs", "upower");
-            $Upower = runCmd("upower -d 2>/dev/null");
-            $Upower = encryptSerials($Upower, "serial");
-            if($HWLogs and $Upower) {
-                writeLog($LOG_DIR."/upower", $Upower);
-            }
+        listProbe("logs", "upower");
+        $Upower = runCmd("upower -d 2>/dev/null");
+        $Upower = encryptSerials($Upower, "serial");
+        if($HWLogs and $Upower) {
+            writeLog($LOG_DIR."/upower", $Upower);
         }
     }
     
@@ -4505,8 +4541,6 @@ sub probeHW()
             if($UPInfo=~/devices\/battery_/)
             {
                 my %Device = ();
-                
-                $Device{"Type"} = "battery";
                 
                 foreach my $Line (split(/\n/, $UPInfo))
                 {
@@ -4550,7 +4584,7 @@ sub probeHW()
     if($Opt{"FixProbe"}) {
         $PowerSupply = readFile($FixProbe_Logs."/power_supply");
     }
-    else
+    elsif(-d $PSDir)
     {
         listProbe("logs", "power_supply");
         foreach my $Bat (listDir($PSDir))
@@ -4575,8 +4609,6 @@ sub probeHW()
             if($Block=~/$PSDir\/BAT/i)
             {
                 my %Device = ();
-                
-                $Device{"Type"} = "battery";
                 
                 if($Block=~/POWER_SUPPLY_MODEL_NAME=(.+)/i) {
                     $Device{"Device"} = $1;
@@ -4653,15 +4685,13 @@ sub probeHW()
     if($Opt{"FixProbe"}) {
         $Lspnp = readFile($FixProbe_Logs."/lspnp");
     }
-    else
+    elsif(enabledLog("lspnp")
+    and checkCmd("lspnp"))
     {
-        if(check_Cmd("lspnp"))
-        {
-            listProbe("logs", "lspnp");
-            $Lspnp = runCmd("lspnp -vv 2>&1");
-            if($HWLogs) {
-                writeLog($LOG_DIR."/lspnp", $Lspnp);
-            }
+        listProbe("logs", "lspnp");
+        $Lspnp = runCmd("lspnp -vv 2>&1");
+        if($HWLogs) {
+            writeLog($LOG_DIR."/lspnp", $Lspnp);
         }
     }
     
@@ -4672,9 +4702,9 @@ sub probeHW()
     }
     elsif($HWLogs)
     {
-        listProbe("logs", "hdparm");
-        if($Admin and check_Cmd("hdparm"))
+        if($Admin and checkCmd("hdparm"))
         {
+            listProbe("logs", "hdparm");
             foreach my $Drive (sort keys(%HDD))
             {
                 my $Id = $HDD{$Drive};
@@ -4704,9 +4734,8 @@ sub probeHW()
     
     if($Opt{"Snap"} or $Opt{"AppImage"} or $Opt{"Flatpak"})
     {
-        if(not $Opt{"FixProbe"} and $HWLogs)
-        {
-            $SmartctlCmd = find_Cmd("smartctl");
+        if(not $Opt{"FixProbe"} and $HWLogs) {
+            $SmartctlCmd = findCmd("smartctl");
         }
     }
     
@@ -4751,7 +4780,7 @@ sub probeHW()
     }
     elsif($HWLogs)
     {
-        if($Admin and check_Cmd("smartctl"))
+        if($Admin and checkCmd("smartctl"))
         {
             listProbe("logs", "smartctl");
             my %CheckedScsi = ();
@@ -4937,7 +4966,7 @@ sub probeHW()
         
         foreach my $Cmd ("storcli64", "storcli")
         {
-            if(check_Cmd($Cmd))
+            if(checkCmd($Cmd))
             {
                 $StorcliCmd = $Cmd;
                 last;
@@ -4946,7 +4975,7 @@ sub probeHW()
         
         if($StorcliCmd)
         { # MegaRAID
-            listProbe("logs", $StorcliCmd);
+            listProbe("logs", "storcli");
             my $Storcli = runCmd($StorcliCmd." /call /vall /eall /sall show 2>&1");
             if($Storcli=~/No Controller found/i) {
                 $Storcli = undef;
@@ -5027,13 +5056,14 @@ sub probeHW()
         }
     }
     
-    if(not $Opt{"FixProbe"} and not $SmartctlMR)
+    if(not $Opt{"FixProbe"} and not $SmartctlMR
+    and enabledLog("megacli"))
     {
         my $MegacliCmd = undef;
         
         foreach my $Cmd ("megacli", "MegaCli64", "MegaCli")
         {
-            if(check_Cmd($Cmd))
+            if(checkCmd($Cmd))
             {
                 $MegacliCmd = $Cmd;
                 last;
@@ -5042,7 +5072,7 @@ sub probeHW()
         
         if($MegacliCmd)
         {
-            listProbe("logs", $MegacliCmd);
+            listProbe("logs", "megacli");
             my $Megacli = runCmd($MegacliCmd." -PDList -aAll 2>&1");
             $Megacli=~s/(Inquiry Data\s*:.+?)\s\w+\n/$1.../g; # Hide serial
             $Megacli = encryptSerials($Megacli, "WWN");
@@ -5050,16 +5080,17 @@ sub probeHW()
                 writeLog($LOG_DIR."/megacli", $Megacli);
             }
             
-            my %DIDs = ();
-            while($Megacli=~/Device Id\s*:\s*(\d+)/g) {
-                $DIDs{$1} = 1;
-            }
+            # my %DIDs = ();
+            # while($Megacli=~/Device Id\s*:\s*(\d+)/g) {
+            #     $DIDs{$1} = 1;
+            # }
         }
     }
     
     if(not $Opt{"FixProbe"})
     {
-        if(check_Cmd("megactl"))
+        if(enabledLog("megactl")
+        and checkCmd("megactl"))
         {
             listProbe("logs", "megactl");
             my $Megactl = runCmd("megactl 2>&1");
@@ -5071,7 +5102,8 @@ sub probeHW()
     
     if(not $Opt{"FixProbe"})
     {
-        if(check_Cmd("arcconf"))
+        if(enabledLog("arcconf")
+        and checkCmd("arcconf"))
         { # Adaptec RAID
             listProbe("logs", "arcconf");
             
@@ -5121,11 +5153,10 @@ sub probeHW()
     
     my $Dmesg = "";
     
-    if($Opt{"FixProbe"})
-    {
+    if($Opt{"FixProbe"}) {
         $Dmesg = readFile($FixProbe_Logs."/dmesg");
     }
-    elsif($HWLogs)
+    elsif(checkCmd("dmesg"))
     {
         listProbe("logs", "dmesg");
         $Dmesg = runCmd("dmesg 2>&1");
@@ -5134,7 +5165,10 @@ sub probeHW()
         $Dmesg = hideIPs($Dmesg);
         $Dmesg = hideMACs($Dmesg);
         $Dmesg = hidePaths($Dmesg);
-        writeLog($LOG_DIR."/dmesg", $Dmesg);
+        
+        if($HWLogs) {
+            writeLog($LOG_DIR."/dmesg", $Dmesg);
+        }
     }
     
     if(not $Sys{"System"} and $Dmesg)
@@ -5146,8 +5180,7 @@ sub probeHW()
     
     my $XLog = "";
     
-    if($Opt{"FixProbe"})
-    {
+    if($Opt{"FixProbe"}) {
         $XLog = readFile($FixProbe_Logs."/xorg.log");
     }
     else
@@ -5297,16 +5330,13 @@ sub probeHW()
     {
         $HciConfig = readFile($FixProbe_Logs."/hciconfig");
     }
-    else
+    elsif(checkCmd("hciconfig"))
     {
-        if(check_Cmd("hciconfig"))
-        {
-            listProbe("logs", "hciconfig");
-            $HciConfig = runCmd("hciconfig -a 2>&1");
-            $HciConfig = hideMACs($HciConfig);
-            if($HciConfig) {
-                writeLog($LOG_DIR."/hciconfig", $HciConfig);
-            }
+        listProbe("logs", "hciconfig");
+        $HciConfig = runCmd("hciconfig -a 2>&1");
+        $HciConfig = hideMACs($HciConfig);
+        if($HciConfig) {
+            writeLog($LOG_DIR."/hciconfig", $HciConfig);
         }
     }
     
@@ -5333,37 +5363,33 @@ sub probeHW()
     
     my $MmCli = "";
     
-    if($Opt{"FixProbe"})
-    {
+    if($Opt{"FixProbe"}) {
         $MmCli = readFile($FixProbe_Logs."/mmcli");
     }
-    else
+    elsif(checkCmd("mmcli"))
     {
-        if(check_Cmd("mmcli"))
+        listProbe("logs", "mmcli");
+        my $Modems = runCmd("mmcli -L 2>&1");
+        if($Modems=~/No modems were found/i) {
+            $Modems = "";
+        }
+        
+        my %MNums = ();
+        while($Modems=~s/Modem\/(\d+)//) {
+            $MNums{$1} = 1;
+        }
+        
+        foreach my $Modem (sort {int($a)<=>int($b)} keys(%MNums))
         {
-            listProbe("logs", "mmcli");
-            my $Modems = runCmd("mmcli -L 2>&1");
-            if($Modems=~/No modems were found/i) {
-                $Modems = "";
-            }
+            my $MInfo = runCmd("mmcli -m $Modem");
+            $MInfo = hideTags($MInfo, "own|imei|equipment id");
+            $MmCli .= $MInfo;
             
-            my %MNums = ();
-            while($Modems=~s/Modem\/(\d+)//) {
-                $MNums{$1} = 1;
-            }
-            
-            foreach my $Modem (sort {int($a)<=>int($b)} keys(%MNums))
-            {
-                my $MInfo = runCmd("mmcli -m $Modem");
-                $MInfo = hideTags($MInfo, "own|imei|equipment id");
-                $MmCli .= $MInfo;
-                
-                $MmCli .= "\n";
-            }
-            
-            if($MmCli) {
-                writeLog($LOG_DIR."/mmcli", $MmCli);
-            }
+            $MmCli .= "\n";
+        }
+        
+        if($MmCli) {
+            writeLog($LOG_DIR."/mmcli", $MmCli);
         }
     }
     
@@ -5387,21 +5413,17 @@ sub probeHW()
     
     my $OpenscTool = "";
     
-    if($Opt{"FixProbe"})
-    {
+    if($Opt{"FixProbe"}) {
         $OpenscTool = readFile($FixProbe_Logs."/opensc-tool");
     }
-    else
+    elsif(checkCmd("opensc-tool"))
     {
-        if(check_Cmd("opensc-tool"))
+        listProbe("logs", "opensc-tool");
+        $OpenscTool = runCmd("opensc-tool --list-readers");
+        if($OpenscTool and $OpenscTool!~/No smart card readers/)
         {
-            listProbe("logs", "opensc-tool");
-            $OpenscTool = runCmd("opensc-tool --list-readers");
-            if($OpenscTool and $OpenscTool!~/No smart card readers/)
-            {
-                $OpenscTool=~s/ \([^\(\)]+\)//g;
-                writeLog($LOG_DIR."/opensc-tool", $OpenscTool);
-            }
+            $OpenscTool=~s/ \([^\(\)]+\)//g;
+            writeLog($LOG_DIR."/opensc-tool", $OpenscTool);
         }
     }
     
@@ -5429,6 +5451,13 @@ sub probeHW()
 sub registerBattery($)
 {
     my $Device = $_[0];
+    
+    $Device->{"Type"} = "battery";
+    
+    if(not $Sys{"Type"}
+    or $Sys{"Type"}=~/desktop|server|other/) {
+        $Sys{"Type"} = "notebook";
+    }
     
     if(defined $BatType{$Device->{"Technology"}}) {
         $Device->{"Technology"} = $BatType{$Device->{"Technology"}};
@@ -6611,7 +6640,7 @@ sub probeSys()
         }
     }
     
-    if(check_Cmd("uname"))
+    if(checkCmd("uname"))
     {
         $Sys{"Arch"} = runCmd("uname -m");
         $Sys{"Kernel"} = runCmd("uname -r");
@@ -6826,7 +6855,7 @@ sub probeHWaddr()
     }
     else
     {
-        if(check_Cmd("ifconfig"))
+        if(checkCmd("ifconfig"))
         {
             listProbe("logs", "ifconfig");
             $IFConfig = runCmd("ifconfig -a 2>&1");
@@ -6837,7 +6866,7 @@ sub probeHWaddr()
                 writeLog($LOG_DIR."/ifconfig", $IFConfig);
             }
         }
-        elsif(check_Cmd("ip"))
+        elsif(checkCmd("ip"))
         {
             listProbe("logs", "ip_addr");
             if(my $IPaddr = runCmd("ip addr 2>&1"))
@@ -7075,7 +7104,7 @@ sub getRealHWaddr($)
 {
     my $Dev = $_[0];
     
-    if(check_Cmd("ethtool"))
+    if(checkCmd("ethtool"))
     {
         my $Info = runCmd("ethtool -P $Dev 2>/dev/null");
         
@@ -7135,7 +7164,7 @@ sub probeDistr()
     {
         if(not $Opt{"Docker"} and not $Opt{"Snap"} and not $Opt{"Flatpak"})
         {
-            if(check_Cmd("lsb_release"))
+            if(checkCmd("lsb_release"))
             {
                 listProbe("logs", "lsb_release");
                 $LSB_Rel = runCmd("lsb_release -i -d -r -c 2>/dev/null");
@@ -7484,7 +7513,9 @@ sub writeLogs()
     # level=minimal
     if($Admin)
     {
-        if(not $Opt{"Docker"})
+        if(not $Opt{"Docker"}
+        and enabledLog("dmesg.1")
+        and checkCmd("journalctl"))
         {
             listProbe("logs", "dmesg.1");
             my $Dmesg_Old = runCmd("journalctl -a -k -b -1 -o short-monotonic 2>/dev/null | grep -v systemd");
@@ -7498,25 +7529,29 @@ sub writeLogs()
         }
     }
     
-    listProbe("logs", "xorg.log.1");
-    my $XLog_Old = readFile("/var/log/Xorg.0.log.old");
-    
-    if(not $XLog_Old)
+    if(enabledLog("xorg.log.1"))
     {
-        if(my $SUser = getUser())
-        { # Old Xorg log in XWayland (Ubuntu 18.04)
-            $XLog_Old = readFile("/home/".$SUser."/.local/share/xorg/Xorg.0.log.old");
+        listProbe("logs", "xorg.log.1");
+        my $XLog_Old = readFile("/var/log/Xorg.0.log.old");
+        
+        if(not $XLog_Old)
+        {
+            if(my $SUser = getUser())
+            { # Old Xorg log in XWayland (Ubuntu 18.04)
+                $XLog_Old = readFile("/home/".$SUser."/.local/share/xorg/Xorg.0.log.old");
+            }
         }
+        
+        $XLog_Old = hideTags($XLog_Old, "Serial#");
+        $XLog_Old = hidePaths($XLog_Old);
+        if(my $HostName = $ENV{"HOSTNAME"}) {
+            $XLog_Old=~s/ $HostName / NODE /g;
+        }
+        writeLog($LOG_DIR."/xorg.log.1", $XLog_Old);
     }
     
-    $XLog_Old = hideTags($XLog_Old, "Serial#");
-    $XLog_Old = hidePaths($XLog_Old);
-    if(my $HostName = $ENV{"HOSTNAME"}) {
-        $XLog_Old=~s/ $HostName / NODE /g;
-    }
-    writeLog($LOG_DIR."/xorg.log.1", $XLog_Old);
-    
-    if(check_Cmd("mcelog"))
+    if(enabledLog("mcelog")
+    and checkCmd("mcelog"))
     {
         listProbe("logs", "mcelog");
         my $Mcelog = runCmd("mcelog --client 2>&1");
@@ -7539,7 +7574,8 @@ sub writeLogs()
         writeLog($LOG_DIR."/xorg.conf", $XorgConf);
     }
     
-    if(-e "/etc/default/grub")
+    if(enabledLog("grub")
+    and -e "/etc/default/grub")
     {
         listProbe("logs", "grub");
         my $Grub = readFile("/etc/default/grub");
@@ -7548,7 +7584,8 @@ sub writeLogs()
     
     if(not $Opt{"Docker"})
     {
-        if(-f "/boot/grub2/grub.cfg")
+        if(enabledLog("grub.cfg")
+        and -f "/boot/grub2/grub.cfg")
         {
             listProbe("logs", "grub.cfg");
             my $GrubCfg = readFile("/boot/grub2/grub.cfg");
@@ -7556,7 +7593,8 @@ sub writeLogs()
         }
     }
     
-    if(-f "/var/log/boot.log")
+    if(enabledLog("boot.log")
+    and -f "/var/log/boot.log")
     {
         listProbe("logs", "boot.log");
         my $BootLog = clearLog(readFile("/var/log/boot.log"));
@@ -7565,7 +7603,7 @@ sub writeLogs()
         writeLog($LOG_DIR."/boot.log", $BootLog);
     }
     
-    if(check_Cmd("xrandr"))
+    if(checkCmd("xrandr"))
     {
         listProbe("logs", "xrandr");
         my $XRandr = runCmd("xrandr --verbose 2>&1");
@@ -7576,7 +7614,7 @@ sub writeLogs()
         writeLog($LOG_DIR."/xrandr_providers", clearLog_X11($XRandrProviders));
     }
     
-    if(check_Cmd("glxinfo"))
+    if(checkCmd("glxinfo"))
     {
         listProbe("logs", "glxinfo");
         my $Glxinfo = runCmd("glxinfo 2>&1");
@@ -7589,19 +7627,24 @@ sub writeLogs()
         writeLog($LOG_DIR."/glxinfo", $Glxinfo);
     }
     
-    listProbe("logs", "biosdecode");
-    my $BiosDecode = "";
-    if($Admin)
+    if(checkCmd("biosdecode"))
     {
-        $BiosDecode = runCmd("biosdecode 2>/dev/null");
-        
-        if(length($BiosDecode)<20) {
-            $BiosDecode = "";
+        listProbe("logs", "biosdecode");
+        my $BiosDecode = "";
+        if($Admin)
+        {
+            $BiosDecode = runCmd("biosdecode 2>/dev/null");
+            
+            if(length($BiosDecode)<20) {
+                $BiosDecode = "";
+            }
         }
+        writeLog($LOG_DIR."/biosdecode", $BiosDecode);
     }
-    writeLog($LOG_DIR."/biosdecode", $BiosDecode);
     
-    if(not $Opt{"Docker"})
+    if(not $Opt{"Docker"}
+    and enabledLog("df")
+    and checkCmd("df"))
     {
         listProbe("logs", "df");
         my $Df = runCmd("df -h 2>&1");
@@ -7611,22 +7654,30 @@ sub writeLogs()
         writeLog($LOG_DIR."/df", $Df);
     }
     
-    listProbe("logs", "meminfo");
-    my $Meminfo = readFile("/proc/meminfo");
-    writeLog($LOG_DIR."/meminfo", $Meminfo);
+    if(enabledLog("meminfo"))
+    {
+        listProbe("logs", "meminfo");
+        my $Meminfo = readFile("/proc/meminfo");
+        writeLog($LOG_DIR."/meminfo", $Meminfo);
+    }
     
-    listProbe("logs", "sensors");
-    my $Sensors = runCmd("sensors 2>/dev/null");
-    writeLog($LOG_DIR."/sensors", $Sensors);
+    if(checkCmd("sensors"))
+    {
+        listProbe("logs", "sensors");
+        my $Sensors = runCmd("sensors 2>/dev/null");
+        writeLog($LOG_DIR."/sensors", $Sensors);
+    }
     
-    if(check_Cmd("cpuid"))
+    if(enabledLog("cpuid")
+    and checkCmd("cpuid"))
     {
         listProbe("logs", "cpuid");
         my $Cpuid = runCmd("cpuid -1 2>&1");
         $Cpuid = encryptSerials($Cpuid, "serial number");
         writeLog($LOG_DIR."/cpuid", $Cpuid);
     }
-    else
+    elsif(enabledLog("cpuinfo")
+    and -e "/proc/cpuinfo")
     {
         listProbe("logs", "cpuinfo");
         my $Cpuinfo = readFile("/proc/cpuinfo");
@@ -7636,289 +7687,326 @@ sub writeLogs()
     
     if(not $Opt{"Flatpak"})
     {
-        listProbe("logs", "lscpu");
-        my $Lscpu = runCmd("lscpu 2>&1");
-        writeLog($LOG_DIR."/lscpu", $Lscpu);
+        if(checkCmd("lscpu"))
+        {
+            listProbe("logs", "lscpu");
+            my $Lscpu = runCmd("lscpu 2>&1");
+            writeLog($LOG_DIR."/lscpu", $Lscpu);
+        }
     }
     
     # level=default
-    if($Opt{"LogLevel"} eq "default"
-    or $Opt{"LogLevel"} eq "maximal")
+    if(enabledLog("uptime")
+    and checkCmd("uptime"))
     {
         listProbe("logs", "uptime");
         my $Uptime = runCmd("uptime");
         writeLog($LOG_DIR."/uptime", $Uptime);
+    }
+    
+    if(not $Opt{"AppImage"}
+    and enabledLog("cpupower")
+    and checkCmd("cpupower"))
+    { # TODO: Why doesn't work in AppImage?
+        listProbe("logs", "cpupower");
+        my $CPUpower = "";
+        $CPUpower .= "frequency-info\n--------------\n";
+        $CPUpower .= runCmd("cpupower frequency-info 2>&1");
+        $CPUpower .= "\n";
+        $CPUpower .= "idle-info\n---------\n";
+        $CPUpower .= runCmd("cpupower idle-info 2>&1");
         
-        if(not $Opt{"AppImage"} and check_Cmd("cpupower"))
-        { # TODO: Why doesn't work in AppImage?
-            listProbe("logs", "cpupower");
-            my $CPUpower = "";
-            $CPUpower .= "frequency-info\n--------------\n";
-            $CPUpower .= runCmd("cpupower frequency-info 2>&1");
-            $CPUpower .= "\n";
-            $CPUpower .= "idle-info\n---------\n";
-            $CPUpower .= runCmd("cpupower idle-info 2>&1");
+        if($CPUpower=~/cpupower not found/) {
+            $CPUpower = undef;
+        }
+        
+        if($CPUpower) {
+            writeLog($LOG_DIR."/cpupower", $CPUpower);
+        }
+    }
+    
+    if(enabledLog("dkms_status")
+    and checkCmd("dkms"))
+    {
+        listProbe("logs", "dkms_status");
+        my $DkmsStatus = "";
+        if($Admin) {
+            $DkmsStatus = runCmd("dkms status 2>&1");
+        }
+        writeLog($LOG_DIR."/dkms_status", $DkmsStatus);
+    }
+    
+    if(enabledLog("xdpyinfo")
+    and checkCmd("xdpyinfo"))
+    {
+        listProbe("logs", "xdpyinfo");
+        if(my $Xdpyinfo = runCmd("xdpyinfo 2>&1")) {
+            writeLog($LOG_DIR."/xdpyinfo", clearLog_X11($Xdpyinfo));
+        }
+    }
+    
+    if(enabledLog("xinput")
+    and checkCmd("xinput"))
+    {
+        listProbe("logs", "xinput");
+        my $XInput = runCmd("xinput list --long 2>&1");
+        writeLog($LOG_DIR."/xinput", clearLog_X11($XInput));
+    }
+    
+    if(enabledLog("rpms")
+    and checkCmd("rpm"))
+    {
+        listProbe("logs", "rpms");
+        my $Rpms = runCmd("rpm -qa 2>/dev/null | sort");
+        
+        if($Rpms) {
+            writeLog($LOG_DIR."/rpms", $Rpms);
+        }
+    }
+    
+    if(enabledLog("dpkg")
+    and checkCmd("dpkg"))
+    {
+        listProbe("logs", "debs");
+        my $Dpkgs = runCmd("dpkg -l 2>/dev/null | awk '/^[hi]i/{print \$2,\$3,\$4}'");
+        
+        if($Dpkgs) {
+            writeLog($LOG_DIR."/debs", $Dpkgs);
+        }
+    }
+    
+    if(enabledLog("apk") and $Sys{"System"}=~/alpine/i
+    and checkCmd("apk"))
+    {
+        listProbe("logs", "apk");
+        my $Apk = runCmd("apk info 2>/dev/null");
+        
+        if($Apk) {
+            writeLog($LOG_DIR."/apk", $Apk);
+        }
+    }
+    
+    if(enabledLog("pkglist")
+    and checkCmd("pacman"))
+    { # Arch
+        listProbe("logs", "pkglist");
+        my $Pkglist = runCmd("pacman -Q 2>/dev/null");
+        
+        if($Pkglist) {
+            writeLog($LOG_DIR."/pkglist", $Pkglist);
+        }
+    }
+    
+    if(not $Opt{"Docker"})
+    {
+        if(enabledLog("rfkill")
+        and checkCmd("rfkill"))
+        {
+            listProbe("logs", "rfkill");
+            my $Rfkill = runCmd("rfkill list 2>&1");
             
-            if($CPUpower=~/cpupower not found/) {
-                $CPUpower = undef;
-            }
-            
-            if($CPUpower) {
-                writeLog($LOG_DIR."/cpupower", $CPUpower);
-            }
-        }
-        
-        if(check_Cmd("dkms"))
-        {
-            listProbe("logs", "dkms_status");
-            my $DkmsStatus = "";
-            if($Admin) {
-                $DkmsStatus = runCmd("dkms status 2>&1");
-            }
-            writeLog($LOG_DIR."/dkms_status", $DkmsStatus);
-        }
-        
-        if(check_Cmd("xdpyinfo"))
-        {
-            listProbe("logs", "xdpyinfo");
-            if(my $Xdpyinfo = runCmd("xdpyinfo 2>&1")) {
-                writeLog($LOG_DIR."/xdpyinfo", clearLog_X11($Xdpyinfo));
-            }
-        }
-        
-        if(check_Cmd("xinput"))
-        {
-            listProbe("logs", "xinput");
-            my $XInput = runCmd("xinput list --long 2>&1");
-            writeLog($LOG_DIR."/xinput", clearLog_X11($XInput));
-        }
-        
-        if(check_Cmd("rpm"))
-        {
-            listProbe("logs", "rpms");
-            my $Rpms = runCmd("rpm -qa 2>/dev/null | sort");
-            
-            if($Rpms) {
-                writeLog($LOG_DIR."/rpms", $Rpms);
-            }
-        }
-        
-        if(check_Cmd("dpkg"))
-        {
-            listProbe("logs", "debs");
-            my $Dpkgs = runCmd("dpkg -l 2>/dev/null | awk '/^[hi]i/{print \$2,\$3,\$4}'");
-            
-            if($Dpkgs) {
-                writeLog($LOG_DIR."/debs", $Dpkgs);
-            }
-        }
-        
-        if(check_Cmd("apk") and $Sys{"System"}=~/alpine/i)
-        {
-            listProbe("logs", "apk");
-            my $Apk = runCmd("apk info 2>/dev/null");
-            
-            if($Apk) {
-                writeLog($LOG_DIR."/apk", $Apk);
-            }
-        }
-        
-        if(check_Cmd("pacman"))
-        { # Arch
-            listProbe("logs", "pkglist");
-            my $Pkglist = runCmd("pacman -Q 2>/dev/null");
-            
-            if($Pkglist) {
-                writeLog($LOG_DIR."/pkglist", $Pkglist);
-            }
-        }
-        
-        if(not $Opt{"Docker"})
-        {
-            if(check_Cmd("rfkill"))
-            {
-                listProbe("logs", "rfkill");
-                my $Rfkill = runCmd("rfkill list 2>&1");
-                
-                if($Opt{"Snap"} and $Rfkill=~/Permission denied/) {
-                    $Rfkill = "";
-                }
-                
-                writeLog($LOG_DIR."/rfkill", $Rfkill);
-            }
-        }
-        
-        if(check_Cmd("iw"))
-        {
-            listProbe("logs", "iw_list");
-            my $IwList = runCmd("iw list 2>&1");
-            
-            if($Opt{"Snap"} and $IwList=~/Permission denied/) {
-                $IwList = "";
+            if($Opt{"Snap"} and $Rfkill=~/Permission denied/) {
+                $Rfkill = "";
             }
             
-            if($IwList) {
-                writeLog($LOG_DIR."/iw_list", $IwList);
-            }
+            writeLog($LOG_DIR."/rfkill", $Rfkill);
+        }
+    }
+    
+    if(enabledLog("iw_list")
+    and checkCmd("iw"))
+    {
+        listProbe("logs", "iw_list");
+        my $IwList = runCmd("iw list 2>&1");
+        
+        if($Opt{"Snap"} and $IwList=~/Permission denied/) {
+            $IwList = "";
         }
         
-        if(check_Cmd("iwconfig"))
-        {
-            listProbe("logs", "iwconfig");
-            my $IwConfig = runCmd("iwconfig 2>&1");
-            $IwConfig = hideMACs($IwConfig);
-            $IwConfig = hideTags($IwConfig, "ESSID");
-            writeLog($LOG_DIR."/iwconfig", $IwConfig);
+        if($IwList) {
+            writeLog($LOG_DIR."/iw_list", $IwList);
         }
-        
-        if(check_Cmd("nm-tool"))
-        {
-            listProbe("logs", "nm-tool");
-            my $NmTool = runCmd("nm-tool 2>&1");
-            if($NmTool) {
-                writeLog($LOG_DIR."/nm-tool", $NmTool);
-            }
+    }
+    
+    if(enabledLog("iwconfig")
+    and checkCmd("iwconfig"))
+    {
+        listProbe("logs", "iwconfig");
+        my $IwConfig = runCmd("iwconfig 2>&1");
+        $IwConfig = hideMACs($IwConfig);
+        $IwConfig = hideTags($IwConfig, "ESSID");
+        writeLog($LOG_DIR."/iwconfig", $IwConfig);
+    }
+    
+    if(enabledLog("nm-tool")
+    and checkCmd("nm-tool"))
+    {
+        listProbe("logs", "nm-tool");
+        my $NmTool = runCmd("nm-tool 2>&1");
+        if($NmTool) {
+            writeLog($LOG_DIR."/nm-tool", $NmTool);
         }
-        
-        if(check_Cmd("nmcli"))
-        {
-            listProbe("logs", "nmcli");
-            my $NmCli = runCmd("nmcli c 2>&1");
-            $NmCli=~s/.+\s+([^\s]+\s+[^\s]+\s+[^\s]+\s*\n)/XXX   $1/g;
-            $NmCli=~s/\AXXX /NAME/g;
-            if($NmCli) {
-                writeLog($LOG_DIR."/nmcli", $NmCli);
-            }
+    }
+    
+    if(enabledLog("nmcli")
+    and checkCmd("nmcli"))
+    {
+        listProbe("logs", "nmcli");
+        my $NmCli = runCmd("nmcli c 2>&1");
+        $NmCli=~s/.+\s+([^\s]+\s+[^\s]+\s+[^\s]+\s*\n)/XXX   $1/g;
+        $NmCli=~s/\AXXX /NAME/g;
+        if($NmCli) {
+            writeLog($LOG_DIR."/nmcli", $NmCli);
         }
-        
-        if($Admin)
+    }
+    
+    if($Admin)
+    {
+        if(enabledLog("fdisk")
+        and checkCmd("fdisk"))
         {
             listProbe("logs", "fdisk");
-            my $Fdisk = "";
-            if(check_Cmd("fdisk"))
-            {
-                $Fdisk = runCmd("fdisk -l 2>&1");
-                if($Opt{"Snap"} and $Fdisk=~/Permission denied/) {
-                    $Fdisk = "";
-                }
+            my $Fdisk = runCmd("fdisk -l 2>&1");
+            if($Opt{"Snap"} and $Fdisk=~/Permission denied/) {
+                $Fdisk = "";
             }
             $Fdisk = hidePaths($Fdisk);
             writeLog($LOG_DIR."/fdisk", $Fdisk);
         }
+    }
+    
+    if(enabledLog("inxi")
+    and my $InxiCmd = checkCmd("inxi"))
+    {
+        listProbe("logs", "inxi");
+        my $Inxi = undef;
         
-        if(my $InxiCmd = check_Cmd("inxi"))
-        {
-            listProbe("logs", "inxi");
-            my $Inxi = undef;
-            
-            if(readLine($InxiCmd)=~/perl/)
-            { # The new Perl inxi
-                $Inxi = runCmd("inxi -Fxxxz --no-host 2>&1");
-            }
-            else
-            { # Old inxi
-                $Inxi = runCmd("inxi -Fxz -c 0 -! 31 2>&1");
-            }
-            
-            $Inxi=~s/\s+\w+\:\s*<filter>//g;
-            writeLog($LOG_DIR."/inxi", $Inxi);
+        if(readLine($InxiCmd)=~/perl/)
+        { # The new Perl inxi
+            $Inxi = runCmd("inxi -Fxxxz --no-host 2>&1");
+        }
+        else
+        { # Old inxi
+            $Inxi = runCmd("inxi -Fxz -c 0 -! 31 2>&1");
         }
         
-        if(check_Cmd("i2cdetect"))
+        $Inxi=~s/\s+\w+\:\s*<filter>//g;
+        writeLog($LOG_DIR."/inxi", $Inxi);
+    }
+    
+    if(enabledLog("i2cdetect")
+    and checkCmd("i2cdetect"))
+    {
+        listProbe("logs", "i2cdetect");
+        my $I2cdetect = runCmd("i2cdetect -l 2>&1");
+        writeLog($LOG_DIR."/i2cdetect", $I2cdetect);
+    }
+    
+    if(-e "/sys/firmware/efi") # defined $KernMod{"efivarfs"}
+    { # installed in EFI mode
+        if(enabledLog("efivar")
+        and checkCmd("efivar"))
         {
-            listProbe("logs", "i2cdetect");
-            my $I2cdetect = runCmd("i2cdetect -l 2>&1");
-            writeLog($LOG_DIR."/i2cdetect", $I2cdetect);
+            listProbe("logs", "efivar");
+            my $Efivar = runCmd("efivar -l 2>&1");
+            
+            if($Efivar=~/error listing variables/i) {
+                $Efivar = "";
+            }
+            
+            writeLog($LOG_DIR."/efivar", $Efivar);
         }
         
-        if(-e "/sys/firmware/efi") # defined $KernMod{"efivarfs"}
-        { # installed in EFI mode
-            if(check_Cmd("efivar"))
+        if($Admin and $Sys{"Arch"} eq "x86_64")
+        {
+            if(enabledLog("efibootmgr")
+            and checkCmd("efibootmgr"))
             {
-                listProbe("logs", "efivar");
-                my $Efivar = runCmd("efivar -l 2>&1");
-                
-                if($Efivar=~/error listing variables/i) {
-                    $Efivar = "";
+                listProbe("logs", "efibootmgr");
+                my $Efibootmgr = runCmd("efibootmgr -v 2>&1");
+                if($Opt{"Snap"} and $Efibootmgr=~/Permission denied/) {
+                    $Efibootmgr = "";
                 }
-                
-                writeLog($LOG_DIR."/efivar", $Efivar);
-            }
-            
-            if($Admin)
-            {
-                if($Sys{"Arch"} eq "x86_64")
-                {
-                    if(check_Cmd("efibootmgr"))
-                    {
-                        listProbe("logs", "efibootmgr");
-                        my $Efibootmgr = runCmd("efibootmgr -v 2>&1");
-                        if($Opt{"Snap"} and $Efibootmgr=~/Permission denied/) {
-                            $Efibootmgr = "";
-                        }
-                        writeLog($LOG_DIR."/efibootmgr", $Efibootmgr);
-                    }
-                }
-            }
-            
-            if(-d "/boot/efi" and not $Opt{"Snap"})
-            {
-                listProbe("logs", "boot_efi");
-                my $BootEfi = runCmd("find /boot/efi 2>/dev/null | sort");
-                writeLog($LOG_DIR."/boot_efi", $BootEfi);
+                writeLog($LOG_DIR."/efibootmgr", $Efibootmgr);
             }
         }
         
-        my $Switch = "/sys/kernel/debug/vgaswitcheroo/switch";
-        if(-e $Switch)
+        if(enabledLog("boot_efi")
+        and -d "/boot/efi" and not $Opt{"Snap"})
         {
-            listProbe("logs", "vgaswitcheroo");
-            my $SInfo = readFile($Switch);
-            writeLog($LOG_DIR."/vgaswitcheroo", $SInfo);
+            listProbe("logs", "boot_efi");
+            my $BootEfi = runCmd("find /boot/efi 2>/dev/null | sort");
+            writeLog($LOG_DIR."/boot_efi", $BootEfi);
         }
-        
+    }
+    
+    my $Switch = "/sys/kernel/debug/vgaswitcheroo/switch";
+    if(enabledLog("vgaswitcheroo")
+    and -e $Switch)
+    {
+        listProbe("logs", "vgaswitcheroo");
+        my $SInfo = readFile($Switch);
+        writeLog($LOG_DIR."/vgaswitcheroo", $SInfo);
+    }
+    
+    if(enabledLog("input_devices"))
+    {
         listProbe("logs", "input_devices");
         my $InputDevices = readFile("/proc/bus/input/devices");
         writeLog($LOG_DIR."/input_devices", $InputDevices);
-        
-        if(not $Opt{"Docker"})
+    }
+    
+    if(not $Opt{"Docker"})
+    {
+        if(enabledLog("systemctl")
+        and checkCmd("systemctl"))
         {
-            if(check_Cmd("systemctl"))
-            {
-                listProbe("logs", "systemctl");
-                my $Sctl = runCmd("systemctl 2>/dev/null");
-                $Sctl=~s/( of user)\s+\Q$SessUser\E/$1 USER/g;
-                $Sctl = decorateSystemd($Sctl);
-                writeLog($LOG_DIR."/systemctl", $Sctl);
-            }
+            listProbe("logs", "systemctl");
+            my $Sctl = runCmd("systemctl 2>/dev/null");
+            $Sctl=~s/( of user)\s+\Q$SessUser\E/$1 USER/g;
+            $Sctl = decorateSystemd($Sctl);
+            writeLog($LOG_DIR."/systemctl", $Sctl);
         }
-        
-        if(check_Cmd("iostat"))
-        {
-            listProbe("logs", "iostat");
-            my $Iostat = runCmd("iostat 2>&1");
-            $Iostat=~s/\(.+\)/(...)/;
-            writeLog($LOG_DIR."/iostat", $Iostat);
-        }
-        
-        if(check_Cmd("acpi"))
-        {
-            listProbe("logs", "acpi");
-            my $Acpi = runCmd("acpi -V 2>/dev/null");
-            writeLog($LOG_DIR."/acpi", $Acpi);
-        }
-        
-        if(defined $KernMod{"fglrx"} and $KernMod{"fglrx"}!=0)
+    }
+    
+    if(enabledLog("iostat")
+    and checkCmd("iostat"))
+    {
+        listProbe("logs", "iostat");
+        my $Iostat = runCmd("iostat 2>&1");
+        $Iostat=~s/\(.+\)/(...)/;
+        writeLog($LOG_DIR."/iostat", $Iostat);
+    }
+    
+    if(enabledLog("acpi")
+    and checkCmd("acpi"))
+    {
+        listProbe("logs", "acpi");
+        my $Acpi = runCmd("acpi -V 2>/dev/null");
+        writeLog($LOG_DIR."/acpi", $Acpi);
+    }
+    
+    if(defined $KernMod{"fglrx"} and $KernMod{"fglrx"}!=0)
+    {
+        if(enabledLog("fglrxinfo")
+        and checkCmd("fglrxinfo"))
         {
             listProbe("logs", "fglrxinfo");
             my $Fglrxinfo = runCmd("fglrxinfo -t 2>&1");
             writeLog($LOG_DIR."/fglrxinfo", $Fglrxinfo);
-            
+        }
+        
+        if(enabledLog("amdconfig")
+        and checkCmd("amdconfig"))
+        {
             listProbe("logs", "amdconfig");
             my $AMDconfig = runCmd("amdconfig --list-adapters 2>&1");
             writeLog($LOG_DIR."/amdconfig", $AMDconfig);
         }
-        elsif(defined $KernMod{"nvidia"} and $KernMod{"nvidia"}!=0)
+    }
+    elsif(defined $KernMod{"nvidia"} and $KernMod{"nvidia"}!=0)
+    {
+        if(enabledLog("nvidia-smi"))
         {
             foreach ("64", "")
             {
@@ -7933,117 +8021,142 @@ sub writeLogs()
                 }
             }
         }
-        
-        if(check_Cmd("vulkaninfo"))
-        {
-            listProbe("logs", "vulkaninfo");
-            my $Vulkaninfo = runCmd("vulkaninfo 2>&1");
-            if($Vulkaninfo!~/Cannot create/i) {
-                writeLog($LOG_DIR."/vulkaninfo", $Vulkaninfo);
-            }
+    }
+    
+    if(enabledLog("vulkaninfo")
+    and checkCmd("vulkaninfo"))
+    {
+        listProbe("logs", "vulkaninfo");
+        my $Vulkaninfo = runCmd("vulkaninfo 2>&1");
+        if($Vulkaninfo!~/Cannot create/i) {
+            writeLog($LOG_DIR."/vulkaninfo", $Vulkaninfo);
         }
-        
-        if(check_Cmd("vdpauinfo"))
-        {
-            listProbe("logs", "vdpauinfo");
-            my $Vdpauinfo = runCmd("vdpauinfo 2>&1");
-            if($Vdpauinfo=~/Failed to open/i) {
-                $Vdpauinfo = undef;
-            }
-            if($Vdpauinfo) {
-                writeLog($LOG_DIR."/vdpauinfo", clearLog_X11($Vdpauinfo));
-            }
+    }
+    
+    if(enabledLog("vdpauinfo")
+    and checkCmd("vdpauinfo"))
+    {
+        listProbe("logs", "vdpauinfo");
+        my $Vdpauinfo = runCmd("vdpauinfo 2>&1");
+        if($Vdpauinfo=~/Failed to open/i) {
+            $Vdpauinfo = undef;
         }
-        
-        if(check_Cmd("vainfo"))
-        {
-            listProbe("logs", "vainfo");
-            my $Vainfo = runCmd("vainfo 2>&1");
-            if($Vainfo=~/failed with error/i) {
-                $Vainfo = undef;
-            }
-            if($Vainfo) {
-                writeLog($LOG_DIR."/vainfo", clearLog_X11($Vainfo));
-            }
+        if($Vdpauinfo) {
+            writeLog($LOG_DIR."/vdpauinfo", clearLog_X11($Vdpauinfo));
         }
-        
+    }
+    
+    if(enabledLog("vainfo")
+    and checkCmd("vainfo"))
+    {
+        listProbe("logs", "vainfo");
+        my $Vainfo = runCmd("vainfo 2>&1");
+        if($Vainfo=~/failed with error/i) {
+            $Vainfo = undef;
+        }
+        if($Vainfo) {
+            writeLog($LOG_DIR."/vainfo", clearLog_X11($Vainfo));
+        }
+    }
+    
+    if(enabledLog("lsblk")
+    and checkCmd("lsblk"))
+    {
         listProbe("logs", "lsblk");
-        my $Lsblk = "";
-        if(check_Cmd("lsblk"))
-        {
-            my $LsblkCmd = "lsblk -al -o NAME,SIZE,TYPE,FSTYPE,UUID,MOUNTPOINT,MODEL,PARTUUID";
-            if($Opt{"Flatpak"}) {
-                $LsblkCmd .= " 2>/dev/null";
-            }
-            else {
-                $LsblkCmd .= " 2>&1";
-            }
+        my $LsblkCmd = "lsblk -al -o NAME,SIZE,TYPE,FSTYPE,UUID,MOUNTPOINT,MODEL,PARTUUID";
+        if($Opt{"Flatpak"}) {
+            $LsblkCmd .= " 2>/dev/null";
+        }
+        else {
+            $LsblkCmd .= " 2>&1";
+        }
+        my $Lsblk = runCmd($LsblkCmd);
+        
+        if($Lsblk=~/unknown column/)
+        { # CentOS 6: no PARTUUID column
+            $LsblkCmd=~s/\,PARTUUID//g;
             $Lsblk = runCmd($LsblkCmd);
-            
-            if($Lsblk=~/unknown column/)
-            { # CentOS 6: no PARTUUID column
-                $LsblkCmd=~s/\,PARTUUID//g;
-                $Lsblk = runCmd($LsblkCmd);
-            }
-            
-            if($Opt{"Snap"} and $Lsblk=~/Permission denied/) {
-                $Lsblk = "";
-            }
-            $Lsblk = hideByRegexp($Lsblk, qr/(.+?)\s+[^\s]+?\s+crypt\s+/);
-            $Lsblk = hidePaths($Lsblk);
         }
+        
+        if($Opt{"Snap"} and $Lsblk=~/Permission denied/) {
+            $Lsblk = "";
+        }
+        $Lsblk = hideByRegexp($Lsblk, qr/(.+?)\s+[^\s]+?\s+crypt\s+/);
+        $Lsblk = hidePaths($Lsblk);
         writeLog($LOG_DIR."/lsblk", $Lsblk);
-        
-        if(not $Opt{"Docker"})
-        {
-            listProbe("logs", "fstab");
-            my $Fstab = readFile("/etc/fstab");
-            $Fstab = hidePaths($Fstab);
-            $Fstab = hideIPs($Fstab);
-            $Fstab = hideUrls($Fstab);
-            $Fstab = hidePass($Fstab);
-            $Fstab=~s/LABEL=[^\s]+/LABEL=XXXX/g;
-            writeLog($LOG_DIR."/fstab", $Fstab);
-        }
-        
+    }
+    
+    if(not $Opt{"Docker"}
+    and enabledLog("fstab"))
+    {
+        listProbe("logs", "fstab");
+        my $Fstab = readFile("/etc/fstab");
+        $Fstab = hidePaths($Fstab);
+        $Fstab = hideIPs($Fstab);
+        $Fstab = hideUrls($Fstab);
+        $Fstab = hidePass($Fstab);
+        $Fstab=~s/LABEL=[^\s]+/LABEL=XXXX/g;
+        writeLog($LOG_DIR."/fstab", $Fstab);
+    }
+    
+    if(enabledLog("scsi"))
+    {
         listProbe("logs", "scsi");
         my $Scsi = readFile("/proc/scsi/scsi");
         if($Scsi)
         { # list all devices in RAID
             writeLog($LOG_DIR."/scsi", $Scsi);
         }
-        
+    }
+    
+    if(enabledLog("ioports"))
+    {
         listProbe("logs", "ioports");
         my $IOports = readFile("/proc/ioports");
         writeLog($LOG_DIR."/ioports", $IOports);
-        
+    }
+    
+    if(enabledLog("interrupts"))
+    {
         listProbe("logs", "interrupts");
         my $Interrupts = readFile("/proc/interrupts");
         writeLog($LOG_DIR."/interrupts", $Interrupts);
-        
+    }
+    
+    my $Aplay = undef;
+    if(enabledLog("aplay")
+    and checkCmd("aplay"))
+    {
         listProbe("logs", "aplay");
-        my $Aplay = "";
-        if(check_Cmd("aplay"))
-        {
-            $Aplay = runCmd("aplay -l 2>&1");
-            if(length($Aplay)<80 and $Aplay=~/no soundcards found|not found/i) {
-                $Aplay = "";
-            }
+        $Aplay = runCmd("aplay -l 2>&1");
+        if(length($Aplay)<80
+        and $Aplay=~/no soundcards found|not found/i) {
+            $Aplay = "";
         }
         writeLog($LOG_DIR."/aplay", $Aplay);
-        
+    }
+    
+    if(enabledLog("arecord")
+    and checkCmd("arecord"))
+    {
         listProbe("logs", "arecord");
-        my $Arecord = "";
-        if(check_Cmd("arecord"))
-        {
-            $Arecord = runCmd("arecord -l 2>&1");
-            if(length($Arecord)<80 and $Arecord=~/no soundcards found|not found/i) {
-                $Arecord = "";
-            }
+        my $Arecord = runCmd("arecord -l 2>&1");
+        if(length($Arecord)<80
+        and $Arecord=~/no soundcards found|not found/i) {
+            $Arecord = "";
         }
         writeLog($LOG_DIR."/arecord", $Arecord);
-        
+    }
+    
+    if(enabledLog("amixer")
+    and checkCmd("amixer"))
+    {
         listProbe("logs", "amixer");
+        
+        if(not defined $Aplay) {
+            $Aplay = runCmd("aplay -l");
+        }
+        
         my %CardNums = ();
         while($Aplay=~/card\s+(\d+)/g) {
             $CardNums{$1} = 1;
@@ -8057,285 +8170,307 @@ sub writeLogs()
             $Amixer .= "\n";
         }
         writeLog($LOG_DIR."/amixer", $Amixer);
-        
+    }
+    
+    if(enabledLog("alsactl")
+    and checkCmd("alsactl"))
+    {
         listProbe("logs", "alsactl");
         system("alsactl store -f $TMP_DIR/alsactl 2>/dev/null");
         if(-f "$TMP_DIR/alsactl") {
             move("$TMP_DIR/alsactl", $LOG_DIR."/alsactl");
         }
-        
-        if(check_Cmd("systemd-analyze"))
-        {
-            listProbe("logs", "systemd-analyze");
-            my $SystemdAnalyze = runCmd("systemd-analyze blame 2>/dev/null");
-            $SystemdAnalyze = decorateSystemd($SystemdAnalyze);
-            writeLog($LOG_DIR."/systemd-analyze", $SystemdAnalyze);
+    }
+    
+    if(enabledLog("systemd-analyze")
+    and checkCmd("systemd-analyze"))
+    {
+        listProbe("logs", "systemd-analyze");
+        my $SystemdAnalyze = runCmd("systemd-analyze blame 2>/dev/null");
+        $SystemdAnalyze = decorateSystemd($SystemdAnalyze);
+        writeLog($LOG_DIR."/systemd-analyze", $SystemdAnalyze);
+    }
+    
+    if(enabledLog("gpu-manager.log")
+    and -f "/var/log/gpu-manager.log")
+    { # Ubuntu
+        listProbe("logs", "gpu-manager.log");
+        if(my $GpuManager = readFile("/var/log/gpu-manager.log")) {
+            writeLog($LOG_DIR."/gpu-manager.log", $GpuManager);
         }
-        
-        if(-f "/var/log/gpu-manager.log")
-        { # Ubuntu
-            listProbe("logs", "gpu-manager.log");
-            if(my $GpuManager = readFile("/var/log/gpu-manager.log")) {
-                writeLog($LOG_DIR."/gpu-manager.log", $GpuManager);
-            }
-        }
-        
-        if(not $Opt{"Docker"})
+    }
+    
+    if(not $Opt{"Docker"}
+    and enabledLog("modprobe.d"))
+    {
+        listProbe("logs", "modprobe.d");
+        my @Modprobe = listDir("/etc/modprobe.d/");
+        my $Mprobe = "";
+        foreach my $Mp (@Modprobe)
         {
-            listProbe("logs", "modprobe.d");
-            my @Modprobe = listDir("/etc/modprobe.d/");
-            my $Mprobe = "";
-            foreach my $Mp (@Modprobe)
-            {
-                if($Mp eq "00_modprobe.conf"
-                or $Mp eq "01_mandriva.conf") {
-                    next;
-                }
-                $Mprobe .= $Mp."\n";
-                foreach (1 .. length($Mp)) {
-                    $Mprobe .= "-";
-                }
-                $Mprobe .= "\n";
-                my $Content = readFile("/etc/modprobe.d/".$Mp);
-
-                $Content=~s{http(s|)://[^ ]+}{}g;
-
-                $Mprobe .= $Content;
-                $Mprobe .= "\n\n";
-            }
-            writeLog($LOG_DIR."/modprobe.d", $Mprobe);
-        }
-        
-        listProbe("logs", "xorg.conf.d");
-        my $XConfig = "";
-        
-        foreach my $XDir ("/etc/X11/xorg.conf.d", "/usr/share/X11/xorg.conf.d")
-        {
-            if(not -d $XDir) {
+            if($Mp eq "00_modprobe.conf"
+            or $Mp eq "01_mandriva.conf") {
                 next;
             }
-            
-            my @XorgConfD = listDir($XDir);
-            foreach my $Xc (@XorgConfD)
-            {
-                if($Xc!~/\.conf\Z/) {
-                    next;
-                }
-                $XConfig .= $Xc."\n";
-                foreach (1 .. length($Xc)) {
-                    $XConfig .= "-";
-                }
-                $XConfig .= "\n";
-                $XConfig .= readFile($XDir."/".$Xc);
-                $XConfig .= "\n\n";
+            $Mprobe .= $Mp."\n";
+            foreach (1 .. length($Mp)) {
+                $Mprobe .= "-";
             }
+            $Mprobe .= "\n";
+            my $Content = readFile("/etc/modprobe.d/".$Mp);
+
+            $Content=~s{http(s|)://[^ ]+}{}g;
+
+            $Mprobe .= $Content;
+            $Mprobe .= "\n\n";
+        }
+        writeLog($LOG_DIR."/modprobe.d", $Mprobe);
+    }
+    
+    listProbe("logs", "xorg.conf.d");
+    my $XConfig = "";
+    
+    foreach my $XDir ("/etc/X11/xorg.conf.d", "/usr/share/X11/xorg.conf.d")
+    {
+        if(not -d $XDir) {
+            next;
         }
         
-        if(not $Opt{"Docker"} or $XConfig) {
-            writeLog($LOG_DIR."/xorg.conf.d", $XConfig);
-        }
-        
-        if($Opt{"Scanners"})
+        my @XorgConfD = listDir($XDir);
+        foreach my $Xc (@XorgConfD)
         {
-            if(check_Cmd("sane-find-scanner"))
-            {
-                listProbe("logs", "sane-find-scanner");
-                my $FindScanner = runCmd("sane-find-scanner -q 2>/dev/null");
-                writeLog($LOG_DIR."/sane-find-scanner", $FindScanner);
+            if($Xc!~/\.conf\Z/) {
+                next;
             }
-            
-            if(check_Cmd("scanimage"))
-            {
-                listProbe("logs", "scanimage");
-                my $Scanimage = runCmd("scanimage -L 2>/dev/null | grep -v v4l");
-                if($Scanimage=~/No scanners were identified/i) {
-                    $Scanimage = "";
-                }
-                writeLog($LOG_DIR."/scanimage", $Scanimage);
+            $XConfig .= $Xc."\n";
+            foreach (1 .. length($Xc)) {
+                $XConfig .= "-";
             }
+            $XConfig .= "\n";
+            $XConfig .= readFile($XDir."/".$Xc);
+            $XConfig .= "\n\n";
+        }
+    }
+    
+    if(not $Opt{"Docker"} or $XConfig) {
+        writeLog($LOG_DIR."/xorg.conf.d", $XConfig);
+    }
+    
+    if($Opt{"Scanners"})
+    {
+        if(enabledLog("sane-find-scanner")
+        and checkCmd("sane-find-scanner"))
+        {
+            listProbe("logs", "sane-find-scanner");
+            my $FindScanner = runCmd("sane-find-scanner -q 2>/dev/null");
+            writeLog($LOG_DIR."/sane-find-scanner", $FindScanner);
+        }
+        
+        if(enabledLog("scanimage")
+        and checkCmd("scanimage"))
+        {
+            listProbe("logs", "scanimage");
+            my $Scanimage = runCmd("scanimage -L 2>/dev/null | grep -v v4l");
+            if($Scanimage=~/No scanners were identified/i) {
+                $Scanimage = "";
+            }
+            writeLog($LOG_DIR."/scanimage", $Scanimage);
         }
     }
     
     # level=maximal
-    if($Opt{"LogLevel"} eq "maximal")
+
+    if(not $Opt{"Docker"})
     {
-        if(not $Opt{"Docker"})
+        if(enabledLog("findmnt")
+        and checkCmd("findmnt"))
         {
             listProbe("logs", "findmnt");
-            my $Findmnt = "";
-            if(check_Cmd("findmnt"))
-            {
-                my $FindmntCmd = "findmnt";
-                if($Opt{"Flatpak"}) {
-                    $FindmntCmd .= " 2>/dev/null";
-                }
-                else {
-                    $FindmntCmd .= " 2>&1";
-                }
-                $Findmnt = runCmd($FindmntCmd);
-                
-                if($Opt{"Snap"} and $Findmnt=~/Permission denied/) {
-                    $Findmnt = "";
-                }
-                
-                $Findmnt=~s/\[[^\s]+\]/[XXXXX]/g;
-                $Findmnt = hidePaths($Findmnt);
-                $Findmnt = hideIPs($Findmnt);
-                $Findmnt = hideUrls($Findmnt);
+            my $FindmntCmd = "findmnt";
+            if($Opt{"Flatpak"}) {
+                $FindmntCmd .= " 2>/dev/null";
+            }
+            else {
+                $FindmntCmd .= " 2>&1";
             }
             
-            if($Findmnt) {
-                writeLog($LOG_DIR."/findmnt", $Findmnt);
+            my $Findmnt = runCmd($FindmntCmd);
+            if($Opt{"Snap"} and $Findmnt=~/Permission denied/) {
+                $Findmnt = "";
             }
-            else
-            {
-                listProbe("logs", "mount");
-                my $Mount = "";
-                if(check_Cmd("mount"))
-                {
-                    $Mount = runCmd("mount -v 2>&1");
-                    
-                    if($Opt{"Snap"} and $Mount=~/Permission denied/) {
-                        $Mount = "";
-                    }
-                    
-                    $Mount = hidePaths($Mount);
-                    $Mount = hideIPs($Mount);
-                    $Mount = hideUrls($Mount);
-                }
-                writeLog($LOG_DIR."/mount", $Mount);
-            }
+            
+            $Findmnt=~s/\[[^\s]+\]/[XXXXX]/g;
+            $Findmnt = hidePaths($Findmnt);
+            $Findmnt = hideIPs($Findmnt);
+            $Findmnt = hideUrls($Findmnt);
+            writeLog($LOG_DIR."/findmnt", $Findmnt);
         }
         
+        if(enabledLog("mount")
+        and checkCmd("mount"))
+        {
+            listProbe("logs", "mount");
+            
+            my $Mount = runCmd("mount -v 2>&1 | column -t");
+            if($Opt{"Snap"} and $Mount=~/Permission denied/) {
+                $Mount = "";
+            }
+            
+            $Mount = hidePaths($Mount);
+            $Mount = hideIPs($Mount);
+            $Mount = hideUrls($Mount);
+            writeLog($LOG_DIR."/mount", $Mount);
+        }
+    }
+    
+    if(enabledLog("firmware")
+    and -d "/lib/firmware")
+    {
         listProbe("logs", "firmware");
         my $Firmware = runCmd("find /lib/firmware -type f | sort");
         $Firmware=~s{/lib/firmware/}{}g;
         writeLog($LOG_DIR."/firmware", $Firmware);
-        
+    }
+    
+    if(enabledLog("top")
+    and checkCmd("top"))
+    {
         listProbe("logs", "top");
         my $TopInfo = runCmd("top -n 1 -b 2>&1");
         if($SessUser) {
             $TopInfo=~s/ \Q$SessUser\E / USER /g;
         }
         writeLog($LOG_DIR."/top", $TopInfo);
+    }
+    
+    if(enabledLog("pstree")
+    and checkCmd("pstree"))
+    {
+        listProbe("logs", "pstree");
+        my $Pstree = runCmd("pstree 2>&1");
+        writeLog($LOG_DIR."/pstree", $Pstree);
+    }
+    
+    if(enabledLog("numactl")
+    and checkCmd("numactl"))
+    {
+        listProbe("logs", "numactl");
+        my $Numactl = runCmd("numactl -H");
         
-        if(check_Cmd("pstree"))
-        {
-            listProbe("logs", "pstree");
-            my $Pstree = runCmd("pstree 2>&1");
-            writeLog($LOG_DIR."/pstree", $Pstree);
+        if($Numactl) {
+            writeLog($LOG_DIR."/numactl", $Numactl);
         }
-        
-        if(check_Cmd("numactl"))
+    }
+    
+    if(enabledLog("slabtop")
+    and checkCmd("slabtop"))
+    {
+        listProbe("logs", "slabtop");
+        my $Slabtop = runCmd("slabtop -o");
+        writeLog($LOG_DIR."/slabtop", $Slabtop);
+    }
+    
+    # scan for available WiFi networks
+    if(enabledLog("iw_scan")
+    and checkCmd("iw"))
+    {
+        listProbe("logs", "iw_scan");
+        my $IwScan = "";
+        if($Admin)
         {
-            listProbe("logs", "numactl");
-            my $Numactl = runCmd("numactl -H");
-            
-            if($Numactl) {
-                writeLog($LOG_DIR."/numactl", $Numactl);
-            }
-        }
-        
-        if(check_Cmd("slabtop"))
-        {
-            listProbe("logs", "slabtop");
-            my $Slabtop = runCmd("slabtop -o");
-            writeLog($LOG_DIR."/slabtop", $Slabtop);
-        }
-        
-        # scan for available WiFi networks
-        if(check_Cmd("iw"))
-        {
-            listProbe("logs", "iw_scan");
-            my $IwScan = "";
-            if($Admin)
+            foreach my $I (sort keys(%WLanInterface))
             {
-                foreach my $I (sort keys(%WLanInterface))
-                {
-                    $IwScan .= $I."\n";
-                    foreach (1 .. length($I)) {
-                        $IwScan .= "-";
-                    }
-                    $IwScan .= "\n";
-                    $IwScan .= runCmd("iw dev $I scan 2>&1");
-                    $IwScan .= "\n";
+                $IwScan .= $I."\n";
+                foreach (1 .. length($I)) {
+                    $IwScan .= "-";
                 }
-            }
-            $IwScan = hideTags($IwScan, "SSID|UUID|Serial Number");
-            $IwScan = hideMACs($IwScan);
-            writeLog($LOG_DIR."/iw_scan", $IwScan);
-        }
-        
-        # scan for available bluetooth connections
-        if(check_Cmd("hcitool"))
-        {
-            listProbe("logs", "hcitool_scan");
-            my $HciScan = runCmd("hcitool scan --class 2>&1");
-            if($HciScan=~/No such device/i) {
-                $HciScan = "";
-            }
-            $HciScan = hideMACs($HciScan);
-            if($HciScan) {
-                writeLog($LOG_DIR."/hcitool_scan", $HciScan);
+                $IwScan .= "\n";
+                $IwScan .= runCmd("iw dev $I scan 2>&1");
+                $IwScan .= "\n";
             }
         }
-        
+        $IwScan = hideTags($IwScan, "SSID|UUID|Serial Number");
+        $IwScan = hideMACs($IwScan);
+        writeLog($LOG_DIR."/iw_scan", $IwScan);
+    }
+    
+    # scan for available bluetooth connections
+    if(enabledLog("hcitool_scan")
+    and checkCmd("hcitool"))
+    {
+        listProbe("logs", "hcitool_scan");
+        my $HciScan = runCmd("hcitool scan --class 2>&1");
+        if($HciScan=~/No such device/i) {
+            $HciScan = "";
+        }
+        $HciScan = hideMACs($HciScan);
+        if($HciScan) {
+            writeLog($LOG_DIR."/hcitool_scan", $HciScan);
+        }
+    }
+    
+    if(enabledLog("route")
+    and checkCmd("route"))
+    {
         listProbe("logs", "route");
         my $Route = runCmd("route 2>&1");
         $Route = hideIPs($Route);
         writeLog($LOG_DIR."/route", $Route);
-        
-        if(check_Cmd("xvinfo"))
+    }
+    
+    if(enabledLog("xvinfo")
+    and checkCmd("xvinfo"))
+    {
+        listProbe("logs", "xvinfo");
+        my $XVInfo = runCmd("xvinfo 2>&1");
+        writeLog($LOG_DIR."/xvinfo", clearLog_X11($XVInfo));
+    }
+    
+    if(enabledLog("lsinitrd")
+    and checkCmd("lsinitrd"))
+    {
+        listProbe("logs", "lsinitrd");
+        my $Lsinitrd = runCmd("lsinitrd 2>&1");
+        $Lsinitrd=~s/.*?(\w+\s+\d+\s+\d\d\d\d\s+)/$1/g;
+        writeLog($LOG_DIR."/lsinitrd", $Lsinitrd);
+    }
+    
+    if(enabledLog("update-alternatives")
+    and checkCmd("update-alternatives"))
+    {
+        listProbe("logs", "update-alternatives");
+        my $Alternatives = runCmd("update-alternatives --list 2>/dev/null");
+        writeLog($LOG_DIR."/update-alternatives", $Alternatives);
+    }
+    
+    if($Opt{"Printers"})
+    {
+        if($Admin)
         {
-            listProbe("logs", "xvinfo");
-            my $XVInfo = runCmd("xvinfo 2>&1");
-            writeLog($LOG_DIR."/xvinfo", clearLog_X11($XVInfo));
-        }
-        
-        if(check_Cmd("lsinitrd"))
-        {
-            listProbe("logs", "lsinitrd");
-            my $Lsinitrd = runCmd("lsinitrd 2>&1");
-            $Lsinitrd=~s/.*?(\w+\s+\d+\s+\d\d\d\d\s+)/$1/g;
-            writeLog($LOG_DIR."/lsinitrd", $Lsinitrd);
-        }
-        
-        if(check_Cmd("update-alternatives"))
-        {
-            listProbe("logs", "update-alternatives");
-            my $Alternatives = runCmd("update-alternatives --list 2>/dev/null");
-            writeLog($LOG_DIR."/update-alternatives", $Alternatives);
-        }
-        
-        if($Opt{"Printers"})
-        {
-            if($Admin)
+            my $ELog = "/var/log/cups/error_log";
+            if(enabledLog("cups_error_log") and -e $ELog)
             {
-                my $ELog = "/var/log/cups/error_log";
-                if(-e $ELog)
-                {
-                    listProbe("logs", "cups_error_log");
-                    my $CupsError = readFile($ELog);
-                    writeLog($LOG_DIR."/cups_error_log", $CupsError);
-                }
-                
-                my $ALog = "/var/log/cups/access_log";
-                if(-e $ALog)
-                {
-                    listProbe("logs", "cups_access_log");
-                    my $CupsAccess = readFile($ALog);
-                    writeLog($LOG_DIR."/cups_access_log", $CupsAccess);
-                }
+                listProbe("logs", "cups_error_log");
+                my $CupsError = readFile($ELog);
+                writeLog($LOG_DIR."/cups_error_log", $CupsError);
+            }
+            
+            my $ALog = "/var/log/cups/access_log";
+            if(enabledLog("cups_access_log") and -e $ALog)
+            {
+                listProbe("logs", "cups_access_log");
+                my $CupsAccess = readFile($ALog);
+                writeLog($LOG_DIR."/cups_access_log", $CupsAccess);
             }
         }
-        
-        # Disabled as it can hang your system
-        # my $SuperIO = "";
-        # if($Admin) {
-        #     $SuperIO = runCmd("superiotool -d 2>/dev/null");
-        # }
-        # writeLog($LOG_DIR."/superiotool", $SuperIO);
     }
+        
+    # Disabled as it can hang the system
+    # my $SuperIO = "";
+    # if($Admin) {
+    #     $SuperIO = runCmd("superiotool -d 2>/dev/null");
+    # }
+    # writeLog($LOG_DIR."/superiotool", $SuperIO);
     
     if($Opt{"DumpACPI"})
     {
@@ -8348,7 +8483,7 @@ sub writeLogs()
         
         if($Admin)
         {
-            if(check_Cmd("acpidump")) {
+            if(checkCmd("acpidump")) {
                 $AcpiDump = runCmd("acpidump 2>/dev/null");
             }
         }
@@ -8368,7 +8503,7 @@ sub writeLogs()
     print "Ok\n";
 }
 
-sub check_Cmd(@)
+sub checkCmd(@)
 {
     my $Cmd = shift(@_);
     my $Verify = undef;
@@ -8397,10 +8532,10 @@ sub check_Cmd(@)
     return;
 }
 
-sub find_Cmd($)
+sub findCmd($)
 {
     my $Cmd = $_[0];
-    if(my $Path = check_Cmd($Cmd, 1)) {
+    if(my $Path = checkCmd($Cmd, 1)) {
         return $Path;
     }
     return $Cmd;
@@ -8411,8 +8546,8 @@ sub decodeACPI($$)
     my ($Dump, $Output) = @_;
     $Dump = abs_path($Dump);
     
-    if(not check_Cmd("acpixtract")
-    or not check_Cmd("iasl")) {
+    if(not checkCmd("acpixtract")
+    or not checkCmd("iasl")) {
         return 0;
     }
     
@@ -8800,7 +8935,7 @@ sub checkGraphics()
     {
         if(defined $WorkMod{"nvidia"})
         { # check NVidia Optimus with proprietary driver
-            if(check_Cmd("optirun"))
+            if(checkCmd("optirun"))
             {
                 listProbe("tests", "glxgears (Nvidia)");
                 $Out_D = runCmd("optirun $Glxgears");
@@ -8908,14 +9043,14 @@ sub setCardStatus($$)
 
 sub checkHW()
 { # TODO: test operability, set status to "works", "malfunc" or "failed"
-    if($Opt{"CheckGraphics"} and check_Cmd("glxgears"))
+    if($Opt{"CheckGraphics"} and checkCmd("glxgears"))
     {
         if(defined $ENV{"WAYLAND_DISPLAY"} or $ENV{"XDG_SESSION_TYPE"} eq "wayland" or defined $ENV{"DISPLAY"}) {
             checkGraphics();
         }
     }
     
-    if($Opt{"CheckMemory"} and check_Cmd("memtester"))
+    if($Opt{"CheckMemory"} and checkCmd("memtester"))
     {
         print "Check memory ... ";
         my $Memtester = runCmd("memtester 8 1");
@@ -8925,7 +9060,7 @@ sub checkHW()
         print "Ok\n";
     }
     
-    if($Opt{"CheckHdd"} and check_Cmd("hdparm"))
+    if($Opt{"CheckHdd"} and checkCmd("hdparm"))
     {
         print "Check HDDs ... ";
         my $HDD_Read = "";
@@ -8953,7 +9088,7 @@ sub checkHW()
         print "Ok\n";
     }
     
-    if($Opt{"CheckCpu"} and check_Cmd("dd") and check_Cmd("md5sum"))
+    if($Opt{"CheckCpu"} and checkCmd("dd") and checkCmd("md5sum"))
     {
         if(my @CPUs = grep { /\Acpu:/ } keys(%HW))
         {
@@ -8978,6 +9113,129 @@ sub listProbe($$)
     if($Opt{"ListProbes"}) {
         print $_[0]."/".$_[1]."\n";
     }
+}
+
+my %EnabledLog = (
+    "minimal" => [
+        "arcconf",
+        "cpuinfo",
+        "df",
+        "dmesg.1",
+        "grub",
+        "lspnp",
+        "mcelog",
+        "megacli",
+        "megactl",
+        "meminfo",
+        "xorg.log.1"
+    ],
+    "default" => [
+        "acpi",
+        "amdconfig",
+        "amixer",
+        "apk",
+        "aplay",
+        "arecord",
+        "boot.log",
+        "boot_efi",
+        "cpuid",
+        "cpupower",
+        "dkms_status",
+        "dpkg",
+        "efibootmgr",
+        "efivar",
+        "fdisk",
+        "fglrxinfo",
+        "fstab",
+        "gpu-manager.log",
+        "grub.cfg",
+        "hp-probe",
+        "i2cdetect",
+        "input_devices",
+        "interrupts",
+        "inxi",
+        "ioports",
+        "iostat",
+        "iw_list",
+        "iwconfig",
+        "lsblk",
+        "modinfo",
+        "modprobe.d",
+        "nm-tool",
+        "nmcli",
+        "nvidia-smi",
+        "pkglist",
+        "rfkill",
+        "rpms",
+        "sane-find-scanner",
+        "scanimage",
+        "scsi",
+        "systemctl",
+        "systemd-analyze",
+        "uptime",
+        "vainfo",
+        "vdpauinfo",
+        "vgaswitcheroo",
+        "vulkaninfo",
+        "xdpyinfo",
+        "xinput"
+    ],
+    "maximal" => [
+        "alsactl",
+        "avahi",
+        "cups_access_log",
+        "cups_error_log",
+        "findmnt",
+        "firmware",
+        "hcitool_scan",
+        "iw_scan",
+        "lsinitrd",
+        "mount",
+        "numactl",
+        "pstree",
+        "route",
+        "slabtop",
+        "top",
+        "udev-db",
+        "update-alternatives",
+        "xvinfo"
+    ]
+);
+
+foreach my $LL ("minimal", "default")
+{
+    foreach my $L (@{$EnabledLog{$LL}}) {
+        push(@{$EnabledLog{"maximal"}}, $L);
+    }
+}
+
+foreach my $L (@{$EnabledLog{"minimal"}}) {
+    push(@{$EnabledLog{"default"}}, $L);
+}
+
+sub enabledLog($)
+{
+    my $Name = $_[0];
+    
+    if(defined $Opt{"Disable"})
+    {
+        if(grep { $_ eq $Name } split(/,/, $Opt{"Disable"})) {
+            return 0;
+        }
+    }
+    
+    if(defined $Opt{"Enable"})
+    {
+        if(grep { $_ eq $Name } split(/,/, $Opt{"Enable"})) {
+            return 1;
+        }
+    }
+    
+    if(grep { $_ eq $Name } @{$EnabledLog{$Opt{"LogLevel"}}}) {
+        return 1;
+    }
+    
+    return 0;
 }
 
 sub getMaxLogSize($)
@@ -9264,7 +9522,7 @@ sub downloadFileContent($)
 {
     my $Url = $_[0];
     $Url=~s/&amp;/&/g;
-    if(check_Cmd("curl"))
+    if(checkCmd("curl"))
     {
         my $Cmd = getCurlCmd($Url);
         return `$Cmd`;
@@ -9279,7 +9537,7 @@ sub downloadFile($$)
 {
     my ($Url, $Output) = @_;
     $Url=~s/&amp;/&/g;
-    if(check_Cmd("curl"))
+    if(checkCmd("curl"))
     {
         my $Cmd = getCurlCmd($Url)." --output \"$Output\"";
         return `$Cmd`;
@@ -9521,7 +9779,7 @@ sub setPublic(@)
         $R = shift(@_);
     }
     
-    if(not check_Cmd("chmod")) {
+    if(not checkCmd("chmod")) {
         return;
     }
     
@@ -9773,6 +10031,14 @@ sub scenario()
         $Opt{"DumpACPI"} = 1;
     }
     
+    if($Opt{"Maximal"}) {
+        $Opt{"LogLevel"} = "maximal";
+    }
+    
+    if($Opt{"Minimal"}) {
+        $Opt{"LogLevel"} = "minimal";
+    }
+    
     if($Opt{"LogLevel"})
     {
         if($Opt{"LogLevel"}=~/\A(min|mini|minimum)\Z/i) {
@@ -9793,6 +10059,24 @@ sub scenario()
     }
     else {
         $Opt{"LogLevel"} = "default";
+    }
+    
+    foreach my $LogStatus ("Enable", "Disable")
+    {
+        if(not defined $Opt{$LogStatus}) {
+            next;
+        }
+        
+        foreach my $L (split(/,/, $Opt{$LogStatus}))
+        {
+            if(not grep { $_ eq $L } @{$EnabledLog{"minimal"}}
+            and not grep { $_ eq $L } @{$EnabledLog{"default"}}
+            and not grep { $_ eq $L } @{$EnabledLog{"maximal"}})
+            {
+                printMsg("ERROR", "logging of \'$L\' cannot be enabled or disabled");
+                exitStatus(1);
+            }
+        }
     }
     
     if($Opt{"HWInfoPath"})
@@ -10070,7 +10354,7 @@ sub scenario()
     
     if($Opt{"Upload"})
     {
-        if(not check_Cmd("curl"))
+        if(not checkCmd("curl"))
         {
             if(not $Opt{"Snap"} and not $Opt{"Flatpak"}) {
                 printMsg("WARNING", "'curl' package is not installed");
