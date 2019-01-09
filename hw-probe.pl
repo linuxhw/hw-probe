@@ -2764,6 +2764,9 @@ sub probeHW()
                 $Device{"Type"} = "cdrom";
             }
         }
+        elsif($Device{"Type"} eq "cpu") {
+            fixTypeByCPU($Device{"Device"});
+        }
         
         # fix vendor
         if($V eq "1d6b") {
@@ -3020,12 +3023,11 @@ sub probeHW()
             }
         }
         
-        if($Device{"Type"}=~/touchpad/
-        and $Bus eq "ps/2")
+        if($Bus eq "ps/2"
+        and $Device{"Type"}=~/touchpad/)
         {
             if(not $Sys{"Type"}
-            or $Sys{"Type"} eq "desktop"
-            or $Sys{"Type"} eq "other") {
+            or $Sys{"Type"}=~/desktop|server|other/) {
                 $Sys{"Type"} = "notebook";
             }
         }
@@ -4110,6 +4112,8 @@ sub probeHW()
                     }
                 }
             }
+            
+            fixTypeByCPU($Device{"Device"});
         }
     }
     
@@ -4507,7 +4511,7 @@ sub probeHW()
     
     my @Mons = ();
     if(index($Edid, "edid-decode")!=-1) {
-        @Mons = split(/edid\-decode /, $Edid);
+        @Mons = grep { /\S/ } split(/edid\-decode /, $Edid);
     }
     else {
         @Mons = ($Edid);
@@ -4658,23 +4662,6 @@ sub probeHW()
                 }
                 
                 registerBattery(\%Device);
-            }
-        }
-    }
-    
-    # Fix incorrect machine type
-    if(not $Sys{"Type"} or $Sys{"Type"} eq "desktop")
-    {
-        if($Upower)
-        {
-            if($Upower=~/devices\/battery_/)  {
-                $Sys{"Type"} = "notebook";
-            }
-        }
-        elsif($PowerSupply)
-        {
-            if($PowerSupply=~/\/BAT/i)  {
-                $Sys{"Type"} = "notebook";
             }
         }
     }
@@ -5828,14 +5815,21 @@ sub detectMonitor($)
     
     if(my $OldID = $MON{uc($V.$D)})
     {
+        my $OldID_F = "eisa:".$OldID;
         my $Name = $Device{"Device"};
+        
         if($Name ne "LCD Monitor")
         {
-            if($HW{"eisa:".$OldID}{"Vendor"}!~/\Q$Name\E/i) {
-                $HW{"eisa:".$OldID}{"Device"}=~s/LCD Monitor/$Name/;
+            if($HW{$OldID_F}{"Vendor"}!~/\Q$Name\E/i) {
+                $HW{$OldID_F}{"Device"}=~s/LCD Monitor/$Name/;
             }
         }
-        $HW{"eisa:".$OldID}{"Status"} = "works"; # got EDID
+        $HW{$OldID_F}{"Status"} = "works"; # got EDID
+        
+        if(my $Res = $Device{"Resolution"}) {
+            $HW{$OldID_F}{"Device"}=~s/ \d+x\d+ / $Res /;
+        }
+        
         return;
     }
     
@@ -6749,6 +6743,17 @@ sub fixProduct()
     {
         if(emptyProduct($Sys{$Attr})) {
             $Sys{$Attr} = "";
+        }
+    }
+}
+
+sub fixTypeByCPU($)
+{
+    my $CPU = $_[0];
+    if(not $Sys{"Type"})
+    {
+        if($CPU=~/Pentium (CPU G\d+|D CPU) |Core 2 CPU \d+ /) {
+            $Sys{"Type"} = "desktop";
         }
     }
 }
