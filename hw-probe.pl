@@ -88,7 +88,6 @@ my $GITHUB = "https://github.com/linuxhw/hw-probe";
 my $LOCALE = "C";
 my $ORIG_DIR = cwd();
 
-my $HWLogs = 0;
 my $TMP_DIR = tempdir(CLEANUP=>1);
 
 my $ShortUsage = "Hardware Probe Tool $TOOL_VERSION
@@ -147,6 +146,7 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "src|source=s" => \$Opt{"Source"},
   "save=s" => \$Opt{"Save"},
   "fix=s" => \$Opt{"FixProbe"},
+  "show-devices!" => \$Opt{"ShowDevices"},
   "show!" => \$Opt{"Show"},
   "compact!" => \$Opt{"Compact"},
   "verbose!" => \$Opt{"Verbose"},
@@ -176,7 +176,6 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "fix-edid!" => \$Opt{"FixEdid"},
   "rm-log=s" => \$Opt{"RmLog"},
   "truncate-log=s" => \$Opt{"TruncateLog"},
-# Security
   "key=s" => \$Opt{"Key"}
 ) or die "\n".$ShortUsage;
 
@@ -313,11 +312,11 @@ OTHER OPTIONS:
       Update list of devices and host info
       in the probe using probe data.
   
-  -show
-      Show devices info.
+  -show-devices
+      Show devices list.
   
-  -compact
-      Use with -show option for compact view.
+  -show
+      Show host info and devices list.
   
   -verbose
       Use with -show option to show type and status of the device.
@@ -2041,7 +2040,7 @@ sub probeHW()
             exitStatus(1);
         }
         
-        if($HWLogs)
+        if($Opt{"HWLogs"})
         {
             foreach my $Prog ("dmidecode", "edid-decode")
             {
@@ -2178,7 +2177,7 @@ sub probeHW()
             $Lsmod = $FL."\n".join("\n", sort split(/\n/, $Lsmod));
         }
         
-        if($HWLogs) {
+        if($Opt{"HWLogs"}) {
             writeLog($LOG_DIR."/lsmod", $Lsmod);
         }
     }
@@ -2344,7 +2343,7 @@ sub probeHW()
         }
         $HWInfo = encryptWWNs($HWInfo);
         
-        if($HWLogs) {
+        if($Opt{"HWLogs"}) {
             writeLog($LOG_DIR."/hwinfo", $HWInfo);
         }
     }
@@ -3068,7 +3067,7 @@ sub probeHW()
             $Udevadm = readFile($FixProbe_Logs."/sdio");
         }
     }
-    elsif(checkCmd("udevadm") and $Opt{"Logs"})
+    elsif(checkCmd("udevadm") and $Opt{"HWLogs"})
     {
         listProbe("logs", "udev-db");
         $Udevadm = runCmd("udevadm info --export-db 2>/dev/null");
@@ -3194,7 +3193,7 @@ sub probeHW()
         $Lspci_A = runCmd("lspci -vvnn");
         $Lspci_A=~s/(Serial Number:?\s+|Manufacture ID:\s+).+/$1.../gi;
         
-        if($HWLogs) {
+        if($Opt{"HWLogs"}) {
             writeLog($LOG_DIR."/lspci_all", $Lspci_A);
         }
     }
@@ -3233,7 +3232,7 @@ sub probeHW()
             $Lspci = runCmd("lspci -vmnnk");
         }
         
-        if($HWLogs) {
+        if($Opt{"HWLogs"}) {
             writeLog($LOG_DIR."/lspci", $Lspci);
         }
     }
@@ -3381,7 +3380,7 @@ sub probeHW()
             }
         }
         
-        if($HWLogs) {
+        if($Opt{"HWLogs"}) {
             writeLog($LOG_DIR."/lsusb", $Lsusb);
         }
     }
@@ -3592,7 +3591,7 @@ sub probeHW()
             $Usb_devices = encryptSerials($Usb_devices, "SerialNumber");
         }
         
-        if($HWLogs) {
+        if($Opt{"HWLogs"}) {
             writeLog($LOG_DIR."/usb-devices", $Usb_devices);
         }
     }
@@ -3806,7 +3805,7 @@ sub probeHW()
             $Dmidecode = encryptSerials($Dmidecode, "Serial Number");
         }
         
-        if($HWLogs) {
+        if($Opt{"HWLogs"}) {
             writeLog($LOG_DIR."/dmidecode", $Dmidecode);
         }
     }
@@ -4174,7 +4173,7 @@ sub probeHW()
         
         $HP_probe = clearLog($HP_probe);
         
-        if($HWLogs) {
+        if($Opt{"HWLogs"}) {
             writeLog($LOG_DIR."/hp-probe", $HP_probe);
         }
     }
@@ -4252,7 +4251,7 @@ sub probeHW()
         listProbe("logs", "avahi-browse");
         $Avahi = runCmd("avahi-browse -a -t 2>&1 | grep 'PDL Printer'");
         
-        if($HWLogs and $Avahi) {
+        if($Opt{"HWLogs"} and $Avahi) {
             writeLog($LOG_DIR."/avahi", $Avahi);
         }
     }
@@ -4501,7 +4500,7 @@ sub probeHW()
             }
         }
         
-        if($HWLogs and $Edid) {
+        if($Opt{"HWLogs"} and $Edid) {
             writeLog($LOG_DIR."/edid", $Edid);
         }
     }
@@ -4529,7 +4528,7 @@ sub probeHW()
         listProbe("logs", "upower");
         $Upower = runCmd("upower -d 2>/dev/null");
         $Upower = encryptSerials($Upower, "serial");
-        if($HWLogs and $Upower) {
+        if($Opt{"HWLogs"} and $Upower) {
             writeLog($LOG_DIR."/upower", $Upower);
         }
     }
@@ -4597,7 +4596,7 @@ sub probeHW()
         
         $PowerSupply = encryptSerials($PowerSupply, "SERIAL_NUMBER");
         
-        if($HWLogs and $PowerSupply) {
+        if($Opt{"HWLogs"} and $PowerSupply) {
             writeLog($LOG_DIR."/power_supply", $PowerSupply);
         }
     }
@@ -4690,7 +4689,7 @@ sub probeHW()
     {
         listProbe("logs", "lspnp");
         $Lspnp = runCmd("lspnp -vv 2>&1");
-        if($HWLogs) {
+        if($Opt{"HWLogs"}) {
             writeLog($LOG_DIR."/lspnp", $Lspnp);
         }
     }
@@ -4700,7 +4699,7 @@ sub probeHW()
     if($Opt{"FixProbe"}) {
         $Hdparm = readFile($FixProbe_Logs."/hdparm");
     }
-    elsif($HWLogs)
+    elsif($Opt{"HWLogs"})
     {
         if($Admin and checkCmd("hdparm"))
         {
@@ -4734,7 +4733,7 @@ sub probeHW()
     
     if($Opt{"Snap"} or $Opt{"AppImage"} or $Opt{"Flatpak"})
     {
-        if(not $Opt{"FixProbe"} and $HWLogs) {
+        if(not $Opt{"FixProbe"} and $Opt{"HWLogs"}) {
             $SmartctlCmd = findCmd("smartctl");
         }
     }
@@ -4778,7 +4777,7 @@ sub probeHW()
             }
         }
     }
-    elsif($HWLogs)
+    elsif($Opt{"HWLogs"})
     {
         if($Admin and checkCmd("smartctl"))
         {
@@ -5166,7 +5165,7 @@ sub probeHW()
         $Dmesg = hideMACs($Dmesg);
         $Dmesg = hidePaths($Dmesg);
         
-        if($HWLogs) {
+        if($Opt{"HWLogs"}) {
             writeLog($LOG_DIR."/dmesg", $Dmesg);
         }
     }
@@ -6708,7 +6707,7 @@ sub probeSys()
         }
     }
     
-    if($Opt{"Logs"}) {
+    if($Opt{"HWLogs"}) {
         writeLog($LOG_DIR."/dmi_id", $Dmi);
     }
     
@@ -6862,7 +6861,7 @@ sub probeHWaddr()
             $IFConfig = hideIPs($IFConfig);
             $IFConfig = encryptMACs($IFConfig);
             
-            if($HWLogs) {
+            if($Opt{"HWLogs"}) {
                 writeLog($LOG_DIR."/ifconfig", $IFConfig);
             }
         }
@@ -6875,7 +6874,7 @@ sub probeHWaddr()
                 $IPaddr = encryptMACs($IPaddr);
                 $IFConfig = ipAddr2ifConfig($IPaddr);
                 
-                if($HWLogs) {
+                if($Opt{"HWLogs"}) {
                     writeLog($LOG_DIR."/ip_addr", $IPaddr);
                 }
             }
@@ -6914,7 +6913,7 @@ sub probeHWaddr()
         {
             $Sys{"HWaddr"} = detectHWaddr($IFConfig);
             
-            if($HWLogs)
+            if($Opt{"HWLogs"})
             {
                 my $EthtoolP = "";
                 foreach my $E (sort keys(%PermanentAddr)) {
@@ -7169,7 +7168,7 @@ sub probeDistr()
                 listProbe("logs", "lsb_release");
                 $LSB_Rel = runCmd("lsb_release -i -d -r -c 2>/dev/null");
                 
-                if($HWLogs) {
+                if($Opt{"HWLogs"}) {
                     writeLog($LOG_DIR."/lsb_release", $LSB_Rel);
                 }
             }
@@ -7204,7 +7203,7 @@ sub probeDistr()
                 }
             }
         }
-        if($HWLogs) {
+        if($Opt{"HWLogs"}) {
             writeLog($LOG_DIR."/os-release", $OS_Rel);
         }
     }
@@ -7218,7 +7217,7 @@ sub probeDistr()
     {
         listProbe("logs", "system-release");
         $Sys_Rel = readFile("/etc/system-release");
-        if($HWLogs and $Sys_Rel) {
+        if($Opt{"HWLogs"} and $Sys_Rel) {
             writeLog($LOG_DIR."/system-release", $Sys_Rel);
         }
     }
@@ -8704,6 +8703,15 @@ sub showInfo()
             "SDevice" => $Info[8]
         );
         
+        if($Dev{"ID"}=~s/\A([^:]+)\://)
+        {
+            $Dev{"Bus"} = uc($1);
+            
+            if($Dev{"Bus"}=~/BAT|BIOS|BOARD|CPU|MEM/) {
+                $Dev{"Bus"} = "SYS";
+            }
+        }
+        
         foreach my $Attr (keys(%Dev))
         {
             if(not defined $Tbl{$Attr}) {
@@ -8714,42 +8722,24 @@ sub showInfo()
             
             if($Attr eq "ID")
             {
-                if(index($Val, "-serial-")!=-1)
-                {
-                    # $Val=~s/\-serial\-(.+?)\Z/ [$1]/;
+                if(index($Val, "-serial-")!=-1) {
                     $Val=~s/\-serial\-(.+?)\Z//;
                 }
             }
             
             if($Opt{"Compact"})
             {
-                if($Attr eq "ID")
-                {
-                    if(length($Val)>23)
-                    {
-                        $Val = substr($Val, 0, 23);
-                    }
+                if($Attr eq "ID") {
+                    $Val = shortStr($Val, 19);
                 }
-                elsif($Attr eq "Vendor")
-                {
-                    if(length($Val)>22)
-                    {
-                        $Val = substr($Val, 0, 22);
-                    }
+                elsif($Attr eq "Vendor") {
+                    $Val = shortStr($Val, 22);
                 }
-                elsif($Attr eq "Device")
-                {
-                    if(length($Val)>40)
-                    {
-                        $Val = substr($Val, 0, 40);
-                    }
+                elsif($Attr eq "Device") {
+                    $Val = shortStr($Val, 40);
                 }
-                elsif($Attr eq "Type")
-                {
-                    if(length($Val)>14)
-                    {
-                        $Val = substr($Val, 0, 14);
-                    }
+                elsif($Attr eq "Type") {
+                    $Val = shortStr($Val, 14);
                 }
             }
             
@@ -8765,11 +8755,8 @@ sub showInfo()
             
             if($Opt{"Compact"})
             {
-                if($Attr eq "id")
-                {
-                    if(length($Val)>25) {
-                        $Val = substr($Val, 0, 25);
-                    }
+                if($Attr eq "id") {
+                    $Val = shortStr($Val, 25);
                 }
             }
             
@@ -8777,21 +8764,54 @@ sub showInfo()
         }
     }
     
-    my $Rows = $#{$Tbl{"ID"}};
-    
     print "\n";
-    print "Total devices: ".($Rows + 1)."\n";
     
-    if(defined $Opt{"Verbose"}) {
-        showTable(\%Tbl, $Rows, "ID", "Class", "Status", "Type", "Vendor", "Device");
-    }
-    else {
-        showTable(\%Tbl, $Rows, "ID", "Class", "Vendor", "Device");
+    if($Opt{"Show"})
+    {
+        print "Host Info\n";
+        print "=========\n\n";
+        foreach my $Attr ("system", "arch", "kernel", "vendor", "model", "year", "type", "id")
+        {
+            if($STbl{$Attr})
+            {
+                print ucfirst($Attr).": ";
+                print " " x (length("kernel")-length($Attr));
+                print $STbl{$Attr}."\n";
+            }
+        }
+        print "\n\n";
     }
     
-    print "\n";
-    print "Host Info\n";
-    showHash(\%STbl, "system", "arch", "kernel", "vendor", "model", "year", "type", "id");
+    if($Opt{"ShowDevices"})
+    {
+        my $Rows = $#{$Tbl{"ID"}};
+        my $DevsTitle = "Devices (".($Rows + 1).")";
+        
+        print $DevsTitle."\n";
+        print "=" x (length($DevsTitle));
+        print "\n\n";
+        
+        if(defined $Opt{"Verbose"}) {
+            showTable(\%Tbl, $Rows, "Bus", "ID", "Class", "Vendor", "Device", "Type", "Status");
+        }
+        else {
+            showTable(\%Tbl, $Rows, "Bus", "ID", "Vendor", "Device", "Type");
+        }
+        print "\n";
+    }
+    
+    
+}
+
+sub shortStr($$)
+{
+    my ($Str, $Len) = @_;
+    
+    if(length($Str)>$Len) {
+        return substr($Str, 0, $Len-3)."...";
+    }
+    
+    return $Str;
 }
 
 sub showTable(@)
@@ -8849,53 +8869,6 @@ sub showTable(@)
     }
     
     print $Br."\n";
-}
-
-sub showHash(@)
-{
-    my ($Hash, @Keys) = @_;
-    
-    my $KMax = 0;
-    my $VMax = 0;
-    
-    foreach my $Key (sort keys(%{$Hash}))
-    {
-        if(not grep {$Key eq $_} @Keys) {
-            next;
-        }
-        
-        my $Val = $Hash->{$Key};
-        if(length($Val) > $VMax) {
-            $VMax = length($Val);
-        }
-        if(length($Key) > $KMax) {
-            $KMax = length($Key);
-        }
-    }
-    
-    my $Br = "+";
-    $Br .= mulCh("-", $KMax + 2);
-    $Br .= "+";
-    $Br .= mulCh("-", $VMax + 2);
-    $Br .= "+";
-    
-    foreach my $Key (@Keys)
-    {
-        my $Val = $Hash->{$Key};
-        
-        print $Br."\n";
-        
-        print "| ";
-        print ucfirst($Key);
-        print alignStr($Key, $KMax + 1);
-        print "| ";
-        print $Val;
-        print alignStr($Val, $VMax + 1);
-        print "|\n";
-    }
-    
-    print $Br."\n";
-    print "\n";
 }
 
 sub mulCh($$)
@@ -10031,6 +10004,14 @@ sub scenario()
         $Opt{"DumpACPI"} = 1;
     }
     
+    if(not $Opt{"Compact"}) {
+        $Opt{"Compact"} = 1;
+    }
+    
+    if($Opt{"Show"}) {
+        $Opt{"ShowDevices"} = 1;
+    }
+    
     if($Opt{"Maximal"}) {
         $Opt{"LogLevel"} = "maximal";
     }
@@ -10141,6 +10122,10 @@ sub scenario()
         exitStatus(0);
     }
     
+    if($Opt{"Logs"}) {
+        $Opt{"Probe"} = 1;
+    }
+    
     if($Opt{"All"})
     {
         $Opt{"Probe"} = 1;
@@ -10154,7 +10139,7 @@ sub scenario()
     }
     
     if($Opt{"Probe"}) {
-        $HWLogs = 1;
+        $Opt{"HWLogs"} = 1;
     }
     
     if($Opt{"Probe"} and not $Opt{"FixProbe"})
@@ -10182,8 +10167,8 @@ sub scenario()
     
     if($Opt{"FixProbe"})
     {
-        $HWLogs = 0;
         $Opt{"Probe"} = 0;
+        $Opt{"HWLogs"} = 0;
         $Opt{"Logs"} = 0;
     }
     
@@ -10410,7 +10395,7 @@ sub scenario()
             writeFile($DATA_DIR."/key", $Opt{"Key"});
         }
         
-        if(not $Opt{"Upload"} and not $Opt{"Show"}) {
+        if(not $Opt{"Upload"} and not $Opt{"Show"} and not $Opt{"ShowDevices"}) {
             print "Local probe path: $DATA_DIR\n";
         }
     }
@@ -10557,7 +10542,7 @@ sub scenario()
         setPublic($PROBE_DIR, "-R");
     }
     
-    if($Opt{"Show"}) {
+    if($Opt{"Show"} or $Opt{"ShowDevices"}) {
         showInfo();
     }
     
