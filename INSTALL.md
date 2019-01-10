@@ -19,6 +19,8 @@ Contents
 * [ Install on Fedora      ](#install-on-fedora)
 * [ Install on CentOS 7    ](#install-on-centos-7)
 * [ Install on CentOS 6    ](#install-on-centos-6)
+* [ Install on RHEL 7      ](#install-on-rhel-7)
+* [ Install on RHEL 6      ](#install-on-rhel-6)
 * [ Build Debian package   ](#build-debian-package)
 
 
@@ -53,6 +55,7 @@ To uninstall:
 
 ###### Recommends
 
+* libwww-perl (to use instead of curl)
 * mcelog
 * hdparm
 * systemd-tools (systemd-analyze)
@@ -72,7 +75,6 @@ To uninstall:
 
 ###### Suggests
 
-* libwww-perl (to use instead of curl)
 * hplip (hp-probe)
 * sane-backends (sane-find-scanner)
 * pnputils (lspnp)
@@ -133,50 +135,37 @@ Download package [hw-probe-1.4-1.ArchLinux-any.pkg.tar.xz](https://github.com/li
 Install on Fedora
 -----------------
 
-Download package [hw-probe-1.4-101.1.Fedora.noarch.rpm](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe-1.4-101.1.Fedora.noarch.rpm) and install:
+For Fedora 28 and later:
 
-    sudo yum install ./hw-probe-1.4-101.1.Fedora.noarch.rpm
+    sudo yum install hw-probe
 
-###### Fedora repository
-
-    sudo dnf config-manager --add-repo https://download.opensuse.org/repositories/home:/linuxbuild/Fedora_Rawhide/home:linuxbuild.repo
-    sudo dnf config-manager --set-enabled home_linuxbuild
-    sudo dnf install hw-probe
 
 Install on CentOS 7
 -------------------
 
-Install dependencies:
-
-    sudo yum install perl-Digest-SHA curl dmidecode pciutils usbutils smartmontools \
-    lm_sensors mcelog xorg-x11-utils xorg-x11-server-utils
-
-Install `hwinfo` and `libx86emu`:
-
-    sudo yum install http://li.nux.ro/download/nux/dextop/el7/x86_64/hwinfo-20.2-5.3.x86_64.rpm \
-    http://li.nux.ro/download/nux/dextop/el7/x86_64/libx86emu-1.1-2.1.x86_64.rpm
-
-Make a probe:
-
-    curl -s https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | sudo perl - -all -upload
+    sudo yum install epel-release
+    sudo yum install hw-probe
 
 
 Install on CentOS 6
 -------------------
 
-Install dependencies:
+    sudo yum install epel-release
+    sudo yum install hw-probe
 
-    sudo yum install perl-Digest-SHA curl dmidecode pciutils usbutils smartmontools \
-    lm_sensors mcelog xorg-x11-utils xorg-x11-server-utils
 
-Install `hwinfo` and `libx86emu`:
+Install on RHEL 7
+-----------------
 
-    sudo yum install http://mirror.ghettoforge.org/distributions/gf/el/6/gf/x86_64/hwinfo-20.2-1.gf.el6.x86_64.rpm \
-    http://mirror.ghettoforge.org/distributions/gf/el/6/gf/x86_64/libx86emu-1.1-1.gf.el6.x86_64.rpm
+    sudo yum install epel-release
+    sudo yum install hw-probe
 
-Make a probe:
 
-    curl -s https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | sudo perl - -all -upload
+Install on RHEL 6
+-----------------
+
+    sudo yum install epel-release
+    sudo yum install hw-probe
 
 
 Build Debian package
