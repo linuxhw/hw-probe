@@ -3,6 +3,7 @@ HW PROBE 1.4
 
 Hardware Probe Tool (HW Probe) — a tool to probe for hardware, check its operability and upload result to the Linux hardware database: https://linux-hardware.org
 
+
 Contents
 --------
 
@@ -81,6 +82,7 @@ The app runs on all Linux distributions with `Glibc >= 2.14` including:
 * Sabayon 13 and later
 * Slackware 14.2 and later
 
+
 Docker
 ------
 
@@ -110,9 +112,9 @@ Boot this Linux CD on your computer and make a probe (see [Usage](#usage)).
 Snap
 ----
 
-Download the universal Linux package [hw-probe_1.4-2_amd64.snap](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe_1.4-2_amd64.snap) and install:
+Install the universal Linux package:
 
-    sudo snap install ./hw-probe_1.4-2_amd64.snap --dangerous --classic
+    sudo snap install hw-probe --classic
 
 The `hw-probe` command should become available on the command line after installation. If not, try:
 
@@ -122,7 +124,7 @@ Now you can create computer probes:
 
     sudo hw-probe -all -upload
 
-NOTE: You need a Snap runtime (`snapd` package) and `/snap` symlink to `/var/lib/snapd/snap` (by `sudo ln -s /var/lib/snapd/snap /snap`) in your system to install and run snaps (pre-installed on Ubuntu 16.04 and Ubuntu 18.04).
+NOTE: You need a Snap runtime (`snapd` package) and `/snap` symlink to `/var/lib/snapd/snap` (by `sudo ln -s /var/lib/snapd/snap /snap`) in your system to install and run snaps (pre-installed on Ubuntu 16.04 and later).
 
 ###### Snap Store
 
@@ -176,6 +178,7 @@ NOTE: The 'Launch' button doesn't display the probe window currently due to [bug
 
 The app is available in the Flathub: https://flathub.org/apps/details/org.linux_hardware.hw-probe
 
+
 Inventory
 ---------
 
@@ -217,7 +220,7 @@ The tool checks operability of devices on board by analysis of collected log fil
 
 The following tests are executed:
 
-* graphics test by `glxgears` (for both integrated and discrete graphics cards)
+* graphics test by `glxgears` (for both integrated and discrete graphics cards, requires `mesa-demos` package to be installed)
 * drive read speed test by `hdparm` (for all HDDs and SSDs)
 * CPU performance test by `dd` and `md5sum`
 * RAM memory test by `memtester`

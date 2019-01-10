@@ -7,6 +7,7 @@ This file explains how to install and setup environment for the tool in your com
 
 See more info in the [README.md](https://github.com/linuxhw/hw-probe/).
 
+
 Contents
 --------
 
@@ -15,6 +16,7 @@ Contents
 * [ Install on Ubuntu      ](#install-on-ubuntu)
 * [ Install on Debian      ](#install-on-debian)
 * [ Install on openSUSE    ](#install-on-opensuse)
+* [ Install on Manjaro     ](#install-on-manjaro)
 * [ Install on Arch Linux  ](#install-on-arch-linux)
 * [ Install on Fedora      ](#install-on-fedora)
 * [ Install on CentOS 7    ](#install-on-centos-7)
@@ -28,6 +30,7 @@ Run without Installing
 ----------------------
 
 You can probe your computer by [AppImage](https://github.com/linuxhw/hw-probe#appimage), [Docker image](https://github.com/linuxhw/hw-probe#docker), [Snap](https://github.com/linuxhw/hw-probe#snap), [Flatpak](https://github.com/linuxhw/hw-probe#flatpak) or [Live CD](https://github.com/linuxhw/hw-probe#live-cd) without the need to install anything on your host.
+
 
 Install from Source
 -------------------
@@ -96,6 +99,7 @@ On Ubuntu and Ubuntu based Linux distributions (Linux Mint, elementary OS, etc.)
 
 The [Snap package](https://github.com/linuxhw/hw-probe#snap) is also available to install and run easily on Ubuntu without the need to install any Deb packages to your system.
 
+
 Install on Debian
 -----------------
 
@@ -112,6 +116,14 @@ Setup an OBS repository and install the package:
 
     sudo zypper addrepo -G -f obs://home:linuxbuild/openSUSE_Factory hw-probe
     sudo zypper install --no-recommends hw-probe
+
+
+Install on Manjaro
+------------------
+
+For Manjaro 18 and later:
+
+    sudo pacman -Syu hw-probe
 
 
 Install on Arch Linux
@@ -137,7 +149,7 @@ Install on Fedora
 
 For Fedora 28 and later:
 
-    sudo yum install hw-probe
+    sudo dnf install hw-probe
 
 
 Install on CentOS 7
