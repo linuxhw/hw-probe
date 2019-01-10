@@ -435,6 +435,7 @@ my %DiskVendor = (
     "GB0"       => "HP",
     "GB1000EA"  => "HP",
     "Gen2A400"  => "Anobit",
+    "GKH84"     => "Goldkey",
     "GOODRAM"   => "GOODRAM",
     "HDS"       => "Hitachi",
     "HDT"       => "Hitachi",
@@ -790,19 +791,93 @@ my @UnknownVendors = (
 # Repair vendor of some motherboards and mmc devices
 # It is needed for catalog of public reports on github
 my %VendorModels = (
-    "ASRock" => ["4CoreDual-VSTA", "4CoreDual-SATA2", "4Core1600-GLAN", "4Core1600-D800", "4CoreN73PV-HD720p", "775XFire-RAID", "775XFire-RAID",
-    "775VM800", "775Twins-HDTV", "775i945GZ", "775i65PE", "775i48", "939Dual-SATA2", "939NF6G-VSTA", "945GCM-S",
-    "ALiveDual-eSATA2", "ALiveNF4G-DVI", "ALiveNF6P-VSTA", "ALiveNF6G-GLAN", "ALiveNF7G-HDready", "ALiveSATA2-GLAN", "AM2NF6G-VSTA", "G31M-S",
-    "K8NF4G-SATA2", "K8Upgrade-NF3", "P4VM900-SATA2", "P4VM890", "P4Dual-915GL", "P4i48", "P4i65G", "P4i65GV", "P4VM8",
-    "Wolfdale1333-GLAN", "Wolfdale1333-D667", "775Dual-VSTA", "775Dual-880Pro", "A780GXE/128M"],
-    "ECS" => ["848P-A7", "965PLT-A", "H110M4-C2H", "K8M800-M2", "nForce4-A939", "nForce4-A754", "nForce", "nVidia-nForce", "RS480-M"],
-    "ASUSTek Computer" => ["C51MCP51", "P5GD1-TMX/S", "RC410-SB450"],
-    "MSI" => ["MS-7210", "MS-7030", "MS-7025", "MS-7210 100"],
-    "SiS Technology" => ["SiS-661", "SiS-649", "SiS-648FX", "SiS-650GX"],
+    "ASRock" => [
+        "4CoreDual-VSTA",
+        "4CoreDual-SATA2",
+        "4Core1600-GLAN",
+        "4Core1600-D800",
+        "4CoreN73PV-HD720p",
+        "775XFire-RAID",
+        "775XFire-RAID",
+        "775VM800",
+        "775Twins-HDTV",
+        "775i945GZ",
+        "775i65PE",
+        "775i48",
+        "939Dual-SATA2",
+        "939NF6G-VSTA",
+        "945GCM-S",
+        "ALiveDual-eSATA2",
+        "ALiveNF4G-DVI",
+        "ALiveNF6P-VSTA",
+        "ALiveNF6G-GLAN",
+        "ALiveNF7G-HDready",
+        "ALiveSATA2-GLAN",
+        "AM2NF6G-VSTA",
+        "G31M-S",
+        "K8NF4G-SATA2",
+        "K8Upgrade-NF3",
+        "P4VM900-SATA2",
+        "P4VM890",
+        "P4Dual-915GL",
+        "P4i48",
+        "P4i65G",
+        "P4i65GV",
+        "P4VM8",
+        "Wolfdale1333-GLAN",
+        "Wolfdale1333-D667",
+        "775Dual-VSTA",
+        "775Dual-880Pro",
+        "A780GXE/128M"
+    ],
+    "ECS" => [
+        "848P-A7",
+        "965PLT-A",
+        "H110M4-C2H",
+        "K8M800-M2",
+        "nForce4-A939",
+        "nForce4-A754",
+        "nForce",
+        "nVidia-nForce",
+        "RS480-M"
+    ],
+    "ASUSTek Computer" => [
+        "C51MCP51",
+        "P5GD1-TMX/S",
+        "RC410-SB450"
+    ],
+    "MSI" => [
+        "MS-7210",
+        "MS-7030",
+        "MS-7025",
+        "MS-7210 100"
+    ],
+    "SiS Technology" => [
+        "SiS-661",
+        "SiS-649",
+        "SiS-648FX",
+        "SiS-650GX"
+    ],
     
-    "Samsung"  => ["AWMB3R", "CJNB4R", "MAG2GC", "MCG8GA", "MCG8GC"],
-    "SanDisk"  => ["DF4032", "DF4064", "DF4128", "SDW64G", "SL32G"],
-    "SK hynix" => ["HBG4a", "HBG4e", "HCG8e"]
+    "Samsung"  => [
+        "AWMB3R",
+        "CJNB4R",
+        "MAG2GC",
+        "MCG8GA",
+        "MCG8GC"
+    ],
+    "SanDisk"  => [
+        "DF4032",
+        "DF4064",
+        "DF4128",
+        "SDW64G",
+        "SL32G"
+    ],
+    "SK hynix" => [
+        "HBG4a",
+        "HBG4e",
+        "HCG8e"
+    ]
 );
 
 my %VendorByModel;
@@ -814,39 +889,39 @@ foreach my $V (sort keys(%VendorModels))
 }
 
 my %PciClassType = (
-    "01" => "storage",
-    "02" => "network",
-    "03" => "graphics card",
-    "04" => "multimedia",
+    "01"    => "storage",
+    "02"    => "network",
+    "03"    => "graphics card",
+    "04"    => "multimedia",
     "04-00" => "video",
     "04-01" => "sound",
     "04-03" => "sound",
-    "05" => "memory controller",
+    "05"    => "memory controller",
     "05-00" => "ram memory",
-    "06" => "bridge",
-    "07" => "communication controller",
+    "06"    => "bridge",
+    "07"    => "communication controller",
     "07-03" => "modem",
-    "08" => "system peripheral",
+    "08"    => "system peripheral",
     "08-05" => "sd host controller",
-    "09" => "input",
-    "0a" => "docking station",
-    "0b" => "processor",
+    "09"    => "input",
+    "0a"    => "docking station",
+    "0b"    => "processor",
     "0b-40" => "co-processor",
-    "0c" => "serial bus controller",
+    "0c"    => "serial bus controller",
     "0c-00" => "firewire controller",
     "0c-03" => "usb controller",
     "0c-02" => "ssa",
     "0c-05" => "smbus",
     "0c-06" => "infiniband",
     "0c-09" => "canbus",
-    "0d" => "wireless controller",
+    "0d"    => "wireless controller",
     "0d-00" => "irda",
     "0d-11" => "bluetooth",
-    "0e" => "intelligent controller",
-    "0f" => "communications controller",
-    "10" => "encryption controller",
-    "11" => "signal processing",
-    "12" => "processing accelerators"
+    "0e"    => "intelligent controller",
+    "0f"    => "communications controller",
+    "10"    => "encryption controller",
+    "11"    => "signal processing",
+    "12"    => "processing accelerators"
 );
 
 my %UsbClassType = (
@@ -2005,8 +2080,8 @@ sub addCapacity($$)
     if($Capacity)
     {
         $Capacity=~s/\s+//g;
-        if($Device!~/(\A|\s)[\d\.\,]+\s*(MB|GB|TB|PB|[MGT])(\s|\Z)/
-        and $Device!~/reader|bridge|\/sd\/|adapter/i) {
+        if($Device!~/(\A|\s|\-)[\d\.\,]+\s*(MB|GB|TB|PB|[MGT])(\s|\Z)/
+        and $Device!~/reader|bridge|\/sd\/|adapter/i and $Device!~/\Q$Capacity\E/i) {
             return " ".$Capacity;
         }
     }
@@ -4857,7 +4932,7 @@ sub probeHW()
                 if($Drv{"Model"} and my $Vnd = guessDeviceVendor($Drv{"Model"}))
                 {
                     $Drv{"Vendor"} = $Vnd;
-                    $Drv{"Model"}=~s/\A\Q$Vnd\E([\s_\-]+|\Z)//i;
+                    $Drv{"Model"}=~s/\A\Q$Vnd\E([\s_\-\[]+|\Z)//i;
                 }
                 
                 if($Drv{"Model"} and $Drv{"Model"} ne "Disk") {
@@ -5989,9 +6064,8 @@ sub detectDrive(@)
         if($Device->{"Vendor"} and my $Vnd = guessDeviceVendor($Device->{"Vendor"}))
         {
             $Device->{"Vendor"} = $Vnd;
-            $Device->{"Device"}=~s/\s+$Vnd(\s+|\Z)/$1/i;
+            $Device->{"Device"}=~s/\s+\Q$Vnd\E(\s+|\Z)/$1/i;
         }
-        
     }
     
     if(not $Opt{"IdentifyDrive"})
@@ -6002,6 +6076,11 @@ sub detectDrive(@)
     }
     
     $Device->{"Device"} = duplVendor($Device->{"Vendor"}, $Device->{"Device"});
+    
+    $Device->{"Device"}=~s/[\[\]]/ /g;
+    $Device->{"Device"}=~s/\A //g;
+    $Device->{"Device"}=~s/ \Z//g;
+    
     fixDrive($Device);
     
     $Device->{"Model"} = $Device->{"Device"};
@@ -6051,7 +6130,7 @@ sub fixDrive_Pre($)
     {
         if(my $Vnd = guessDeviceVendor($Device->{"Device"}))
         {
-            $Device->{"Device"}=~s/\A\Q$Vnd\E([\s_\-]+|\Z)//i;
+            $Device->{"Device"}=~s/\A\Q$Vnd\E([\s_\-\[]+|\Z)//i;
             $Device->{"Vendor"} = $Vnd;
         }
         
@@ -6325,7 +6404,7 @@ sub guessDeviceVendor($)
 {
     my $Device = $_[0];
     
-    if($Device=~s/\A(WDC|Western Digital|Seagate|Samsung Electronics|SAMSUNG|Hitachi|TOSHIBA|Maxtor|SanDisk|Kingston|ADATA|Lite-On|OCZ|Smartbuy|SK hynix|GOODRAM|LDLC|A\-DATA|KingFast|LDLC|INTENSO|ExcelStor Technology|i-FlashDisk|e2e4|Anobit)([\s_\-]|\Z)//i)
+    if($Device=~s/\A(WDC|Western Digital|Seagate|Samsung Electronics|SAMSUNG|Hitachi|TOSHIBA|Maxtor|SanDisk|Kingston|ADATA|Lite-On|OCZ|Smartbuy|SK hynix|GOODRAM|LDLC|A\-DATA|KingFast|LDLC|INTENSO|ExcelStor Technology|i-FlashDisk|e2e4|Anobit|SandForce)([\s_\-\[]|\Z)//i)
     { # drives
         return $1;
     }
@@ -6372,14 +6451,14 @@ sub duplVendor($$)
     
     if($Vendor)
     { # do not duplicate vendor name
-        if(not $Device=~s/\A\Q$Vendor\E([\s\-\_]+|\Z)//gi
+        if(not $Device=~s/\A\Q$Vendor\E([\s\-\_\[]+|\Z)//gi
         and not $Device=~s/\s+\Q$Vendor\E\s+/ /gi)
         {
             if(my $ShortVendor = nameID($Vendor))
             {
                 if($ShortVendor ne $Vendor)
                 {
-                    $Device=~s/\A\Q$ShortVendor\E[\s\-\_]+//gi;
+                    $Device=~s/\A\Q$ShortVendor\E[\s\-\_\[]+//gi;
                     $Device=~s/\s+\Q$ShortVendor\E\s+/ /gi;
                 }
             }
