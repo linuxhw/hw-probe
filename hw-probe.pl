@@ -411,7 +411,12 @@ my %UsbInfo;
 my %PciVendor = (
     "17aa" => "Lenovo",
     "144d" => "Samsung",
-    "14a4" => "Lite-On"
+    "14a4" => "Lite-On",
+    "1987" => "Phison",
+    "8086" => "Intel",
+    "1179" => "Toshiba",
+    "1c5c" => "SK hynix",
+    "1b4b" => "SanDisk"
 );
 
 my %DiskVendor = (
@@ -497,6 +502,7 @@ my %IeeeOui = (
     "0014ee" => "WDC",
     "000c50" => "Seagate",
     "0004cf" => "Seagate",
+    "00080d" => "Toshiba",
     "000039" => "Toshiba",
     "001b44" => "SanDisk",
     "000cca" => "HGST",
@@ -505,7 +511,9 @@ my %IeeeOui = (
     "0026b7" => "Kingston",
     "00000e" => "Fujitsu",
     "5cd2e4" => "Intel",
-    "002303" => "Lite-On"
+    "002303" => "Lite-On",
+    "6479a7" => "Phison",
+    "ace42e" => "SK hynix"
 );
 
 my %SerialVendor = (
@@ -599,15 +607,19 @@ my %MonVendor = (
     "ACH" => "Achieva Shimian", # QHD270
     "ACI" => "Ancor Communications", # ASUS
     "ACR" => "Acer",
+    "ADI" => "ADI",
     "AIC" => "Arnos Instruments", # AG Neovo
     "AMR" => "JVC",
     "AMT" => "AMT International",
     "AOC" => "AOC",
     "APP" => "Apple Computer",
+    "ASB" => "Prestigio", # ASBIS
+    "ATV" => "Ativa",
     "AUO" => "AU Optronics",
     "AUS" => "ASUS",
     "BBK" => "BBK",
     "BBY" => "Insignia",
+    "BEK" => "Beko",
     "BNQ" => "BenQ",
     "BOE" => "BOE",
     "BTC" => "RS",
@@ -615,18 +627,23 @@ my %MonVendor = (
     "CMN" => "Chimei Innolux",
     "CMO" => "Chi Mei Optoelectronics",
     "CND" => "CND",
+    "COR" => "CPT", # Chunghwa Picture Tubes
     "CPT" => "CPT",
     "CPQ" => "Compaq Computer",
     "CTL" => "CTL",
     "CTX" => "CTX",
     "DEL" => "Dell",
     "DNS" => "DNS",
+    "DON" => "DENON",
     "DVM" => "RoverScan",
     "DWE" => "Daewoo",
+    "EIZ" => "Eizo",
     "ELE" => "Element",
+    "ELO" => "Elo Touch",
     "EMA" => "eMachines",
     "ENC" => "Eizo",
     "ENV" => "Envision Peripherals",
+    "EPI" => "Envision",
     "FUS" => "Fujitsu Siemens",
     "GRU" => "Grundig",
     "GSM" => "Goldstar",
@@ -649,11 +666,13 @@ my %MonVendor = (
     "HWP" => "HP",
     "HPN" => "HP",
     "IBM" => "IBM",
+    "IGM" => "Videoseven",
     "INL" => "InnoLux Display",
     "IQT" => "Hyundai ImageQuest",
     "IVM" => "Iiyama",
     "IVO" => "InfoVision",
     "JEN" => "Jean",
+    "JVC" => "JVC",
     "KOA" => "Konka",
     "KTC" => "KTC",
     "LCA" => "Lacie",
@@ -665,6 +684,7 @@ my %MonVendor = (
     "LNX" => "Lanix",
     "LPL" => "LG Philips",
     "LTN" => "Lite-On",
+    "LRN" => "Doffler",
     "MAX" => "Belinea",
     "MEA" => "Medion",
     "MED" => "Medion",
@@ -676,6 +696,8 @@ my %MonVendor = (
     "MST" => "MStar",
     "MTC" => "Mitac",
     "MZI" => "Digital Vision",
+    "NCI" => "NECCI",
+    "NCP" => "PANDA", # Nanjing CEC Panda
     "NEC" => "NEC",
     "NON" => "Positivo",
     "NVD" => "Nvidia",
@@ -689,6 +711,8 @@ my %MonVendor = (
     "PKR" => "Parker",
     "PKV" => "Thomson",
     "PLN" => "Planar",
+    "PNR" => "Planar",
+    "POS" => "Positivo",
     "PRE" => "Prestigio",
     "PTS" => "Plain Tree Systems",
     "QBL" => "QBell",
@@ -706,9 +730,11 @@ my %MonVendor = (
     "SNY" => "Sony",
     "SPT" => "Sceptre Tech",
     "STC" => "Sampo",
+    "STK" => "S2-Tek",
     "STN" => "Samsung",
     "SUN" => "Sun",
     "SYN" => "Olevia",
+    "SZM" => "Mitac",
     "TAR" => "Targa Visionary",
     "TCL" => "TCL",
     "TEU" => "Relisys",
@@ -717,20 +743,23 @@ my %MonVendor = (
     "TOS" => "Toshiba",
     "TPV" => "Top Victory",
     "TSB" => "Toshiba",
+    "UMC" => "UMC",
     "UPS" => "UpStar",
     "VBX" => "VirtualBox",
     "VES" => "Vestel Elektronik",
     "VIZ" => "Vizio",
     "VSC" => "ViewSonic",
-    "WDT" => "Westinghouse"
+    "WDE" => "Westinghouse",
+    "WDT" => "Westinghouse",
+    "YAK" => "Yakumo",
+    "ZRN" => "Zoran"
 );
 
 my @UnknownVendors = (
     "AAA",
     "AGO",
     "AMT",
-    "ARS",
-    "ATV",
+    "ARS", # Prestigio?
     "AVO",
     "AQU",
     "BBY",
@@ -738,41 +767,48 @@ my @UnknownVendors = (
     "CDR",
     "CHD",
     "CHE",
-    "COR",
+    "CHR",
     "CVT",
     "DCL",
     "DDL",
     "DGI",
-    "DON",
     "EXP",
+    "FNI",
     "FRT",
     "GER",
+    "GLE",
     "GVT",
     "JRY",
+    "JXJ",
     "HYO",
+    "ITE",
     "KDC",
     "KTC",
     "LLP",
     "LLL",
     "LSC",
+    "LTM",
     "MIT",
+    "MOT", # MotoAttach?
     "NOD",
     "NTS",
     "NXG",
     "PAR",
     "PKV",
+    "PNP",
     "PPP",
     "PVS",
     "ROW",
     "RTD",
     "RTK",
     "RX_",
+    "SAC",
     "SAN",
+    "SIS",
     "SKK",
     "SKY",
     "SMC",
     "STD",
-    "STK",
     "SYK",
     "TVT",
     "UME",
@@ -858,15 +894,14 @@ my %VendorModels = (
         "SiS-648FX",
         "SiS-650GX"
     ],
-    
-    "Samsung"  => [
+    "Samsung" => [
         "AWMB3R",
         "CJNB4R",
         "MAG2GC",
         "MCG8GA",
         "MCG8GC"
     ],
-    "SanDisk"  => [
+    "SanDisk" => [
         "DF4032",
         "DF4064",
         "DF4128",
@@ -3877,7 +3912,7 @@ sub probeHW()
         if(checkCmd("dmidecode"))
         {
             listProbe("logs", "dmidecode");
-            $Dmidecode = runCmd("dmidecode 2>&1");
+            $Dmidecode = runCmd("dmidecode");
             $Dmidecode = hideTags($Dmidecode, "UUID|Asset Tag");
             $Dmidecode = encryptSerials($Dmidecode, "Serial Number");
         }
@@ -4290,7 +4325,7 @@ sub probeHW()
             
             if(my $Vendor = $Device{"Vendor"})
             {
-                $Device{"Device"}=~s/\A\Q$Vendor\E[\s\-]+//ig;
+                $Device{"Device"} = duplVendor($Vendor, $Device{"Device"});
                 $Pr{$Device{"Device"}} = 1;
             }
             
@@ -4357,7 +4392,7 @@ sub probeHW()
             }
             
             if(my $Vendor = $Device{"Vendor"}) {
-                $Device{"Device"}=~s/\A\Q$Vendor\E[\s\-]+//ig;
+                $Device{"Device"} = duplVendor($Vendor, $Device{"Device"});
             }
             
             $Device{"Type"} = "printer";
@@ -4625,28 +4660,40 @@ sub probeHW()
                     if($Line=~/vendor:[ ]*(.+?)[ ]*\Z/) {
                         $Device{"Vendor"} = fmtVal($1);
                     }
-                    
-                    if($Line=~/model:[ ]*(.+?)[ ]*\Z/) {
+                    elsif($Line=~/model:[ ]*(.+?)[ ]*\Z/) {
                         $Device{"Device"} = fmtVal($1);
                     }
-                    
-                    if($Line=~/serial:[ ]*(.+?)[ ]*\Z/) {
+                    elsif($Line=~/serial:[ ]*(.+?)[ ]*\Z/) {
                         $Device{"Serial"} = $1;
                     }
-                    
-                    if($Line=~/energy-full-design:[ ]*(.+?)[ ]*\Z/)
+                    elsif($Line=~/energy-full-design:[ ]*(.+?)[ ]*\Z/)
                     {
                         $Device{"Size"} = $1;
                         $Device{"Size"}=~s/\,/\./g;
                     }
-                    
-                    if($Line=~/technology:[ ]*(.+?)[ ]*\Z/) {
+                    elsif($Line=~/energy-full:[ ]*(.+?)[ ]*\Z/)
+                    {
+                        $Device{"CurSize"} = $1;
+                        $Device{"CurSize"}=~s/\,/\./g;
+                    }
+                    elsif($Line=~/technology:[ ]*(.+?)[ ]*\Z/) {
                         $Device{"Technology"} = $1;
                     }
-                    
-                    if($Line=~/capacity:[ ]*(.+?)[ ]*\Z/) {
+                    elsif($Line=~/capacity:[ ]*(.+?)[ ]*\Z/) {
                         $Device{"Capacity"} = $1;
                     }
+                }
+                
+                if(not $Device{"Size"}
+                or $Device{"Size"} eq "0 Wh")
+                {
+                    my $C = $Device{"Capacity"};
+                    $C=~s/\%//;
+                    
+                    my $F = $Device{"CurSize"};
+                    $F=~s/ Wh//;
+                    
+                    $Device{"Size"} = ($F*100/$C)." Wh";
                 }
                 
                 cleanValues(\%Device);
@@ -4684,7 +4731,7 @@ sub probeHW()
     {
         foreach my $Block (split(/\n\n/, $PowerSupply))
         {
-            if($Block=~/$PSDir\/BAT/i)
+            if($Block=~/$PSDir\/BAT/i or $Block=~/POWER_SUPPLY_CAPACITY\=/i)
             {
                 my %Device = ();
                 
@@ -4712,12 +4759,16 @@ sub probeHW()
                     }
                 }
                 
+                if($Block=~/POWER_SUPPLY_CHARGE_FULL=(.+)/i) {
+                    $Device{"Charge"} = $1;
+                }
+                
                 if($Block=~/POWER_SUPPLY_CHARGE_FULL_DESIGN=(.+)/i)
                 {
-                    $Device{"Change"} = $1;
+                    $Device{"DesignCharge"} = $1;
                     
-                    if($Block=~/POWER_SUPPLY_CHARGE_FULL=(.+)/i) {
-                        $Device{"Capacity"} = $1*100/$Device{"Change"};
+                    if($Device{"Charge"}) {
+                        $Device{"Capacity"} = $Device{"Charge"}*100/$Device{"DesignCharge"};
                     }
                 }
                 
@@ -4726,13 +4777,20 @@ sub probeHW()
                 }
                 
                 if($Block=~/POWER_SUPPLY_VOLTAGE_MIN_DESIGN=(.+)/i) {
-                    $Device{"Voltage"} = $1;
+                    $Device{"MinVoltage"} = $1;
+                }
+                
+                if($Block=~/POWER_SUPPLY_VOLTAGE_MAX_DESIGN=(.+)/i) {
+                    $Device{"MaxVoltage"} = $1;
                 }
                 
                 if(not $Device{"Size"})
                 {
-                    if($Device{"Voltage"} and $Device{"Change"}) {
-                        $Device{"Size"} = (($Device{"Change"}/1000000)*($Device{"Voltage"}/1000000))." Wh";
+                    if($Device{"MinVoltage"} and $Device{"DesignCharge"}) {
+                        $Device{"Size"} = (($Device{"DesignCharge"}/1000000)*($Device{"MinVoltage"}/1000000))." Wh";
+                    }
+                    elsif($Device{"MaxVoltage"} and $Device{"Charge"}) {
+                        $Device{"Size"} = (($Device{"Charge"}/1000000)*($Device{"MaxVoltage"}/1000000))." Wh";
                     }
                 }
                 
@@ -4791,6 +4849,7 @@ sub probeHW()
     }
     
     my $Smartctl = "";
+    
     my $SmartctlCmd = "smartctl";
     
     if($Opt{"Snap"} or $Opt{"AppImage"} or $Opt{"Flatpak"})
@@ -4915,6 +4974,39 @@ sub probeHW()
         }
     }
     
+    if(not $Opt{"FixProbe"})
+    {
+        if($Admin and enabledLog("smart-log")
+        and checkCmd("nvme"))
+        {
+            listProbe("logs", "smart-log");
+            my $NvmeCli = "";
+            foreach my $Dev (sort keys(%HDD))
+            {
+                if($Dev=~/nvme/)
+                {
+                    my $Output = runCmd("nvme smart-log \"".$Dev."\" 2>/dev/null");
+                    my $OutputAdd = runCmd("nvme smart-log-add \"".$Dev."\" 2>/dev/null");
+                    
+                    if($Output or $OutputAdd)
+                    {
+                        $NvmeCli .= $Dev."\n";
+                        if($Output) {
+                            $NvmeCli .= $Output."\n";
+                        }
+                        if($OutputAdd) {
+                            $NvmeCli .= $OutputAdd."\n";
+                        }
+                        $NvmeCli .= "\n";
+                    }
+                }
+            }
+            if($NvmeCli) {
+                writeLog($LOG_DIR."/smart-log", $NvmeCli);
+            }
+        }
+    }
+    
     foreach my $Dev (keys(%HDD))
     {
         if(not $HDD{$Dev})
@@ -4932,7 +5024,7 @@ sub probeHW()
                 if($Drv{"Model"} and my $Vnd = guessDeviceVendor($Drv{"Model"}))
                 {
                     $Drv{"Vendor"} = $Vnd;
-                    $Drv{"Model"}=~s/\A\Q$Vnd\E([\s_\-\[]+|\Z)//i;
+                    $Drv{"Model"} = duplVendor($Vnd, $Drv{"Model"});
                 }
                 
                 if($Drv{"Model"} and $Drv{"Model"} ne "Disk") {
@@ -5532,51 +5624,49 @@ sub registerBattery($)
         $Device->{"Size"} = sprintf("%.1f", $1).$2;
     }
     
-    if($Device->{"Vendor"})
+    my $ID = undef;
+    
+    if($Device->{"Device"}=~/\A(Battery|Primary|Dell|Bat)\d*\Z/i
+    or not $Device->{"Vendor"})
     {
-        my $ID = undef;
+        $Device->{"Device"} = $1;
         
-        if($Device->{"Device"}=~/\A(Battery|Primary|Dell|Bat)\d*\Z/i)
-        {
-            $Device->{"Device"} = $1;
-            
-            if($Device->{"Size"}=~/(.+)( Wh)/) {
-                $Device->{"Size"} = sprintf("%.0f", $1).$2;
-            }
-            $ID = devID(nameID($Device->{"Vendor"}), lc($Device->{"Device"}), $Device->{"Technology"}, $Device->{"Size"});
-            if($Device->{"Serial"}) {
-                $ID = devID($ID, "serial", $Device->{"Serial"});
-            }
+        if($Device->{"Size"}=~/(.+)( Wh)/) {
+            $Device->{"Size"} = sprintf("%.0f", $1).$2;
         }
-        else
-        {
-            $ID = devID(nameID($Device->{"Vendor"}), devSuffix($Device));
-            $Device->{"Device"} = "Battery ".$Device->{"Device"};
+        $ID = devID(nameID($Device->{"Vendor"}), lc($Device->{"Device"}), $Device->{"Technology"}, $Device->{"Size"});
+        if($Device->{"Serial"}) {
+            $ID = devID($ID, "serial", $Device->{"Serial"});
         }
-        
-        $ID = fmtID($ID);
-        
-        if($Device->{"Technology"}) {
-            $Device->{"Device"} .= " ".$Device->{"Technology"};
+    }
+    else
+    {
+        $ID = devID(nameID($Device->{"Vendor"}), devSuffix($Device));
+        $Device->{"Device"} = "Battery ".$Device->{"Device"};
+    }
+    
+    $ID = fmtID($ID);
+    
+    if($Device->{"Technology"}) {
+        $Device->{"Device"} .= " ".$Device->{"Technology"};
+    }
+    
+    if($Device->{"Size"}) {
+        $Device->{"Device"} .= " ".$Device->{"Size"};
+    }
+    
+    if($Device->{"Capacity"}=~/\A(\d+)/)
+    {
+        if($1>$MIN_BAT_CAPACITY) {
+            $Device->{"Status"} = "works";
         }
-        
-        if($Device->{"Size"}) {
-            $Device->{"Device"} .= " ".$Device->{"Size"};
+        else {
+            $Device->{"Status"} = "malfunc";
         }
-        
-        if($Device->{"Capacity"}=~/\A(\d+)/)
-        {
-            if($1>$MIN_BAT_CAPACITY) {
-                $Device->{"Status"} = "works";
-            }
-            else {
-                $Device->{"Status"} = "malfunc";
-            }
-        }
-        
-        if($ID) {
-            $HW{"bat:".$ID} = $Device;
-        }
+    }
+    
+    if($ID) {
+        $HW{"bat:".$ID} = $Device;
     }
 }
 
@@ -5642,16 +5732,19 @@ sub shortOS($)
 sub detectBoard($)
 {
     my $Device = $_[0];
-
+    
     $Device->{"Vendor"}=~s{\Ahttp://www\.}{}i; # http://www.abit.com.tw as vendor
-
+    if(index($Device->{"Vendor"}, "abit.com.tw")!=-1) {
+        $Device->{"Vendor"} = "ABIT";
+    }
+    
     if($Device->{"Version"}=~/\b(n\/a|Not)\b/i) {
         $Device->{"Version"} = undef;
     }
     
     cleanValues($Device);
     
-    if($Device->{"Version"}=~/board version/i) {
+    if(emptyProduct($Device->{"Version"})) {
         delete($Device->{"Version"});
     }
     
@@ -6061,10 +6154,11 @@ sub detectDrive(@)
             $Device->{"Vendor"} = getPciVendor($1);
         }
         
-        if($Device->{"Vendor"} and my $Vnd = guessDeviceVendor($Device->{"Vendor"}))
+        if($Device->{"Vendor"}
+        and my $Vnd = guessDeviceVendor($Device->{"Vendor"}))
         {
             $Device->{"Vendor"} = $Vnd;
-            $Device->{"Device"}=~s/\s+\Q$Vnd\E(\s+|\Z)/$1/i;
+            $Device->{"Device"} = duplVendor($Vnd, $Device->{"Device"});
         }
     }
     
@@ -6130,8 +6224,8 @@ sub fixDrive_Pre($)
     {
         if(my $Vnd = guessDeviceVendor($Device->{"Device"}))
         {
-            $Device->{"Device"}=~s/\A\Q$Vnd\E([\s_\-\[]+|\Z)//i;
             $Device->{"Vendor"} = $Vnd;
+            $Device->{"Device"} = duplVendor($Vnd, $Device->{"Device"});
         }
         
         my $FamilyVnd = undef;
@@ -6165,8 +6259,12 @@ sub fixDrive_Pre($)
         
         if(not $Device->{"Vendor"})
         {
-            if($Device->{"Device"}=~s/\A([A-Z]{5,})[\s_\-]+//i) {
-                $Device->{"Vendor"} = $1;
+            if($Device->{"Device"}=~s/\A([A-Z]{5,})[\s_\-]+//i)
+            {
+                my $Vnd = $1;
+                if(not nonVendor($Vnd)) {
+                    $Device->{"Vendor"} = $Vnd;
+                }
             }
         }
         
@@ -6206,25 +6304,13 @@ sub fixDrive_Pre($)
     }
 }
 
+sub nonVendor($) {
+    return grep { $_[0] eq $_ } ("SSD", "mSata", "SATAIII", "PCIe");
+}
+
 sub fixDrive($)
 {
     my $Device = $_[0];
-    
-    if($Device->{"Vendor"}=~/\A(SSD|mSata|SATAIII)\Z/)
-    { # SSD/mSata instead of vendor name
-      # Device Model: SSD Smartbuy 120GB
-        my $OldVnd = $Device->{"Vendor"};
-        if(my $Vnd = guessDeviceVendor($Device->{"Device"}))
-        {
-            $Device->{"Device"}=~s/\A\Q$Vnd\E(\s+|\Z)/$OldVnd$1/i;
-            $Device->{"Vendor"} = $Vnd;
-        }
-        else
-        {
-            $Device->{"Device"} = $OldVnd." ".$Device->{"Device"};
-            $Device->{"Vendor"} = $DEFAULT_VENDOR;
-        }
-    }
     
     if($Device->{"Vendor"}=~/\A(WD|ST)\d+/)
     { # model name instead of vendor name
@@ -6352,7 +6438,10 @@ sub guessDriveVendor($)
     if($Name=~s/\A([a-z]{3,})[\-\_ ]//i)
     { # Crucial_CT240M500SSD3
       # OCZ-VERTEX
-        return $1;
+        my $Vnd = $1;
+        if(not nonVendor($Vnd)) {
+            return $Vnd;
+        }
     }
 
     return;
@@ -6404,14 +6493,14 @@ sub guessDeviceVendor($)
 {
     my $Device = $_[0];
     
-    if($Device=~s/\A(WDC|Western Digital|Seagate|Samsung Electronics|SAMSUNG|Hitachi|TOSHIBA|Maxtor|SanDisk|Kingston|ADATA|Lite-On|OCZ|Smartbuy|SK hynix|GOODRAM|LDLC|A\-DATA|KingFast|LDLC|INTENSO|ExcelStor Technology|i-FlashDisk|e2e4|Anobit|SandForce)([\s_\-\[]|\Z)//i)
+    if($Device=~s/(\A|\s)(WDC|Western Digital|Seagate|Samsung Electronics|SAMSUNG|Hitachi|TOSHIBA|Maxtor|SanDisk|Kingston|ADATA|Lite-On|OCZ|Smartbuy|SK hynix|GOODRAM|LDLC|A\-DATA|KingFast|LDLC|INTENSO|ExcelStor Technology|i-FlashDisk|e2e4|Anobit|SandForce)([\s_\-\[]|\Z)//i)
     { # drives
-        return $1;
+        return $2;
     }
     
-    if($Device=~/\A(HP|Hewlett\-Packard|Epson|Kyocera|Brother|Samsung|Canon|Xerox) /i)
+    if($Device=~/(\A|\s)(HP|Hewlett\-Packard|Epson|Kyocera|Brother|Samsung|Canon|Xerox)(\s|\Z)/i)
     { # printers
-        return $1;
+        return $2;
     }
 
     return;
@@ -6452,7 +6541,8 @@ sub duplVendor($$)
     if($Vendor)
     { # do not duplicate vendor name
         if(not $Device=~s/\A\Q$Vendor\E([\s\-\_\[]+|\Z)//gi
-        and not $Device=~s/\s+\Q$Vendor\E\s+/ /gi)
+        and not $Device=~s/\s+\Q$Vendor\E\s+/ /gi
+        and not $Device=~s/\s+\Q$Vendor\E\Z//gi)
         {
             if(my $ShortVendor = nameID($Vendor))
             {
@@ -6460,6 +6550,7 @@ sub duplVendor($$)
                 {
                     $Device=~s/\A\Q$ShortVendor\E[\s\-\_\[]+//gi;
                     $Device=~s/\s+\Q$ShortVendor\E\s+/ /gi;
+                    $Device=~s/\s+\Q$ShortVendor\E\Z//gi;
                 }
             }
         }
@@ -6501,7 +6592,7 @@ sub emptyVal($)
     
     if($Val=~/\A[\[\(]*(not specified|not defined|invalid|error|unknown|unknow|uknown|empty|n\/a|none|default string)[\)\]]*\Z/i
     or $Val=~/(\A|\b|\d)(to be filled|unclassified device|not defined)(\b|\Z)/i
-    or $Val=~/\A(vendor|device|unknown vendor|customer|model)\Z/i) {
+    or $Val=~/\A(vendor|device|unknown vendor|customer|model|_)\Z/i) {
         return 1;
     }
     
@@ -6581,7 +6672,7 @@ sub nameID($)
     $Name=~s/\s*\([^()]*\)//g;
     $Name=~s/\s*\[[^\[\]]*\]//g;
     
-    while ($Name=~s/\s*(\,\s*|\s+)(Inc|Ltd|Co|GmbH|Corp|Pte|LLC|Sdn|Bhd|BV|RSS|PLC|s\.r\.l\.|srl|S\.P\.A\.|S\.p\.A\.|B\.V\.)(\.|\Z)//ig) {}
+    while ($Name=~s/\s*(\,\s*|\s+)(Inc|Ltd|Co|GmbH|Corp|Pte|LLC|Sdn|Bhd|BV|AG|RSS|PLC|s\.r\.l\.|srl|S\.P\.A\.|S\.p\.A\.|B\.V\.|S\.A\.)(\.|\Z)//ig) {}
     $Name=~s/,?\s+[a-z]{2,4}\.//ig;
     $Name=~s/,(.+)\Z//ig;
     
@@ -6606,6 +6697,8 @@ sub fixModel($$$)
     my ($Vendor, $Model, $Version) = @_;
     
     $Model=~s/\A\-//;
+    $Model=~s/\A\[(.+)\]\-\Z/$1/; # IBM
+    
     $Model=~s/\A\Q$Vendor\E\s+//i;
     
     if($Vendor eq "Hewlett-Packard")
@@ -6650,7 +6743,7 @@ sub fixModel($$$)
         {
             $Version=~s/\ALenovo-?\s*//i;
             
-            if($Version)
+            if($Version and $Version!~/Rev \d/i)
             {
                 while($Model=~s/\A\Q$Version\E\s+//i) {}
 
@@ -6737,6 +6830,15 @@ sub probeSys()
         $Sys{"Name"} = $Opt{"PC_Name"};
     }
     
+    $Sys{"Probe_ver"} = $TOOL_VERSION;
+    
+    foreach (keys(%Sys)) {
+        chomp($Sys{$_});
+    }
+}
+
+sub probeDmi()
+{
     listProbe("logs", "dmi_id");
     
     my $Dmi = "";
@@ -6786,18 +6888,13 @@ sub probeSys()
     
     $Sys{"Vendor"} = fixVendor($Sys{"Vendor"});
     $Sys{"Model"} = fixModel($Sys{"Vendor"}, $Sys{"Model"}, $Sys{"Version"});
-    
-    $Sys{"Probe_ver"} = $TOOL_VERSION;
-    
-    foreach (keys(%Sys)) {
-        chomp($Sys{$_});
-    }
 }
 
 sub emptyProduct($)
 {
     my $Val = $_[0];
-    if($Val=~/\b(System manufacturer|Name|Version|to be filled|empty|Not Specified)\b/i) {
+    if($Val=~/\b(System manufacturer|System Manufacter|stem manufacturer|Name|Version|to be filled|empty|Not Specified|Default string|board version)\b/i
+    or $Val=~/\A([_0\-\.]+|NA|N\/A)\Z/i) {
         return 1;
     }
     
@@ -6829,10 +6926,16 @@ sub fixProduct()
 sub fixTypeByCPU($)
 {
     my $CPU = $_[0];
-    if(not $Sys{"Type"})
+    if($Sys{"Type"}!~/desktop|server/)
     {
         if($CPU=~/Pentium (CPU G\d+|D CPU) |Core 2 CPU \d+ /) {
             $Sys{"Type"} = "desktop";
+        }
+    }
+    if($Sys{"Type"}!~/notebook|tablet/)
+    {
+        if($CPU=~/Athlon Neo X2 .* L3/) {
+            $Sys{"Type"} = "notebook";
         }
     }
 }
@@ -6850,6 +6953,24 @@ sub fixChassis()
             {
                 if(my $CType = getChassisType($ChassisType{$Value})) {
                     $Sys{"Type"} = $CType;
+                }
+            }
+            elsif($File eq "sys_vendor")
+            {
+                if(not emptyProduct($Value)) {
+                    $Sys{"Vendor"} = $Value;
+                }
+            }
+            elsif($File eq "product_name")
+            {
+                if(not emptyProduct($Value)) {
+                    $Sys{"Model"} = $Value;
+                }
+            }
+            elsif($File eq "product_version")
+            {
+                if(not emptyProduct($Value)) {
+                    $Sys{"Version"} = $Value;
                 }
             }
             elsif($File eq "bios_vendor") {
@@ -6875,6 +6996,23 @@ sub fixChassis()
     
     detectBIOS(\%Bios);
     $MotherboardID = detectBoard(\%Board);
+    
+    if($Sys{"Type"} eq "tablet")
+    {
+        if($Sys{"Model"}=~/Mini PC/i)
+        { # tiny desktops
+            $Sys{"Type"} = "desktop";
+        }
+    }
+    
+    if($Sys{"Type"} ne "tablet")
+    { # TODO: check this by analysis of
+      # particular devices on board
+        if($Sys{"Vendor"}=~/Microsoft/
+        and $Sys{"Model"}=~/Surface/) {
+            $Sys{"Type"} = "tablet";
+        }
+    }
 }
 
 sub ipAddr2ifConfig($)
@@ -7566,6 +7704,7 @@ sub readHost($)
             else {
                 $K = ucfirst($K);
             }
+            
             $Sys{$K} = $V;
         }
     }
@@ -7871,11 +8010,26 @@ sub writeLogs()
     
     if(enabledLog("pkglist")
     and checkCmd("pacman"))
-    { # Arch
+    { # Arch / Manjaro
         listProbe("logs", "pkglist");
         my $Pkglist = runCmd("pacman -Q 2>/dev/null");
         
         if($Pkglist) {
+            writeLog($LOG_DIR."/pkglist", $Pkglist);
+        }
+    }
+    
+    if(enabledLog("pkglist") and $Sys{"System"}=~/solus/i
+    and checkCmd("eopkg"))
+    {
+        listProbe("logs", "pkglist");
+        my $Pkglist = runCmd("eopkg list-installed -l 2>/dev/null | grep Name:");
+        
+        if($Pkglist)
+        {
+            $Pkglist=~s/Name\: //g;
+            $Pkglist=~s/, version: / /g;
+            $Pkglist=~s/, release: / r/g;
             writeLog($LOG_DIR."/pkglist", $Pkglist);
         }
     }
@@ -9179,7 +9333,6 @@ my %EnabledLog = (
         "df",
         "dmesg.1",
         "grub",
-        "lspnp",
         "mcelog",
         "megacli",
         "megactl",
@@ -9216,6 +9369,7 @@ my %EnabledLog = (
         "iw_list",
         "iwconfig",
         "lsblk",
+        "lspnp",
         "modinfo",
         "modprobe.d",
         "nm-tool",
@@ -9227,6 +9381,7 @@ my %EnabledLog = (
         "sane-find-scanner",
         "scanimage",
         "scsi",
+        "smart-log",
         "systemctl",
         "systemd-analyze",
         "uptime",
@@ -9882,14 +10037,6 @@ sub fixLogs($)
         unlink($Dir."/iostat");
     }
 
-    if(-f "$Dir/dmidecode"
-    and -s "$Dir/dmidecode" < 160)
-    { # Support for HW Probe 1.3
-      # dmidecode: command not found
-      # No SMBIOS nor DMI entry point found
-        writeFile($Dir."/dmidecode", "");
-    }
-
     foreach my $L ("glxinfo", "xdpyinfo", "xinput", "vdpauinfo", "xrandr")
     {
         if(-e "$Dir/$L"
@@ -9945,7 +10092,7 @@ sub fixLogs($)
         }
     }
 
-    foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all")
+    foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all", "dmidecode")
     {
         if(-f "$Dir/$L"
         and -s "$Dir/$L" < 2*$EMPTY_LOG_SIZE)
@@ -9955,6 +10102,9 @@ sub fixLogs($)
           # lspci: Cannot find any working access method.
           # lsusb: error while loading shared libraries: libusb-1.0.so.0: cannot open shared object file: No such file or directory
           # ERROR: ld.so: object '/usr/lib/arm-linux-gnueabihf/libarmmem.so' from /etc/ld.so.preload cannot be preloaded
+          # /dev/mem: Permission denied
+          # dmidecode: command not found
+          # No SMBIOS nor DMI entry point found
             writeFile("$Dir/$L", "");
         }
     }
@@ -9970,8 +10120,8 @@ sub fixLogs($)
         }
     }
     
-    foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all")
-    {
+    foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all", "dmidecode")
+    { # Support for old probes
         if(-e "$Dir/$L")
         {
             my $Content = readFile("$Dir/$L");
@@ -9989,6 +10139,7 @@ sub fixLogs($)
                 if(index($Content, "some information will be missing")!=-1)
                 {
                     $Content=~s/Couldn't open device, some information will be missing\n//g;
+                    $Content=~s/Couldn't get configuration descriptor 0, some information will be missing\n//g;
                     writeFile("$Dir/$L", $Content);
                 }
             }
@@ -9997,6 +10148,15 @@ sub fixLogs($)
                 if(index($Content, "lspci: Unable to load libkmod resources: error -12")!=-1)
                 {
                     $Content=~s/lspci: Unable to load libkmod resources: error -12\n//g;
+                    writeFile("$Dir/$L", $Content);
+                }
+            }
+            elsif($L eq "dmidecode")
+            {
+                if(index($Content, "Table is unreachable, sorry")!=-1)
+                {
+                    $Content=~s{/dev/mem: Bad address\nTable is unreachable, sorry.\n}{}g;
+                    $Content=~s{/dev/mem: lseek: Value too large for defined data type\nTable is unreachable, sorry.\n}{}g;
                     writeFile("$Dir/$L", $Content);
                 }
             }
@@ -10457,6 +10617,7 @@ sub scenario()
     if($Opt{"Probe"} or $Opt{"Check"})
     {
         probeSys();
+        probeDmi();
         probeHWaddr();
         probeHW();
         
