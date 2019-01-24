@@ -1378,7 +1378,7 @@ sub getGroup()
     
     if(checkCmd("curl"))
     {
-        my $CurlCmd = "curl -s -S -f -POST -F get=group -H \"Expect:\" --http1.0 $GroupURL";
+        my $CurlCmd = "curl -s -S -f -POST -F get=group -H \"Expect:\" $GroupURL"; # --http1.0
         $Log = qx/$CurlCmd 2>&1/;
     }
     else {
@@ -1545,7 +1545,7 @@ sub uploadData()
     
     # fix curl error 22: "The requested URL returned error: 417 Expectation Failed"
     @Cmd = (@Cmd, "-H", "Expect:");
-    @Cmd = (@Cmd, "--http1.0");
+    # @Cmd = (@Cmd, "--http1.0");
     
     @Cmd = (@Cmd, $UploadURL);
     
@@ -7733,6 +7733,37 @@ sub writeLogs()
     my $SessUser = getUser() || $ENV{"USER"};
 
     # level=minimal
+    if(checkCmd("sensors"))
+    {
+        listProbe("logs", "sensors");
+        my $Sensors = runCmd("sensors 2>/dev/null");
+        writeLog($LOG_DIR."/sensors", $Sensors);
+    }
+    
+    if(enabledLog("meminfo"))
+    {
+        listProbe("logs", "meminfo");
+        my $Meminfo = readFile("/proc/meminfo");
+        writeLog($LOG_DIR."/meminfo", $Meminfo);
+    }
+    
+    if(enabledLog("cpuid")
+    and checkCmd("cpuid"))
+    {
+        listProbe("logs", "cpuid");
+        my $Cpuid = runCmd("cpuid -1 2>&1");
+        $Cpuid = encryptSerials($Cpuid, "serial number");
+        writeLog($LOG_DIR."/cpuid", $Cpuid);
+    }
+    elsif(enabledLog("cpuinfo")
+    and -e "/proc/cpuinfo")
+    {
+        listProbe("logs", "cpuinfo");
+        my $Cpuinfo = readFile("/proc/cpuinfo");
+        $Cpuinfo=~s/\n\n(.|\n)+\Z/\n/g; # for one core
+        writeLog($LOG_DIR."/cpuinfo", $Cpuinfo);
+    }
+    
     if($Admin)
     {
         if(not $Opt{"Docker"}
@@ -7874,37 +7905,6 @@ sub writeLogs()
         $Df = hideIPs($Df);
         $Df = hideUrls($Df);
         writeLog($LOG_DIR."/df", $Df);
-    }
-    
-    if(enabledLog("meminfo"))
-    {
-        listProbe("logs", "meminfo");
-        my $Meminfo = readFile("/proc/meminfo");
-        writeLog($LOG_DIR."/meminfo", $Meminfo);
-    }
-    
-    if(checkCmd("sensors"))
-    {
-        listProbe("logs", "sensors");
-        my $Sensors = runCmd("sensors 2>/dev/null");
-        writeLog($LOG_DIR."/sensors", $Sensors);
-    }
-    
-    if(enabledLog("cpuid")
-    and checkCmd("cpuid"))
-    {
-        listProbe("logs", "cpuid");
-        my $Cpuid = runCmd("cpuid -1 2>&1");
-        $Cpuid = encryptSerials($Cpuid, "serial number");
-        writeLog($LOG_DIR."/cpuid", $Cpuid);
-    }
-    elsif(enabledLog("cpuinfo")
-    and -e "/proc/cpuinfo")
-    {
-        listProbe("logs", "cpuinfo");
-        my $Cpuinfo = readFile("/proc/cpuinfo");
-        $Cpuinfo=~s/\n\n(.|\n)+\Z/\n/g; # for one core
-        writeLog($LOG_DIR."/cpuinfo", $Cpuinfo);
     }
     
     if(not $Opt{"Flatpak"})
@@ -9370,7 +9370,6 @@ my %EnabledLog = (
         "iwconfig",
         "lsblk",
         "lspnp",
-        "modinfo",
         "modprobe.d",
         "nm-tool",
         "nmcli",
@@ -9402,6 +9401,7 @@ my %EnabledLog = (
         "hcitool_scan",
         "iw_scan",
         "lsinitrd",
+        "modinfo",
         "mount",
         "numactl",
         "pstree",
