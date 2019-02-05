@@ -223,7 +223,7 @@ PRIVACY:
   properly identify unique computers and hard drives. All the data is uploaded
   securely via HTTPS.
 
-EXAMPLES:
+EXAMPLE:
   sudo $CmdName -all -upload -id DESC
   
   DESC — any description of the probe.
@@ -2875,7 +2875,7 @@ sub probeHW()
             }
         }
         elsif($Device{"Type"} eq "cpu") {
-            fixTypeByCPU($Device{"Device"});
+            fixFFByCPU($Device{"Device"});
         }
         
         # fix vendor
@@ -4223,12 +4223,14 @@ sub probeHW()
                 }
             }
             
-            fixTypeByCPU($Device{"Device"});
+            fixFFByCPU($Device{"Device"});
         }
     }
     
     if($MotherboardID)
     {
+        fixFFByBoard($HW{$MotherboardID}{"Device"});
+        
         if(not $Sys{"Vendor"} or not $Sys{"Model"})
         {
             if($Sys{"Type"}=~/desktop|server/)
@@ -6893,8 +6895,8 @@ sub probeDmi()
 sub emptyProduct($)
 {
     my $Val = $_[0];
-    if($Val=~/\b(System manufacturer|System Manufacter|stem manufacturer|Name|Version|to be filled|empty|Not Specified|Default string|board version)\b/i
-    or $Val=~/\A([_0\-\.]+|NA|N\/A)\Z/i) {
+    if(not $Val or $Val=~/\b(System manufacturer|System Manufacter|stem manufacturer|Name|Version|to be filled|empty|Not Specified|Default string|board version)\b/i
+    or $Val=~/\A([_0\-\.\s]+|NA|N\/A)\Z/i) {
         return 1;
     }
     
@@ -6923,7 +6925,7 @@ sub fixProduct()
     }
 }
 
-sub fixTypeByCPU($)
+sub fixFFByCPU($)
 {
     my $CPU = $_[0];
     if($Sys{"Type"}!~/desktop|server/)
@@ -6936,6 +6938,17 @@ sub fixTypeByCPU($)
     {
         if($CPU=~/Athlon Neo X2 .* L3/) {
             $Sys{"Type"} = "notebook";
+        }
+    }
+}
+
+sub fixFFByBoard($)
+{
+    my $Board = $_[0];
+    if($Sys{"Type"}!~/desktop|server/)
+    {
+        if($Board=~/ (D510MO|GA-K8NMF-9) /) {
+            $Sys{"Type"} = "desktop";
         }
     }
 }

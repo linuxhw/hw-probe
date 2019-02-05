@@ -31,7 +31,7 @@ Sample probe: https://linux-hardware.org/?probe=b394035f90
 
 Share your probes and logs with Linux developers in order to debug and fix problems on your computer. Simplify inventory of hardware in your company.
 
-You can make a probe of your computer with the help of [AppImage](#appimage), [Docker image](#docker), [Snap](#snap), [Flatpak](#flatpak), [Live CD](#live-cd) or RPM/DEB package.
+You can make a probe of your computer with the help of [AppImage](#appimage), [Docker](#docker), [Snap](#snap), [Flatpak](#flatpak), [Live CD](#live-cd) or RPM/DEB package.
 
 By creating probes you contribute to the "HDD/SSD Real-Life Reliability Test" study: https://github.com/linuxhw/SMART
 
@@ -39,7 +39,7 @@ By creating probes you contribute to the "HDD/SSD Real-Life Reliability Test" st
 Install
 -------
 
-You can probe your computer by [AppImage](#appimage), [Docker image](#docker), [Snap](#snap), [Flatpak](#flatpak) or [Live CD](#live-cd).
+You can probe your computer by [AppImage](#appimage), [Docker](#docker), [Snap](#snap), [Flatpak](#flatpak) or [Live CD](#live-cd).
 
 Also you can install native RPM/DEB package for your Linux distribution or install from source. See all install instructions in the [INSTALL.md](https://github.com/linuxhw/hw-probe/blob/master/INSTALL.md) file.
 
@@ -49,9 +49,7 @@ Usage
 
 Make a probe:
 
-    sudo hw-probe -all -upload -id "DESC"
-
-DESC — any description of the probe.
+    sudo hw-probe -all -upload
 
 
 AppImage
@@ -94,7 +92,7 @@ You can easily make a probe on any Linux distribution without installing the too
     -v /etc/os-release:/etc/os-release:ro \
     -v /var/log:/var/log:ro \
     --privileged --net=host --pid=host \
-    linuxhw/hw-probe -all -upload -id DESC
+    linuxhw/hw-probe -all -upload
 
 You may need to run `xhost +local:` before docker run to collect X11 info (xrandr, xinput, etc.).
 
@@ -188,7 +186,7 @@ Request inventory ID:
 
 Mark your probes by this ID:
 
-    sudo hw-probe -all -upload -id DESC -inventory-id ID
+    sudo hw-probe -all -upload -inventory-id ID
 
 Find your computers by the inventory ID on this page: https://linux-hardware.org/?view=computers
 
