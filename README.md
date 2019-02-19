@@ -206,7 +206,7 @@ Dump and decode ACPI table:
 
     sudo hw-probe -all -upload -dump-acpi -decode-acpi
 
-NOTE: "acpica-tools" package should be installed
+NOTE: `acpica-tools` package should be installed
 
 
 Operability

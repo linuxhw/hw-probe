@@ -370,6 +370,7 @@ my %DeviceIDByNum;
 my %DeviceNumByID;
 my %DeviceAttached;
 my %GraphicsCards;
+my %GraphicsCards_All;
 my %UsedNetworkDev;
 
 my $MIN_BAT_CAPACITY = 30;
@@ -2051,7 +2052,7 @@ sub getDefaultType($$)
             elsif($Name=~/bluetooth/i) {
                 return "bluetooth";
             }
-            elsif($Name=~/(\A| )WLAN( |\Z)|Wireless Adapter|Wireless Network|WiMAX|WiFi/i) {
+            elsif($Name=~/(\A| )(WLAN|NIC|11n Adapter)( |\Z)|Wireless.*Adapter|Wireless Network|Wireless LAN|WiMAX|WiFi|802\.11/i) {
                 return "network";
             }
             elsif($Name=~/converter/i) {
@@ -3851,8 +3852,10 @@ sub probeHW()
     {
         if($HW{$ID}{"Type"} eq "graphics card")
         {
-            if($ID=~/\w+:(.+?)\-/) {
+            if($ID=~/\w+:(.+?)\-/)
+            {
                 $GraphicsCards{$1}{$ID} = $HW{$ID}{"Driver"};
+                $GraphicsCards_All{$ID} = $HW{$ID}{"Driver"};
             }
         }
         elsif(grep { $HW{$ID}{"Type"} eq $_ } ("network", "modem", "sound", "storage", "camera", "chipcard", "fingerprint reader", "card reader", "dvb card", "tv card"))
@@ -3881,6 +3884,15 @@ sub probeHW()
             if($HW{$ID}{"Class"} eq "03-80"
             and keys(%{$GraphicsCards{$V}})>=2) {
                 next;
+            }
+            
+            if(not $GraphicsCards{$V}{$ID}
+            and $Sys{"Type"}!~/portable|laptop|notebook|docking/)
+            { # not a hybrid graphics
+                if(grep { $GraphicsCards_All{$_} } keys(%GraphicsCards_All))
+                { # some of them is connected
+                    print Data::Dumper::Dumper(\%GraphicsCards_All);next;
+                }
             }
             
             if(grep {$V eq $_} ("1002", "8086"))
@@ -5370,7 +5382,7 @@ sub probeHW()
             $CmdLine = $1;
         }
         
-        $Nomodeset = (index($CmdLine, " nomodeset")!=-1);
+        $Nomodeset = (index($CmdLine, " nomodeset")!=-1 or index($CmdLine, " nokmsboot")!=-1);
         $ForceVESA = (index($CmdLine, "xdriver=vesa")!=-1);
         
         foreach my $D (@G_DRIVERS)
@@ -5458,7 +5470,7 @@ sub probeHW()
                 $CmdLine = $1;
             }
             
-            $Nomodeset = (index($CmdLine, " nomodeset")!=-1);
+            $Nomodeset = (index($CmdLine, " nomodeset")!=-1 or index($CmdLine, " nokmsboot")!=-1);
             $ForceVESA = (index($CmdLine, "xdriver=vesa")!=-1);
         }
         
