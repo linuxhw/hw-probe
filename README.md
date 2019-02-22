@@ -19,6 +19,7 @@ Contents
 * [ Offline view ](#offline-view)
 * [ ACPI dump    ](#acpi-dump)
 * [ Operability  ](#operability)
+* [ Disable logs ](#disable-logs)
 * [ Privacy      ](#privacy)
 
 
@@ -224,6 +225,16 @@ The following tests are executed:
 * RAM memory test by `memtester`
 
 Execution time is about 1 min for average modern desktop hardware.
+
+
+Disable logs
+------------
+
+You can disable collecting of unwanted logs by the `-disable A,B,C,...` option.
+
+For example, to disable collecting of `lsblk` and `xorg.conf` run:
+
+    sudo hw-probe -all -upload -disable lsblk,xorg.conf
 
 
 Privacy

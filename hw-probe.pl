@@ -7841,15 +7841,18 @@ sub writeLogs()
         writeLog($LOG_DIR."/mcelog", $Mcelog);
     }
     
-    listProbe("logs", "xorg.conf");
-    my $XorgConf = readFile("/etc/X11/xorg.conf");
-    
-    if(not $XorgConf) {
-        $XorgConf = readFile("/usr/share/X11/xorg.conf");
-    }
-    
-    if(not $Opt{"Docker"} or $XorgConf) {
-        writeLog($LOG_DIR."/xorg.conf", $XorgConf);
+    if(enabledLog("xorg.conf"))
+    {
+        listProbe("logs", "xorg.conf");
+        my $XorgConf = readFile("/etc/X11/xorg.conf");
+        
+        if(not $XorgConf) {
+            $XorgConf = readFile("/usr/share/X11/xorg.conf");
+        }
+        
+        if(not $Opt{"Docker"} or $XorgConf) {
+            writeLog($LOG_DIR."/xorg.conf", $XorgConf);
+        }
     }
     
     if(enabledLog("grub")
@@ -8489,33 +8492,36 @@ sub writeLogs()
         writeLog($LOG_DIR."/modprobe.d", $Mprobe);
     }
     
-    listProbe("logs", "xorg.conf.d");
-    my $XConfig = "";
-    
-    foreach my $XDir ("/etc/X11/xorg.conf.d", "/usr/share/X11/xorg.conf.d")
+    if(enabledLog("xorg.conf"))
     {
-        if(not -d $XDir) {
-            next;
-        }
+        listProbe("logs", "xorg.conf.d");
+        my $XConfig = "";
         
-        my @XorgConfD = listDir($XDir);
-        foreach my $Xc (@XorgConfD)
+        foreach my $XDir ("/etc/X11/xorg.conf.d", "/usr/share/X11/xorg.conf.d")
         {
-            if($Xc!~/\.conf\Z/) {
+            if(not -d $XDir) {
                 next;
             }
-            $XConfig .= $Xc."\n";
-            foreach (1 .. length($Xc)) {
-                $XConfig .= "-";
+            
+            my @XorgConfD = listDir($XDir);
+            foreach my $Xc (@XorgConfD)
+            {
+                if($Xc!~/\.conf\Z/) {
+                    next;
+                }
+                $XConfig .= $Xc."\n";
+                foreach (1 .. length($Xc)) {
+                    $XConfig .= "-";
+                }
+                $XConfig .= "\n";
+                $XConfig .= readFile($XDir."/".$Xc);
+                $XConfig .= "\n\n";
             }
-            $XConfig .= "\n";
-            $XConfig .= readFile($XDir."/".$Xc);
-            $XConfig .= "\n\n";
         }
-    }
-    
-    if(not $Opt{"Docker"} or $XConfig) {
-        writeLog($LOG_DIR."/xorg.conf.d", $XConfig);
+        
+        if(not $Opt{"Docker"} or $XConfig) {
+            writeLog($LOG_DIR."/xorg.conf.d", $XConfig);
+        }
     }
     
     if($Opt{"Scanners"})
@@ -9413,7 +9419,8 @@ my %EnabledLog = (
         "vgaswitcheroo",
         "vulkaninfo",
         "xdpyinfo",
-        "xinput"
+        "xinput",
+        "xorg.conf"
     ],
     "maximal" => [
         "alsactl",
