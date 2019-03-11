@@ -1064,6 +1064,11 @@ my @ProtectedLogs = (
     "xrandr_providers"
 );
 
+my @ProtectFromRm = (
+    "dmesg",
+    "dmesg.1"
+);
+
 my $USE_DIGEST = 0;
 my $USE_DUMPER = 0;
 
@@ -1658,7 +1663,7 @@ sub createPackage()
             {
                 $Pkg = $Opt{"Source"};
                 
-                system("tar", "--directory", $TMP_DIR, "-xJf", $Pkg);
+                system("tar", "--directory", $TMP_DIR, "-xf", $Pkg);
                 if($?)
                 {
                     printMsg("ERROR", "failed to extract package (".$?.")");
@@ -1800,7 +1805,7 @@ sub copyFiles($$)
 sub isPkg($)
 {
     my $Path = $_[0];
-    return ($Path=~/\.(tar\.xz|txz)\Z/ or `file "$Path"`=~/XZ compressed data/);
+    return ($Path=~/\.(tar\.xz|txz|tar\.gz|tgz)\Z/ or `file "$Path"`=~/(XZ|gzip) compressed data/);
 }
 
 sub updateHost($$$)
@@ -2401,9 +2406,9 @@ sub probeHW()
         
         my @Items = qw(monitor bluetooth bridge
         camera cdrom chipcard cpu disk dvb fingerprint floppy
-        framebuffer gfxcard hub ide isapnp isdn joystick keyboard
+        gfxcard hub ide isapnp isdn joystick keyboard
         mouse netcard network pci pcmcia scanner scsi smp sound
-        tape tv usb usb-ctrl wlan zip);
+        tape tv usb usb-ctrl wlan);
         
         my $HWInfoCmd = "hwinfo";
         
@@ -2431,6 +2436,11 @@ sub probeHW()
                     push(@Items, "mmc-ctrl");
                 }
             }
+        }
+        
+        if($Opt{"LogLevel"} eq "maximal")
+        { # this may hang
+            push(@Items, "framebuffer");
         }
         
         my $Items = "--".join(" --", @Items);
@@ -2718,6 +2728,9 @@ sub probeHW()
                 if($Val=~/\"(.*)\"/) {
                     $Device{"Platform"} = $1;
                 }
+            }
+            elsif($Key eq "Link detected") {
+                $Device{"Link detected"} = $Val;
             }
         }
         
@@ -3106,6 +3119,10 @@ sub probeHW()
                         $Device{"Status"} = "works";
                     }
                 }
+            }
+            
+            if($Device{"Link detected"} eq "yes") {
+                $Device{"Status"} = "works";
             }
         }
         
@@ -3848,9 +3865,23 @@ sub probeHW()
     }
     
     # Fix status of graphics cards, network devices, etc.
+    my $PCIDrivers = 0;
+    
     foreach my $ID (sort keys(%HW))
     {
-        if($HW{$ID}{"Type"} eq "graphics card")
+        if($HW{$ID}{"Driver"}
+        and $ID=~/\Apci/)
+        {
+            $PCIDrivers = 1;
+            last;
+        }
+    }
+    
+    foreach my $ID (sort keys(%HW))
+    {
+        my $DevType = $HW{$ID}{"Type"};
+        
+        if($DevType eq "graphics card")
         {
             if($ID=~/\w+:(.+?)\-/)
             {
@@ -3858,12 +3889,20 @@ sub probeHW()
                 $GraphicsCards_All{$ID} = $HW{$ID}{"Driver"};
             }
         }
-        elsif(grep { $HW{$ID}{"Type"} eq $_ } ("network", "modem", "sound", "storage", "camera", "chipcard", "fingerprint reader", "card reader", "dvb card", "tv card"))
+        elsif(grep { $DevType eq $_ } ("bluetooth", "camera", "card reader", "chipcard", "communication controller", "dvb card", "fingerprint reader", "firewire controller", "flash memory", "modem", "multimedia controller", "network", "sd host controller", "sound", "storage", "system peripheral", "tv card", "video", "wireless"))
         {
-            if($ID=~/\A(usb|pci|ide):/)
+            if(grep { $DevType eq $_ } ("sd host controller", "system peripheral")
+            and $HW{$ID}{"Vendor"}=~/Intel/) {
+                next;
+            }
+            
+            if($ID=~/\A(usb|pci|ide|sdio):/)
             {
-                if(not $HW{$ID}{"Driver"}) {
-                    $HW{$ID}{"Status"} = "failed";
+                if($1 ne "pci" or $PCIDrivers)
+                {
+                    if(not $HW{$ID}{"Driver"}) {
+                        $HW{$ID}{"Status"} = "failed";
+                    }
                 }
             }
             
@@ -3890,8 +3929,8 @@ sub probeHW()
             and $Sys{"Type"}!~/portable|laptop|notebook|docking/)
             { # not a hybrid graphics
                 if(grep { $GraphicsCards_All{$_} } keys(%GraphicsCards_All))
-                { # some of them is connected
-                    print Data::Dumper::Dumper(\%GraphicsCards_All);next;
+                { # some of them are connected
+                    next;
                 }
             }
             
@@ -4091,7 +4130,8 @@ sub probeHW()
             or $Device{"Device"}=~/\AArray\d+_(Part)Number\d+\Z/i
             or $Device{"Device"}=~/\A(Part)Num\d+\Z/i
             or $Device{"Device"}=~/\A(0x)[\dA-F]+\Z/i
-            or $Device{"Device"}=~/\A(0)0+\Z/i)
+            or $Device{"Device"}=~/\A(0)0+\Z/i
+            or $Device{"Device"}=~/Module(Part)Number/i)
             {
                 $Device{"Device"} = $1;
                 if(grep { lc($Device{"Device"}) eq $_ } ("part", "0x", "0")) {
@@ -4484,26 +4524,6 @@ sub probeHW()
                             $Card .= "/edid";
                         }
                         
-                        foreach my $B (split(/\n\n/, $Block))
-                        {
-                            if($B=~/serial number:/)
-                            {
-                                foreach my $L (split(/\n/, $B))
-                                {
-                                    if($L=~/\A[a-z\d\s]+:\s+([a-f\d\s]+?)\Z/)
-                                    {
-                                        if(not defined $OldEdid{$Card}) {
-                                            $OldEdid{$Card} = $1;
-                                        }
-                                        else {
-                                            $OldEdid{$Card} .= " ".$1;
-                                        }
-                                    }
-                                }
-                                last;
-                            }
-                        }
-                        
                         if(not $OldEdid{$Card})
                         {
                             foreach my $L (split(/\n/, $Block))
@@ -4516,6 +4536,29 @@ sub probeHW()
                                     else {
                                         $OldEdid{$Card} .= " ".$1;
                                     }
+                                }
+                            }
+                        }
+                        
+                        if(not $OldEdid{$Card})
+                        {
+                            foreach my $B (split(/\n\n/, $Block))
+                            {
+                                if($B=~/serial number:/)
+                                {
+                                    foreach my $L (split(/\n/, $B))
+                                    {
+                                        if($L=~/\A[a-z\d\s]+:\s+([a-f\d\s]+?)\Z/)
+                                        {
+                                            if(not defined $OldEdid{$Card}) {
+                                                $OldEdid{$Card} = $1;
+                                            }
+                                            else {
+                                                $OldEdid{$Card} .= " ".$1;
+                                            }
+                                        }
+                                    }
+                                    last;
                                 }
                             }
                         }
@@ -4535,7 +4578,7 @@ sub probeHW()
                     
                     if(grep {$FoundEdid{$_}=~/\A$Hex\w+/} keys(%FoundEdid))
                     { # extended EDID is available
-                        last;
+                        next;
                     }
                     
                     $FoundEdid{$C} = $Hex;
@@ -5345,6 +5388,14 @@ sub probeHW()
         }
     }
     
+    if(not $Sys{"Secureboot"} and $Dmesg)
+    {
+        if(index($Dmesg, "Secure boot enabled")!=-1
+        or index($Dmesg, "Secure boot could not be determined")!=-1) {
+            $Sys{"Secureboot"} = "enabled";
+        }
+    }
+    
     my $XLog = "";
     
     if($Opt{"FixProbe"}) {
@@ -5728,7 +5779,8 @@ sub shortModel($)
     $Mdl=~s/\s*[\.\*]\Z//;
     $Mdl=~s/\s*\d\*.*//; # Motherboard C31 1*V1.*
     $Mdl=~s/\s+(Unknow|INVALID|Default string)\Z//;
-    $Mdl=~s/\s+R\d+\.\d+\Z//ig; # R2.0
+    
+    # $Mdl=~s/\s+R\d+\.\d+\Z//ig; # R2.0
     
     return $Mdl;
 }
@@ -7679,6 +7731,9 @@ sub writeHost()
     $Host .= "user:".$Sys{"User"}."\n";
     $Host .= "node:".$Sys{"Node"}."\n";
     $Host .= "arch:".$Sys{"Arch"}."\n";
+    if($Sys{"Secureboot"}) {
+        $Host .= "secureboot:".$Sys{"Secureboot"}."\n";
+    }
     $Host .= "kernel:".$Sys{"Kernel"}."\n";
     
     if($Sys{"Vendor"}) {
@@ -8910,7 +8965,7 @@ sub showInfo()
             {
                 my $Pkg = abs_path($Opt{"Source"});
                 chdir($TMP_DIR);
-                system("tar", "-m", "-xJf", $Pkg);
+                system("tar", "-m", "-xf", $Pkg);
                 chdir($ORIG_DIR);
                 
                 if($?)
@@ -10141,13 +10196,20 @@ sub fixLogs($)
         }
     }
     
-    foreach my $L ("pstree", "lsblk", "efibootmgr")
-    {
+    foreach my $L ("pstree")
+    { # Support for HW Probe 1.4
         if(-f "$Dir/$L"
         and -s "$Dir/$L" < $EMPTY_LOG_SIZE)
-        { # Support for HW Probe 1.4
-          # sh: XXX: command not found
+        { # sh: XXX: command not found
           # lsblk: Permission denied
+            writeFile("$Dir/$L", "");
+        }
+    }
+    
+    foreach my $L ("efibootmgr", "lsblk")
+    { # Support for HW Probe 1.4
+        if(-f "$Dir/$L"
+        and -s "$Dir/$L" < $EMPTY_LOG_SIZE/2) {
             writeFile("$Dir/$L", "");
         }
     }
@@ -10530,7 +10592,7 @@ sub scenario()
             
             copy($Opt{"FixProbe"}, $TMP_DIR."/".$PName);
             chdir($TMP_DIR);
-            system("tar", "-m", "-xJf", $PName);
+            system("tar", "-m", "-xf", $PName);
             chdir($ORIG_DIR);
             
             $Opt{"FixProbe"} = $TMP_DIR."/hw.info";
@@ -10585,7 +10647,8 @@ sub scenario()
         if(my $RmLog = $Opt{"RmLog"})
         {
             if(-f "$FixProbe_Logs/$RmLog"
-            and not grep {$RmLog eq $_} @ProtectedLogs) {
+            and not grep {$RmLog eq $_} @ProtectedLogs
+            and not grep {$RmLog eq $_} @ProtectFromRm) {
                 writeFile("$FixProbe_Logs/$RmLog", "");
             }
         }
@@ -10794,14 +10857,24 @@ sub scenario()
             my $PName = basename($FixProbe_Pkg);
             chdir($TMP_DIR);
             
-            my $Compress = ""; # default is XZ_OPT=-9
-            if($Opt{"LowCompress"}) {
-                $Compress .= "XZ_OPT=-0 ";
+            my $Compress = "";
+            
+            if($PName=~/xz\Z/)
+            {
+                if($Opt{"LowCompress"}) {
+                    $Compress .= "XZ_OPT=-0 ";
+                }
+                elsif($Opt{"HighCompress"}) {
+                    $Compress .= "XZ_OPT=-9 ";
+                }
+                else {
+                    # default is XZ_OPT=-9
+                }
+                $Compress .= "tar -cJf ".$PName." hw.info";
             }
-            elsif($Opt{"HighCompress"}) {
-                $Compress .= "XZ_OPT=-9 ";
+            elsif($PName=~/gz\Z/) {
+                $Compress .= "tar -czf ".$PName." hw.info";
             }
-            $Compress .= "tar -cJf ".$PName." hw.info";
             qx/$Compress/;
             move($PName, $FixProbe_Pkg);
             chdir($ORIG_DIR);
