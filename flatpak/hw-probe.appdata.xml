@@ -29,6 +29,10 @@
       By creating probes you contribute to the HDD/SSD Real-Life
       Reliability Test study: https://github.com/linuxhw/SMART
     </p>
+    <p>
+      Note: The 'Launch' button doesn't work properly due to a bug 552
+      in GNOME Software. Use desktop icon instead to create the probe.
+    </p>
   </description>
 
   <categories>
