@@ -26,6 +26,7 @@ cleanup:
   - /share/pkgconfig
   - /share/usb.ids.gz
   - /share/smartmontools
+  - /share/smartd.service
   - /share/PERL5_BASE
   - /share/automake*
   - /share/info
@@ -205,7 +206,7 @@ modules:
     buildsystem: simple
     build-commands:
       - NOCONFIGURE=1 sh autogen.sh
-      - ./configure --with-nvme-devicescan --prefix=/
+      - ./configure --with-nvme-devicescan --prefix=/ --with-systemdsystemunitdir=/share
       - sed -i -e 's/ -g / -s /' Makefile
       - make -j $FLATPAK_BUILDER_N_JOBS
       - find . -type f | perl -lne 'print if -B and -x' | xargs strip
@@ -421,7 +422,7 @@ modules:
     sources:
       - type: archive
         url: https://github.com/linuxhw/build-stuff/releases/download/1.4/hw-probe-1.4-AI.tar.gz
-        sha256: 787de4c2e52eaf65c0c3c1923c3eada2489f666602471681ac41012f4427fb76
+        sha256: 4c6170c11b12fb2b59b163a97f88600d0ad57b38507f7fcb91a69064f288a620
   - name: perl-base
     buildsystem: simple
     build-commands:
