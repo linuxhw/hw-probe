@@ -9,16 +9,15 @@ description: >
  logs. The tool returns a permanent URL to view the probe of the
  computer.
      
- The tool is intended to simplify collecting of logs necessary for
+ The probes are intended to simplify collecting of logs necessary for
  investigating hardware related problems. Just ask a user to run one
  simple command to collect all the system logs at once:
  
      sudo hw-probe -all -upload
  
- Make sure required Snap interfaces are connected:
- 
-     for i in hardware-observe mount-observe network-observe system-observe upower-observe log-observe raw-usb physical-memory-observe opengl;do sudo snap connect hw-probe:$i :$i; done
- 
+ Please connect all interfaces in Permissions in order to collect
+ more info. Private info is not collected.
+     
  By creating probes you contribute to the HDD/SSD Real-Life
  Reliability Test study: https://github.com/linuxhw/SMART
      
@@ -30,7 +29,7 @@ grade: stable
 apps:
   hw-probe:
     command: usr/bin/hw-probe -snap
-    plugs: [hardware-observe, mount-observe, network-observe, system-observe, upower-observe, log-observe, raw-usb, physical-memory-observe, opengl]
+    plugs: [hardware-observe, system-observe, block-devices, log-observe, upower-observe, physical-memory-observe, network-observe, raw-usb, mount-observe, opengl]
     environment:
       PATH: $PATH:$SNAP/sbin:$SNAP/usr/sbin:$SNAP/usr/bin
       PERL5LIB: $SNAP/usr/share/perl5:$SNAP/usr/lib/x86_64-linux-gnu/perl-base:$SNAP/usr/lib/i386-linux-gnu/perl-base
@@ -141,7 +140,7 @@ parts:
       - usr/sbin/lspci
       - usr/share/pci.ids
   acpica-unix:
-    source: https://acpica.org/sites/acpica/files/acpica-unix-20180629.tar.gz
+    source: https://acpica.org/sites/acpica/files/acpica-unix-20190215.tar.gz
     source-type: tar
     plugin: make
     build-attributes: [no-patchelf]
@@ -169,7 +168,7 @@ parts:
     prime:
       - sbin/hdparm
   smartmontools:
-    source: https://github.com/linuxhw/build-stuff/releases/download/1.4/smartmontools-6.6.tar.gz
+    source: https://github.com/linuxhw/build-stuff/releases/download/1.4/smartmontools-7.0.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -235,11 +234,11 @@ parts:
       - make
   hwinfo:
     after: [libx86emu]
-    source: https://github.com/openSUSE/hwinfo/archive/21.61.tar.gz
+    source: https://github.com/openSUSE/hwinfo/archive/21.64.tar.gz
     source-type: tar
     plugin: make
     override-build: |
-      echo '21.61' > VERSION
+      echo '21.64' > VERSION
       rm -f git2log
       sed -i -e 's/ -g / -s /' Makefile.common
       CFLAGS='-I'$SNAPCRAFT_STAGE'/usr/include' LDFLAGS='-L'$SNAPCRAFT_STAGE'/usr/lib64 -L'$SNAPCRAFT_STAGE'/usr/lib -lx86emu' make
