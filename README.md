@@ -113,7 +113,7 @@ Snap
 
 Install the universal Linux package:
 
-    sudo snap install hw-probe --classic
+    sudo snap install hw-probe
 
 The `hw-probe` command should become available on the command line after installation. If not, try:
 
@@ -137,9 +137,8 @@ Install app from Store:
 
 Connect system interfaces:
 
-    for i in hardware-observe mount-observe network-observe \
-    system-observe upower-observe log-observe raw-usb \
-    physical-memory-observe opengl;do sudo snap connect hw-probe:$i :$i; done
+    for i in hardware-observe system-observe block-devices log-observe upower-observe physical-memory-observe \
+    network-observe raw-usb mount-observe opengl;do sudo snap connect hw-probe:$i :$i; done
 
 Now you can create computer probes:
 

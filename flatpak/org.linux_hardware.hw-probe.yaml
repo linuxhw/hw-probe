@@ -9,6 +9,7 @@ finish-args:
   - --filesystem=host:ro
   - --filesystem=/var/log:ro
   - --filesystem=/sys:ro
+  - --filesystem=/dev
   - --env=PATH=/usr/bin:/bin:/usr/sbin:/sbin:/app/bin:/app/sbin
   - --env=PERL5LIB=/app/share/perl5:/app/lib/x86_64-linux-gnu/perl-base:/app/lib/i386-linux-gnu/perl-base
   - --env=LD_LIBRARY_PATH=/app/lib/x86_64-linux-gnu/:/app/lib/i386-linux-gnu/:/app/lib64:/app/lib
@@ -190,8 +191,8 @@ modules:
       - make install DESTDIR=$FLATPAK_DEST PREFIX=/
     sources:
       - type: archive
-        url: https://acpica.org/sites/acpica/files/acpica-unix-20180629.tar.gz
-        sha256: 70d11f3f2adbdc64a5b33753e1889918af811ec8050722fbee0fdfc3bfd29a4f
+        url: https://acpica.org/sites/acpica/files/acpica-unix-20190215.tar.gz
+        sha256: 71133ab2b1b2e2f176a9b5081060571977a3d2c91b36722e198bffa7ce9b0d37
   - name: hdparm
     buildsystem: simple
     build-commands:
@@ -213,8 +214,8 @@ modules:
       - make install DESTDIR=$FLATPAK_DEST
     sources:
       - type: archive
-        url: https://github.com/linuxhw/build-stuff/releases/download/1.4/smartmontools-6.6.tar.gz
-        sha256: 51f43d0fb064fccaf823bbe68cf0d317d0895ff895aa353b3339a3b316a53054
+        url: https://github.com/linuxhw/build-stuff/releases/download/1.4/smartmontools-7.0.tar.gz
+        sha256: e5e1ac2786bc87fdbd6f92d0ee751b799fbb3e1a09c0a6a379f9eb64b3e8f61c
   - name: util-linux
     buildsystem: simple
     build-commands:
@@ -257,7 +258,7 @@ modules:
       - aarch64
     buildsystem: simple
     build-commands:
-      - echo '21.61' > VERSION
+      - echo '21.64' > VERSION
       - rm -f git2log
       - sed -i -e 's/ -g / -s /' Makefile.common
       - CFLAGS='-I'$FLATPAK_DEST'/include' LDFLAGS='-L'$FLATPAK_DEST'/lib64 -L'$FLATPAK_DEST'/lib -lx86emu' LD_LIBRARY_PATH=$FLATPAK_DEST'/lib64:'$FLATPAK_DEST'/lib' make
@@ -265,14 +266,14 @@ modules:
       - cp -fr INST/usr/* $FLATPAK_DEST/
     sources:
       - type: archive
-        url: https://github.com/openSUSE/hwinfo/archive/21.61.tar.gz
-        sha256: dacd5d6f058cf0f39948f96e9265054d9ccea735a6098cec6aceb22365d097b4
+        url: https://github.com/openSUSE/hwinfo/archive/21.64.tar.gz
+        sha256: d681aeab4a54629933c5d059ba3a7047f281d1d08bbf89b452e43794050b4611
   - name: hwinfo
     only-arches:
       - aarch64
     buildsystem: simple
     build-commands:
-      - echo '21.61' > VERSION
+      - echo '21.64' > VERSION
       - rm -f git2log
       - sed -i -e 's/ -g / -s /' Makefile.common
       - make
@@ -280,8 +281,8 @@ modules:
       - cp -fr INST/usr/* $FLATPAK_DEST/
     sources:
       - type: archive
-        url: https://github.com/openSUSE/hwinfo/archive/21.61.tar.gz
-        sha256: dacd5d6f058cf0f39948f96e9265054d9ccea735a6098cec6aceb22365d097b4
+        url: https://github.com/openSUSE/hwinfo/archive/21.64.tar.gz
+        sha256: d681aeab4a54629933c5d059ba3a7047f281d1d08bbf89b452e43794050b4611
   - name: perl-uri
     buildsystem: simple
     build-commands:
