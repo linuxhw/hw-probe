@@ -26,11 +26,13 @@ Contents
 About
 -----
 
-Probe — is a snapshot of your computer's hardware state and system logs. HW Probe tool returns a permanent URL to view the probe of the computer.
+Probe — is a snapshot of your computer's hardware state and logs. The tool checks operability of devices by analysis of logs and returns a permanent url to view the probe of the computer.
+
+Share your probes and logs with Linux developers in order to debug and fix problems on your computer. Simplify inventory of hardware in your company. Please read more in [our blog](https://github.com/linuxhw/Blog/blob/master/Linux_Hardware_Blog.pdf).
+
+If some of your computer devices doesn't work due to a missed driver then the tool will suggest a proper Linux kernel version according to the LKDDb or third-party drivers.
 
 Sample probe: https://linux-hardware.org/?probe=b394035f90
-
-Share your probes and logs with Linux developers in order to debug and fix problems on your computer. Simplify inventory of hardware in your company.
 
 You can make a probe of your computer with the help of [AppImage](#appimage), [Docker](#docker), [Snap](#snap), [Flatpak](#flatpak), [Live CD](#live-cd) or RPM/DEB package.
 
@@ -65,21 +67,21 @@ The portable app that runs anywhere, no need to install anything. Just download 
 
 The app runs on all Linux distributions with `Glibc >= 2.14` including:
 
-* Ubuntu 12.04 and later
-* Linux Mint 13 and later
-* Debian 8 and later
-* openSUSE 12.0 and later
-* Manjaro 0.8 and later
-* ROSA Linux R1 and later
-* elementary OS 0.2 and later
-* Fedora 15 and later (need to add `fuse-libs` package to host on Fedora 15, 16 and 17)
-* RHEL 7 and later
-* CentOS 7 and later
-* Mageia 2 and later
-* Alt Linux 7 and later
-* Gentoo 12 and later
-* Sabayon 13 and later
-* Slackware 14.2 and later
+* Ubuntu 12.04 and newer
+* Linux Mint 13 and newer
+* Debian 8 and newer
+* openSUSE 12.0 and newer
+* Manjaro 0.8 and newer
+* ROSA Linux R1 and newer
+* elementary OS 0.2 and newer
+* Fedora 15 and newer (need to add `fuse-libs` package to host on Fedora 15, 16 and 17)
+* RHEL 7 and newer
+* CentOS 7 and newer
+* Mageia 2 and newer
+* Alt Linux 7 and newer
+* Gentoo 12 and newer
+* Sabayon 13 and newer
+* Slackware 14.2 and newer
 
 
 Docker
@@ -146,10 +148,13 @@ Now you can create computer probes:
 
 ###### Supported systems
 
-* Ubuntu 14.04 and later
-* Debian 9 and later
-* Fedora 26 and later
+* Ubuntu 14.04 and newer
+* Debian 9 and newer
+* Fedora 26 and newer
+* Solus 3 and newer
+* Zorin 12.3 and newer
 
+For other Linux distributions see install manual here: https://docs.snapcraft.io/installing-snapd/6735
 
 Flatpak
 -------
@@ -176,6 +181,14 @@ Note: The 'Launch' button doesn't display the probe window currently due to [bug
 
 The app is available in the Flathub: https://flathub.org/apps/details/org.linux_hardware.hw-probe
 
+###### Supported systems
+
+* Endless OS 3 and newer
+* Linux Mint 18.3 and newer
+* Fedora 27 and newer
+* CentOS 7.6 GNOME and newer
+
+For other Linux distributions see install manual here: https://flatpak.org/setup/
 
 Inventory
 ---------

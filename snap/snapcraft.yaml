@@ -5,16 +5,20 @@ description: >
  A tool to check operability of computer hardware and upload result
  to the Linux hardware database.
      
- Probe — is a snapshot of your computer hardware state and system
- logs. The tool returns a permanent URL to view the probe of the
- computer.
+ Probe — is a snapshot of your computer hardware state and logs.
+ The tool checks operability of devices by analysis of logs and
+ returns a permanent url to view the probe of the computer.
      
  The probes are intended to simplify collecting of logs necessary for
- investigating hardware related problems. Just ask a user to run one
- simple command to collect all the system logs at once:
+ investigating hardware related problems. Just run one simple command
+ to check hardware and collect all the system logs at once:
  
      sudo hw-probe -all -upload
  
+ If some of your computer devices does not work due to a missed driver
+ then the tool will suggest a proper Linux kernel version according
+ to the LKDDb or third-party drivers.
+     
  Please connect all interfaces in Permissions in order to collect
  more info. Private info is not collected.
      
