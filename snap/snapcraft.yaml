@@ -1,6 +1,6 @@
 name: hw-probe
-version: 1.4-10
-summary: A tool to check operability of computer hardware
+version: 1.4-11
+summary: Check operability of computer hardware and find drivers
 description: >
  A tool to check operability of computer hardware and upload result
  to the Linux hardware database.

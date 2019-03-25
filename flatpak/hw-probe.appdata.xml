@@ -5,7 +5,7 @@
   <metadata_license>CC-BY-3.0</metadata_license>
   <project_license>LGPL-2.1+</project_license>
   <name>Hardware Probe</name>
-  <summary>Check operability of computer hardware</summary>
+  <summary>Check operability of computer hardware and find drivers</summary>
 
   <description>
     <p>
