@@ -165,11 +165,11 @@ Add a remote:
 
 Install universal package:
 
-    flatpak install flathub org.linux_hardware.hw-probe
+    sudo flatpak install flathub org.linux_hardware.hw-probe
 
 Now you can create computer probes:
 
-    flatpak run org.linux_hardware.hw-probe -all -upload
+    sudo flatpak run org.linux_hardware.hw-probe -all -upload
 
 ###### App Center
 

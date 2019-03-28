@@ -23,7 +23,7 @@
       to check hardware and collect all the system logs at once:
     </p>
     <p>
-      sudo flatpak run org.linux_hardware.hw-probe -all -upload
+      flatpak run org.linux_hardware.hw-probe -all -upload
     </p>
     <p>
       If some of your computer devices does not work due to a missed driver
