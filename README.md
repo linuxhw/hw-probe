@@ -125,7 +125,7 @@ Now you can create computer probes:
 
     sudo hw-probe -all -upload
 
-NOTE: You need a Snap runtime (`snapd` package) and `/snap` symlink to `/var/lib/snapd/snap` (by `sudo ln -s /var/lib/snapd/snap /snap`) in your system to install and run snaps (pre-installed on Ubuntu 16.04 and later).
+Note: You need a Snap runtime (`snapd` package) and `/snap` symlink to `/var/lib/snapd/snap` (by `sudo ln -s /var/lib/snapd/snap /snap`) in your system to install and run snaps (pre-installed on Ubuntu 16.04 and later).
 
 ###### Snap Store
 
@@ -137,7 +137,7 @@ This is a strict snap that runs in a sandbox with limited functionality.
 
 It's better to use [classic snap](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe_1.4-2_amd64.snap) to collect more info about the computer:
 
-    sudo snap install [hw-probe_1.4-2_amd64.snap](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe_1.4-2_amd64.snap) --classic --dangerous
+    sudo snap install hw-probe_1.4-2_amd64.snap --classic --dangerous
 
 Connect system interfaces:
 
