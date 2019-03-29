@@ -131,18 +131,20 @@ NOTE: You need a Snap runtime (`snapd` package) and `/snap` symlink to `/var/lib
 
 The app is available in the Snap Store: https://snapcraft.io/hw-probe
 
-This is a strict snap that runs in a sandbox with limited functionality. It's better to use classic snap (see above) to collect more info about the computer.
+This is a strict snap that runs in a sandbox with limited functionality.
 
-Install app from Store:
+###### Classic Snap
 
-    sudo snap install hw-probe
+It's better to use [classic snap](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe_1.4-2_amd64.snap) to collect more info about the computer:
+
+    sudo snap install [hw-probe_1.4-2_amd64.snap](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe_1.4-2_amd64.snap) --classic --dangerous
 
 Connect system interfaces:
 
     for i in hardware-observe system-observe block-devices log-observe upower-observe physical-memory-observe \
     network-observe raw-usb mount-observe opengl;do sudo snap connect hw-probe:$i :$i; done
 
-Now you can create computer probes:
+Create computer probes:
 
     sudo hw-probe -all -upload
 
