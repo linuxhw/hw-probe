@@ -24,8 +24,8 @@ script:
   - make
   - make install DESTDIR=$BUILD_APPDIR
   # dmidecode
-  - tar -xf $BUILD_SOURCE_DIR/dmidecode-3.1.tar.gz -C $BUILD_SOURCE_DIR
-  - cd $BUILD_SOURCE_DIR/dmidecode-3.1
+  - tar -xf $BUILD_SOURCE_DIR/dmidecode-3.2.tar.xz -C $BUILD_SOURCE_DIR
+  - cd $BUILD_SOURCE_DIR/dmidecode-3.2
   - sed -i -e 's/ -O2/ -s -O2/' Makefile
   - make
   - make install prefix=/usr DESTDIR=$BUILD_APPDIR
@@ -57,18 +57,18 @@ script:
   - make install PREFIX=/usr DESTDIR=$BUILD_APPDIR SHARED=no LIBKMOD=yes HWDB=no ZLIB=no DNS=no
   - sed -i -e 's|/usr|././|g' $BUILD_APPDIR/usr/sbin/lspci
   # acpica-unix
-  - tar -xf $BUILD_SOURCE_DIR/acpica-unix-20180629.tar.gz -C $BUILD_SOURCE_DIR
-  - cd $BUILD_SOURCE_DIR/acpica-unix-20180629
+  - tar -xf $BUILD_SOURCE_DIR/acpica-unix-20190215.tar.gz -C $BUILD_SOURCE_DIR
+  - cd $BUILD_SOURCE_DIR/acpica-unix-20190215
   - make
   - make install DESTDIR=$BUILD_APPDIR
   # hdparm
-  - tar -xf $BUILD_SOURCE_DIR/hdparm-9.56.tar.gz -C $BUILD_SOURCE_DIR
-  - cd $BUILD_SOURCE_DIR/hdparm-9.56
+  - tar -xf $BUILD_SOURCE_DIR/hdparm-9.58.tar.gz -C $BUILD_SOURCE_DIR
+  - cd $BUILD_SOURCE_DIR/hdparm-9.58
   - make
   - make install DESTDIR=$BUILD_APPDIR
   # smartmontools
-  - tar -xf $BUILD_SOURCE_DIR/smartmontools-6.6.tar.gz -C $BUILD_SOURCE_DIR
-  - cd $BUILD_SOURCE_DIR/smartmontools-6.6
+  - tar -xf $BUILD_SOURCE_DIR/smartmontools-7.0.tar.gz -C $BUILD_SOURCE_DIR
+  - cd $BUILD_SOURCE_DIR/smartmontools-7.0
   - sh autogen.sh
   - ./configure --with-nvme-devicescan --prefix=/
   - sed -i -e 's/ -g / -s /' Makefile
@@ -90,12 +90,12 @@ script:
   - make
   - cp -fr ./src/xdemos/{glxgears,glxinfo} $BUILD_APPDIR/usr/bin/
   # hwinfo
-  - tar -xf $BUILD_SOURCE_DIR/hwinfo-21.56.tar.gz -C $BUILD_SOURCE_DIR
-  - cd $BUILD_SOURCE_DIR/hwinfo-21.56
-  - echo '21.56' > VERSION
+  - tar -xf $BUILD_SOURCE_DIR/hwinfo-21.64.tar.gz -C $BUILD_SOURCE_DIR
+  - cd $BUILD_SOURCE_DIR/hwinfo-21.64
+  - echo '21.64' > VERSION
   - rm -f git2log
   - sed -i -e 's/ -g / -s /' Makefile.common
-  - CFLAGS='-I'$BUILD_APPDIR'/usr/include' LDFLAGS='-L'$BUILD_APPDIR'/usr/lib64 -lx86emu' LD_LIBRARY_PATH=$BUILD_APPDIR'/usr/lib64' make
+  - CFLAGS="-I$BUILD_APPDIR/usr/include" LDFLAGS="-L$BUILD_APPDIR/usr/lib64 -L$BUILD_APPDIR/usr/lib -lx86emu" LD_LIBRARY_PATH="$BUILD_APPDIR/usr/lib64:$BUILD_APPDIR/usr/lib" make
   - make install DESTDIR=$BUILD_APPDIR
   # hw-probe
   - tar -xf $BUILD_SOURCE_DIR/hw-probe-1.4-AI.tar.gz -C $BUILD_SOURCE_DIR
@@ -157,6 +157,25 @@ script:
   - perl Makefile.PL
   - make install DESTDIR=`pwd`/INST INSTALLSITELIB=/SITELIB
   - cp -fr ./INST/SITELIB/* $BUILD_APPDIR/usr/lib/perl5/
+  # perl-Time-Local
+  - tar -xf $BUILD_SOURCE_DIR/Time-Local-1.28.tar.gz -C $BUILD_SOURCE_DIR
+  - cd $BUILD_SOURCE_DIR/Time-Local-1.28
+  - perl Makefile.PL
+  - make install DESTDIR=`pwd`/INST INSTALLSITELIB=/SITELIB
+  - cp -fr ./INST/SITELIB/* $BUILD_APPDIR/usr/lib/perl5/
+  # perl-Data-Dumper
+  - tar -xf $BUILD_SOURCE_DIR/Data-Dumper-2.161.tar.gz -C $BUILD_SOURCE_DIR
+  - cd $BUILD_SOURCE_DIR/Data-Dumper-2.161
+  - perl Makefile.PL
+  - make install DESTDIR=`pwd`/INST INSTALLSITELIB=/SITELIB
+  - cp -fr ./INST/usr/lib/perl5/*/* $BUILD_APPDIR/usr/lib/perl5/
+  # perl-base
+  - tar -xf $BUILD_SOURCE_DIR/perl-5.28.0.tar.gz -C $BUILD_SOURCE_DIR
+  - cd $BUILD_SOURCE_DIR/perl-5.28.0
+  - sh Configure -de -Dprefix=/
+  - make
+  - install -D ./perl $BUILD_APPDIR/usr/bin/perl
+  - cd lib && cat $BUILD_SOURCE_DIR/PERL5_BASE | while read i; do mkdir -p $BUILD_APPDIR/usr/lib/perl5/`dirname $i`; cp -fr $i $BUILD_APPDIR/usr/lib/perl5/$i; done
   # meta info
   - mkdir -p $BUILD_APPDIR/usr/share/metainfo/
   - cp -f $BUILD_SOURCE_DIR/hw-probe.appdata.xml $BUILD_APPDIR/usr/share/metainfo/

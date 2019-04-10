@@ -58,10 +58,10 @@ Make a probe:
 AppImage
 --------
 
-The portable app that runs anywhere, no need to install anything. Just download [hw-probe-1.4-129-x86_64.AppImage](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe-1.4-129-x86_64.AppImage) and run the following command in terminal to probe your computer:
+The portable app that runs anywhere, no need to install anything. Just download [hw-probe-1.4-135-x86_64.AppImage](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe-1.4-135-x86_64.AppImage) and run the following command in terminal to probe your computer:
 
-    chmod +x ./hw-probe-1.4-129-x86_64.AppImage
-    sudo ./hw-probe-1.4-129-x86_64.AppImage -all -upload
+    chmod +x ./hw-probe-1.4-135-x86_64.AppImage
+    sudo ./hw-probe-1.4-135-x86_64.AppImage -all -upload
 
 ###### Supported systems
 
