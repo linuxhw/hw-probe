@@ -2912,8 +2912,12 @@ sub probeHW()
         }
         elsif($Device{"Type"} eq "disk")
         {
-            if(defined $Device{"AllFiles"}{"/dev/cdrom"}) {
+            if(defined $Device{"AllFiles"}{"/dev/cdrom"})
+            {
                 $Device{"Type"} = "cdrom";
+                if(my $File = $Device{"File"}) {
+                    delete($HDD{$File});
+                }
             }
         }
         
@@ -4944,15 +4948,19 @@ sub probeHW()
         if($Admin and checkCmd("hdparm"))
         {
             listProbe("logs", "hdparm");
-            foreach my $Drive (sort keys(%HDD))
+            foreach my $Dev (sort keys(%HDD))
             {
-                my $Id = $HDD{$Drive};
+                if($Dev=~/\A\/dev\/sr\d+\Z/) {
+                    next;
+                }
+                
+                my $Id = $HDD{$Dev};
                 
                 if(index($Id, "usb:")==0 or index($Id, "scsi:")==0) {
                     next;
                 }
                 
-                my $Output = runCmd("hdparm -I \"$Drive\" 2>/dev/null");
+                my $Output = runCmd("hdparm -I \"$Dev\" 2>/dev/null");
                 $Output = encryptSerials($Output, "Serial Number");
                 $Output = encryptSerials($Output, "Unique ID");
                 $Output = hideTags($Output, "WWN Device Identifier");
@@ -5008,16 +5016,28 @@ sub probeHW()
     }
     elsif($Opt{"HWLogs"})
     {
-        if($Admin and checkCmd("smartctl"))
+        if($Admin and checkCmd("smartctl")) # $Admin or $Opt{"Snap"} ?
         {
             listProbe("logs", "smartctl");
             my %CheckedScsi = ();
             foreach my $Dev (sort keys(%HDD))
             {
+                if($Dev=~/\A\/dev\/sr\d+\Z/) {
+                    next;
+                }
+                
                 my $Id = $HDD{$Dev};
                 my $Output = runCmd($SmartctlCmd." -x \"".$Dev."\" 2>/dev/null");
-                $Output = encryptSerials($Output, "Serial Number");
-                $Output = hideWWNs($Output);
+                
+                if(not $Output or $Output=~/Operation not permitted|Permission denied/)
+                {
+                    if($Opt{"Snap"})
+                    {
+                        print STDERR "\nMake sure 'block-devices' interface is connected to verify SMART attributes of your drives:\n\n";
+                        print STDERR "    sudo snap connect hw-probe:block-devices :block-devices\n";
+                    }
+                    next;
+                }
                 
                 if(index($Id, "usb:")==0
                 and $Output=~/Unsupported USB|Unknown USB/i)
@@ -5043,11 +5063,11 @@ sub probeHW()
                     }
                 }
                 
-                if($Output)
-                {
-                    # $Output=~s/\A.*?(\=\=\=)/$1/sg;
-                    $Smartctl .= $Dev."\n".$Output."\n";
-                }
+                $Output = encryptSerials($Output, "Serial Number");
+                $Output = hideWWNs($Output);
+                
+                # $Output=~s/\A.*?(\=\=\=)/$1/sg;
+                $Smartctl .= $Dev."\n".$Output."\n";
                 
                 if(not $Id) {
                     $Id = detectDrive($Output, $Dev);
@@ -5056,10 +5076,6 @@ sub probeHW()
                 if($Id) {
                     setDriveStatus($Output, $Id);
                 }
-            }
-            
-            if($Opt{"Snap"} and $Smartctl=~/Operation not permitted|Permission denied/) {
-                $Smartctl = "";
             }
             
             writeLog($LOG_DIR."/smartctl", $Smartctl);
@@ -8974,6 +8990,7 @@ sub checkCmd(@)
             return "$Dir/$Cmd";
         }
     }
+    
     return;
 }
 

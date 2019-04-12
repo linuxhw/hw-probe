@@ -131,7 +131,7 @@ Note: You need a Snap runtime (`snapd` package) and `/snap` symlink to `/var/lib
 
 The app is available in the Snap Store: https://snapcraft.io/hw-probe
 
-This is a strict snap that runs in a sandbox with limited functionality.
+This is a strict snap that runs in a sandbox with limited functionality. Please enable `Access to disk block devices` in `Permissions` in order to check SMART attributes of your drives.
 
 ###### Classic Snap
 
