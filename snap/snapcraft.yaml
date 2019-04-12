@@ -41,8 +41,8 @@ apps:
       LC_ALL: C
 parts:
   edid-decode:
-    source: https://git.linuxtv.org/cgit.cgi/edid-decode.git
-    source-type: git
+    source: https://github.com/linuxhw/build-stuff/releases/download/1.4/edid-decode-20180622.tar.gz
+    source-type: tar
     plugin: make
     override-build: |
       sed -i -e 's/ -g / -s /' Makefile

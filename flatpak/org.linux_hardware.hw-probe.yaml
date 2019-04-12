@@ -423,7 +423,7 @@ modules:
     sources:
       - type: archive
         url: https://github.com/linuxhw/build-stuff/releases/download/1.4/hw-probe-1.4-AI.tar.gz
-        sha256: 8979ec4affbf7dcae224383d4946eaa4878068fde88b3c4d8c4acff8c7214c45
+        sha256: 5ac55a7d9e67d4a5c7d046e86f98a33c14f6fd46ba38799d8d303300f0b621f9
   - name: perl-base
     buildsystem: simple
     build-commands:
@@ -434,5 +434,5 @@ modules:
       - cd lib && cat $FLATPAK_DEST/share/PERL5_BASE | while read i; do mkdir -p $FLATPAK_DEST/share/perl5/`dirname $i`; cp -fr $i $FLATPAK_DEST/share/perl5/$i; done
     sources:
       - type: archive
-        url: https://www.cpan.org/src/5.0/perl-5.28.0.tar.gz
-        sha256: 7e929f64d4cb0e9d1159d4a59fc89394e27fa1f7004d0836ca0d514685406ea8
+        url: https://www.cpan.org/src/5.0/perl-5.28.1.tar.gz
+        sha256: 3ebf85fe65df2ee165b22596540b7d5d42f84d4b72d84834f74e2e0b8956c347
