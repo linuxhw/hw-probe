@@ -123,7 +123,7 @@ Install on Manjaro
 
 For Manjaro 18 and later:
 
-    sudo pacman -Syu hw-probe
+    sudo pacman -S hw-probe
 
 
 Install on Arch Linux
