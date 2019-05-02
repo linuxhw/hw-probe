@@ -121,6 +121,10 @@ The `hw-probe` command should become available on the command line after install
 
     export PATH=$PATH:/snap/bin
 
+Connect `block-devices` interface to check SMART attributes of drives:
+
+    sudo snap connect hw-probe:block-devices :block-devices
+
 Now you can create computer probes:
 
     sudo hw-probe -all -upload
