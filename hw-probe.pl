@@ -224,9 +224,7 @@ PRIVACY:
   securely via HTTPS.
 
 EXAMPLE:
-  sudo $CmdName -all -upload -id DESC
-  
-  DESC — any description of the probe.
+  sudo $CmdName -all -upload
 
 INFORMATION OPTIONS:
   -h|-help
@@ -413,18 +411,23 @@ my $FixProbe_Tests;
 # PCI and USB IDs
 my %PciInfo;
 my %PciInfo_D;
-my %UsbInfo;
+my %PciClass;
 
 my %PciVendor = (
+    "8086" => "Intel",
     "17aa" => "Lenovo",
-    "144d" => "Samsung",
     "14a4" => "Lite-On",
     "1987" => "Phison",
-    "8086" => "Intel",
-    "1179" => "Toshiba",
+    "144d" => "Samsung",
+    "1b4b" => "SanDisk",
+    "126f" => "Silicon Motion",
     "1c5c" => "SK hynix",
-    "1b4b" => "SanDisk"
+    "1179" => "Toshiba"
 );
+
+my %UsbInfo;
+my %UsbVendor;
+my %UsbClass;
 
 my %DiskVendor = (
     "ACJ"       => "KingSpec",
@@ -475,6 +478,7 @@ my %DiskVendor = (
     "PH2"       => "LITEON",
     "PH6-CE"    => "Plextor",
     "Q200 EX"   => "Toshiba",
+    "Q-180"     => "KingSpec",
     "Q-360"     => "KingSpec",
     "R3S"       => "AMD",
     "R5S"       => "AMD",
@@ -493,6 +497,7 @@ my %DiskVendor = (
     "SU04G"     => "SanDisk",
     "SU08G"     => "SanDisk",
     "TE2"       => "SanDisk",
+    "TEAML5"    => "Team",
     "TP00"      => "China",
     "TS"        => "Transcend",
     "USDU1"     => "Transcend",
@@ -583,6 +588,7 @@ my %ChassisType = (
 
 my $DESKTOP_TYPE = "desktop|nettop|all in one|lunch box|space\-saving|mini|tower|server|rack|blade";
 my $MOBILE_TYPE  = "notebook|laptop|portable|tablet|convertible|detachable|docking";
+my $SERVER_TYPE  = "server|rack|blade";
 
 my $MOUSE_BATTERY = "wiimote|hidpp_|controller_|hid\-";
 
@@ -623,7 +629,9 @@ my %MonVendor = (
     "AIC" => "Arnos Instruments", # AG Neovo
     "AMR" => "JVC",
     "AMT" => "AMT International",
+    "AMW" => "AMW",
     "AOC" => "AOC",
+    "AOP" => "AOpen",
     "APP" => "Apple Computer",
     "ASB" => "Prestigio", # ASBIS
     "ATV" => "Ativa",
@@ -650,6 +658,7 @@ my %MonVendor = (
     "DVM" => "RoverScan",
     "DWE" => "Daewoo",
     "EIZ" => "Eizo",
+    "ELA" => "ELSA",
     "ELE" => "Element",
     "ELO" => "Elo Touch",
     "EMA" => "eMachines",
@@ -664,8 +673,10 @@ my %MonVendor = (
     "GWY" => "Gateway",
     "HAI" => "Haier",
     "HAR" => "Haier",
+    "HCM" => "HCL",
     "HEC" => "Hitachi",
     "HED" => "Hedy",
+    "HII" => "Higer",
     "HIQ" => "Hyundai ImageQuest",
     "HIT" => "Hitachi",
     "HKC" => "HKC",
@@ -677,12 +688,14 @@ my %MonVendor = (
     "HTC" => "Hitachi",
     "HWP" => "HP",
     "HPN" => "HP",
+    "HUG" => "Hugon",
     "IBM" => "IBM",
     "IGM" => "Videoseven",
     "INL" => "InnoLux Display",
     "IQT" => "Hyundai ImageQuest",
     "IVM" => "Iiyama",
     "IVO" => "InfoVision",
+    "JDI" => "JDI", # Japan Display Inc.
     "JEN" => "Jean",
     "JVC" => "JVC",
     "KOA" => "Konka",
@@ -699,6 +712,7 @@ my %MonVendor = (
     "LRN" => "Doffler",
     "MAX" => "Belinea",
     "MEA" => "Medion",
+    "MEC" => "Medion Akoya",
     "MED" => "Medion",
     "MEI" => "Panasonic",
     "MEL" => "Mitsubishi",
@@ -714,7 +728,9 @@ my %MonVendor = (
     "NON" => "Positivo",
     "NVD" => "Nvidia",
     "NVT" => "Novatek",
+    "OCM" => "oCOSMO",
     "ONK" => "Onkyo",
+    "ONN" => "ONN",
     "ORN" => "Orion",
     "PEA" => "Pegatron",
     "PHL" => "Philips",
@@ -734,9 +750,11 @@ my %MonVendor = (
     "ROL" => "Rolsen",
     "RUB" => "Rubin",
     "SAM" => "Samsung",
+    "SAN" => "Sanyo",
     "SCE" => "Sun",
     "SDC" => "Samsung",
     "SEC" => "Samsung", # Seiko Epson
+    "SEK" => "Seiki",
     "SEM" => "Samsung",
     "SHP" => "Sharp",
     "SNY" => "Sony",
@@ -750,6 +768,7 @@ my %MonVendor = (
     "TAR" => "Targa Visionary",
     "TCL" => "TCL",
     "TEU" => "Relisys",
+    "TLX" => "Tianma XM",
     "TNJ" => "Toppoly",
     "TOP" => "TopView",
     "TOS" => "Toshiba",
@@ -763,12 +782,16 @@ my %MonVendor = (
     "VSC" => "ViewSonic",
     "WDE" => "Westinghouse",
     "WDT" => "Westinghouse",
+    "WET" => "Westinghouse",
+    "WOR" => "COMPAL",
     "YAK" => "Yakumo",
-    "ZRN" => "Zoran"
+    "ZRN" => "Zoran",
+    "_YM" => "Samsung"
 );
 
-my @UnknownVendors = (
+my @UnknownMonVendor = (
     "AAA",
+    "ADP",
     "AGO",
     "AMT",
     "ARS", # Prestigio?
@@ -779,22 +802,36 @@ my @UnknownVendors = (
     "CDR",
     "CHD",
     "CHE",
+    "CHI",
     "CHR",
+    "CTV",
     "CVT",
+    "CYX",
     "DCL",
     "DDL",
     "DGI",
+    "DPL",
+    "DTV",
     "EXP",
     "FNI",
     "FRT",
+    "GDH",
     "GER",
     "GLE",
     "GVT",
     "JRY",
     "JXJ",
+    "HCG",
+    "HHT",
+    "HSI",
     "HYO",
+    "IFS",
+    "IPS", # Songren?
+    "IOD",
     "ITE",
     "KDC",
+    "KET",
+    "KNK",
     "KTC",
     "LLP",
     "LLL",
@@ -802,20 +839,25 @@ my @UnknownVendors = (
     "LTM",
     "MIT",
     "MOT", # MotoAttach?
+    "MTD",
+    "NEX",
     "NOD",
     "NTS",
     "NXG",
+    "ONB",
     "PAR",
     "PKV",
     "PNP",
     "PPP",
+    "PTF",
     "PVS",
+    "RCA",
     "ROW",
+    "RRR",
     "RTD",
     "RTK",
     "RX_",
     "SAC",
-    "SAN",
     "SIS",
     "SKK",
     "SKY",
@@ -824,11 +866,13 @@ my @UnknownVendors = (
     "SYK",
     "TVT",
     "UME",
+    "UTV",
     "VIE",
     "VID",
     "VMO",
     "VST",
     "WIN",
+    "WST",
     "WYT",
     "DVI",
     "XXX",
@@ -1919,7 +1963,7 @@ sub getPnpVendor($)
         return $MonVendor{$V};
     }
     
-    if(grep {$V eq $_} @UnknownVendors) {
+    if(grep {$V eq $_} @UnknownMonVendor) {
         return $V;
     }
     
@@ -3070,10 +3114,6 @@ sub probeHW()
                     elsif(not $Device{"Vendor"}) {
                         $Device{"Vendor"} = $V;
                     }
-                    
-                    # if(not defined $MonVendor{$V} and not grep {$_ eq $V} @UnknownVendors) {
-                    #     print "WARNING: unknown monitor vendor $V\n";
-                    # }
                 }
             }
             
@@ -3205,18 +3245,15 @@ sub probeHW()
         }
         
         if($Device{"Type"}
-        and $Device{"Type"}!~/cpu|mouse|keyboard/) {
+        and $Device{"Type"}!~/cpu|mouse|keyboard|monitor/) {
             countDevice($BusID);
         }
         
         if($Device{"Type"} eq "cpu") {
             $CPU_ID = $BusID;
         }
-        elsif($Device{"Type"} eq "graphics card") {
-            $ComponentID{"Graphics"}{$BusID} = 1;
-        }
-        elsif($Device{"Type"} eq "cdrom") {
-            $ComponentID{"CDRom"}{$BusID} = 1;
+        else {
+            $ComponentID{$Device{"Type"}}{$BusID} = 1;
         }
     }
     
@@ -3361,7 +3398,13 @@ sub probeHW()
     elsif(checkCmd("lspci"))
     {
         listProbe("logs", "lspci_all");
-        $Lspci_A = runCmd("lspci -vvnn");
+        
+        my $PciLink = createIDsLink("pci");
+        $Lspci_A = runCmd("lspci -vvnn 2>&1");
+        if($PciLink) {
+            unlink($PciLink);
+        }
+        
         $Lspci_A=~s/(Serial Number:?\s+|Manufacture ID:\s+).+/$1.../gi;
         
         if($Opt{"HWLogs"}) {
@@ -3400,7 +3443,12 @@ sub probeHW()
         if(checkCmd("lspci"))
         {
             listProbe("logs", "lspci");
-            $Lspci = runCmd("lspci -vmnnk");
+            
+            my $PciLink = createIDsLink("pci");
+            $Lspci = runCmd("lspci -vmnnk 2>&1");
+            if($PciLink) {
+                unlink($PciLink);
+            }
         }
         
         if($Opt{"HWLogs"}) {
@@ -3543,7 +3591,13 @@ sub probeHW()
         if(checkCmd("lsusb"))
         {
             listProbe("logs", "lsusb");
-            $Lsusb = runCmd("lsusb -v");
+            
+            my $UsbLink = createIDsLink("usb");
+            $Lsusb = runCmd("lsusb -v 2>&1");
+            if($UsbLink) {
+                unlink($UsbLink);
+            }
+            
             $Lsusb=~s/(iSerial\s+\d+\s*)[^\s]+$/$1.../mg;
             
             if(length($Lsusb)<60 and $Lsusb=~/unable to initialize/i) {
@@ -4004,7 +4058,7 @@ sub probeHW()
         if(checkCmd("dmidecode"))
         {
             listProbe("logs", "dmidecode");
-            $Dmidecode = runCmd("dmidecode");
+            $Dmidecode = runCmd("dmidecode 2>&1");
             $Dmidecode = hideTags($Dmidecode, "UUID|Asset Tag");
             $Dmidecode = encryptSerials($Dmidecode, "Serial Number");
         }
@@ -4037,7 +4091,7 @@ sub probeHW()
         elsif($Info=~/System Information\n/)
         {
             if($Info=~/Manufacturer:[ ]*(.+?)[ ]*(\n|\Z)/) {
-                $Sys{"Vendor"} = $1;
+                $Sys{"Vendor"} = fmtVal($1);
             }
             
             if($Info=~/Product Name:[ ]*(.+?)[ ]*(\n|\Z)/) {
@@ -4329,12 +4383,22 @@ sub probeHW()
         fixFFByCPU($HW{$CPU_ID}{"Device"});
     }
     
-    foreach (keys(%{$ComponentID{"CDRom"}})) {
+    foreach (keys(%{$ComponentID{"cdrom"}})) {
         fixFFByCDRom($HW{$_}{"Device"});
     }
     
-    foreach (keys(%{$ComponentID{"Graphics"}})) {
+    foreach (keys(%{$ComponentID{"graphics card"}})) {
         fixFFByGPU($HW{$_}{"Device"});
+    }
+    
+    foreach (keys(%{$ComponentID{"monitor"}})) {
+        fixFFByMonitor($HW{$_}{"Device"});
+    }
+    
+    fixFFByModel($Sys{"Vendor"}, $Sys{"Model"});
+    
+    foreach (keys(%{$ComponentID{"touchpad"}})) {
+        fixFFByTouchpad($_);
     }
     
     if($Board_ID)
@@ -5020,6 +5084,7 @@ sub probeHW()
         {
             listProbe("logs", "smartctl");
             my %CheckedScsi = ();
+            my $SnapNoBlockDevices = 0;
             foreach my $Dev (sort keys(%HDD))
             {
                 if($Dev=~/\A\/dev\/sr\d+\Z/) {
@@ -5031,10 +5096,11 @@ sub probeHW()
                 
                 if(not $Output or $Output=~/Operation not permitted|Permission denied/)
                 {
-                    if($Opt{"Snap"})
+                    if($Opt{"Snap"} and not $SnapNoBlockDevices)
                     {
-                        print STDERR "\nMake sure 'block-devices' interface is connected to verify SMART attributes of your drives:\n\n";
+                        print STDERR "\nWARNING: Make sure 'block-devices' interface is connected to verify SMART attributes of your drives:\n\n";
                         print STDERR "    sudo snap connect hw-probe:block-devices :block-devices\n";
+                        $SnapNoBlockDevices = 1;
                     }
                     next;
                 }
@@ -5462,11 +5528,19 @@ sub probeHW()
             }
         }
         
-        $XLog = hideTags($XLog, "Serial#");
-        $XLog = hidePaths($XLog);
-        if(my $HostName = $ENV{"HOSTNAME"}) {
-            $XLog=~s/ $HostName / NODE /g;
+        if(not $XLog) {
+            $XLog = readFile("/home/ubuntu/.local/share/xorg/Xorg.0.log");
         }
+        
+        if($XLog)
+        {
+            $XLog = hideTags($XLog, "Serial#");
+            $XLog = hidePaths($XLog);
+            if(my $HostName = $ENV{"HOSTNAME"}) {
+                $XLog=~s/ $HostName / NODE /g;
+            }
+        }
+        
         if(not $Opt{"Docker"} or $XLog) {
             writeLog($LOG_DIR."/xorg.log", $XLog);
         }
@@ -5506,6 +5580,10 @@ sub probeHW()
                 elsif($D eq "nouveau")
                 { # Manjaro 17
                     @Drs = ("nouveau", "nvidia");
+                    # if(keys(%GraphicsCards)==1)
+                    # { # Ubuntu 18
+                    #     push(@Drs, "modesetting");
+                    # }
                 }
                 elsif($D eq "amdgpu" and keys(%GraphicsCards)==1)
                 { # Ubuntu 18
@@ -5731,6 +5809,10 @@ sub registerBattery($)
     
     if(defined $BatType{$Device->{"Technology"}}) {
         $Device->{"Technology"} = $BatType{$Device->{"Technology"}};
+    }
+    
+    if($Device->{"Technology"} eq "Unknown") {
+        $Device->{"Technology"} = undef;
     }
     
     if(not $Device->{"Device"}) {
@@ -6178,8 +6260,14 @@ sub detectMonitor($)
     {
         $Device{"Vendor"} = nameID($Device{"Vendor"});
         
-        if(not defined $MonVendor{$V}) {
-            $Device{"Unknown"} = 1;
+        if(not defined $MonVendor{$V})
+        {
+            if(grep {$V eq $_} @UnknownMonVendor) {
+                $Device{"KnownUnknown"} = 1;
+            }
+            else {
+                $Device{"Unknown"} = 1;
+            }
         }
     }
     
@@ -6189,10 +6277,6 @@ sub detectMonitor($)
         {
             $HW{"eisa:".$ID} = \%Device;
             $HW{"eisa:".$ID}{"Status"} = "works"; # got EDID
-            
-            # if(not $Opt{"IdentifyMonitor"} and not defined $MonVendor{$V} and not grep {$_ eq $V} @UnknownVendors) {
-            #     print "WARNING: unknown monitor vendor $V\n";
-            # }
         }
     }
 }
@@ -6301,10 +6385,10 @@ sub detectDrive(@)
     if(not $Device->{"Vendor"})
     { # NVMe
         if($Desc=~/PCI Vendor ID:\s*0x(\w+)/) {
-            $Device->{"Vendor"} = getPciVendor($1);
+            $Device->{"Vendor"} = nameID(getPciVendor($1));
         }
         elsif($Desc=~/PCI Vendor\/Subsystem ID:\s*0x(\w+)/) {
-            $Device->{"Vendor"} = getPciVendor($1);
+            $Device->{"Vendor"} = nameID(getPciVendor($1));
         }
         
         if($Device->{"Vendor"}
@@ -6586,9 +6670,9 @@ sub guessDriveVendor($)
         }
     }
     
-    if($Name=~/\A(MT|MSH|P3|P3D|T)\-(60|64|120|128|240|256|512|1TB|2TB)\Z/
+    if($Name=~/\A(MT|MSH|P3|P3D|T|PA25)\-(60|64|120|128|240|256|512|1TB|2TB)\Z/
     or grep { $Name eq $_ } ("V-32", "NT-256", "NT-512", "Q-360"))
-    { # MT-64 MSH-256 P3-128 P3D-240 P3-2TB T-60 V-32
+    { # MT-64 MSH-256 P3-128 P3D-240 P3-2TB T-60 V-32 PA25-128
         return "KingSpec";
     }
     
@@ -6748,7 +6832,7 @@ sub emptyVal($)
     my $Val = $_[0];
     
     if($Val=~/\A[\[\(]*(not specified|not defined|invalid|error|unknown|unknow|uknown|empty|n\/a|none|default string)[\)\]]*\Z/i
-    or $Val=~/(\A|\b|\d)(to be filled|unclassified device|not defined)(\b|\Z)/i
+    or $Val=~/(\A|\b|\d)(to be filled|unclassified device|not defined|bad index)(\b|\Z)/i
     or $Val=~/\A(vendor|device|unknown vendor|customer|model|_)\Z/i) {
         return 1;
     }
@@ -6829,7 +6913,7 @@ sub nameID($)
     $Name=~s/\s*\([^()]*\)//g;
     $Name=~s/\s*\[[^\[\]]*\]//g;
     
-    while ($Name=~s/\s*(\,\s*|\s+)(Inc|Ltd|Co|GmbH|Corp|Pte|LLC|Sdn|Bhd|BV|AG|RSS|PLC|s\.r\.l\.|srl|S\.P\.A\.|S\.p\.A\.|B\.V\.|S\.A\.)(\.|\Z)//ig) {}
+    while ($Name=~s/\s*(\,\s*|\s+)(Inc|Ltda|Ltd|Co|GmbH|Corp|Pte|LLC|Sdn|Bhd|BV|AG|RSS|PLC|s\.r\.l\.|srl|S\.P\.A\.|S\.p\.A\.|B\.V\.|S\.A\.)(\.|\Z)//ig) {}
     $Name=~s/,?\s+[a-z]{2,4}\.//ig;
     $Name=~s/,(.+)\Z//ig;
     
@@ -6980,9 +7064,6 @@ sub probeSys()
         $Sys{"Arch"}=~s/\-linux.*//;
     }
     
-    $Sys{"Node"} = "NODE";
-    $Sys{"User"} = "USER";
-    
     if($Opt{"PC_Name"}) {
         $Sys{"Name"} = $Opt{"PC_Name"};
     }
@@ -7008,6 +7089,7 @@ sub probeDmi()
         }
         
         $Value=~s/\s+\Z//g;
+        $Value = fmtVal($Value);
         
         if($File eq "sys_vendor")
         {
@@ -7052,7 +7134,7 @@ sub emptyProduct($)
     my $Val = $_[0];
     
     if(not $Val or $Val=~/\b(System manufacturer|System Manufacter|stem manufacturer|Name|Version|to be filled|empty|Not Specified|Default string|board version|Unknow)\b/i
-    or $Val=~/\A([_0\-\.\s]+|NA|N\/A|\-O)\Z/i or emptyVal($Val)) {
+    or $Val=~/\A([_0O\-\.\s]+|NA|N\/A|\-O)\Z/i or emptyVal($Val)) {
         return 1;
     }
     
@@ -7086,8 +7168,14 @@ sub fixFFByCPU($)
     my $CPU = $_[0];
     if($Sys{"Type"}!~/$DESKTOP_TYPE/)
     {
-        if($CPU=~/Celeron CPU E\d+|Pentium (CPU G\d+|D CPU|Dual-Core CPU E\d+) |Core 2 CPU \d+ |Core 2 Duo CPU E\d+|Core 2 Quad CPU Q\d+|Core i\d CPU \d+ |Core i\d-\d+ CPU|CPU Q(9400|8200)|Athlon 64 X2 Dual Core Processor \d+|Athlon X4 \d+|Phenom II X[24] B?\d+|FX-\d+ Six-Core|A10\-\d+K|Xeon CPU \d+ /) {
+        if($CPU=~/Celeron CPU E\d+|Pentium (CPU G\d+|D CPU|Dual-Core CPU E\d+) |Core 2 CPU \d+ |Core 2 Duo CPU E\d+|Core 2 Quad CPU Q\d+|Core i\d CPU \d+ |Core i\d-\d+ CPU|CPU Q(9400|8200)|Athlon 64 X2 Dual Core Processor \d+|Athlon X4 \d+|Athlon 64 Processor \d+\+|Phenom II X[24] B?\d+|FX-\d+ Six-Core|A10\-\d+K|Xeon CPU \d+ /) {
             $Sys{"Type"} = "desktop";
+        }
+    }
+    if($Sys{"Type"}!~/$SERVER_TYPE/)
+    {
+        if($CPU=~/Opteron X3216|Xeon Gold/) {
+            $Sys{"Type"} = "server";
         }
     }
     if($Sys{"Type"}!~/$MOBILE_TYPE/)
@@ -7114,8 +7202,37 @@ sub fixFFByCDRom($)
     my $CDRom = $_[0];
     if($Sys{"Type"}!~/$DESKTOP_TYPE/)
     {
-        if($CDRom=~/(DVR-118L|DDU1615|SH-222AB)/) {
+        if($CDRom=~/(DVR-118L|DDU1615|SH-222AB|DVR-111D|GSA-H10N)/) {
             $Sys{"Type"} = "desktop";
+        }
+    }
+}
+
+sub fixFFByTouchpad($)
+{
+    my $Id = $_[0];
+    if($Sys{"Type"}!~/$MOBILE_TYPE/)
+    {
+        if($Id=~/ps\/2/) {
+            $Sys{"Type"} = "notebook";
+        }
+    }
+}
+
+sub fixFFByMonitor($)
+{
+    my $Mon = $_[0];
+    if($Sys{"Type"} ne "all in one")
+    {
+        if($Mon=~/(AIO PC)/) {
+            $Sys{"Type"} = "all in one";
+        }
+    }
+    
+    if($Sys{"Type"}!~/$MOBILE_TYPE/)
+    {
+        if($Mon=~/LGD02E9|SEC3445/) {
+            $Sys{"Type"} = "notebook";
         }
     }
 }
@@ -7125,14 +7242,41 @@ sub fixFFByBoard($)
     my $Board = $_[0];
     if($Sys{"Type"}!~/$DESKTOP_TYPE/)
     {
-        if($Board=~/\b(D510MO|GA-K8NMF-9|DG965RY|DG33BU|D946GZIS|N3150ND3V|D865GSA|DP55WG|H61MXT1|D875PBZ|F2A55|Z68XP-UD3|Z77A-GD65|M4A79T|775Dual-880Pro|P4Dual-915GL|P4i65GV|D5400XS|D201GLY|MicroServer)\b/) {
+        if($Board=~/\b(D510MO|GA-K8NMF-9|DG965RY|DG33BU|D946GZIS|N3150ND3V|D865GSA|DP55WG|H61MXT1|D875PBZ|F2A55|Z68XP-UD3|Z77A-GD65|M4A79T|775Dual-880Pro|P4Dual-915GL|P4i65GV|D5400XS|D201GLY|MicroServer|IPPSB-DB|MS-AA53|C2016-BSWI-D2|N3160TN|ZBOX-CI323NANO|D915PBL)\b/) {
             $Sys{"Type"} = "desktop";
+        }
+    }
+    if($Sys{"Type"}!~/$SERVER_TYPE/)
+    {
+        if($Board=~/X10DRT-P|X10DRW-i/) {
+            $Sys{"Type"} = "server";
         }
     }
     if($Sys{"Type"}!~/$MOBILE_TYPE/)
     {
-        if($Board=~/\b(W7430)\b/) {
+        if($Board=~/\b(W7430|Poyang)\b/) {
             $Sys{"Type"} = "notebook";
+        }
+    }
+}
+
+sub fixFFByModel($$)
+{
+    my ($V, $M) = @_;
+    
+    if($Sys{"Type"}!~/$MOBILE_TYPE/)
+    {
+        if($M=~/(Aspire (7720|5670)|EasyNote)/
+        or ($V=~/Samsung/i and $M=~/R50\/R51/)
+        or ($V=~/Clevo/i and $M=~/M740TU/)) {
+            $Sys{"Type"} = "notebook";
+        }
+    }
+    
+    if($Sys{"Type"}=~/$MOBILE_TYPE/ and $Sys{"Type"} ne "convertible")
+    {
+        if($M=~/convertible/i) {
+            $Sys{"Type"} = "convertible";
         }
     }
 }
@@ -7145,6 +7289,8 @@ sub fixChassis()
         if($L=~/\A(\w+?):\s+(.+?)\Z/)
         {
             my ($File, $Value) = ($1, $2);
+            
+            $Value = fmtVal($Value);
             
             if($File eq "chassis_type")
             {
@@ -7216,6 +7362,13 @@ sub fixChassis()
         if($Sys{"Kernel"}=~/\-(sunxi|raspi2)\Z/i
         or $Sys{"Vendor"}=~/raspberry/i) {
             $Sys{"Type"} = "system on chip";
+        }
+        
+        if($Sys{"Kernel"}=~/\-(tegra)\Z/i)
+        {
+            $Sys{"Type"} = "system on chip";
+            $Sys{"Vendor"} = "NVIDIA";
+            $Sys{"Model"} = "Tegra";
         }
     }
 }
@@ -7382,7 +7535,7 @@ sub probeHWaddr()
 
 sub warnSnapInterfaces()
 {
-    print STDERR "\nMake sure required Snap interfaces are connected:\n\n";
+    print STDERR "\nERROR: Make sure required Snap interfaces are connected:\n\n";
     print STDERR "    for i in hardware-observe system-observe block-devices log-observe upower-observe physical-memory-observe network-observe raw-usb mount-observe opengl;do sudo snap connect hw-probe:\$i :\$i; done\n";
     
     # auto-connected:
@@ -7738,6 +7891,14 @@ sub probeDistr()
             $Name = $1;
         }
         
+        if($OS_Rel=~/\bNAME=\s*[\"\']*([^"'\n]+)/)
+        {
+            my $RealName = $1;
+            if(grep {$RealName eq $_} ("Peppermint")) {
+                $Name = $RealName;
+            }
+        }
+        
         if($OS_Rel=~/\bVERSION_ID=\s*[\"\']*([^"'\n]+)/) {
             $Release = lc($1);
         }
@@ -7864,8 +8025,6 @@ sub writeHost()
     if($Sys{"Build"}) {
         $Host .= "build:".$Sys{"Build"}."\n"; # Live
     }
-    $Host .= "user:".$Sys{"User"}."\n";
-    $Host .= "node:".$Sys{"Node"}."\n";
     $Host .= "arch:".$Sys{"Arch"}."\n";
     if($Sys{"Secureboot"}) {
         $Host .= "secureboot:".$Sys{"Secureboot"}."\n";
@@ -9760,11 +9919,11 @@ sub readPciIds($$$)
     my $Info = $_[1];
     my $Info_D = $_[2];
     
-    my ($V, $D, $SV, $SD) = ();
+    my ($V, $D, $SV, $SD, $C, $SC, $SSC) = ();
     
     foreach (split(/\n/, $List))
     {
-        if(/\A(\t*)(\w{4}) /)
+        if(/\A(\t*)([a-f\d]{4}) /)
         {
             my $L = length($1);
             
@@ -9772,7 +9931,7 @@ sub readPciIds($$$)
             {
                 $V = $2;
                 
-                if(/\w{4}\s+(.*?)\Z/) {
+                if(/[a-f\d]{4}\s+(.*?)\Z/) {
                     $PciVendor{$V} = $1;
                 }
             }
@@ -9780,19 +9939,39 @@ sub readPciIds($$$)
             {
                 $D = $2;
                 
-                if(/\t\w{4}\s+(.*?)\Z/) {
+                if(/\t[a-f\d]{4}\s+(.*?)\Z/) {
                     $Info->{$V}{$D} = $1;
                 }
             }
             elsif($L==2)
             {
-                if(/\t(\w{4}) (\w{4})\s+(.*?)\Z/)
+                if(/\t([a-f\d]{4}) ([a-f\d]{4})\s+(.*?)\Z/)
                 {
                     $SV = $1;
                     $SD = $2;
                     
                     $Info_D->{$V}{$D}{$SV}{$SD} = $3;
                 }
+            }
+        }
+        elsif(/\AC ([a-f\d]{2})  (.+)/)
+        {
+            $C = $1;
+            $PciClass{$C} = $2;
+            $PciClass{$C."00"} = $2;
+        }
+        elsif(/\A(\t+)([a-f\d]{2})  (.+)/)
+        {
+            my $L = length($1);
+            if($L==1)
+            {
+                $SC = $2;
+                $PciClass{$C.$SC} = $3;
+            }
+            elsif($L==2)
+            {
+                $SSC = $2;
+                $PciClass{$C.$SC.$SSC} = $3;
             }
         }
     }
@@ -9808,18 +9987,23 @@ sub readUsbIds($$)
     
     foreach (split(/\n/, $List))
     {
-        if(/\A(\t*)(\w{4}) /)
+        if(/\A(\t*)([a-f\d]{4}) /)
         {
             my $L = length($1);
             
-            if($L==0) {
+            if($L==0)
+            {
                 $V = $2;
+                
+                if(/[a-f\d]{4}\s+(.*?)\Z/) {
+                    $UsbVendor{$V} = $1;
+                }
             }
             elsif($L==1)
             {
                 $D = $2;
                 
-                if(/\t\w{4}\s+(.*?)\Z/) {
+                if(/\t[a-f\d]{4}\s+(.*?)\Z/) {
                     $Info->{$V}{$D} = $1;
                 }
             }
@@ -10254,6 +10438,152 @@ sub setPublic(@)
     }
 }
 
+sub fixLsUsb($)
+{
+    my $Content = $_[0];
+    my @Content_New = ();
+    
+    foreach my $Block (split(/\n\n/, $Content))
+    {
+        if($Block=~/: ID (\w{4}):(\w{4})/)
+        {
+            my ($V, $D) = ($1, $2);
+            if(defined $UsbVendor{$V})
+            {
+                my $Vendor = $UsbVendor{$V};
+                
+                if(defined $UsbInfo{$V}{$D})
+                {
+                    my $Product = $UsbInfo{$V}{$D};
+                    
+                    $Block=~s{(:\s+ID\s+$V:$D)[ ]+\n}{$1 $Vendor $Product\n};
+                    $Block=~s{(idVendor\s+0x$V)[ ]+\n}{$1 $Vendor\n};
+                    $Block=~s{(idProduct\s+0x$D)[ ]+\n}{$1 $Product\n};
+                }
+            }
+        }
+        push(@Content_New, $Block);
+    }
+    
+    return join("\n\n", @Content_New);
+}
+
+sub fixLsPci_All($)
+{
+    my $Content = $_[0];
+    my @Content_New = ();
+    
+    foreach my $Block (split(/\n\n/, $Content))
+    {
+        if($Block=~/ Class \[([a-f\d]+)\]: Device \[(\w{4}):(\w{4})\]/)
+        {
+            my ($C, $V, $D) = ($1, $2, $3);
+            
+            if(defined $PciVendor{$V})
+            {
+                my $Vendor = $PciVendor{$V};
+                
+                if(defined $PciInfo{$V}{$D})
+                {
+                    my $Product = $PciInfo{$V}{$D};
+                    $Block=~s{(\]:) Device (\[$V:$D\])}{$1 $Vendor $Product $2};
+                    
+                    if($Block=~/Subsystem: Device \[(\w{4}):(\w{4})\]/)
+                    {
+                        my ($SV, $SD) = ($1, $2);
+                        if(my $SubVendor = $PciVendor{$SV})
+                        {
+                            my $Subsystem = "Device";
+                            if(defined $PciInfo_D{$V}{$D}{$SV}{$SD}) {
+                                $Subsystem = $PciInfo_D{$V}{$D}{$SV}{$SD};
+                            }
+                            elsif($V eq $SV and $D eq $SD) {
+                                $Subsystem = $Product;
+                            }
+                            
+                            $Block=~s{(Subsystem:) Device (\[$SV:$SD\])}{$1 $SubVendor $Subsystem $2};
+                        }
+                    }
+                }
+            }
+            
+            if(defined $PciClass{$C})
+            {
+                my $Class = $PciClass{$C};
+                $Block=~s{ Class (\[$C\]:)}{ $Class $1};
+            }
+        }
+        
+        push(@Content_New, $Block);
+    }
+    
+    return join("\n\n", @Content_New);
+}
+
+sub fixLsPci($)
+{
+    my $Content = $_[0];
+    my @Content_New = ();
+    
+    my %Dev = ();
+    
+    foreach my $Block (split(/\n\n/, $Content))
+    {
+        foreach my $Attr ("Class", "Vendor", "Device", "SVendor", "SDevice")
+        {
+            if($Block=~/$Attr:.*\[([a-f\d]{4})\]/) {
+                $Dev{$Attr} = $1;
+            }
+        }
+        
+        my $C = $Dev{"Class"};
+        
+        if(defined $PciClass{$C})
+        {
+            my $Class = $PciClass{$C};
+            $Block=~s{(Class:\s+)Class(\s+\[$C\])}{$1$Class$2};
+        }
+        
+        my ($V, $D) = ($Dev{"Vendor"}, $Dev{"Device"});
+        
+        if(defined $PciVendor{$V})
+        {
+            my $Vendor = $PciVendor{$V};
+            $Block=~s{(Vendor:\s+)Vendor(\s+\[$V\])}{$1$Vendor$2};
+            
+            if(defined $PciInfo{$V}{$D})
+            {
+                my $Product = $PciInfo{$V}{$D};
+                $Block=~s{(Device:\s+)Device(\s+\[$D\])}{$1$Product$2};
+                
+                my ($SV, $SD) = ($Dev{"SVendor"}, $Dev{"SDevice"});
+                
+                if(my $SubVendor = $PciVendor{$SV})
+                {
+                    $Block=~s{(SVendor:\s+)Unknown vendor(\s+\[$SV\])}{$1$SubVendor$2};
+                    
+                    my $Subsystem = undef;
+                    if(defined $PciInfo_D{$V}{$D}{$SV}{$SD}) {
+                        $Subsystem = $PciInfo_D{$V}{$D}{$SV}{$SD};
+                        
+                    }
+                    elsif($V eq $SV and $D eq $SD) {
+                        $Subsystem = $Product;
+                    }
+                    
+                    if($Subsystem) {
+                        $Block=~s{(SDevice:\s+)Device(\s+\[$SD\])}{$1$Subsystem$2};
+                    }
+                }
+            }
+        }
+        
+        push(@Content_New, $Block);
+    }
+    
+    return join("\n\n", @Content_New);
+}
+
 sub fixLogs($)
 {
     my $Dir = $_[0];
@@ -10365,7 +10695,7 @@ sub fixLogs($)
         }
     }
     
-    foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all", "dmidecode")
+    foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all", "dmidecode", "hwinfo")
     { # Support for old probes
         if(-e "$Dir/$L")
         {
@@ -10387,6 +10717,18 @@ sub fixLogs($)
                     $Content=~s/Couldn't get configuration descriptor 0, some information will be missing\n//g;
                     writeFile("$Dir/$L", $Content);
                 }
+                
+                if($Opt{"UsbIDs"})
+                {
+                    if(index($Content, "HW_PROBE_USB_")!=-1 or $Content=~/: ID [a-f\d]{4}:[a-f\d]{4}  \n/)
+                    {
+                        $Content=~s{lsusb: cannot open "/tmp/HW_PROBE_USB_", Permission denied\n\n}{}g;
+                        if($Opt{"UsbIDs"}) {
+                            $Content = fixLsUsb($Content);
+                        }
+                        writeFile("$Dir/$L", $Content);
+                    }
+                }
             }
             elsif($L eq "lspci" or $L eq "lspci_all")
             {
@@ -10395,6 +10737,17 @@ sub fixLogs($)
                     $Content=~s/lspci: Unable to load libkmod resources: error -12\n//g;
                     writeFile("$Dir/$L", $Content);
                 }
+                
+                if($Opt{"PciIDs"})
+                {
+                    if($L eq "lspci" and index($Content, "Class:\tClass [")!=-1) {
+                        writeFile("$Dir/$L", fixLsPci($Content));
+                    }
+                    
+                    if($L eq "lspci_all" and index($Content, "]: Device [")!=-1) {
+                        writeFile("$Dir/$L", fixLsPci_All($Content));
+                    }
+                }
             }
             elsif($L eq "dmidecode")
             {
@@ -10402,6 +10755,14 @@ sub fixLogs($)
                 {
                     $Content=~s{/dev/mem: Bad address\nTable is unreachable, sorry.\n}{}g;
                     $Content=~s{/dev/mem: lseek: Value too large for defined data type\nTable is unreachable, sorry.\n}{}g;
+                    writeFile("$Dir/$L", $Content);
+                }
+            }
+            elsif($L eq "hwinfo")
+            {
+                if(index($Content, "sh: /dev/null: Permission denied")!=-1)
+                {
+                    $Content=~s{sh: /dev/null: Permission denied\n}{}g;
                     writeFile("$Dir/$L", $Content);
                 }
             }
@@ -10454,6 +10815,37 @@ sub fixLogs($)
             }
         }
     }
+}
+
+sub createIDsLink($)
+{
+    my $Type = $_[0];
+    my $Type_U = uc($Type);
+    
+    my $Link = "/tmp/HW_PROBE_".$Type_U."_";
+    if($Opt{"Flatpak"}) {
+        $Link = "/var/tmp/P_".$Type_U;
+    }
+    
+    if(-e $Link) {
+        return undef;
+    }
+    
+    if($Opt{"Snap"})
+    {
+        if(my $SNAP_Dir = $ENV{"SNAP"})
+        {
+            symlink("$SNAP_Dir/usr/share/$Type.ids", $Link);
+            return $Link;
+        }
+    }
+    elsif($Opt{"Flatpak"})
+    {
+        symlink("/app/share/$Type.ids", $Link);
+        return $Link;
+    }
+    
+    return undef;
 }
 
 sub scenario()
@@ -10836,29 +11228,6 @@ sub scenario()
                 printMsg("WARNING", "'curl' package is not installed");
             }
         }
-    }
-    
-    my $UsbLink = "/tmp/HW_PROBE_USB_";
-    my $PciLink = "/tmp/HW_PROBE_PCI_";
-    
-    if($Opt{"Flatpak"})
-    {
-        $UsbLink = "/var/tmp/P_USB";
-        $PciLink = "/var/tmp/P_PCI";
-    }
-    
-    if($Opt{"Snap"})
-    {
-        if(my $SNAP_Dir = $ENV{"SNAP"})
-        {
-            symlink("$SNAP_Dir/usr/share/usb.ids", $UsbLink);
-            symlink("$SNAP_Dir/usr/share/pci.ids", $PciLink);
-        }
-    }
-    elsif($Opt{"Flatpak"})
-    {
-        symlink("/app/share/usb.ids", $UsbLink);
-        symlink("/app/share/pci.ids", $PciLink);
     }
     
     if($Opt{"Probe"} or $Opt{"Check"})
