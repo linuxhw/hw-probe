@@ -429,6 +429,133 @@ my %UsbInfo;
 my %UsbVendor;
 my %UsbClass;
 
+# JEDEC IDS
+my %VendorJedec = (
+    "A Force"   => ["7F7F7F7F7F7F7F02"],
+    "ADATA"     => ["04CB", "7F7F7F7FCB000000"],
+    "Aeneon"    => ["7F7F7F7F7F570000"],
+    "Apacer"    => ["017A", "7F7A", "7A01"],
+    "ASint"     => ["06C1", "7F7F7F7F7F7FC100"],
+    "Centon"    => ["7F7F7F1900000000"],
+    "Corsair"   => ["029E", "7F7F9E0000000000"],
+    "Crucial"   => ["059B", "859B", "9B85", "009D36160", "7F7F7F7F7F9B0000", "7F7F7F7F7F9BFFFF"],
+    "Elpida"    => ["00FE", "01FE", "02FE", "FE02", "7F7FFE0000000000", "0000000000FE7F7F"],
+    "EUDAR"     => ["847C"],
+    "EVGA"      => ["08D9"],
+    "Foxline"   => ["88F2"],
+    "G-Alantic" => ["08F7"],
+    "G.Skill"   => ["04CD", "7F7F7F7FCD000000", "04=>"],
+    "Golden Empire" => ["7F7F7F1300000000"],
+    "GOODRAM"   => ["075D", "7F7F7F7F7F7F7F5D"],
+    "Infineon"  => ["C100", "C10"],
+    "Innodisk"  => ["86F1"],
+    "Hexon"     => ["7F7F7F7F7FDC0000"],
+    "High Bridge" => ["07E9"],
+    "Kingmax"   => ["7F7F7F2500000000", "7F7F7F2500000000"],
+    "Kingston"  => ["0198", "7F98", "9804", "F789"],
+    "KingTiger" => ["7F7F7F7F7F7F7F10"],
+    "Kllisre"   => ["89C2"],
+    "Kreton"    => ["85E3", "7F7F7F7F7FE30000"],
+    "Micron"    => ["002C", "802C", "857F", "2C00", "2CFF", "2C80", "2C0", "C20", "2C", "08D0", "009C162C0000", "FFFFFFFFFFFFFF2C", "0000000000002C80"],
+    "Mougol"    => ["4B0"],
+    "Nanya"     => ["830B", "030B", "0B83", "0B0D", "7F7F7F0B00000000"],
+    "Netlist"   => ["7F7F7F1600000000"],
+    "OCZ"       => ["84B0", "7F7F7F7FB0000000"],
+    "Patriot"   => ["8502", "7F7F7F7F7F020000"],
+    "PNY"       => ["01BA"],
+    "pqi"       => ["853E", "7F7F7F7F7F3E0000"],
+    "Qimonda"   => ["7F7F7F7F7F510000", "5145", "F7F7F7F7F7150000"],
+    "Ramaxel"   => ["7F7F7F7F43000000", "04430000802C", "7F7F7F7F7F000000", "000000437F7F7F7F"],
+    "Samsung"   => ["00CE", "80CE", "00EC", "CE00", "CE80", "0CE", "EC0", "CE0", "000000000000CE80", "CE80"],
+    "SanMax"    => ["86E9"],
+    "Silicon Power" => ["86D3", "7F7F7F7F7F7FD300"],
+    "SiS"       => ["7F7F7F7F7F7FA800"],
+    "SK hynix"  => ["00AD", "6F2B", "80AD", "AD00", "AD01", "AD80", "00000000000000AD", "AD0", "DA0", "0AD8", "009C35230000"],
+    "Smart"     => ["7F94"],
+    "Swissbit"  => ["7F7F7FDA00000000"],
+    "TakeMS"    => ["7F7F7F5800000000", "7F7F7F58FFFFFFFF"],
+    "Team"      => ["04EF", "7F7F7F7FEF000000"],
+    "Teikon"    => ["079E"],
+    "Transcend" => ["014F", "7F4F"],
+    "TwinMOS"   => ["866B"]
+);
+
+my %JedecVendor;
+foreach my $V (sort keys(%VendorJedec))
+{
+    foreach (sort @{$VendorJedec{$V}}) {
+        $JedecVendor{$_} = $V;
+    }
+}
+
+my %VendorRam = (
+    "A Force"  => ["1GX64V", "256X64M", "25664Y"],
+    "ADATA"    => ["AD7", "AM1U", "EL7YG", "HYOPE"],
+    "AMD"      => ["AE32G", "AE34G", "R33", "R53", "R74"],
+    "Apacer"   => ["76.", "78."],
+    "ASint"    => ["B1YJ", "B2YJ", "B3KJ", "C1RE", "SSY", "SSZ"],
+    "BiNFUL"   => ["BINFUL"],
+    "Corsair"  => ["CMK", "CMR", "CMS", "CMU", "CMV"],
+    "Crucial"  => ["BLS2G", "BLS4G", "BLS8G", "BLS16G", "BLT4G", "CT1024", "CT256", "CT512", "CT4G", "CT8G", "CT16G", "RM256", "RM1024", "RM512", "ST512"],
+    "CSX"      => ["V01L", "V01D"],
+    "Dynet"    => ["DNHMAU"],
+    "Exceleram"=> ["E301", "E408"],
+    "EVGA"     => ["08G-D3"],
+    "Foxline"  => ["FL"],
+    "G.Skill"  => ["F3-", "F4-"],
+    "GeIL"     => ["CL11-11-11 D3-1600"],
+    "Goldkey"  => ["GKE", "GKH", "BKH"],
+    "GoldenMars"=> ["GMT"],
+    "GOODRAM"  => ["GR", "GY1", "IR2400"],
+    "Hexon"    => ["HEXON"],
+    "High Bridge"=> ["HB3SU"],
+    "Ketech"   => ["KETECH"],
+    "Kllisre"  => ["KRE-", "Kllisre"],
+    "Kingmax"  => ["FLFF65F", "FLGF65F"],
+    "Kingston" => ["KHX", "ACR", "ASU", "D3L16", "KN2M", "SNY", "TSB"],
+    "KingTiger"=> ["KingTiger"],
+    "KomputerBay"=> ["KB"],
+    "Kreton"   => ["51634x"],
+    "MDT"      => ["MDT"],
+    "Memox"    => ["LN-SD"],
+    "MemoWise" => ["MW"],
+    "Micron"   => ["16JSF", "8JSF", "8JTF"],
+    "Mushkin"  => ["991769", "992017", "991529", "991558", "991713", "992070"],
+    "Nanya"    => ["NT", "M2F", "M2S"],
+    "Netlist"  => ["NL8"],
+    "OCZ"      => ["OCZ3V1333LV2G"],
+    "Panasonic"=> ["CFW5W"],
+    "Patriot"  => ["PSD", "1600EL", "1600LL", "1866EL", "186C0", "2000EL", "2133 CL11 Series", "2666 C15 Series", "2666 C16 Series", "2800 C16 Series", "3200 C16 Series"],
+    "PNY"      => ["64C0M", "4GBH"],
+    "PSC"      => ["AS8F8G73D-DJ2"],
+    "Qimonda"  => ["64T1280", "64T64", "64T12"],
+    "Qumo"     => ["QUM"],
+    "Ramaxel"  => ["RMT", "RMN", "RMR"],
+    "Ramos"    => ["EMB2GB", "EWB4GB", "EMB2GB"],
+    "Saikano"  => ["Saikano"],
+    "Samsung"  => ["M378B", "M4 70T", "M471"],
+    "Silicon Power" => ["DBLT", "DBST", "DCLT", "SP00", "ESRD"],
+    "SK hynix" => ["HMT", "4GBPC1333512", "4GBPC", "HMP", "HYMP", "MMXIV", "MPP"],
+    "Smart"    => ["SH564"],
+    "SpecTek"  => ["ZC256"],
+    "Swissbit" => ["SEU"],
+    "TakeMS"   => ["TMS"],
+    "Team"     => ["Team-Eli", "Team--El", "TEAM"],
+    "Teikon"   => ["TML", "TMT"],
+    "Transcend"=> ["JM", "TS64", "TS128", "TS256"],
+    "TwinMOS"  => ["9DEEBMZB", "8DP25KK", "8DE25KK", "7D-23KK", "9DHTBNIE", "9DETBNZB"],
+    "Unifosa"  => ["GU", "HU"],
+    "Veineda"  => ["M08GD16P1600C10"]
+);
+
+my %RamVendor;
+foreach my $V (sort keys(%VendorRam))
+{
+    foreach (sort @{$VendorRam{$V}}) {
+        $RamVendor{$_} = $V;
+    }
+}
+
 my %DiskVendor = (
     "ACJ"       => "KingSpec",
     "ACS"       => "KingSpec",
@@ -461,8 +588,8 @@ my %DiskVendor = (
     "IC35"      => "IBM/Hitachi",
     "IM2S"      => "ADATA",
     "InM2"      => "Indilinx",
-    "IR_SSDPR"  => "Goodram",
-    "IR-SSDPR"  => "Goodram",
+    "IR_SSDPR"  => "GOODRAM",
+    "IR-SSDPR"  => "GOODRAM",
     "M4-CT"     => "Crucial",
     "MB1000"    => "HP",
     "MB2000G"   => "HP",
@@ -491,7 +618,7 @@ my %DiskVendor = (
     "SPK"       => "KingSpec",
     "SSD2SC\\d+" => "PNY",
     "SSDPAMM"   => "Intel",
-    "SSDPR_CX"  => "Goodram",
+    "SSDPR_CX"  => "GOODRAM",
     "SSDSA2S"   => "Intel",
     "ST"        => "Seagate",
     "SU04G"     => "SanDisk",
@@ -4135,10 +4262,8 @@ sub probeHW()
                     next;
                 }
                 
-                if($Key eq "Manufacturer")
-                {
+                if($Key eq "Manufacturer") {
                     $Device{"Vendor"} = $Val;
-                    $Device{"Vendor"}=~s/0{4,}/0/;
                 }
                 elsif($Key eq "Part Number") {
                     $Device{"Device"} = $Val;
@@ -4148,6 +4273,9 @@ sub probeHW()
                 }
                 elsif($Key eq "Type")
                 {
+                    if(my $FF = $Device{"FF"}) {
+                        $Val=~s/ \Q$FF\E\Z//;
+                    }
                     $Device{"Kind"} = $Val;
                     push(@Add, $Val);
                 }
@@ -4182,6 +4310,11 @@ sub probeHW()
                     $Val=~s/ //g;
                     push(@Add, $Val);
                 }
+                elsif($Key eq "Form Factor")
+                {
+                    $Device{"FF"} = $Val;
+                    push(@Add, $Val);
+                }
             }
             
             cleanValues(\%Device);
@@ -4194,10 +4327,52 @@ sub probeHW()
                 next;
             }
             
+            if(grep { $Device{"FF"} eq $_ } ("Chip", "TSOP")
+            or $Device{"Kind"} eq "Flash")
+            { # TODO: add this kind of devices
+                next;
+            }
+            
             $Device{"Type"} = "memory";
             $Device{"Status"} = "works";
             
             my $Inc = 0;
+            
+            if($Device{"Vendor"})
+            {
+                if($Device{"Vendor"}=~/\AJEDEC ID:(.+)/)
+                {
+                    $Device{"Vendor"} = $1;
+                    $Device{"Vendor"}=~s/ //g;
+                }
+                
+                if(defined $JedecVendor{$Device{"Vendor"}}) {
+                    $Device{"Vendor"} = $JedecVendor{$Device{"Vendor"}};
+                }
+                elsif($Device{"Vendor"}=~/\A0x(.+)\Z/
+                and defined $JedecVendor{$1}) {
+                    $Device{"Vendor"} = $JedecVendor{$1};
+                }
+                elsif($Device{"Vendor"}=~/\A(0x|)([A-F\d]{4})/
+                and defined $JedecVendor{$2}) {
+                    $Device{"Vendor"} = $JedecVendor{$2};
+                }
+            }
+            
+            if(not $Device{"Vendor"} or isUnknownRam($Device{"Vendor"}))
+            {
+                if(my $GuessVendor = guessRamVendor($Device{"Device"})) {
+                    $Device{"Vendor"} = $GuessVendor;
+                }
+            }
+            
+            if(not $Device{"Vendor"} or isUnknownRam($Device{"Vendor"}))
+            {
+                if(defined $RamVendor{$Device{"Device"}}) {
+                    $Device{"Vendor"} = $RamVendor{$Device{"Device"}};
+                }
+            }
+            
             if(not $Device{"Vendor"})
             {
                 $Device{"Vendor"} = "Manufacturer".$MemIndex;
@@ -4223,9 +4398,14 @@ sub probeHW()
                 $MemIndex++;
             }
             
-            $Device{"Vendor"}=~s/\A(Mfg \d+|Manufacturer\d+|0x[\dA-F]+)\Z//i;
+            if(isUnknownRam($Device{"Vendor"})) {
+                $Device{"Vendor"} = undef;
+            }
             
-            if($Device{"Device"}=~/\A(SODIMM)\d+\Z/i
+            $Device{"Device"} = duplVendor($Device{"Vendor"}, $Device{"Device"});
+            
+            if($Device{"Device"}=~/\A(\s*)\Z/
+            or $Device{"Device"}=~/\A(SODIMM)\d+\Z/i
             or $Device{"Device"}=~/\AArray\d+_(Part)Number\d+\Z/i
             or $Device{"Device"}=~/\A(Part)Num\d+\Z/i
             or $Device{"Device"}=~/\A(0x)[\dA-F]+\Z/i
@@ -6633,6 +6813,44 @@ sub fixDrive($)
     }
 }
 
+sub isUnknownRam($)
+{
+    my $Vendor = $_[0];
+    
+    if($Vendor=~/(Mfg |Manufacturer)/) {
+        return 1;
+    }
+    
+    if($Vendor=~/\A(0x|)0+\Z/) {
+        return 1;
+    }
+    
+    if(grep {$Vendor eq $_} ("8313", "M0", "M1")) {
+        return 1;
+    }
+    
+    return 0;
+}
+
+sub guessRamVendor($)
+{
+    my $Name = $_[0];
+    
+    if($Name=~/\A99[A-Z\d]{5}\-\d{3}\.[A-Z\d]{4,}\Z/) {
+        return "Kingston";
+    }
+    
+    foreach my $Len (reverse(3 .. 8))
+    {
+        my $Prefix = substr($Name, 0, $Len);
+        if(defined $RamVendor{$Prefix}) {
+            return $RamVendor{$Prefix};
+        }
+    }
+    
+    return undef;
+}
+
 sub guessDriveVendor($)
 {
     my $Name = $_[0];
@@ -6781,7 +6999,7 @@ sub duplVendor($$)
     
     if($Vendor)
     { # do not duplicate vendor name
-        if(not $Device=~s/\A\Q$Vendor\E([\s\-\_\[]+|\Z)//gi
+        if(not $Device=~s/\A\Q$Vendor\E([\s\-\_\[\.]+|\Z)//gi
         and not $Device=~s/\s+\Q$Vendor\E\s+/ /gi
         and not $Device=~s/\s+\Q$Vendor\E\Z//gi)
         {
@@ -6789,7 +7007,7 @@ sub duplVendor($$)
             {
                 if($ShortVendor ne $Vendor)
                 {
-                    $Device=~s/\A\Q$ShortVendor\E[\s\-\_\[]+//gi;
+                    $Device=~s/\A\Q$ShortVendor\E[\s\-\_\[\.]+//gi;
                     $Device=~s/\s+\Q$ShortVendor\E\s+/ /gi;
                     $Device=~s/\s+\Q$ShortVendor\E\Z//gi;
                 }
@@ -6831,9 +7049,9 @@ sub emptyVal($)
 {
     my $Val = $_[0];
     
-    if($Val=~/\A[\[\(]*(not specified|not defined|invalid|error|unknown|unknow|uknown|empty|n\/a|none|default string)[\)\]]*\Z/i
+    if($Val=~/\A[\[\(]*(not specified|not available|not defined|invalid|error|unknown|undefined|unknow|uknown|empty|n\/a|none|default string)[\)\]]*\Z/i
     or $Val=~/(\A|\b|\d)(to be filled|unclassified device|not defined|bad index)(\b|\Z)/i
-    or $Val=~/\A(vendor|device|unknown vendor|customer|model|_)\Z/i) {
+    or $Val=~/\A(vendor|device|unknown vendor|customer|model|_|unde|null|Unknown \(0\))\Z/i) {
         return 1;
     }
     
