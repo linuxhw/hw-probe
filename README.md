@@ -63,6 +63,8 @@ The portable app that runs anywhere, no need to install anything. Just download 
     chmod +x ./hw-probe-1.4-135-x86_64.AppImage
     sudo ./hw-probe-1.4-135-x86_64.AppImage -all -upload
 
+You may need to install `fuse-libs` package if it is not pre-installed in your Linux distribution to run appimages.
+
 ###### Supported systems
 
 The app runs on all Linux distributions with `Glibc >= 2.14` including:

@@ -64,15 +64,14 @@ To uninstall:
 * systemd-tools (systemd-analyze)
 * acpica-tools
 * mesa-demos
-* vulkan-utils
 * memtester
-* vulkan-utils
-* rfkill
 * sysstat (iostat)
 * cpuid
+* rfkill
 * xinput
 * vainfo
 * inxi
+* vulkan-utils
 * i2c-tools
 * opensc
 
@@ -114,7 +113,7 @@ Install on openSUSE
 
 Setup an OBS repository and install the package:
 
-    sudo zypper addrepo -G -f obs://home:linuxbuild/openSUSE_Factory hw-probe
+    sudo zypper addrepo https://download.opensuse.org/repositories/hardware/openSUSE_Leap_15.0/ hardware
     sudo zypper install --no-recommends hw-probe
 
 
