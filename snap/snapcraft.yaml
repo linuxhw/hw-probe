@@ -29,7 +29,6 @@ description: >
      
 type: app
 confinement: strict
-icon: $SNAP/usr/share/icons/hw-probe.png
 grade: stable
 apps:
   hw-probe:
