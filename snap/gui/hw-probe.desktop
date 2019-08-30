@@ -2,7 +2,7 @@
 Name=Hardware Probe
 Comment=Probe for hardware and upload result to the Linux hardware database
 Exec=hw-probe
-Icon=$SNAP/meta/gui/icon.png
+Icon=$SNAP/usr/share/icons/hw-probe.png
 Terminal=true
 Type=Application
 StartupNotify=true
