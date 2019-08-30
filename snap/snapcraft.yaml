@@ -73,7 +73,7 @@ parts:
     prime:
       - usr/sbin
   lm-sensors:
-    source: https://ftp.gwdg.de/pub/linux/misc/lm-sensors/lm_sensors-3.4.0.tar.bz2
+    source: https://github.com/lm-sensors/lm-sensors/archive/V3-5-0.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -146,7 +146,7 @@ parts:
       - usr/sbin/lspci
       - usr/share/pci.ids
   acpica-unix:
-    source: https://acpica.org/sites/acpica/files/acpica-unix-20190215.tar.gz
+    source: https://acpica.org/sites/acpica/files/acpica-unix-20190816.tar.gz
     source-type: tar
     plugin: make
     build-attributes: [no-patchelf]
@@ -208,7 +208,7 @@ parts:
     prime:
       - usr/lib/libusb*.so*
   util-linux:
-    source: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.32/util-linux-2.32.1.tar.gz
+    source: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.34/util-linux-2.34.tar.xz
     source-type: tar
     plugin: make
     override-build: |
@@ -414,4 +414,5 @@ parts:
       - usr/lib/*-linux-gnu/perl-base
       - usr/bin/perl
       - usr/share/perl5/File/Copy.pm
+      - usr/share/icons/hw-probe.png
 
