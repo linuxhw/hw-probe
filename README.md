@@ -34,7 +34,7 @@ If some of your computer devices doesn't work due to a missed driver then the to
 
 Sample probe: https://linux-hardware.org/?probe=b394035f90
 
-You can make a probe of your computer with the help of [AppImage](#appimage), [Docker](#docker), [Snap](#snap), [Flatpak](#flatpak), [Live CD](#live-cd) or RPM/DEB package.
+You can make a probe of your computer with the help of [AppImage](#appimage), [Docker](#docker), [Snap](#snap), [Flatpak](#flatpak), [Live CD](#live-cd) or RPM/Deb package.
 
 By creating probes you contribute to the "HDD/SSD Real-Life Reliability Test" study: https://github.com/linuxhw/SMART
 

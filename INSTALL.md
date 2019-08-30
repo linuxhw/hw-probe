@@ -44,7 +44,7 @@ Download Deb package [hw-probe_1.4-2_all.deb](https://github.com/linuxhw/hw-prob
 
 ###### PPA
 
-PPA: https://launchpad.net/~mikhailnov/+archive/ubuntu/hw-probe
+https://launchpad.net/~mikhailnov/+archive/ubuntu/hw-probe
 
     sudo add-apt-repository universe
     sudo add-apt-repository ppa:mikhailnov/hw-probe
@@ -59,7 +59,7 @@ The [Snap package](https://github.com/linuxhw/hw-probe#snap) is also available t
 Install on Debian
 -----------------
 
-Download DEB package [hw-probe_1.4-2_all.deb](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe_1.4-2_all.deb) and install:
+Download Deb package [hw-probe_1.4-2_all.deb](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe_1.4-2_all.deb) and install:
 
     sudo dpkg -i ./hw-probe_1.4-2_all.deb
     sudo apt install -f --no-install-recommends
