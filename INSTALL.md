@@ -61,6 +61,7 @@ Install on Debian
 
 Download Deb package [hw-probe_1.4-2_all.deb](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe_1.4-2_all.deb) and install:
 
+    sudo apt-get update
     sudo dpkg -i ./hw-probe_1.4-2_all.deb
     sudo apt install -f --no-install-recommends
 
