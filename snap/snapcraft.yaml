@@ -29,6 +29,7 @@ description: >
      
 type: app
 confinement: strict
+icon: usr/share/icons/hw-probe.png
 grade: stable
 apps:
   hw-probe:
@@ -399,6 +400,8 @@ parts:
     plugin: make
     override-build: |
       make install DESTDIR=$SNAPCRAFT_PART_INSTALL
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/icons/
+      cp -f flatpak/icon-64x64.png $SNAPCRAFT_PART_INSTALL/usr/share/icons/hw-probe.png
       mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/perl5/File/
       mv $SNAPCRAFT_PART_INSTALL/usr/share/perl/5.*.*/File/Copy.pm $SNAPCRAFT_PART_INSTALL/usr/share/perl5/File/
     build-packages:
