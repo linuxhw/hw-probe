@@ -6,5 +6,5 @@ Name=Hardware Probe
 Comment=Probe for hardware and upload result to the Linux hardware database
 Icon=org.linux_hardware.hw-probe
 Exec=hw-probe
-Categories=System;
+Categories=Utility;Development;System;
 Keywords=HW Probe;Hardware;Probe;

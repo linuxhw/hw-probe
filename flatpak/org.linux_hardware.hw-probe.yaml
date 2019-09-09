@@ -135,8 +135,8 @@ modules:
       - make install BUILD_STATIC_LIB=0 DEBUG=0 PREFIX=/ DESTDIR=$FLATPAK_DEST
     sources:
       - type: archive
-        url: https://ftp.gwdg.de/pub/linux/misc/lm-sensors/lm_sensors-3.4.0.tar.bz2
-        sha256: e0579016081a262dd23eafe1d22b41ebde78921e73a1dcef71e05e424340061f
+        url: https://github.com/lm-sensors/lm-sensors/archive/V3-5-0.tar.gz
+        sha256: f671c1d63a4cd8581b3a4a775fd7864a740b15ad046fe92038bcff5c5134d7e0
   - name: libkmod
     buildsystem: simple
     build-commands:
@@ -191,8 +191,8 @@ modules:
       - make install DESTDIR=$FLATPAK_DEST PREFIX=/
     sources:
       - type: archive
-        url: https://acpica.org/sites/acpica/files/acpica-unix-20190215.tar.gz
-        sha256: 71133ab2b1b2e2f176a9b5081060571977a3d2c91b36722e198bffa7ce9b0d37
+        url: https://acpica.org/sites/acpica/files/acpica-unix-20190816.tar.gz
+        sha256: 7aec4dc88a3ba148eecd898e59fb5378573eb6a94585e5538e0b396840d0fc5c
   - name: hdparm
     buildsystem: simple
     build-commands:
@@ -226,8 +226,8 @@ modules:
       - install -D ./dmesg $FLATPAK_DEST/bin/dmesg
     sources:
       - type: archive
-        url: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.32/util-linux-2.32.1.tar.gz
-        sha256: 3bbf9f3d4a33d6653cf0f7e4fc422091b6a38c3b1195c0ee716c67148a1a7122
+        url: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.34/util-linux-2.34.tar.xz
+        sha256: 743f9d0c7252b6db246b659c1e1ce0bd45d8d4508b4dfa427bbb4a3e9b9f62b5
   - name: libx86emu
     buildsystem: simple
     build-commands:
@@ -423,7 +423,7 @@ modules:
     sources:
       - type: archive
         url: https://github.com/linuxhw/build-stuff/releases/download/1.4/hw-probe-1.4-AI.tar.gz
-        sha256: 55c61854a316b99802d299bfc631f249cb34301f8d9dd3abb0dc149f1ef3d048
+        sha256: 39ffc4428c358f69b02ee03e1e8788899d0e5d5285dbd88c026ca21b7cf94ea8
   - name: perl-base
     buildsystem: simple
     build-commands:
