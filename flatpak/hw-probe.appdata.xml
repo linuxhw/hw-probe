@@ -31,8 +31,7 @@
       to the LKDDb or third-party drivers.
     </p>
     <p>
-      Private info is not collected. By creating probes you contribute to
-      the HDD/SSD Real-Life Reliability Test study: https://github.com/linuxhw/SMART
+      Private info is not collected.
     </p>
     <p>
       Note: The 'Launch' button doesn't work properly due to a bug 552
@@ -65,4 +64,17 @@
   <provides>
     <binary>hw-probe</binary>
   </provides>
+
+  <content_rating type="oars-1.0">
+    <content_attribute id="social-info">moderate</content_attribute>
+  </content_rating>
+
+  <releases>
+    <release version="1.4" date="2018-04-14">
+      <description>
+        Hardware Probe Tool 1.4
+      </description>
+    </release>
+  </releases>
+
 </component>
