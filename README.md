@@ -63,7 +63,7 @@ The portable app that runs anywhere, no need to install anything. Just download 
     chmod +x ./hw-probe-1.4-135-x86_64.AppImage
     sudo ./hw-probe-1.4-135-x86_64.AppImage -all -upload
 
-You may need to install `fuse-libs` package if it is not pre-installed in your Linux distribution to run appimages.
+You may need to install `fuse-libs` or `libfuse2` package if it is not pre-installed in your Linux distribution to run appimages.
 
 ###### Supported systems
 
