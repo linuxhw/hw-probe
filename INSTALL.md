@@ -12,6 +12,7 @@ Contents
 --------
 
 * [ Run without Installing ](#run-without-installing)
+* [ Command line to Run    ](#command-line-to-run)
 * [ Install on Ubuntu      ](#install-on-ubuntu)
 * [ Install on Debian      ](#install-on-debian)
 * [ Install on openSUSE    ](#install-on-opensuse)
@@ -23,12 +24,19 @@ Contents
 * [ Install on RHEL 7      ](#install-on-rhel-7)
 * [ Install on RHEL 6      ](#install-on-rhel-6)
 * [ Install on Gentoo      ](#install-on-gentoo)
+* [ Install on Alpine      ](#install-on-alpine)
 * [ Install from Source    ](#install-from-source)
 
 Run without Installing
 ----------------------
 
 You can probe your computer by [AppImage](https://github.com/linuxhw/hw-probe#appimage), [Docker](https://github.com/linuxhw/hw-probe#docker), [Snap](https://github.com/linuxhw/hw-probe#snap), [Flatpak](https://github.com/linuxhw/hw-probe#flatpak) or [Live CD](https://github.com/linuxhw/hw-probe#live-cd) without the need to install anything on your host.
+
+
+Command line to Run
+-------------------
+
+    sudo hw-probe -all -upload
 
 
 Install on Ubuntu
@@ -115,12 +123,28 @@ Install on CentOS 7
     sudo yum install epel-release
     sudo yum install hw-probe
 
+###### Old systems
+
+    curl https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | sudo dd of=/usr/bin/hw-probe
+    sudo chmod +x /usr/bin/hw-probe
+    sudo yum install -y http://li.nux.ro/download/nux/dextop/el7/x86_64/libx86emu-1.1-2.1.x86_64.rpm
+    sudo yum install -y http://li.nux.ro/download/nux/dextop/el7/x86_64/hwinfo-20.2-5.3.x86_64.rpm
+    sudo yum install -y curl dmidecode smartmontools hdparm lm_sensors usbutils pciutils mcelog
+
 
 Install on CentOS 6
 -------------------
 
     sudo yum install epel-release
     sudo yum install hw-probe
+
+###### Old systems
+
+    curl https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | sudo dd of=/usr/bin/hw-probe
+    sudo chmod +x /usr/bin/hw-probe
+    sudo yum install -y http://mirror.ghettoforge.org/distributions/gf/el/6/gf/x86_64/libx86emu-1.1-1.gf.el6.x86_64.rpm
+    sudo yum install -y http://mirror.ghettoforge.org/distributions/gf/el/6/gf/x86_64/hwinfo-20.2-1.gf.el6.x86_64.rpm
+    sudo yum install -y curl dmidecode smartmontools hdparm lm_sensors usbutils pciutils mcelog
 
 
 Install on RHEL 7
@@ -142,6 +166,12 @@ Install on Gentoo
 
     sudo eselect repository enable bobwya
     sudo emerge --ask sys-apps/hw-probe
+
+
+Install on Alpine
+-----------------
+
+    sudo apk add --no-cache -X http://dl-cdn.alpinelinux.org/alpine/edge/testing hw-probe
 
 
 Install from Source
