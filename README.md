@@ -67,7 +67,7 @@ You may need to install `fuse-libs` or `libfuse2` package if it is not pre-insta
 
 ###### Supported systems
 
-The app runs on all Linux distributions with `Glibc >= 2.14` including:
+The app runs on all 64-bit Linux distributions with `Glibc >= 2.14` including:
 
 * Ubuntu 12.04 and newer
 * Linux Mint 13 and newer
@@ -84,7 +84,7 @@ The app runs on all Linux distributions with `Glibc >= 2.14` including:
 * Gentoo 12 and newer
 * Sabayon 13 and newer
 * Slackware 14.2 and newer
-
+* Puppy Linux 6.0 and newer (Tahr, XenialPup, BionicPup, etc.)
 
 Docker
 ------
