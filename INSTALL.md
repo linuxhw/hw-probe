@@ -21,6 +21,7 @@ Contents
 * [ Install on Fedora      ](#install-on-fedora)
 * [ Install on CentOS 7    ](#install-on-centos-7)
 * [ Install on CentOS 6    ](#install-on-centos-6)
+* [ Install on OpenVZ 7    ](#install-on-openvz-7)
 * [ Install on RHEL 7      ](#install-on-rhel-7)
 * [ Install on RHEL 6      ](#install-on-rhel-6)
 * [ Install on Gentoo      ](#install-on-gentoo)
@@ -145,6 +146,13 @@ Install on CentOS 6
     sudo yum install -y http://mirror.ghettoforge.org/distributions/gf/el/6/gf/x86_64/libx86emu-1.1-1.gf.el6.x86_64.rpm
     sudo yum install -y http://mirror.ghettoforge.org/distributions/gf/el/6/gf/x86_64/hwinfo-20.2-1.gf.el6.x86_64.rpm
     sudo yum install -y curl dmidecode smartmontools hdparm lm_sensors usbutils pciutils mcelog
+
+
+Install on OpenVZ 7
+-------------------
+
+    sudo yum install epel-release
+    sudo yum install hw-probe
 
 
 Install on RHEL 7

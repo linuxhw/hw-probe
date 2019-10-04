@@ -79,12 +79,13 @@ The app runs on all 64-bit Linux distributions with `Glibc >= 2.14` including:
 * Fedora 15 and newer (need to add `fuse-libs` package to host on Fedora 15, 16 and 17)
 * RHEL 7 and newer
 * CentOS 7 and newer
+* Puppy Linux 6.0 and newer (Tahr, XenialPup, BionicPup, etc.)
+* Clear Linux of any version
 * Mageia 2 and newer
 * Alt Linux 7 and newer
 * Gentoo 12 and newer
 * Sabayon 13 and newer
 * Slackware 14.2 and newer
-* Puppy Linux 6.0 and newer (Tahr, XenialPup, BionicPup, etc.)
 
 Docker
 ------
