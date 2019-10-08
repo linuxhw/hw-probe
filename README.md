@@ -81,6 +81,7 @@ The app runs on all 64-bit Linux distributions with `Glibc >= 2.14` including:
 * CentOS 7 and newer
 * Puppy Linux 6.0 and newer (Tahr, XenialPup, BionicPup, etc.)
 * Clear Linux of any version
+* Pop!_OS 17 and newer
 * Mageia 2 and newer
 * Alt Linux 7 and newer
 * Gentoo 12 and newer
