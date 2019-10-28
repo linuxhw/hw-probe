@@ -73,7 +73,7 @@ parts:
     prime:
       - usr/sbin
   lm-sensors:
-    source: https://github.com/lm-sensors/lm-sensors/archive/V3-5-0.tar.gz
+    source: https://github.com/lm-sensors/lm-sensors/archive/V3-6-0.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -146,7 +146,7 @@ parts:
       - usr/sbin/lspci
       - usr/share/pci.ids
   acpica-unix:
-    source: https://acpica.org/sites/acpica/files/acpica-unix-20190816.tar.gz
+    source: https://acpica.org/sites/acpica/files/acpica-unix-20191018.tar.gz
     source-type: tar
     plugin: make
     build-attributes: [no-patchelf]
