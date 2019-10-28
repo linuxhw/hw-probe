@@ -19,9 +19,11 @@ Contents
 * [ Install on Manjaro     ](#install-on-manjaro)
 * [ Install on Arch Linux  ](#install-on-arch-linux)
 * [ Install on Fedora      ](#install-on-fedora)
+* [ Install on CentOS 8    ](#install-on-centos-8)
 * [ Install on CentOS 7    ](#install-on-centos-7)
 * [ Install on CentOS 6    ](#install-on-centos-6)
 * [ Install on OpenVZ 7    ](#install-on-openvz-7)
+* [ Install on RHEL 8      ](#install-on-rhel-8)
 * [ Install on RHEL 7      ](#install-on-rhel-7)
 * [ Install on RHEL 6      ](#install-on-rhel-6)
 * [ Install on Gentoo      ](#install-on-gentoo)
@@ -118,6 +120,13 @@ For Fedora 28 and later:
     sudo dnf install hw-probe
 
 
+Install on CentOS 8
+-------------------
+
+    sudo yum install epel-release
+    sudo yum install hw-probe
+
+
 Install on CentOS 7
 -------------------
 
@@ -150,6 +159,13 @@ Install on CentOS 6
 
 Install on OpenVZ 7
 -------------------
+
+    sudo yum install epel-release
+    sudo yum install hw-probe
+
+
+Install on RHEL 8
+-----------------
 
     sudo yum install epel-release
     sudo yum install hw-probe
