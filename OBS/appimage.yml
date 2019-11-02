@@ -30,8 +30,8 @@ script:
   - make
   - make install prefix=/usr DESTDIR=$BUILD_APPDIR
   # lm_sensors
-  - tar -xf $BUILD_SOURCE_DIR/lm_sensors-3.4.0.tar.bz2 -C $BUILD_SOURCE_DIR
-  - cd $BUILD_SOURCE_DIR/lm_sensors-3.4.0
+  - tar -xf $BUILD_SOURCE_DIR/lm-sensors-3-6-0.tar.gz -C $BUILD_SOURCE_DIR
+  - cd $BUILD_SOURCE_DIR/lm-sensors-3-6-0
   - sed -i -e 's/ -g/ -s/' Makefile
   - make install BUILD_STATIC_LIB=0 DEBUG=0 PREFIX=/usr DESTDIR=$BUILD_APPDIR
   # libkmod
@@ -57,8 +57,8 @@ script:
   - make install PREFIX=/usr DESTDIR=$BUILD_APPDIR SHARED=no LIBKMOD=yes HWDB=no ZLIB=no DNS=no
   - sed -i -e 's|/usr|././|g' $BUILD_APPDIR/usr/sbin/lspci
   # acpica-unix
-  - tar -xf $BUILD_SOURCE_DIR/acpica-unix-20190215.tar.gz -C $BUILD_SOURCE_DIR
-  - cd $BUILD_SOURCE_DIR/acpica-unix-20190215
+  - tar -xf $BUILD_SOURCE_DIR/acpica-unix-20191018.tar.gz -C $BUILD_SOURCE_DIR
+  - cd $BUILD_SOURCE_DIR/acpica-unix-20191018
   - make
   - make install DESTDIR=$BUILD_APPDIR
   # hdparm
@@ -170,9 +170,10 @@ script:
   - make install DESTDIR=`pwd`/INST INSTALLSITELIB=/SITELIB
   - cp -fr ./INST/usr/lib/perl5/*/* $BUILD_APPDIR/usr/lib/perl5/
   # perl-base
-  - tar -xf $BUILD_SOURCE_DIR/perl-5.28.0.tar.gz -C $BUILD_SOURCE_DIR
-  - cd $BUILD_SOURCE_DIR/perl-5.28.0
+  - tar -xf $BUILD_SOURCE_DIR/perl-5.28.2.tar.xz -C $BUILD_SOURCE_DIR
+  - cd $BUILD_SOURCE_DIR/perl-5.28.2
   - sh Configure -de -Dprefix=/
+  - sed -i -e 's/ -lnsl / /' Makefile
   - make
   - install -D ./perl $BUILD_APPDIR/usr/bin/perl
   - cd lib && cat $BUILD_SOURCE_DIR/PERL5_BASE | while read i; do mkdir -p $BUILD_APPDIR/usr/lib/perl5/`dirname $i`; cp -fr $i $BUILD_APPDIR/usr/lib/perl5/$i; done
