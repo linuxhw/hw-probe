@@ -8973,6 +8973,8 @@ sub writeLogs()
         $Fstab = hideUrls($Fstab);
         $Fstab = hidePass($Fstab);
         $Fstab=~s/LABEL=[^\s]+/LABEL=XXXX/g;
+        $Fstab=~s/sshfs#.+/sshfs.../g;
+        $Fstab=~s/#.*\n//g;
         writeLog($LOG_DIR."/fstab", $Fstab);
     }
     
