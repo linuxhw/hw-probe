@@ -135,8 +135,8 @@ modules:
       - make install BUILD_STATIC_LIB=0 DEBUG=0 PREFIX=/ DESTDIR=$FLATPAK_DEST
     sources:
       - type: archive
-        url: https://github.com/lm-sensors/lm-sensors/archive/V3-5-0.tar.gz
-        sha256: f671c1d63a4cd8581b3a4a775fd7864a740b15ad046fe92038bcff5c5134d7e0
+        url: https://github.com/lm-sensors/lm-sensors/archive/V3-6-0.tar.gz
+        sha256: 0591f9fa0339f0d15e75326d0365871c2d4e2ed8aa1ff759b3a55d3734b7d197
   - name: libkmod
     buildsystem: simple
     build-commands:
@@ -191,8 +191,8 @@ modules:
       - make install DESTDIR=$FLATPAK_DEST PREFIX=/
     sources:
       - type: archive
-        url: https://acpica.org/sites/acpica/files/acpica-unix-20190816.tar.gz
-        sha256: 7aec4dc88a3ba148eecd898e59fb5378573eb6a94585e5538e0b396840d0fc5c
+        url: https://acpica.org/sites/acpica/files/acpica-unix-20191018.tar.gz
+        sha256: 029db4014600e4b771b11a84276d2d76eb40fb26eabc85864852ef1f962be95f
   - name: hdparm
     buildsystem: simple
     build-commands:
@@ -423,7 +423,7 @@ modules:
     sources:
       - type: archive
         url: https://github.com/linuxhw/build-stuff/releases/download/1.4/hw-probe-1.4-AI.tar.gz
-        sha256: 303b9ff37f1c1d140631bb86e337c50695d40155b33da5057e716c85ea4dcade
+        sha256: 69404e437907658b114c7b68ef0e3914ae7182b7e967d6c5b6c05db4b2118a37
   - name: perl-base
     buildsystem: simple
     build-commands:

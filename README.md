@@ -63,7 +63,7 @@ The portable app that runs anywhere, no need to install anything. Just download 
     chmod +x ./hw-probe-1.4-135-x86_64.AppImage
     sudo ./hw-probe-1.4-135-x86_64.AppImage -all -upload
 
-You may need to install `fuse-libs` or `libfuse2` package if it is not pre-installed in your Linux distribution to run appimages.
+You may need to install `fuse-libs` or `libfuse2` package if it is not pre-installed in your Linux distribution to run appimages. Also on some ancient systems like Ubuntu 12.04 you may need to install `liblzo2`.
 
 ###### Supported systems
 
@@ -79,7 +79,7 @@ The app runs on all 64-bit Linux distributions with `Glibc >= 2.14` including:
 * Fedora 15 and newer (need to add `fuse-libs` package to host on Fedora 15, 16 and 17)
 * RHEL 7 and newer
 * CentOS 7 and newer
-* Puppy Linux 6.0 and newer (Tahr, XenialPup, BionicPup, etc.)
+* Puppy Linux 6.0 and newer (Tahr64, XenialPup64, BionicPup64, etc.)
 * Clear Linux of any version
 * Pop!_OS 17 and newer
 * Mageia 2 and newer
