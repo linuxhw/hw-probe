@@ -224,6 +224,7 @@ modules:
       - make -j $FLATPAK_BUILDER_N_JOBS
       - find . -type f | perl -lne 'print if -B and -x' | xargs strip
       - install -D ./dmesg $FLATPAK_DEST/bin/dmesg
+      - install -D ./lscpu $FLATPAK_DEST/bin/lscpu
     sources:
       - type: archive
         url: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.34/util-linux-2.34.tar.xz
