@@ -8547,14 +8547,11 @@ sub writeLogs()
         writeLog($LOG_DIR."/df", $Df);
     }
     
-    if(not $Opt{"Flatpak"})
+    if(checkCmd("lscpu"))
     {
-        if(checkCmd("lscpu"))
-        {
-            listProbe("logs", "lscpu");
-            my $Lscpu = runCmd("lscpu 2>&1");
-            writeLog($LOG_DIR."/lscpu", $Lscpu);
-        }
+        listProbe("logs", "lscpu");
+        my $Lscpu = runCmd("lscpu 2>&1");
+        writeLog($LOG_DIR."/lscpu", $Lscpu);
     }
     
     # level=default
