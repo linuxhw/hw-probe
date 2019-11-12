@@ -52,7 +52,7 @@ Usage
 
 Make a probe:
 
-    sudo hw-probe -all -upload
+    sudo -E hw-probe -all -upload
 
 
 AppImage
