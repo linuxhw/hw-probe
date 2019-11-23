@@ -49,9 +49,9 @@ On Ubuntu and Ubuntu based Linux distributions (Linux Mint, elementary OS, etc.)
 
 ###### Deb package
 
-Download Deb package [hw-probe_1.4-2_all.deb](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe_1.4-2_all.deb) and install:
+Download Debian package [hw-probe_1.4-1_all.deb](http://ftp.br.debian.org/debian/pool/main/h/hw-probe/hw-probe_1.4-1_all.deb) and install:
 
-    sudo apt-get install ./hw-probe_1.4-2_all.deb --no-install-recommends
+    sudo apt-get install ./hw-probe_1.4-1_all.deb --no-install-recommends
 
 ###### PPA
 
@@ -70,10 +70,16 @@ The [Snap package](https://github.com/linuxhw/hw-probe#snap) is also available t
 Install on Debian
 -----------------
 
-Download Deb package [hw-probe_1.4-2_all.deb](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe_1.4-2_all.deb) and install:
+###### Debian Sid
+
+    sudo apt-get install hw-probe --no-install-recommends
+
+###### Any Debian
+
+Download Deb package [hw-probe_1.4-1_all.deb](http://ftp.br.debian.org/debian/pool/main/h/hw-probe/hw-probe_1.4-1_all.deb) and install:
 
     sudo apt-get update
-    sudo dpkg -i ./hw-probe_1.4-2_all.deb
+    sudo dpkg -i ./hw-probe_1.4-1_all.deb
     sudo apt install -f --no-install-recommends
 
 

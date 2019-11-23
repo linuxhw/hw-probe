@@ -730,6 +730,76 @@ my %FirmwareVendor = (
     "MZ4O" => "Toshiba"
 );
 
+my %MicroCode = (
+    "SandyBridge" => ["0x206a7"],
+    "Westmere"    => ["0x20655"]
+);
+
+my %MicroCodeMicroArch;
+foreach my $MicroArch (sort keys(%MicroCode))
+{
+    foreach (sort @{$MicroCode{$MicroArch}}) {
+        $MicroCodeMicroArch{$_} = $MicroArch;
+    }
+}
+
+my %MicroArchFamily = (
+    "AuthenticAMD" => {
+        "Geode" => { "5" => ["*"] },
+        "K6" => { "6" => ["*"] },
+        "K7" => { "7" => ["*"] },
+        "K8 Hammer" => { "15" => ["*"] },
+        "K10" => { "16" => ["*"] },
+        "K8 & K10 hybrid" => { "17" => ["*"] },
+        "K10 Llano"     => { "18" => ["*"] },
+        "Bobcat" => { "20" => ["*"] },
+        "Bulldozer" => { "21" => ["1"] },
+        "Piledriver" => { "21" => ["2", "16", "19"] },
+        "Steamroller" => { "21" => ["48", "56"] },
+        "Excavator" => { "21" => ["96", "101", "112"] },
+        "Jaguar" => { "22" => ["0"] },
+        "Puma" => { "22" => ["48"] },
+        "Zen" => { "23" => ["1", "17"] },
+        "Zen 2" => { "23" => ["49", "113"] },
+        "Zen+" => { "23" => ["8", "24"] }
+    },
+    "GenuineIntel" => {
+        "CometLake" => { "6" => ["166"] },
+        "KabyLake" => { "6" => ["142", "158"] },
+        "Goldmont plus" => { "6" => ["122"] },
+        "CannonLake" => { "6" => ["102"] },
+        "Skylake" => { "6" => ["78", "85", "94"] },
+        "Goldmont" => { "6" => ["92"] },
+        "Broadwell" => { "6" => ["61", "71", "79", "86"] },
+        "Silvermont" => { "6" => ["55", "76", "77"] },
+        "Haswell" => { "6" => ["60", "63", "69", "70"] },
+        "IvyBridge" => { "6" => ["58", "62"] },
+        "Bonnell" => { "6" => ["28", "38", "54"] },
+        "SandyBridge" => { "6" => ["42", "45"] },
+        "Westmere" => { "6" => ["37", "44", "47"] },
+        "Nehalem" => { "6" => ["26", "30", "46"] },
+        "Penryn" => { "6" => ["23", "29"] },
+        "Core" => { "6" => ["15", "22"] },
+        "P6" => { "6" => ["8", "9", "11", "13", "14"] },
+        "NetBurst" => { "15" => ["1", "2", "3", "4", "6"] }
+    }
+);
+
+my %FamilyMicroArch;
+foreach my $MVendor (sort keys(%MicroArchFamily))
+{
+    foreach my $MicroArch (sort keys(%{$MicroArchFamily{$MVendor}}))
+    {
+        foreach my $Family (sort keys(%{$MicroArchFamily{$MVendor}{$MicroArch}}))
+        {
+            foreach (sort @{$MicroArchFamily{$MVendor}{$MicroArch}{$Family}})
+            {
+                $FamilyMicroArch{$MVendor}{$Family}{$_} = $MicroArch;
+            }
+        }
+    }
+}
+
 my $DEFAULT_VENDOR = "China";
 
 my %DistSuffix = (
@@ -763,6 +833,7 @@ my @DE_Package = (
     [ "task-lxqt", "LXQt" ],
     
     [ "manjaro-xfce", "XFCE" ],
+    [ "xfce4-settings", "XFCE" ],
     [ "task-xfce", "XFCE" ],
     [ "xfce4-session", "XFCE" ],
     
@@ -771,12 +842,19 @@ my @DE_Package = (
     [ "plasma5-workspace", "KDE5" ],
     [ "plasma-desktop-5", "KDE5" ],
     
+    [ "plasma-desktop 4:4", "KDE4" ],
     [ "kde-settings-plasma", "KDE4" ],
     [ "gnome-flashback", "GNOME Flashback" ],
     
     [ "manjaro-gnome-assets", "GNOME" ],
     [ "gnome-session", "GNOME" ],
-    [ "gnome-desktop", "GNOME" ]
+    [ "gnome-desktop", "GNOME" ],
+    
+    [ "manjaro-awesome-settings", "Awesome" ],
+    [ "manjaro-openbox-settings", "Openbox" ],
+    [ "manjaro-fluxbox-settings", "FluxBox" ],
+    [ "i3-manjaro", "i3" ],
+    [ "i3-wm", "i3" ]
 );
 
 my %ChassisType = (
@@ -2334,6 +2412,39 @@ sub bytesToHuman($)
     return $Bytes."MB";
 }
 
+sub toGb($)
+{
+    my $S = $_[0];
+    
+    $S=~s/\,/\./;
+    
+    if($S=~/([\d\.]+)([TGM])/)
+    {
+        my ($Res, $Ent) = ($1, $2);
+        if($Ent eq "M") {
+            $Res /= 1000.0;
+        }
+        elsif($Ent eq "T") {
+            $Res *= 1000.0;
+        }
+        
+        return $Res;
+    }
+    
+    return 0;
+}
+
+sub roundFloat($$)
+{
+    my ($N, $S) = @_;
+    
+    $N = sprintf("%.".$S."f", $N);
+    $N=~s/(\.\d)0\Z/$1/;
+    $N=~s/\.0\Z//;
+    
+    return $N;
+}
+
 sub getPnpVendor($)
 {
     my $V = $_[0];
@@ -3279,13 +3390,6 @@ sub probeHW()
         
         if($Device{"Type"} eq "monitor")
         {
-            if($Sys{"Monitors"}) {
-                $Sys{"Monitors"} += 1;
-            }
-            else {
-                $Sys{"Monitors"} = 1;
-            }
-            
             if(my $MSize = $Device{"Size"})
             {
                 if(my $Inches = computeInch($MSize))
@@ -3293,8 +3397,20 @@ sub probeHW()
                     $Device{"Inches"} = sprintf("%.1f", $Inches);
                     
                     if(my $Density = computeDensity($Device{"Resolution"}, $Inches)) {
-                        $Device{"Density"} = $Density;
+                        $Device{"Density"} = roundFloat($Density, 1);
                     }
+                }
+                
+                if(my $Ratio = computeRatio($MSize)) {
+                    $Device{"Ratio"} = $Ratio;
+                }
+                
+                if(my $Area = computeArea($MSize)) {
+                    $Device{"Area"} = $Area;
+                }
+                
+                if($MSize=~/\A(\d+)/) {
+                    $Device{"Width"} = $1;
                 }
             }
         }
@@ -4434,6 +4550,13 @@ sub probeHW()
         $HW{$ID}{"Driver"} = join(", ", sort {$Drivers{$a}<=>$Drivers{$b}} keys(%Drivers));
     }
     
+    foreach my $ID (sort keys(%HW))
+    {
+        if($HW{$ID}{"Type"} eq "monitor") {
+            $Sys{"Monitors"} += 1;
+        }
+    }
+    
     # Fix incorrectly detected types
     foreach my $ID (sort keys(%HW))
     {
@@ -4612,10 +4735,6 @@ sub probeHW()
             
             if($Info=~/Version:[ ]*(.+?)[ ]*(\n|\Z)/) {
                 $Sys{"Version"} = $1;
-            }
-            
-            if($Info=~/Family:[ ]*(.+?)[ ]*(\n|\Z)/) {
-                $Sys{"Family"} = $1;
             }
             
             # clear
@@ -5019,20 +5138,16 @@ sub probeHW()
             if($MVendor and $MModel
             or (not $Sys{"Vendor"} and not $Sys{"Model"}))
             {
-                $Sys{"SubVendor"} = $Sys{"Vendor"};
-                $Sys{"SubModel"} = $Sys{"Model"};
+                $Sys{"Subvendor"} = $Sys{"Vendor"};
+                $Sys{"Submodel"} = $Sys{"Model"};
                 
                 $Sys{"Vendor"} = $MVendor;
                 $Sys{"Model"} = $MModel;
                 
-                if($Sys{"SubVendor"} eq $Sys{"Vendor"}) {
-                    
-                }
-                
-                if($Sys{"SubVendor"} eq $Sys{"Vendor"} and $Sys{"SubModel"} eq $Sys{"Model"})
+                if($Sys{"Subvendor"} eq $Sys{"Vendor"} and $Sys{"Submodel"} eq $Sys{"Model"})
                 {
-                    delete($Sys{"SubVendor"});
-                    delete($Sys{"SubModel"});
+                    delete($Sys{"Subvendor"});
+                    delete($Sys{"Submodel"});
                 }
             }
             
@@ -5042,8 +5157,8 @@ sub probeHW()
                 $Sys{"Model"} = fixModel($Sys{"Vendor"}, $Sys{"Model"}, undef);
             }
             
-            $Sys{"SubVendor"} = fixVendor($Sys{"SubVendor"}, $Sys{"SubModel"});
-            $Sys{"SubModel"} = fixModel($Sys{"SubVendor"}, $Sys{"SubModel"}, undef);
+            $Sys{"Subvendor"} = fixVendor($Sys{"Subvendor"}, $Sys{"Submodel"});
+            $Sys{"Submodel"} = fixModel($Sys{"Subvendor"}, $Sys{"Submodel"}, undef);
         }
     }
     
@@ -5861,10 +5976,12 @@ sub probeHW()
                 if($Drv{"Device"})
                 {
                     $Drv{"Device"} .= " ".addCapacity($Drv{"Device"}, $Drv{"Capacity"});
+                    $Drv{"Kind"} = "MMC";
                     
                     my $MmcId = "mmc:".fmtID(devID(nameID($Drv{"Vendor"}), devSuffix(\%Drv)));
                     $HW{$MmcId} = \%Drv;
                     countDevice($MmcId, $Drv{"Type"});
+                    $MMC{$Dev} = $MmcId;
                 }
             }
         }
@@ -6113,6 +6230,44 @@ sub probeHW()
         $Sys{"Boot_mode"} = "BIOS";
     }
     
+    if($Dmesg=~/, ([\w\s\-]+) events, /)
+    {
+        $Sys{"Microarch"} = $1;
+        if($Sys{"Microarch"}=~/disabled/) {
+            $Sys{"Microarch"} = undef;
+        }
+        if($Sys{"Microarch"} eq "Core2") {
+            $Sys{"Microarch"} = "Core";
+        }
+        elsif($Sys{"Microarch"} eq "Atom") {
+            $Sys{"Microarch"} = undef;
+        }
+    }
+    
+    if($Dmesg=~/microcode:.*?(sig|patch_level)=(0x\w+)/)
+    {
+        $Sys{"Microcode"} = $2;
+        
+        if(defined $MicroCodeMicroArch{$Sys{"Microcode"}}) {
+            $Sys{"Microarch"} = $MicroCodeMicroArch{$Sys{"Microcode"}};
+        }
+    }
+    
+    if($Dmesg=~/Memory usable by graphics device = (\d+)M/) {
+        $Sys{"Video_memory"} = $1/1024.0;
+    }
+    elsif($Dmesg=~/DRM: VRAM: (\d+) MiB/) {
+        $Sys{"Video_memory"} = $1/1024.0;
+    }
+    elsif($Dmesg=~/(\d+)M of VRAM memory ready/) {
+        $Sys{"Video_memory"} = $1/1024.0;
+    }
+    
+    if($Dmesg=~/Memory: \d+k\/(\d+)k available/)
+    {
+        $Sys{"Ram_total"} = $1;
+    }
+    
     if((not $Sys{"Model"} or $Sys{"Model"} eq "rpi") and $Sys{"Arch"}=~/arm|aarch/i)
     {
         if(index($Dmesg, "Machine")!=-1)
@@ -6183,6 +6338,13 @@ sub probeHW()
     
     if($XLog)
     {
+        if($XLog=~/NVIDIA\(\d+\): Memory: (\d+) kBytes/) {
+            $Sys{"Video_memory"} = $1/(1024.0*1024.0);
+        }
+        elsif($XLog=~/Video RAM: (\d+) kByte/) {
+            $Sys{"Video_memory"} = $1/(1024.0*1024.0);
+        }
+        
         if($XLog=~/Kernel command line:(.*)/) {
             $CmdLine = $1;
         }
@@ -6486,10 +6648,14 @@ sub probeHW()
         writeLog($LOG_DIR."/lscpu", $Lscpu);
     }
     
+    my $CoresPerSocket = undef;
+    
     if($Lscpu)
     {
         my ($Sockets, $Cores, $Threads) = ();
+        my ($CPU_Vendor, $CPU_Family, $CPU_ModelNum) = ();
         
+        my @CpuVals = ();
         foreach (split(/\n/, $Lscpu))
         {
             my @CpuAttr = split(":", $_);
@@ -6497,11 +6663,17 @@ sub probeHW()
             my $Val = $CpuAttr[1];
             $Val=~s/\A\s+//;
             
+            if($Attr eq "Address sizes") {
+                next;
+            }
+            
             if($Attr eq "Socket(s)") {
                 $Sockets = $Val;
             }
-            elsif($Attr eq "Core(s) per socket") {
+            elsif($Attr eq "Core(s) per socket")
+            {
                 $Cores = $Val;
+                $CoresPerSocket = $Val;
             }
             elsif($Attr eq "Thread(s) per core") {
                 $Threads = $Val;
@@ -6509,28 +6681,99 @@ sub probeHW()
             elsif($Attr eq "CPU op-mode(s)") {
                 $Sys{"Op_modes"} = $Val;
             }
+            elsif($Attr eq "Vendor ID") {
+                $CPU_Vendor = $Val;
+            }
+            elsif($Attr eq "CPU family") {
+                $CPU_Family = $Val;
+            }
+            elsif($Attr eq "Model") {
+                $CPU_ModelNum = $Val;
+            }
+            
+            push(@CpuVals, $Val);
         }
         
         if($Sockets and $Cores and $Threads)
         {
             $Sys{"Sockets"} = $Sockets;
             $Sys{"Cores"} = $Cores*$Sockets;
-            $Sys{"Threads"} = $Threads*$Cores*$Sockets;
+            $Sys{"Threads"} = $Threads;
+        }
+        elsif($CpuVals[5]=~/\A[12]\Z/ and $CpuVals[7])
+        {
+            $Sys{"Sockets"} = $CpuVals[7];
+            $Sys{"Cores"} = $CpuVals[6]*$Sys{"Sockets"};
+            $Sys{"Threads"} = $CpuVals[5];
+            $Sys{"Op_modes"} = $CpuVals[1];
+            
+            $CPU_Vendor = $CpuVals[8];
+            $CPU_Family = $CpuVals[10];
+            $CPU_ModelNum = $CpuVals[11];
+        }
+        
+        if(not $Sys{"Microarch"}) {
+            $Sys{"Microarch"} = detectMicroarch($CPU_Vendor, $CPU_Family, $CPU_ModelNum);
         }
     }
     
-    if($Opt{"FixProbe"} and not $Sys{"Cores"})
+    my $CpuInfo = "";
+    
+    if($Opt{"FixProbe"}) {
+        $CpuInfo = readFile($FixProbe_Logs."/cpuinfo");
+    }
+    elsif(enabledLog("cpuinfo")
+    and -e "/proc/cpuinfo")
     {
-        my $CpuInfo = readFile($FixProbe_Logs."/cpuinfo");
+        listProbe("logs", "cpuinfo");
+        $CpuInfo = readFile("/proc/cpuinfo");
+        $CpuInfo=~s/\n\n(.|\n)+\Z/\n/g; # for one core
+        writeLog($LOG_DIR."/cpuinfo", $CpuInfo);
+    }
+    
+    if(not $Sys{"Cores"})
+    {
         if($CpuInfo=~/siblings\s*:\s*(\d+)/)
         {
             my $Siblings = $1;
             if($CpuInfo=~/cpu cores\s*:\s*(\d+)/)
             {
-                $Sys{"Cores"} = $1;
-                $Sys{"Threads"} = $Siblings / $Sys{"Cores"};
+                $CoresPerSocket = $1;
+                $Sys{"Threads"} = $Siblings / $CoresPerSocket;
+                
+                if(my $TotalThreads = getDeviceCount($CPU_ID))
+                {
+                    $Sys{"Sockets"} = $TotalThreads/($CoresPerSocket*$Sys{"Threads"});
+                    $Sys{"Cores"} = $Sys{"Sockets"}*$CoresPerSocket;
+                }
             }
         }
+    }
+    
+    if(not $Sys{"Microarch"} and $CpuInfo)
+    {
+        my ($CPU_Vendor, $CPU_Family, $CPU_ModelNum) = ();
+        
+        foreach my $L (split(/\n/, $CpuInfo))
+        {
+            $L=~s/\s*:\s*/:/;
+            
+            my @CpuAttr = split(":", $L);
+            my $Attr = $CpuAttr[0];
+            my $Val = $CpuAttr[1];
+            
+            if($Attr eq "vendor_id") {
+                $CPU_Vendor = $Val;
+            }
+            elsif($Attr eq "cpu family") {
+                $CPU_Family = $Val;
+            }
+            elsif($Attr eq "model") {
+                $CPU_ModelNum = $Val;
+            }
+        }
+        
+        $Sys{"Microarch"} = detectMicroarch($CPU_Vendor, $CPU_Family, $CPU_ModelNum);
     }
     
     my $Meminfo = "";
@@ -6549,12 +6792,50 @@ sub probeHW()
     {
         if($Meminfo=~/MemTotal:\s+(\d+) kB/)
         {
-            $Sys{"TotalRAM"} = $1;
+            $Sys{"Ram_total"} = $1;
             
             if($Meminfo=~/MemAvailable:\s+(\d+) kB/) {
-                $Sys{"UsedRAM"} = $Sys{"TotalRAM"} - $1;
+                $Sys{"Ram_used"} = $Sys{"Ram_total"} - $1;
             }
         }
+    }
+    
+    my $Df = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Df = readFile($FixProbe_Logs."/df");
+    }
+    elsif(not $Opt{"Docker"}
+    and enabledLog("df")
+    and checkCmd("df"))
+    {
+        listProbe("logs", "df");
+        $Df = runCmd("df -h 2>&1");
+        $Df = hidePaths($Df);
+        $Df = hideIPs($Df);
+        $Df = hideUrls($Df);
+        writeLog($LOG_DIR."/df", $Df);
+    }
+    
+    my ($SpaceTotal, $SpaceUsed) = (0.0, 0.0);
+    foreach my $DfL (split(/\n/, $Df))
+    {
+        if($DfL=~/\A\/dev\/([sh]d|nvme|mapper|mmcblk|root).*?\s+([\w\.\,]+)\s+([\w\.\,]+)/)
+        {
+            my ($PSize, $PUsed) = ($2, $3);
+            if($PSize) {
+                $SpaceTotal += toGb($PSize);
+            }
+            if($PUsed) {
+                $SpaceUsed += toGb($PUsed);
+            }
+        }
+    }
+    
+    if($SpaceTotal and $SpaceUsed)
+    {
+        $Sys{"Space_total"} = roundFloat($SpaceTotal, 2);
+        $Sys{"Space_used"} = roundFloat($SpaceUsed, 2);
     }
     
     $Sys{"Dual_boot"} = 0;
@@ -6594,21 +6875,19 @@ sub probeHW()
     
     if($Lsblk)
     {
-        my $Roots = 0;
-        
         foreach my $Line (split(/\n/, $Lsblk))
         {
-            if($Line=~/\Alive-/) {
+            if($Line=~/\blive-/) {
                 next;
-            }
-            
-            if(index($Line, " / ")!=-1) {
-                $Roots += 1;
             }
             
             my @L = split(/\s+/, $Line);
             
-            if($L[0]=~/\A(sd[a-z]+|nvme\d+n\d+)\Z/)
+            if($Line=~/ (ext[34]) / and index($Line, "/")==-1) {
+                $Sys{"Dual_boot"} = 1;
+            }
+            
+            if($L[0]=~/\A(sd[a-z]+|nvme\d+n\d+|mmcblk\d+)\Z/)
             {
                 my $HDD_File = "/dev/".$L[0];
                 my $HDD_Size = $L[1];
@@ -6645,9 +6924,16 @@ sub probeHW()
                     $HDD_Size = "1TB";
                 }
                 
-                if($HDD_Size and defined $HDD{$HDD_File})
+                my $HDD_Id = undef;
+                if(defined $HDD{$HDD_File}) {
+                    $HDD_Id = $HDD{$HDD_File};
+                }
+                elsif(defined $MMC{$HDD_File}) {
+                    $HDD_Id = $MMC{$HDD_File};
+                }
+                
+                if($HDD_Size and defined $HDD_Id)
                 {
-                    my $HDD_Id = $HDD{$HDD_File};
                     if(defined $HW{$HDD_Id} and not defined $HW{$HDD_Id}{"Capacity"})
                     {
                         $HW{$HDD_Id}{"Capacity"} = $HDD_Size;
@@ -6661,13 +6947,26 @@ sub probeHW()
         if(index($Lsblk, " ntfs ")!=-1) {
             $Sys{"Dual_boot_win"} = 1;
         }
-        
-        if($Roots>1) {
-            $Sys{"Dual_boot"} = 1;
-        }
     }
     
     print "Ok\n";
+}
+
+sub detectMicroarch($$$)
+{
+    my ($V, $F, $M) = @_;
+    
+    if($V and $F)
+    {
+        if(defined $FamilyMicroArch{$V}{$F}{$M}) {
+            return $FamilyMicroArch{$V}{$F}{$M};
+        }
+        elsif(defined $FamilyMicroArch{$V}{$F}{"*"}) {
+            return $FamilyMicroArch{$V}{$F}{"*"};
+        }
+    }
+    
+    return;
 }
 
 sub getLongPCI($)
@@ -7272,7 +7571,19 @@ sub detectMonitor($)
         $Device{"Device"} .= " ".$Device{"Inches"}."-inch";
         
         if(my $Density = computeDensity($Device{"Resolution"}, $Inches)) {
-            $Device{"Density"} = $Density;
+            $Device{"Density"} = roundFloat($Density, 1);
+        }
+        
+        if(my $Ratio = computeRatio($Device{"Size"})) {
+            $Device{"Ratio"} = $Ratio;
+        }
+        
+        if(my $Area = computeArea($Device{"Size"})) {
+            $Device{"Area"} = $Area;
+        }
+        
+        if($Device{"Size"}=~/\A(\d+)/) {
+            $Device{"Width"} = $1;
         }
     }
     
@@ -7552,14 +7863,6 @@ sub fixDrive_Pre($$)
             $Device->{"Vendor"} = $VndF;
         }
     }
-    
-    if(not $Device->{"Kind"} or $Device->{"Kind"} eq "HDD")
-    { # kind of several models is not detected properly by smartmontools
-      # or smartmontools output is not collected
-        if(my $FixedKind = guessDriveKind($Device->{"Vendor"}, $Device->{"Device"})) {
-            $Device->{"Kind"} = $FixedKind;
-        }
-    }
 }
 
 sub guessDriveKind($$)
@@ -7571,7 +7874,7 @@ sub guessDriveKind($$)
         return "SSD";
     }
     
-    if($Model=~/\A(ADATA|AMD|Apacer|Corsair|Crucial|Goodram|Intel|Kingston|LITEON|Micron|Mushkin|OCZ|Patriot|Plextor|PNY|SanDisk|SK hynix|Smartbuy|SPCC|Team|Transcend|HGST HUSM|HP VK0|Samsung (MM|MZ|PM|SG|SM)|Seagate ST(120H|400F|480F|800F)|Toshiba (A100|KSG|Q\d|THNS|T[LR]\d|V[TX]\d)|WDC WD[BS])/i)
+    if($Model=~/\A(ADATA|AMD|Apacer|Corsair|Crucial|Goodram|Intel|Kingston|LITEON|Micron|Mushkin|OCZ|Patriot|Plextor|PNY|SanDisk|SK hynix|Smartbuy|SPCC|Team|Transcend|HGST HUSM|HP VK0|Samsung (MM|MZ|PM|SG|SM)|Seagate ST(120H|400F|480F|800F)|Teclast|Toshiba (A100|KSG|Q\d|THNS|T[LR]\d|V[TX]\d)|TSA \d|WDC WD[BS])/i)
     {
         return "SSD";
     }
@@ -7580,7 +7883,7 @@ sub guessDriveKind($$)
         return "HDD";
     }
     
-    if($Model=~/\A(Fujitsu M|HGST H[A-Z]{2}\d|Hitachi|HP [FGMV]B\d|IBM\/Hitachi|IBM DTLA|Maxtor|Quantum|Samsung (H[DEMNS]|MP|SP|SV)|Seagate (ST|STM)\d|Toshiba (DT|HD|M)|WDC WD\d)/i)
+    if($Model=~/\A(Fujitsu M|HGST H[A-Z]{2}\d|Hitachi|HP [FGMV]B\d|IBM\/Hitachi|IBM DTLA|Maxtor|Quantum|Samsung (H[DEMNS]|MP|SP|SV)|Seagate (ST\d|STM\d|Expansion|BUP )|Toshiba (DT|HD|M)|WDC WD\d)/i)
     {
         return "HDD";
     }
@@ -7610,6 +7913,14 @@ sub fixDrive($)
         $Device->{"Device"} = $Device->{"Vendor"}." ".$Device->{"Device"};
         $Device->{"Vendor"} = $DiskVendor{$Device->{"Vendor"}};
         $Device->{"Device"} = duplVendor($Device->{"Vendor"}, $Device->{"Device"});
+    }
+    
+    if(not $Device->{"Kind"} or $Device->{"Kind"} eq "HDD")
+    { # kind of several models is not detected properly by smartmontools
+      # or smartmontools output is not collected
+        if(my $FixedKind = guessDriveKind($Device->{"Vendor"}, $Device->{"Device"})) {
+            $Device->{"Kind"} = $FixedKind;
+        }
     }
     
     if(not $Device->{"Device"})
@@ -7853,6 +8164,60 @@ sub computeDensity($$)
     {
         my ($W, $H) = ($1, $2);
         return sprintf("%.1f", sqrt($W*$W + $H*$H)/$Inches);
+    }
+    
+    return;
+}
+
+sub computeRatio($)
+{
+    my $Size = $_[0];
+    
+    my %Ratio = (
+        "1.1"  => "11/10",
+        "1.2"  => "6/5",
+        "1.25" => "5/4",
+        "1.26" => "5/4",
+        "1.27" => "5/4",
+        "1.28" => "5/4",
+        "1.3"  => "4/3",
+        "1.4"  => "4/3",
+        "1.5"  => "3/2",
+        "1.6"  => "16/10",
+        "1.7"  => "16/9",
+        "1.8"  => "16/9",
+        "1.9"  => "16/9",
+        "2.3"  => "21/9",
+        "2.4"  => "21/9",
+        "3.5"  => "32/9",
+        "3.6"  => "32/9"
+    );
+    
+    if($Size=~/(\d+)x(\d+)/)
+    {
+        my $ResP = $1/$2;
+        my $Res = sprintf("%.2f", $ResP);
+        my $ResP1 = sprintf("%.1f", $ResP);
+        
+        if(defined $Ratio{$Res}) {
+            $Res = $Ratio{$Res};
+        }
+        elsif(defined $Ratio{$ResP1}) {
+            $Res = $Ratio{$ResP1};
+        }
+        
+        return $Res;
+    }
+    
+    return;
+}
+
+sub computeArea($)
+{
+    my $Size = $_[0];
+    
+    if($Size=~/(\d+)x(\d+)/) {
+        return sprintf("%.0f", $1*$2/(25.4*25.4));
     }
     
     return;
@@ -8207,6 +8572,8 @@ sub probeSys()
         $Sys{"Display_server"} = "Wayland";
     }
     
+    $Sys{"Lang"} = $ENV{"LANG"};
+    
     foreach (keys(%Sys)) {
         chomp($Sys{$_});
     }
@@ -8273,7 +8640,7 @@ sub emptyProduct($)
 {
     my $Val = $_[0];
     
-    if(not $Val or $Val=~/\b(System manufacturer|System Manufacter|stem manufacturer|Name|Version|to be filled|empty|Not Specified|Default string|board version|Unknow|n\/a|Not)\b/i or $Val=~/\A([_0O\-\.\s]+|[X]+|NA|N\/A|\-O|1234567890|0123456789)\Z/i or emptyVal($Val)) {
+    if(not $Val or $Val=~/\b(System manufacturer|System Manufacter|stem manufacturer|Name|Version|to be filled|empty|Not Specified|Default[ _]string|board version|Unknow|n\/a|Not)\b/i or $Val=~/\A([_0O\-\.\s]+|[X]+|NA|N\/A|\-O|1234567890|0123456789)\Z/i or emptyVal($Val)) {
         return 1;
     }
     
@@ -8351,7 +8718,7 @@ sub fixFFByBoard($)
     }
     if($Sys{"Type"}!~/$SERVER_TYPE/)
     {
-        if($Board=~/X10DRT-P|X10DRW-i|X10SDV-TP8F|X10DRH-iT|CS24-SC/) {
+        if($Board=~/X10DRT-P|X10DRW-i|X10SDV-TP8F|X10DRH-iT|CS24-SC|K1SPE-IN001/) {
             $Sys{"Type"} = "server";
         }
     }
@@ -9110,6 +9477,10 @@ sub probeDistr()
                 return ("rosa-sx-".lc($1)."-".$Release, "");
             }
         }
+        elsif($Descr=~/\AROSA Chrome ([\d\.]+)/i)
+        {
+            return ("rosa-chrome-".lc($1), "");
+        }
         elsif($Name=~/\AROSA/i)
         {
             my $Rel = "";
@@ -9312,85 +9683,18 @@ sub writeDevs()
 sub writeHost()
 {
     my $Host = "";
-    if($Sys{"Probe_ver"}) {
-        $Host .= "probe_ver:".$Sys{"Probe_ver"}."\n";
-    }
-    $Host .= "system:".$Sys{"System"}."\n";
-    if($Sys{"Systemrel"}) {
-        $Host .= "systemrel:".$Sys{"Systemrel"}."\n";
-    }
-    if($Sys{"Build"}) {
-        $Host .= "build:".$Sys{"Build"}."\n"; # Live
-    }
-    if($Sys{"DE"}) {
-        $Host .= "de:".$Sys{"DE"}."\n";
-    }
-    if($Sys{"Display_server"}) {
-        $Host .= "display_server:".$Sys{"Display_server"}."\n";
-    }
-    $Host .= "arch:".$Sys{"Arch"}."\n";
-    if($Sys{"Secureboot"}) {
-        $Host .= "secureboot:".$Sys{"Secureboot"}."\n";
-    }
-    if($Sys{"Boot_mode"}) {
-        $Host .= "boot_mode:".$Sys{"Boot_mode"}."\n";
-    }
-    if($Sys{"Dual_boot"} ne "") {
-        $Host .= "dual_boot:".$Sys{"Dual_boot"}."\n";
-    }
-    if($Sys{"Dual_boot_win"} ne "") {
-        $Host .= "dual_boot_win:".$Sys{"Dual_boot_win"}."\n";
-    }
-    if($Sys{"Nomodeset"}) {
-        $Host .= "nomodeset:".$Sys{"Nomodeset"}."\n";
-    }
-    $Host .= "kernel:".$Sys{"Kernel"}."\n";
     
-    if($Sys{"Vendor"}) {
-        $Host .= "vendor:".$Sys{"Vendor"}."\n";
+    foreach my $K (sort keys(%Sys))
+    {
+        if($K eq "Name" or $K eq "Version") {
+            next;
+        }
+        
+        if($Sys{$K} ne "") {
+            $Host .= lc($K).":".$Sys{$K}."\n";
+        }
     }
-    if($Sys{"Model"}) {
-        $Host .= "model:".$Sys{"Model"}."\n";
-    }
-    if($Sys{"SubVendor"}) {
-        $Host .= "subvendor:".$Sys{"SubVendor"}."\n";
-    }
-    if($Sys{"SubModel"}) {
-        $Host .= "submodel:".$Sys{"SubModel"}."\n";
-    }
-    if($Sys{"Year"}) {
-        $Host .= "year:".$Sys{"Year"}."\n";
-    }
-    if($Sys{"HWaddr"}) {
-        $Host .= "hwaddr:".$Sys{"HWaddr"}."\n";
-    }
-    if($Sys{"Type"}) {
-        $Host .= "type:".$Sys{"Type"}."\n";
-    }
-    if($Sys{"Sockets"}) {
-        $Host .= "sockets:".$Sys{"Sockets"}."\n";
-    }
-    if($Sys{"Cores"}) {
-        $Host .= "cores:".$Sys{"Cores"}."\n";
-    }
-    if($Sys{"Threads"}) {
-        $Host .= "threads:".$Sys{"Threads"}."\n";
-    }
-    if($Sys{"NICs"} ne "") {
-        $Host .= "nics:".$Sys{"NICs"}."\n";
-    }
-    if($Sys{"Monitors"} ne "") {
-        $Host .= "monitors:".$Sys{"Monitors"}."\n";
-    }
-    if($Sys{"Op_modes"}) {
-        $Host .= "op_modes:".$Sys{"Op_modes"}."\n";
-    }
-    if($Sys{"TotalRAM"}) {
-        $Host .= "ram_total:".$Sys{"TotalRAM"}."\n";
-    }
-    if($Sys{"UsedRAM"}) {
-        $Host .= "ram_used:".$Sys{"UsedRAM"}."\n";
-    }
+    
     if($Sys{"Name"}) {
         $Host .= "id:".$Sys{"Name"}."\n";
     }
@@ -9417,7 +9721,8 @@ sub readHost($)
     my %Map = (
         "id"=>"Name",
         "hwaddr"=>"HWaddr",
-        "de"=>"DE"
+        "de"=>"DE",
+        "nics"=>"NICs"
     );
     
     foreach my $Line (split(/\n/, $Content))
@@ -9440,13 +9745,21 @@ sub readHost($)
     or -s $FixProbe_Logs."/dmidecode"
     or ($Sys{"Arch"}=~/arm|aarch/i and -s $FixProbe_Logs."/dmesg"))
     {
-        foreach ("Vendor", "Model") {
+        foreach ("Vendor", "Model", "Subvendor", "Submodel") {
             delete($Sys{$_});
         }
     }
     
     $Sys{"NICs"} = 0;
     $Sys{"Monitors"} = 0;
+    
+    $Sys{"Sockets"} = undef;
+    $Sys{"Cores"} = undef;
+    $Sys{"Threads"} = undef;
+    $Sys{"Op_modes"} = undef;
+    
+    $Sys{"Ram_used"} = undef;
+    $Sys{"Ram_total"} = undef;
 }
 
 sub getUser()
@@ -9486,14 +9799,6 @@ sub writeLogs()
         my $Cpuid = runCmd("cpuid -1 2>&1");
         $Cpuid = encryptSerials($Cpuid, "serial number");
         writeLog($LOG_DIR."/cpuid", $Cpuid);
-    }
-    elsif(enabledLog("cpuinfo")
-    and -e "/proc/cpuinfo")
-    {
-        listProbe("logs", "cpuinfo");
-        my $Cpuinfo = readFile("/proc/cpuinfo");
-        $Cpuinfo=~s/\n\n(.|\n)+\Z/\n/g; # for one core
-        writeLog($LOG_DIR."/cpuinfo", $Cpuinfo);
     }
     
     if($Admin)
@@ -9628,18 +9933,6 @@ sub writeLogs()
             }
         }
         writeLog($LOG_DIR."/biosdecode", $BiosDecode);
-    }
-    
-    if(not $Opt{"Docker"}
-    and enabledLog("df")
-    and checkCmd("df"))
-    {
-        listProbe("logs", "df");
-        my $Df = runCmd("df -h 2>&1");
-        $Df = hidePaths($Df);
-        $Df = hideIPs($Df);
-        $Df = hideUrls($Df);
-        writeLog($LOG_DIR."/df", $Df);
     }
     
     # level=default
@@ -12590,7 +12883,7 @@ sub scenario()
             exitStatus(1);
         }
         readPciIds($PciIDs, \%PciInfo, \%PciInfo_D);
-
+        
         if(-e "$PciIDs.add") {
             readPciIds("$PciIDs.add", \%AddPciInfo, \%AddPciInfo_D);
         }
