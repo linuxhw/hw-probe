@@ -72,6 +72,10 @@ Install on Debian
 
 ###### Debian Sid
 
+Enable Unstable repository and install:
+
+    echo "deb http://http.us.debian.org/debian unstable main non-free contrib" | sudo tee -a /etc/apt/sources.list
+    sudo apt-get update
     sudo apt-get install hw-probe --no-install-recommends
 
 ###### Any Debian
