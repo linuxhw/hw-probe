@@ -9872,6 +9872,7 @@ sub writeLogs()
     {
         listProbe("logs", "grub");
         my $Grub = readFile("/etc/default/grub");
+        $Grub = hidePaths($Grub);
         writeLog($LOG_DIR."/grub", $Grub);
     }
     
