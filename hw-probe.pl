@@ -9883,6 +9883,7 @@ sub writeLogs()
         {
             listProbe("logs", "grub.cfg");
             my $GrubCfg = readFile("/boot/grub2/grub.cfg");
+            $GrubCfg = hidePaths($GrubCfg);
             writeLog($LOG_DIR."/grub.cfg", $GrubCfg);
         }
     }
