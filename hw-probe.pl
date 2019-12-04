@@ -1590,7 +1590,9 @@ sub hidePaths($)
 sub hideLVM($)
 {
     my $Content = $_[0];
-    return hideByRegexp($Content, qr/vg_(.+?)\b/);
+    $Content = hideByRegexp($Content, qr/vg_(.+?)\b/);
+    $Content = hideByRegexp($Content, qr/([^\s]+)--vg-[^\s]+/);
+    return $Content;
 }
 
 sub hideIPs($)
@@ -2789,6 +2791,7 @@ sub probeHW()
         $DevFiles = encryptWWNs($DevFiles);
         $DevFiles = hideByRegexp($DevFiles, qr/\/by-partlabel\/([^\s]+)/);
         $DevFiles = hideLVM($DevFiles);
+        $DevFiles = hideByRegexp($DevFiles, qr/\/([^\s\/]+?)-vg/);
         $DevFiles = hidePaths($DevFiles);
         
         writeLog($LOG_DIR."/dev", $DevFiles);
@@ -9895,6 +9898,7 @@ sub writeLogs()
         my $BootLog = clearLog(readFile("/var/log/boot.log"));
         $BootLog=~s&(Mounted|Mounting)\s+/.+&$1 XXXXX&g;
         $BootLog=~s&(Setting hostname\s+).+:&$1XXXXX:&g;
+        $BootLog = hideLVM($BootLog);
         writeLog($LOG_DIR."/boot.log", $BootLog);
     }
     
