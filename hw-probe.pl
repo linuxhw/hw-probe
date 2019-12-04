@@ -1439,7 +1439,10 @@ my %TypeOrder = (
 );
 
 my $ALL_DRIVE_VENDORS = "ADATA|A\-DATA|Advantech|AEGO|AMD|Anobit|Apacer|Apple|ASUS|BHT|BIWIN|Chiprex|CLOVER|Colorful|Corsair|Crucial|Dell|DREVO|Espada|ExcelStor Technology|e2e4|faspeed|FASTDISK|Fordisk|FORESEE|Foxline|FUJITSU|Geil|GelL|GIGABYTE|Gigastone|GLOWAY|Goldendisk|Goldenfir|Goldkey|GOODRAM|Gost|HGST|Hitachi|HP|HYPERDISK|i-FlashDisk|IBM-Hitachi|IBM|Indilinx|INTEL|INTENSO|Kingchuxing|KingDian|KingFast|KINGMAX|KingPower|KINGRICH|KINGSHARE|KingSpec|Kingston|LDLC|LDNDISK|Lenovo|LEXAR|Lite-On|LITEON|LITEONIT|LONDISK|Magnetic Data|MARSHAL|Maxtor|MediaMax|MicroData|Micron|Mushkin|Myung|Netac|OCZ|oyunkey|PALIT|Patriot|PHISON|Platinet|PLEXTOR|PNY|PRETEC|QUANTUM|QUMO|Radeon|Ramaxel|Reeinno|RunCore|Samsung Electronics|SAMSUNG|SandForce|SanDisk|Seagate|SenDisk|Shinedisk|SILICONMOTION|SK hynix|Smartbuy|SMI|SPCC|TEAM|Teclast|TCSUNBOW|TEKET|TopSunligt|TOSHIBA|Transcend|Vaseky|Verbatim|WDC|Western Digital|XPG|XUNZHE|Zheino|ZOTAC";
+
 my $ALL_VENDORS = "Brother|Canon|Epson|HP|Hewlett\-Packard|Kyocera|Samsung|Xerox";
+
+my $ALL_MON_VENDORS = "Acer|ADI|AGO|ALP|Ancor Communications Inc|AOC|Apple|Arnos Instruments|AU Optronics Corporation|AUS|BBY|BEK|BenQ|BOE Technology Group Co\., Ltd|Chi Mei Optoelectronics corp\.|CHI|CIS|CMN|CNC|COMPAL|COMPAQ|cPATH|CRO|CVTE|DELL|DENON, Ltd\.|Eizo|ELO|EQD|FNI|FUS|Gateway|GRUNDIG|HannStar Display Corp|HII|Hisense|HKC|HP|HPN|IBM|Idek Iiyama|ITR INFOTRONIC|IQT|KOA|Lenovo Group Limited|LGD|LG Electronics|LPL|Maxdata\/Belinea|MEB|Medion|Microstep|MS_ Nvidia|MSH|MST|MStar|NEC|NEX|Nvidia|OEM|ONKYO Corporation|Panasonic|Philips|Pioneer Electronic Corporation|PLN|Princeton Graphics|PRI|PKB|Samsung|Sangyo|Sceptre|SDC|Seiko\/Epson|SEK|SHARP|SONY|STN|TAR|Targa|Tech Concepts|TOSHIBA|Toshiba Matsushita Display Technology Co\., Ltd|UMC|Vestel|ViewSonic|VIZ|Wacom Tech|WDT";
 
 my $USE_DIGEST = 0;
 my $USE_DUMPER = 0;
@@ -2659,7 +2662,7 @@ sub getDefaultType($$$)
             return "fingerprint reader";
         }
         
-        if($Device->{"Vendor"}=~/Synaptics/ and $DId=~/0081|009a|00a2/) {
+        if($Device->{"Vendor"}=~/Synaptics/ and $DId=~/0081|009a|00a2|00bd/) {
             return "fingerprint reader";
         }
     }
@@ -2906,6 +2909,7 @@ sub probeHW()
             $Modinfo=~s/\n(filename:)/\n\n$1/g;
             $Modinfo=~s/\n(author|signer|sig_key|sig_hashalgo|vermagic):.+//g;
             $Modinfo=~s/\ndepends:\s+\n/\n/g;
+            $Modinfo=~s/\n\s+[A-F\d]{2}\:.+//g;
             $Modinfo=~s&/lib/modules/[^\/]+/kernel/&&g;
             writeLog($LOG_DIR."/modinfo", $Modinfo);
         }
@@ -3414,6 +3418,13 @@ sub probeHW()
                 
                 if($MSize=~/\A(\d+)/) {
                     $Device{"Width"} = $1;
+                }
+            }
+            
+            if(not $Device{"Ratio"})
+            {
+                if(my $RatioByRes = computeRatio($Device{"Resolution"})) {
+                    $Device{"Ratio"} = $RatioByRes;
                 }
             }
         }
@@ -4553,13 +4564,6 @@ sub probeHW()
         $HW{$ID}{"Driver"} = join(", ", sort {$Drivers{$a}<=>$Drivers{$b}} keys(%Drivers));
     }
     
-    foreach my $ID (sort keys(%HW))
-    {
-        if($HW{$ID}{"Type"} eq "monitor") {
-            $Sys{"Monitors"} += 1;
-        }
-    }
-    
     # Fix incorrectly detected types
     foreach my $ID (sort keys(%HW))
     {
@@ -5090,7 +5094,13 @@ sub probeHW()
     {
         $Sys{"Sockets"} = $CPU_Sockets;
         $Sys{"Cores"} = $CPU_Cores;
-        $Sys{"Threads"} = $CPU_Threads/$CPU_Cores;
+        
+        if($CPU_Threads>=$CPU_Cores) {
+            $Sys{"Threads"} = $CPU_Threads/$CPU_Cores;
+        }
+        elsif($CPU_Threads>=$CPU_Sockets) {
+            $Sys{"Threads"} = $CPU_Threads/$CPU_Sockets;
+        }
     }
     
     # fix missed or incorrect computer type from DMI 
@@ -5110,9 +5120,9 @@ sub probeHW()
         fixFFByGPU($HW{$_}{"Device"});
     }
     
-    #foreach (keys(%{$ComponentID{"disk"}})) {
-    #    fixFFByDisk($HW{$_}{"Device"});
-    #}
+    foreach (keys(%{$ComponentID{"disk"}})) {
+        fixFFByDisk($HW{$_}{"Device"});
+    }
     
     foreach (keys(%{$ComponentID{"monitor"}})) {
         fixFFByMonitor($HW{$_}{"Device"});
@@ -6518,6 +6528,106 @@ sub probeHW()
         delete($Sys{"Nomodeset"});
     }
     
+    if(not grep {$HW{$_}{"Type"} eq "monitor"} keys(%HW))
+    {
+        if(my @LCDs = $XLog=~/\:\s+([^:]+?) \((\w+-?\d+)\)(\: connected| \(boot, connected\)| \(connected\))/g)
+        { # Nvidia
+            foreach my $MPos (keys(@LCDs))
+            {
+                if($MPos % 3 != 0) {
+                    next;
+                }
+                
+                my ($MName, $MPort, $MConn) = ($LCDs[$MPos], $LCDs[$MPos + 1], $LCDs[$MPos + 2]);
+                
+                my %Mon = ();
+                
+                $Mon{"Device"} = $MName;
+                
+                if($MConn=~/boot/ or index($XLog, "$MPort (boot)")!=-1)
+                {
+                    if($XLog=~/Virtual screen size determined to be (\d+) x (\d+)/) {
+                        $Mon{"Resolution"} = $1."x".$2;
+                    }
+                }
+                
+                my $MID = "eisa:".fmtID(devID(nameID($Mon{"Device"}), $Mon{"Resolution"}));
+                
+                if(defined $HW{$MID}) {
+                    last;
+                }
+                
+                if($Mon{"Device"}=~s/\A($ALL_MON_VENDORS)([ \-]|\Z)//) {
+                    $Mon{"Vendor"} = $1;
+                }
+                
+                $Mon{"Type"} = "monitor";
+                $Mon{"Status"} = "works";
+                
+                if($MPort=~/DFP|LVDS/) {
+                    $Mon{"Kind"} = "Digital"
+                }
+                elsif($MPort=~/CRT/) {
+                    $Mon{"Kind"} = "Analog"
+                }
+                
+                if($Mon{"Device"}) {
+                    $Mon{"Device"} = "LCD Monitor ".$Mon{"Device"};
+                }
+                else {
+                    $Mon{"Device"} = "LCD Monitor";
+                }
+                
+                if($Mon{"Resolution"}) {
+                    $Mon{"Device"} .= " ".$Mon{"Resolution"};
+                }
+                
+                $HW{$MID} = \%Mon;
+                $HW{$MID}{"Status"} = "works";
+            }
+        }
+        elsif(my @LCDs = $XLog=~/Output (.+?) using initial mode (\d+x\d+)/g)
+        {
+            foreach my $MPos (keys(@LCDs))
+            {
+                if($MPos % 2 != 0) {
+                    next;
+                }
+                
+                my ($MPort, $MRes) = ($LCDs[$MPos], $LCDs[$MPos + 1]);
+                
+                my %Mon = ();
+                
+                $Mon{"Type"} = "monitor";
+                $Mon{"Status"} = "works";
+                    
+                $Mon{"Device"} = "LCD Monitor";
+                
+                if($MPort=~/DFP|LVDS/) {
+                    $Mon{"Kind"} = "Digital"
+                }
+                elsif($MPort=~/CRT/) {
+                    $Mon{"Kind"} = "Analog"
+                }
+                
+                $Mon{"Resolution"} = $MRes;
+                
+                my $MID = "eisa:".fmtID(devID(nameID($Mon{"Device"}), $MRes));
+                
+                $Mon{"Device"} .= " ".$MRes;
+                
+                $HW{$MID} = \%Mon;
+            }
+        }
+    }
+    
+    foreach my $ID (sort keys(%HW))
+    {
+        if($HW{$ID}{"Type"} eq "monitor") {
+            $Sys{"Monitors"} += 1;
+        }
+    }
+    
     my $HciConfig = "";
     
     if($Opt{"FixProbe"})
@@ -7587,6 +7697,13 @@ sub detectMonitor($)
         
         if($Device{"Size"}=~/\A(\d+)/) {
             $Device{"Width"} = $1;
+        }
+    }
+    
+    if(not $Device{"Ratio"})
+    {
+        if(my $RatioByRes = computeRatio($Device{"Resolution"})) {
+            $Device{"Ratio"} = $RatioByRes;
         }
     }
     
@@ -8715,7 +8832,7 @@ sub fixFFByBoard($)
     my $Board = $_[0];
     if($Sys{"Type"}!~/$DESKTOP_TYPE|$SERVER_TYPE/)
     {
-        if($Board=~/\b(D510MO|GA-K8NMF-9|DG965RY|DG33BU|D946GZIS|N3150ND3V|D865GSA|DP55WG|H61MXT1|D875PBZ|F2A55|Z68XP-UD3|Z77A-GD65|M4A79T|775Dual-880Pro|P4Dual-915GL|P4i65GV|D5400XS|D201GLY|MicroServer|IPPSB-DB|MS-AA53|C2016-BSWI-D2|N3160TN|D915PBL|Aptio CRB|EIRD-SAM|D865PERL|D410PT|D525MW|D945GCNL|BSWI-D2|B202|D865GBF)\b/) {
+        if($Board=~/\b(D510MO|GA-K8NMF-9|DG965RY|DG33BU|D946GZIS|N3150ND3V|D865GSA|DP55WG|H61MXT1|D875PBZ|F2A55|Z68XP-UD3|Z77A-GD65|M4A79T|775Dual-880Pro|P4Dual-915GL|P4i65GV|D5400XS|D201GLY|MicroServer|IPPSB-DB|MS-AA53|C2016-BSWI-D2|N3160TN|D915PBL|Aptio CRB|EIRD-SAM|D865PERL|D410PT|D525MW|D945GCNL|BSWI-D2|B202|D865GBF|G1-CPU-IMP)\b/) {
             $Sys{"Type"} = "desktop";
         }
     }
@@ -8864,7 +8981,7 @@ sub fixFFByDisk($)
     my $Disk = $_[0];
     if($Sys{"Type"}!~/$DESKTOP_TYPE|$SERVER_TYPE/)
     {
-        if($Disk=~/HD321KJ/) {
+        if($Disk=~/HD321KJ|ST3500413AS/) {
             $Sys{"Type"} = "desktop";
         }
     }
@@ -9480,9 +9597,13 @@ sub probeDistr()
                 return ("rosa-sx-".lc($1)."-".$Release, "");
             }
         }
-        elsif($Descr=~/\AROSA Chrome ([\d\.]+)/i)
+        elsif($Descr=~/\AROSA (Chrome|Nickel|Cobalt) ([\d\.]+)/i)
         {
-            return ("rosa-chrome-".lc($1), "");
+            return ("rosa-".lc($1)."-".lc($2), "");
+        }
+        elsif($Descr=~/\AROSA (Chrome|Nickel|Cobalt)\Z/i)
+        {
+            return ("rosa-".lc($1)."-".$Release, "");
         }
         elsif($Name=~/\AROSA/i)
         {
@@ -12519,6 +12640,15 @@ sub fixLogs($)
             if(my $Content = readFile("$FixProbe_Logs/$L")) {
                 writeLog("$FixProbe_Logs/$L", $Content);
             }
+        }
+    }
+    
+    if(-e "$Dir/modinfo")
+    {
+        if((my $Content = readFile("$Dir/modinfo"))=~/signature: /)
+        {
+            $Content=~s/\n\s+[A-F\d]{2}\:.+//g;
+            writeFile("$Dir/modinfo", $Content);
         }
     }
     
