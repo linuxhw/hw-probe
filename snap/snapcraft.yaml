@@ -109,8 +109,7 @@ parts:
     plugin: make
     override-build: |
       curl http://www.linux-usb.org/usb.ids > usb.ids
-      curl "http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD" > ./usbhid-dump/auxdir/config.guess
-      curl "http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD" > ./usbhid-dump/auxdir/config.sub
+      sed -i -e 's/usbhid-dump//' Makefile.*
       ./configure --prefix=/usr
       sed -i -e 's/ -g / -s /' Makefile
       make
