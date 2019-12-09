@@ -6304,6 +6304,11 @@ sub probeHW()
                 elsif($Sys{"Model"}=~s/\A(Xunlong|Hardkernel) //) {
                     $Sys{"Vendor"} = $1;
                 }
+                elsif($Sys{"Model"}=~/Pine64/)
+                {
+                    $Sys{"Type"} = "system on chip";
+                    $Sys{"Vendor"} = "Pine Microsystems";
+                }
                 
                 $Sys{"Model"}=~s/\s+Board\Z//i;
             }
@@ -6526,6 +6531,10 @@ sub probeHW()
     }
     elsif(defined $Sys{"Nomodeset"}) {
         delete($Sys{"Nomodeset"});
+    }
+    
+    if($Sys{"Video_memory"}) {
+        $Sys{"Video_memory"} = roundFloat($Sys{"Video_memory"}, 2);
     }
     
     if(not grep {$HW{$_}{"Type"} eq "monitor"} keys(%HW))
@@ -6923,7 +6932,7 @@ sub probeHW()
     and checkCmd("df"))
     {
         listProbe("logs", "df");
-        $Df = runCmd("df -h 2>&1");
+        $Df = runCmd("df -Th 2>&1");
         $Df = hidePaths($Df);
         $Df = hideIPs($Df);
         $Df = hideUrls($Df);
@@ -6931,11 +6940,18 @@ sub probeHW()
     }
     
     my ($SpaceTotal, $SpaceUsed) = (0.0, 0.0);
+    
+    my $NewDf = "";
+    if(index($Df, " Type ")!=-1) {
+        $NewDf = "[^\\s]+\\s+";
+    }
+    
     foreach my $DfL (split(/\n/, $Df))
     {
-        if($DfL=~/\A\/dev\/([sh]d|nvme|mapper|mmcblk|root).*?\s+([\w\.\,]+)\s+([\w\.\,]+)/)
+        if($DfL=~/\A\/dev\/([sh]d|nvme|mapper|mmcblk|root).*?\s+$NewDf([\w\.\,]+)\s+([\w\.\,]+)/)
         {
             my ($PSize, $PUsed) = ($2, $3);
+            
             if($PSize) {
                 $SpaceTotal += toGb($PSize);
             }
@@ -6949,6 +6965,11 @@ sub probeHW()
     {
         $Sys{"Space_total"} = roundFloat($SpaceTotal, 2);
         $Sys{"Space_used"} = roundFloat($SpaceUsed, 2);
+    }
+    
+    if($NewDf and $Df=~/^[^\s]+[ \t]+([^\s]+).*[ \t]+\/$/m)
+    {
+        $Sys{"Filesystem"} = $1;
     }
     
     $Sys{"Dual_boot"} = 0;
@@ -6996,7 +7017,7 @@ sub probeHW()
             
             my @L = split(/\s+/, $Line);
             
-            if($Line=~/ (ext[34]) / and index($Line, "/")==-1) {
+            if($Line=~/ (ext[234]) / and index($Line, "/")==-1) {
                 $Sys{"Dual_boot"} = 1;
             }
             
@@ -7059,6 +7080,144 @@ sub probeHW()
         
         if(index($Lsblk, " ntfs ")!=-1) {
             $Sys{"Dual_boot_win"} = 1;
+        }
+        
+        if(index($Lsblk, " LABEL ")!=-1)
+        { # old format
+            if(index($Lsblk, "/snap/")!=-1)
+            {
+                if($Lsblk=~/^[^\s]+[ \t]+[^\s]+[ \t]+[^\s]+[ \t]+(\w+)[ \t]+.*\/var\/lib\/snapd\/hostfs[ \t]/m) {
+                    $Sys{"Filesystem"} = $1;
+                }
+            }
+            else
+            {
+                if($Lsblk=~/^[^\s]+[ \t]+[^\s]+[ \t]+[^\s]+[ \t]+(\w+)[ \t]+.*\/[ \t]/m) {
+                    $Sys{"Filesystem"} = $1;
+                }
+            }
+        }
+        else
+        {
+            if(index($Lsblk, "/snap/")!=-1)
+            {
+                if($Lsblk=~/(\w+)\s+[a-f\d\-]+\s+\/var\/lib\/snapd\/hostfs\s/) {
+                    $Sys{"Filesystem"} = $1;
+                }
+            }
+            else
+            {
+                if($Lsblk=~/(\w+)\s+[a-f\d\-]+\s+\/\s/) {
+                    $Sys{"Filesystem"} = $1;
+                }
+            }
+        }
+    }
+    
+    my $Findmnt = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Findmnt = readFile($FixProbe_Logs."/findmnt");
+    }
+    elsif(not $Opt{"Docker"} and enabledLog("findmnt")
+    and checkCmd("findmnt"))
+    {
+        listProbe("logs", "findmnt");
+        my $FindmntCmd = "findmnt";
+        if($Opt{"Flatpak"}) {
+            $FindmntCmd .= " 2>/dev/null";
+        }
+        else {
+            $FindmntCmd .= " 2>&1";
+        }
+        
+        $Findmnt = runCmd($FindmntCmd);
+        if($Opt{"Snap"} and $Findmnt=~/Permission denied/) {
+            $Findmnt = "";
+        }
+        
+        $Findmnt=~s/\[[^\s]+\]/[XXXXX]/g;
+        $Findmnt = hidePaths($Findmnt);
+        $Findmnt = hideIPs($Findmnt);
+        $Findmnt = hideUrls($Findmnt);
+        writeLog($LOG_DIR."/findmnt", $Findmnt);
+    }
+    
+    my $Fstab = "";
+    
+    if($Opt{"FixProbe"})
+    {
+        $Fstab = readFile($FixProbe_Logs."/fstab");
+        $Fstab=~s/#.*\n//g;
+    }
+    elsif(not $Opt{"Docker"}
+    and enabledLog("fstab"))
+    {
+        listProbe("logs", "fstab");
+        $Fstab = readFile("/etc/fstab");
+        $Fstab = hidePaths($Fstab);
+        $Fstab = hideIPs($Fstab);
+        $Fstab = hideUrls($Fstab);
+        $Fstab = hidePass($Fstab);
+        $Fstab=~s/LABEL=[^\s]+/LABEL=XXXX/g;
+        $Fstab=~s/sshfs#.+/sshfs.../g;
+        $Fstab=~s/#.*\n//g;
+        writeLog($LOG_DIR."/fstab", $Fstab);
+    }
+    
+    my $Mount = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Mount = readFile($FixProbe_Logs."/mount");
+    }
+    elsif(not $Opt{"Docker"}
+    and enabledLog("mount")
+    and checkCmd("mount"))
+    {
+        listProbe("logs", "mount");
+        
+        $Mount = runCmd("mount -v 2>&1 | column -t");
+        if($Opt{"Snap"} and $Mount=~/Permission denied/) {
+            $Mount = "";
+        }
+        
+        $Mount = hidePaths($Mount);
+        $Mount = hideIPs($Mount);
+        $Mount = hideUrls($Mount);
+        writeLog($LOG_DIR."/mount", $Mount);
+    }
+    
+    if(not $Sys{"Filesystem"})
+    {
+        if($Fstab=~/\s+\/\s+([^\s]+)\s+/)
+        {
+            if($1 ne "auto") {
+                $Sys{"Filesystem"} = $1;
+            }
+        }
+    }
+    
+    if(not $Sys{"Filesystem"})
+    {
+        if($Mount=~/\s+on\s+(\/|\/usr)\s+type\s+([^\s]+)/) {
+            $Sys{"Filesystem"} = $2;
+        }
+    }
+    
+    if(not $Sys{"Filesystem"})
+    {
+        my @Filesystems = ("btrfs", "jfs", "reiserfs", "xfs", "zfs", "aufs", "ext[234]", "overlay");
+        
+        LOOP: foreach my $Log ($Df, $Lsblk, $Findmnt)
+        {
+            foreach my $Fs (@Filesystems)
+            {
+                if($Log=~/\s+($Fs)\s+/)
+                {
+                    $Sys{"Filesystem"} = $1;
+                    last LOOP;
+                }
+            }
         }
     }
     
@@ -8844,7 +9003,7 @@ sub fixFFByBoard($)
     }
     if($Sys{"Type"}!~/$MOBILE_TYPE/)
     {
-        if($Board=~/\b(W7430|Poyang|PSMBOU|Lhotse-II|Nettiling)\b/) {
+        if($Board=~/\b(W7430|Poyang|PSMBOU|Lhotse-II|Nettiling|EI Capitan)\b/) {
             $Sys{"Type"} = "notebook";
         }
         if($Board=~/\b(SurfTab)\b/) {
@@ -9066,12 +9225,16 @@ sub fixChassis()
         if($Sys{"Kernel"}=~/\-sunxi/) {
             $Sys{"Vendor"} = "sunxi";
         }
-        
-        if($Sys{"Kernel"}=~/\-(tegra)\Z/i)
+        elsif($Sys{"Kernel"}=~/\-(tegra)\Z/i)
         {
             $Sys{"Type"} = "system on chip";
             $Sys{"Vendor"} = "NVIDIA";
             $Sys{"Model"} = "Tegra";
+        }
+        elsif($Sys{"Kernel"}=~/\-(rockchip-.*)\Z/i)
+        {
+            $Sys{"Type"} = "system on chip";
+            $Sys{"Vendor"} = "Rockchip";
         }
     }
     
@@ -9884,6 +10047,8 @@ sub readHost($)
     
     $Sys{"Ram_used"} = undef;
     $Sys{"Ram_total"} = undef;
+    
+    $Sys{"Filesystem"} = undef;
 }
 
 sub getUser()
@@ -10463,21 +10628,6 @@ sub writeLogs()
         }
     }
     
-    if(not $Opt{"Docker"}
-    and enabledLog("fstab"))
-    {
-        listProbe("logs", "fstab");
-        my $Fstab = readFile("/etc/fstab");
-        $Fstab = hidePaths($Fstab);
-        $Fstab = hideIPs($Fstab);
-        $Fstab = hideUrls($Fstab);
-        $Fstab = hidePass($Fstab);
-        $Fstab=~s/LABEL=[^\s]+/LABEL=XXXX/g;
-        $Fstab=~s/sshfs#.+/sshfs.../g;
-        $Fstab=~s/#.*\n//g;
-        writeLog($LOG_DIR."/fstab", $Fstab);
-    }
-    
     if(enabledLog("scsi"))
     {
         listProbe("logs", "scsi");
@@ -10663,49 +10813,6 @@ sub writeLogs()
     }
     
     # level=maximal
-
-    if(not $Opt{"Docker"})
-    {
-        if(enabledLog("findmnt")
-        and checkCmd("findmnt"))
-        {
-            listProbe("logs", "findmnt");
-            my $FindmntCmd = "findmnt";
-            if($Opt{"Flatpak"}) {
-                $FindmntCmd .= " 2>/dev/null";
-            }
-            else {
-                $FindmntCmd .= " 2>&1";
-            }
-            
-            my $Findmnt = runCmd($FindmntCmd);
-            if($Opt{"Snap"} and $Findmnt=~/Permission denied/) {
-                $Findmnt = "";
-            }
-            
-            $Findmnt=~s/\[[^\s]+\]/[XXXXX]/g;
-            $Findmnt = hidePaths($Findmnt);
-            $Findmnt = hideIPs($Findmnt);
-            $Findmnt = hideUrls($Findmnt);
-            writeLog($LOG_DIR."/findmnt", $Findmnt);
-        }
-        
-        if(enabledLog("mount")
-        and checkCmd("mount"))
-        {
-            listProbe("logs", "mount");
-            
-            my $Mount = runCmd("mount -v 2>&1 | column -t");
-            if($Opt{"Snap"} and $Mount=~/Permission denied/) {
-                $Mount = "";
-            }
-            
-            $Mount = hidePaths($Mount);
-            $Mount = hideIPs($Mount);
-            $Mount = hideUrls($Mount);
-            writeLog($LOG_DIR."/mount", $Mount);
-        }
-    }
     
     if(enabledLog("firmware")
     and -d "/lib/firmware")
