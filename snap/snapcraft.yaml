@@ -30,15 +30,10 @@ description: >
 type: app
 confinement: strict
 grade: stable
-plugs:
-  dot-local-share-xorg-logs:
-    interface: personal-files
-    read:
-    - $HOME/.local/share/xorg
 apps:
   hw-probe:
     command: usr/bin/hw-probe -snap
-    plugs: [hardware-observe, system-observe, block-devices, log-observe, upower-observe, physical-memory-observe, network-observe, raw-usb, mount-observe, opengl, dot-local-share-xorg-logs]
+    plugs: [hardware-observe, system-observe, block-devices, log-observe, upower-observe, physical-memory-observe, network-observe, raw-usb, mount-observe, opengl]
     environment:
       PATH: $PATH:$SNAP/sbin:$SNAP/usr/sbin:$SNAP/usr/bin
       PERL5LIB: $SNAP/usr/share/perl5:$SNAP/usr/lib/x86_64-linux-gnu/perl-base:$SNAP/usr/lib/i386-linux-gnu/perl-base
