@@ -841,9 +841,12 @@ my @DE_Package = (
     [ "plasma5-settings", "KDE5" ],
     [ "plasma5-workspace", "KDE5" ],
     [ "plasma-desktop-5", "KDE5" ],
+    [ "plasma5-config-fresh", "KDE5" ],
+    [ "task-plasma5", "KDE5" ],
     
     [ "plasma-desktop 4:4", "KDE4" ],
     [ "kde-settings-plasma", "KDE4" ],
+    [ "task-kde4", "KDE4" ],
     [ "gnome-flashback", "GNOME Flashback" ],
     
     [ "manjaro-gnome-assets", "GNOME" ],
@@ -6367,6 +6370,23 @@ sub probeHW()
             $CmdLine = $1;
         }
         
+        if(not $Sys{"system"} or $Sys{"system"}=~/freedesktop/)
+        {
+            foreach my $Prefix ("Current Operating System", "Build Operating System")
+            {
+                if($XLog=~/$Prefix:(.*)/)
+                {
+                    my $Linux = lc($1);
+                    foreach my $Lin ("deepin", "debian", "arch")
+                    {
+                        if(index($Linux, $Lin) != -1) {
+                            $Sys{"System"} = lc($Lin);
+                        }
+                    }
+                }
+            }
+        }
+        
         $Nomodeset = (index($CmdLine, " nomodeset")!=-1 or index($CmdLine, " nokmsboot")!=-1);
         $ForceVESA = (index($CmdLine, "xdriver=vesa")!=-1);
         
@@ -6969,7 +6989,9 @@ sub probeHW()
     
     if($NewDf and $Df=~/^[^\s]+[ \t]+([^\s]+).*[ \t]+\/$/m)
     {
-        $Sys{"Filesystem"} = $1;
+        if($1 ne "squashfs") {
+            $Sys{"Filesystem"} = $1;
+        }
     }
     
     $Sys{"Dual_boot"} = 0;
@@ -9883,7 +9905,7 @@ sub devSort($$) {
 
 sub writeDevsDump()
 {
-    foreach my $ID (keys(\%HW))
+    foreach my $ID (keys(%HW))
     {
         $HW{$ID}{"Bus"} = getDeviceBus($ID);
         if((my $Count = getDeviceCount($ID))>1) {
@@ -12608,7 +12630,7 @@ sub fixLogs($)
         }
     }
 
-    foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all", "dmidecode")
+    foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all", "dmidecode", "dmesg")
     {
         if(-f "$Dir/$L"
         and -s "$Dir/$L" < 2*$EMPTY_LOG_SIZE)
@@ -12621,6 +12643,7 @@ sub fixLogs($)
           # /dev/mem: Permission denied
           # dmidecode: command not found
           # No SMBIOS nor DMI entry point found
+          # dmesg: read kernel buffer failed: Operation not permitted
             writeFile("$Dir/$L", "");
         }
     }
@@ -13363,6 +13386,12 @@ sub scenario()
                     $Sys{"DE"} = $FixDE;
                 }
             }
+        }
+        
+        if($Sys{"System"} and $Distr=~/freedesktop/)
+        {
+            $Distr = undef;
+            $Rel = undef;
         }
         
         if($Distr)
