@@ -6561,7 +6561,7 @@ sub probeHW()
     {
         if(my @LCDs = $XLog=~/\:\s+([^:]+?) \((\w+-?\d+)\)(\: connected| \(boot, connected\)| \(connected\))/g)
         { # Nvidia
-            foreach my $MPos (keys(@LCDs))
+            foreach my $MPos (0 .. $#LCDs)
             {
                 if($MPos % 3 != 0) {
                     next;
@@ -6617,7 +6617,7 @@ sub probeHW()
         }
         elsif(my @LCDs = $XLog=~/Output (.+?) using initial mode (\d+x\d+)/g)
         {
-            foreach my $MPos (keys(@LCDs))
+            foreach my $MPos (0 .. $#LCDs)
             {
                 if($MPos % 2 != 0) {
                     next;
