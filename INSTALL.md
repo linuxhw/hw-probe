@@ -51,6 +51,7 @@ On Ubuntu and Ubuntu based Linux distributions (Linux Mint, elementary OS, etc.)
 
 Download Debian package [hw-probe_1.4-1_all.deb](http://ftp.br.debian.org/debian/pool/main/h/hw-probe/hw-probe_1.4-1_all.deb) and install:
 
+    sudo add-apt-repository universe
     sudo apt-get install ./hw-probe_1.4-1_all.deb --no-install-recommends
 
 ###### PPA
