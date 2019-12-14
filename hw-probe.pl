@@ -1661,17 +1661,21 @@ sub hideByRegexp(@)
     }
     
     my @Matches = ($Content=~/$Regexp/gi);
+    
+    my @Skip = ("cdrom", "live", "livecd", "live-rw", "tmpfs");
+    
     foreach my $Match (@Matches)
     {
+        if(grep {$Match eq $_} @Skip) {
+            next;
+        }
+        
         $Content = hideStr($Content, $Match);
         
-        if($Subj)
+        if($Subj and $Subj eq "systemd")
         {
-            if($Subj eq "systemd")
-            {
-                if($Match=~s/\x2d/-/g) {
-                    $Content = hideStr($Content, $Match);
-                }
+            if($Match=~s/\x2d/-/g) {
+                $Content = hideStr($Content, $Match);
             }
         }
     }
@@ -5798,10 +5802,12 @@ sub probeHW()
     
     if($Opt{"HWLogs"})
     {
-        if(checkCmd("hddtemp"))
+        if(enabledLog("hddtemp") and checkCmd("hddtemp"))
         {
             listProbe("logs", "hddtemp");
-            writeLog($LOG_DIR."/hddtemp", runCmd("hddtemp"));
+            if(my $HddTemp = runCmd("hddtemp 2>/dev/null")) {
+                writeLog($LOG_DIR."/hddtemp", $HddTemp);
+            }
         }
     }
     
@@ -11752,6 +11758,7 @@ my %EnabledLog = (
         "firmware",
         "fstab",
         "hcitool_scan",
+        "hddtemp",
         "iw_scan",
         "modinfo",
         "mount",
