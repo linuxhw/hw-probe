@@ -28,6 +28,7 @@ Contents
 * [ Install on RHEL 6      ](#install-on-rhel-6)
 * [ Install on Gentoo      ](#install-on-gentoo)
 * [ Install on Alpine      ](#install-on-alpine)
+* [ Install on Puppy       ](#install-on-puppy)
 * [ Install from Source    ](#install-from-source)
 
 Run without Installing
@@ -52,6 +53,7 @@ On Ubuntu and Ubuntu based Linux distributions (Linux Mint, elementary OS, etc.)
 Download Debian package [hw-probe_1.4-1_all.deb](http://ftp.debian.org/debian/pool/main/h/hw-probe/hw-probe_1.4-1_all.deb) and install:
 
     sudo add-apt-repository universe
+    sudo apt-get update
     sudo apt-get install ./hw-probe_1.4-1_all.deb --no-install-recommends
 
 ###### PPA
@@ -102,7 +104,7 @@ Install on Manjaro
 
 For Manjaro 18 and later:
 
-    sudo pacman -S hw-probe
+    sudo pacman -Sy hw-probe
 
 
 Install on Arch Linux
@@ -199,14 +201,34 @@ Install on RHEL 6
 Install on Gentoo
 -----------------
 
-    sudo eselect repository enable bobwya
     sudo emerge --ask sys-apps/hw-probe
+
+###### Manual
+
+    sudo emerge --ask sys-apps/hwinfo
+    sudo emerge --ask sys-apps/pciutils
+    sudo emerge --ask sys-apps/usbutils
+    sudo emerge --ask sys-apps/dmidecode
+    curl https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | sudo dd of=/usr/bin/hw-probe
+    sudo chmod +x /usr/bin/hw-probe
 
 
 Install on Alpine
 -----------------
 
     sudo apk add --no-cache -X http://dl-cdn.alpinelinux.org/alpine/edge/testing hw-probe
+
+
+Install on Puppy
+----------------
+
+For Puppy 7 and later (XenialPup64, BionicPup64, etc.):
+
+Update local database by Menu > Setup > Puppy Package Manager > Configure > Update database > Update now.
+Install `perl-base`, `hwinfo`, `util-linux` and `smartmontools` by Menu > Setup > Puppy Package Manager.
+
+    curl https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | sudo dd of=/usr/bin/hw-probe
+    sudo chmod +x /usr/bin/hw-probe
 
 
 Install from Source
