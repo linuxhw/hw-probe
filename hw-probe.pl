@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #########################################################################
-# Hardware Probe Tool 1.4
+# Hardware Probe 1.4
 # A tool to probe for hardware, check operability and find drivers
 #
 # WWW: https://linux-hardware.org
@@ -79,8 +79,6 @@ use File::Basename qw(basename dirname);
 use Cwd qw(abs_path cwd);
 
 my $TOOL_VERSION = "1.4";
-my $CmdName = basename($0);
-
 my $URL = "https://linux-hardware.org";
 my $GITHUB = "https://github.com/linuxhw/hw-probe";
 
@@ -89,35 +87,26 @@ my $ORIG_DIR = cwd();
 
 my $TMP_DIR = tempdir(CLEANUP=>1);
 
-my $ShortUsage = "Hardware Probe Tool $TOOL_VERSION
+my $SNAP_DESKTOP = (defined $ENV{"BAMF_DESKTOP_FILE_HINT"});
+my $FLATPAK_DESKTOP = (grep { $_ eq "-flatpak" } @ARGV);
+my $BY_DESKTOP = 0;
+
+my @ARGV_COPY = @ARGV;
+
+my $CmdName = basename($0);
+if($CmdName=~/\A\d+\Z/)
+{ # Run from STDIN
+    $CmdName = "hw-probe";
+}
+
+my $ShortUsage = "Hardware Probe $TOOL_VERSION
 A tool to probe for hardware, check operability and find drivers
 License: GNU LGPL 2.1+
 
 Usage: sudo -E $CmdName [options]
 Example: sudo -E $CmdName -all -upload\n\n";
 
-my $SNAP_DESKTOP = (defined $ENV{"BAMF_DESKTOP_FILE_HINT"});
-my $FLATPAK_DESKTOP = (grep { $_ eq "-flatpak" } @ARGV);
-
-if($#ARGV==0 and grep { $ARGV[0] eq $_ } ("-snap", "-flatpak"))
-{ # Run by desktop file
-    print "Executing hw-probe -all -upload\n\n";
-    system("hw-probe ".$ARGV[0]." -all -upload");
-    if($SNAP_DESKTOP or $FLATPAK_DESKTOP)
-    { # Desktop
-        sleep(60);
-    }
-    exit(0);
-}
-
-if($#ARGV==-1)
-{
-    print $ShortUsage;
-    exit(1);
-}
-
 my %Opt;
-
 GetOptions("h|help!" => \$Opt{"Help"},
   "v|version!" => \$Opt{"ShowVersion"},
   "dumpversion!" => \$Opt{"DumpVersion"},
@@ -185,6 +174,24 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "truncate-log=s" => \$Opt{"TruncateLog"}
 ) or die "\n".$ShortUsage;
 
+if($#ARGV_COPY==-1)
+{ # Run from STDIN
+    print "Executing hw-probe -all -upload\n\n";
+    $Opt{"All"} = 1;
+    $Opt{"Upload"} = 1;
+}
+elsif($#ARGV_COPY==0 and grep { $ARGV_COPY[0] eq $_ } ("-snap", "-flatpak"))
+{ # Run by desktop file
+    print "Executing hw-probe -all -upload\n\n";
+    $Opt{"All"} = 1;
+    $Opt{"Upload"} = 1;
+    
+    if($SNAP_DESKTOP or $FLATPAK_DESKTOP)
+    { # Desktop
+        $BY_DESKTOP = 1;
+    }
+}
+
 my $PROBE_DIR = "/root/HW_PROBE";
 
 if($Opt{"Snap"}) {
@@ -205,12 +212,12 @@ my $PROBE_LOG = $PROBE_DIR."/LOG";
 
 my $HelpMessage="
 NAME:
-  Hardware Probe Tool ($CmdName)
+  Hardware Probe ($CmdName)
   A tool to probe for hardware, check operability and find drivers
 
 DESCRIPTION:
-  Hardware Probe Tool (HW Probe) is a tool to probe for hardware,
-  check its operability and upload result to the Linux hardware DB.
+  Hardware Probe ($CmdName) is a tool to probe for hardware,
+  check its operability and upload result to the Linux hardware database.
   
   By creating probes you contribute to the \"HDD/SSD Real-Life Reliability
   Test\" study: https://github.com/linuxhw/SMART
@@ -2916,7 +2923,11 @@ sub probeHW()
             $Modinfo=~s/\n(filename:)/\n\n$1/g;
             $Modinfo=~s/\n(author|signer|sig_key|sig_hashalgo|vermagic):.+//g;
             $Modinfo=~s/\ndepends:\s+\n/\n/g;
-            $Modinfo=~s/\n\s+[A-F\d]{2}\:.+//g;
+            
+            if(index($Modinfo, "signature: ")!=-1) {
+                $Modinfo=~s/:*\n\s+[A-F\d]{2}\:.+//g;
+            }
+            
             $Modinfo=~s&/lib/modules/[^\/]+/kernel/&&g;
             writeLog($LOG_DIR."/modinfo", $Modinfo);
         }
@@ -12781,11 +12792,15 @@ sub fixLogs($)
     }
     
     if(-e "$Dir/modinfo")
-    {
-        if((my $Content = readFile("$Dir/modinfo"))=~/signature: /)
+    { # Support for HW Probe 1.4
+        if(my $Content = readFile("$Dir/modinfo"))
         {
-            $Content=~s/\n\s+[A-F\d]{2}\:.+//g;
-            writeFile("$Dir/modinfo", $Content);
+            if(index($Content, "signature: ")!=-1)
+            {
+                if($Content=~s/:*\n\s+[A-F\d]{2}\:.+//g) {
+                    writeFile("$Dir/modinfo", $Content);
+                }
+            }
         }
     }
     
@@ -13610,6 +13625,11 @@ sub scenario()
         }
         
         importProbes($Opt{"ImportProbes"});
+    }
+    
+    if($BY_DESKTOP)
+    { # Wait for user to save the probe ID
+        sleep(60);
     }
     
     exitStatus(0);
