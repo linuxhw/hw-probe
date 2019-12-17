@@ -2160,8 +2160,17 @@ sub setupMonitoring()
     }
     
     # add/remove cron entry
-    if($Enable) {
-        system("(EDITOR=cat crontab -e 2>/dev/null | grep -v 'hw-probe' ; echo \"0 0 * * * hw-probe -all -check -upload -monitoring -i ".$Opt{"Group"}."\") | crontab -");
+    if($Enable)
+    {
+        my $CronTime = "0 0";
+        if(my $Time = getTimeStamp(time))
+        {
+            if($Time=~/\A(\d+):(\d+)\Z/) {
+                $CronTime = "$2 $1";
+            }
+        }
+        
+        system("(EDITOR=cat crontab -e 2>/dev/null | grep -v 'hw-probe' ; echo \"$CronTime * * * hw-probe -all -check -upload -monitoring -i ".$Opt{"Group"}."\") | crontab -");
     }
     else {
         system("EDITOR=cat crontab -e 2>/dev/null | grep -v 'hw-probe' | crontab -");
