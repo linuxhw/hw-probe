@@ -2130,21 +2130,33 @@ sub setupMonitoring()
         exitStatus(1);
     }
     
-    my $StatusUrl = undef;
-    
-    if($Log=~/(Status URL: .+)/) {
-        $StatusUrl = $1;
-    }
-    
-    if($StatusUrl)
+    if($Enable)
     {
-        my $MonitoringLog = "MONITORING\n=====\n".localtime(time)."\n$Status\n$StatusUrl\n";
-        appendFile($PROBE_LOG, $MonitoringLog."\n");
+        my $StatusUrl = undef;
+        
+        if($Log=~/(Status URL: .+)/) {
+            $StatusUrl = $1;
+        }
+        
+        if($StatusUrl) {
+            appendFile($PROBE_LOG, "MONITORING\n==========\n".localtime(time)."\n$Status\n$StatusUrl\n\n");
+        }
+        else
+        {
+            printMsg("ERROR", "failed to setup monitoring");
+            exitStatus(1);
+        }
     }
     else
     {
-        printMsg("ERROR", "failed to setup monitoring");
-        exitStatus(1);
+        if($Log=~/disabled/) {
+            appendFile($PROBE_LOG, "MONITORING\n==========\n".localtime(time)."\n$Status\n\n");
+        }
+        else
+        {
+            printMsg("ERROR", "failed to setup monitoring");
+            exitStatus(1);
+        }
     }
     
     # add/remove cron entry
@@ -4623,6 +4635,7 @@ sub probeHW()
     {
         my $DevType = $HW{$ID}{"Type"};
         my $Dr = $HW{$ID}{"Driver"};
+        my $Class = $HW{$ID}{"Class"};
         
         if($DevType eq "graphics card")
         {
@@ -4644,6 +4657,10 @@ sub probeHW()
             
             if(grep { $DevType eq $_ } ("unclassified device", "unassigned class")
             and $HW{$ID}{"Device"}=~/ MROM /) {
+                next;
+            }
+            
+            if(grep { $Class eq $_ } ("06-04-01")) {
                 next;
             }
             
@@ -13605,6 +13622,11 @@ sub scenario()
             
             $Opt{"Monitoring"} = 1;
             uploadData();
+        }
+        elsif($Opt{"StopMonitoring"})
+        {
+            $Opt{"Probe"} = 1;
+            probeHWaddr();
         }
         
         setupMonitoring();
