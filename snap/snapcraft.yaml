@@ -150,7 +150,7 @@ parts:
       - usr/sbin/lspci
       - usr/share/pci.ids
   acpica-unix:
-    source: https://acpica.org/sites/acpica/files/acpica-unix-20191018.tar.gz
+    source: https://acpica.org/sites/acpica/files/acpica-unix-20191213.tar.gz
     source-type: tar
     plugin: make
     build-attributes: [no-patchelf]

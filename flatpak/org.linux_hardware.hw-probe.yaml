@@ -191,8 +191,8 @@ modules:
       - make install DESTDIR=$FLATPAK_DEST PREFIX=/
     sources:
       - type: archive
-        url: https://acpica.org/sites/acpica/files/acpica-unix-20191018.tar.gz
-        sha256: 029db4014600e4b771b11a84276d2d76eb40fb26eabc85864852ef1f962be95f
+        url: https://acpica.org/sites/acpica/files/acpica-unix-20191213.tar.gz
+        sha256: 304930df9836d3d4cdbf67a3ae6bd96dbc65f62602d869f571f4b6a12341e6c6
   - name: hdparm
     buildsystem: simple
     build-commands:
