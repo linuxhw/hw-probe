@@ -29,7 +29,7 @@ Contents
 * [ Install on Gentoo          ](#install-on-gentoo)
 * [ Install on Alpine          ](#install-on-alpine)
 * [ Install on Puppy           ](#install-on-puppy)
-* [ Install on blackPanther OS ](#install-on-blackpantheros)
+* [ Install on blackPanther OS ](#install-on-blackpanther-os)
 * [ Install from Source        ](#install-from-source)
 
 Run without Installing
