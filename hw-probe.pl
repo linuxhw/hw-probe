@@ -370,6 +370,8 @@ OTHER OPTIONS:
       
       If you are using Snap or Flatpak package, then DIR will be created
       in the sandbox data directory.
+      
+      Provide inventory ID by -i option in order to import your inventory.
 
 DATA LOCATION:
   Probes are saved in the $PROBE_DIR directory.
@@ -628,7 +630,9 @@ my %DiskVendor = (
     "FASTDISK"  => "FASTDISK",
     "FB0"       => "HP",
     "FLD"       => "Foxline",
+    "FLSSD"     => "Foxline",
     "Force MP"  => "Corsair",
+    "FTM50"     => "Super Talent",
     "G2242"     => "BIWIN",
     "G3 Series" => "Myung",
     "GB0"       => "HP",
@@ -640,6 +644,7 @@ my %DiskVendor = (
     "HDT"       => "Hitachi",
     "HUA"       => "Hitachi",
     "HFS"       => "SK hynix",
+    "HS-SSD"    => "Hikvision",
     "HT"        => "Hitachi",
     "IC25"      => "IBM/Hitachi",
     "IC35"      => "IBM/Hitachi",
@@ -670,10 +675,14 @@ my %DiskVendor = (
     "R5S"       => "AMD",
     "RDM"       => "Ramaxel",
     "RTMMB"     => "China",
+    "sandisk"   => "SanDisk",
     "S10T"      => "Chiprex",
     "S8M"       => "Chiprex",
     "S9M"       => "Chiprex",
+    "SC2 M2"    => "MyDigitalSSD",
+    "SB M2"     => "MyDigitalSSD",
     "SG9"       => "Samsung",
+    "SH00"      => "China",
     "SPK"       => "KingSpec",
     "SQF-S2"    => "Advantech",
     "SSD2SC"    => "PNY",
@@ -685,6 +694,7 @@ my %DiskVendor = (
     "SU08G"     => "SanDisk",
     "TE2"       => "SanDisk",
     "TEAML5"    => "Team",
+    "Thinklife" => "Lenovo",
     "TP00"      => "China",
     "TRO-SSD7"  => "Eluktro",
     "TS"        => "Transcend",
@@ -695,6 +705,7 @@ my %DiskVendor = (
     "WDC WD10"  => "WDC",
     "WL"        => "WD MediaMax",
     "XUNZHE"    => "XUNZHE",
+    "Y6-"       => "Yunhaitian",
     "ZALMAN"    => "ZALMAN",
     "ZF18-64"   => "Espada"
 );
@@ -703,6 +714,7 @@ my %DiskModelVendor = (
     "16GB SATA Flash Drive"   => "Apacer",
     "256GB SATA Flash Drive"  => "Apacer",
     "SATA Flash Drive"        => "Apacer",
+    "Solid"                   => "Patriot",
     "SSD PLUS 480GB"          => "SanDisk",
     "SSDS30256XQC800134237"   => "Phison",
     "V Series SATA SSD 240GB" => "Integral"
@@ -734,7 +746,8 @@ my %SerialVendor = (
 );
 
 my %FirmwareVendor = (
-    "MZ4O" => "Toshiba"
+    "MZ4O" => "Toshiba",
+    "S0222A0" => "Patriot"
 );
 
 my %MicroCode = (
@@ -947,6 +960,7 @@ my %MonVendor = (
     "ACR" => "Acer",
     "ADI" => "ADI",
     "AIC" => "Arnos Instruments", # AG Neovo
+    "AMH" => "AMH",
     "AMR" => "JVC",
     "AMT" => "AMT International", # AMTRAN?
     "AMW" => "AMW",
@@ -957,6 +971,7 @@ my %MonVendor = (
     "ATV" => "Ativa",
     "AUO" => "AU Optronics",
     "AUS" => "ASUS",
+    "BAL" => "Balance",
     "BBK" => "BBK",
     "BBY" => "Insignia",
     "BEK" => "Beko",
@@ -964,18 +979,27 @@ my %MonVendor = (
     "BOE" => "BOE",
     "BSE" => "Bose",
     "BTC" => "RS",
+    "BUF" => "Buffalo",
+    "CAS" => "CASIO",
+    "CCE" => "CCE",
+    "CHH" => "Changhong Electric",
+    "CIS" => "Cisco",
+    "CLX" => "Claxan",
     "CMI" => "InnoLux Display",
     "CMN" => "Chimei Innolux",
     "CMO" => "Chi Mei Optoelectronics",
     "CND" => "CND",
     "COR" => "CPT", # Chunghwa Picture Tubes
+    "CPL" => "COMPAL",
     "CPT" => "CPT",
     "CPQ" => "Compaq Computer",
     "CTL" => "CTL",
     "CTX" => "CTX",
     "DEL" => "Dell",
+    "DIC" => "Dinner",
     "DNS" => "DNS",
     "DON" => "DENON",
+    "DSG" => "DSGR",
     "DVM" => "RoverScan",
     "DWE" => "Daewoo",
     "EIZ" => "Eizo",
@@ -987,8 +1011,11 @@ my %MonVendor = (
     "ENV" => "Envision Peripherals",
     "EPI" => "Envision",
     "FAC" => "Yuraku",
+    "FSN" => "D&T",
     "FUS" => "Fujitsu Siemens",
     "GBA" => "GABA",
+    "GEC" => "Gechic",
+    "GMI" => "XGIMI",
     "GRU" => "Grundig",
     "GSM" => "Goldstar",
     "GTW" => "Gateway",
@@ -999,6 +1026,7 @@ my %MonVendor = (
     "HCM" => "HCL",
     "HEC" => "Hitachi",
     "HED" => "Hedy",
+    "HEI" => "Hyundai",
     "HII" => "Higer",
     "HIQ" => "Hyundai ImageQuest",
     "HIT" => "Hitachi",
@@ -1013,21 +1041,27 @@ my %MonVendor = (
     "HWP" => "HP",
     "HPN" => "HP",
     "HUG" => "Hugon",
+    "HUN" => "Huion",
     "IBM" => "IBM",
+    "ICB" => "Pixio",
     "IGM" => "Videoseven",
     "INL" => "InnoLux Display",
+    "INN" => "PRISM+",
     "IQT" => "Hyundai ImageQuest",
+    "ITR" => "INFOTRONIC",
     "IVM" => "Iiyama",
     "IVO" => "InfoVision",
     "JDI" => "JDI", # Japan Display Inc.
     "JEN" => "Jean",
     "JVC" => "JVC",
     "KOA" => "Konka",
+    "KOS" => "KOIOS",
     "KTC" => "KTC",
     "LCA" => "Lacie",
     "LCD" => "Toshiba",
     "LCS" => "Lenovo",
     "LEN" => "Lenovo",
+    "LEO" => "Lenovo",
     "LGD" => "LG Display",
     "LGP" => "LG Philips",
     "LNX" => "Lanix",
@@ -1043,10 +1077,12 @@ my %MonVendor = (
     "MEL" => "Mitsubishi",
     "MJI" => "Marantz",
     "MSC" => "Syscom",
+    "MSH" => "Microsoft",
     "MSI" => "MSI",
     "MS_" => "Sony",
     "MST" => "MStar",
     "MTC" => "Mitac",
+    "MTX" => "Matrox",
     "MUS" => "Mecer",
     "MZI" => "Digital Vision",
     "NCI" => "NECCI",
@@ -1060,7 +1096,10 @@ my %MonVendor = (
     "ONN" => "ONN",
     "ORN" => "Orion",
     "PEA" => "Pegatron",
+    "PEB" => "Proview",
     "PEG" => "PEGA",
+    "PGE" => "GNR",
+    "PHI" => "Philips",
     "PHL" => "Philips",
     "PHT" => "Philips",
     "PIO" => "Pioneer",
@@ -1076,6 +1115,7 @@ my %MonVendor = (
     "QDS" => "Quanta Display",
     "QMX" => "Gericom",
     "QWA" => "Lenovo",
+    "RJT" => "Ruijiang",
     "ROL" => "Rolsen",
     "RUB" => "Rubin",
     "SAM" => "Samsung",
@@ -1109,15 +1149,19 @@ my %MonVendor = (
     "UPS" => "UpStar",
     "VBX" => "VirtualBox",
     "VES" => "Vestel Elektronik",
+    "VIT" => "Vita",
     "VIZ" => "Vizio",
     "VSC" => "ViewSonic",
+    "VSN" => "Videoseven",
     "VTK" => "Viotek",
+    "WAC" => "Wacom",
     "WDE" => "Westinghouse",
     "WDT" => "Westinghouse",
     "WET" => "Westinghouse",
     "WOR" => "COMPAL",
     "WWW" => "ASUS",
     "XER" => "Xerox",
+    "XMD" => "Xiaomi",
     "YAK" => "Yakumo",
     "YMH" => "Yamaha",
     "ZRN" => "Zoran",
@@ -1125,30 +1169,30 @@ my %MonVendor = (
 );
 
 my @UnknownMonVendor = (
-    "AAA", "ACA", "ADP", "AGO", "AML", "ARS", "AVO", "AQU", # Prestigio (ARS)?
+    "AAA", "ACA", "ADA", "ADP", "AGO", "AML", "ARS", "AVO", "AQU", # Prestigio (ARS)?
     "BBY", "BGT",
-    "CDR", "CHD", "CHE", "CHI", "CHR", "CRO", "CTV", "CVT", "CYX",
-    "DCL", "DDL", "DGI", "DMI", "DPL", "DTV", "DVI",
-    "EXP",
-    "FNI", "FRT",
-    "GDH", "GEN", "GER", "GKK", "GLE", "GVT",
-    "JRY", "JXJ",
+    "CDR", "CHD", "CHE", "CHI", "CHR", "CNA", "CNC", "CRO", "CSL", "CTV", "CVA", "CVT", "CYX",
+    "DCL", "DDL", "DGI", "DLM", "DMI", "DPC", "DPL", "DTV", "DVI",
+    "ECS", "ETC", "EXP",
+    "FNI", "FRT", "FZC",
+    "GBM", "GDH", "GEN", "GER", "GKE", "GKK", "GLE", "GML", "GVT",
+    "JCH", "JRY", "JXJ",
     "HCG", "HHT", "HJW", "HSI", "HYO", "HYT",
     "IFS", "INS", "IPS", "IOD", "ITE", # Songren (IPS)?
-    "KDC", "KET", "KNK", "KTC",
-    "LLP", "LLL", "LOS", "LSC", "LTM",
+    "KDC", "KEB", "KET", "KNK", "KRF", "KTC",
+    "LLE", "LLP", "LLL", "LOE", "LOS", "LSC", "LTM",
     "MIT", "MOT", "MTD", "MTK", # MotoAttach (MOT)? VIZIO (MTK)?
-    "NEX", "NOD", "NTS", "NUL", "NXG",
-    "OEM", "ONB",
-    "PAR", "PKV", "PNP", "PPP", "PRI", "PTF", "PVS",
-    "RCA", "RLT", "ROW", "RRR", "RTD", "RTK", "RX_",
-    "SAC", "SIS", "SKK", "SKY", "SMC", "STA", "STD", "SYK",
-    "TBD", "TMA", "TSN", "TVT", "TVW",
+    "NEX", "NOD", "NOV", "NTS", "NUL", "NXG",
+    "ODE", "OEM", "OMS", "ONB", "ORM", "OUT",
+    "PAR", "PBN", "PDI", "PKV", "PNP", "PPP", "PRI", "PTF", "PVS",
+    "RCA", "RGB", "RJT", "RLT", "ROW", "RRR", "RTD", "RTK", "RX_",
+    "SAC", "SBI", "SFX", "SGT", "SIS", "SKK", "SKY", "SMC", "SNC", "SSD", "STA", "STB", "STD", "SYK",
+    "TBD", "TFC", "TMA", "TSN", "TVT", "TVW",
     "UME", "UTV",
-    "VIE", "VID", "VMO", "VST",
+    "VBO", "VIE", "VID", "VMO", "VOR", "VST",
     "WIN", "WRP", "WST", "WYT",
-    "XXE", "XXX", "XYY",
-    "YSP",
+    "XXE", "XXX", "XYK", "XYY",
+    "YHI", "YSP",
     "___"
 );
 
@@ -1448,7 +1492,7 @@ my %TypeOrder = (
     "graphics card"=>"A"
 );
 
-my $ALL_DRIVE_VENDORS = "ADATA|A\-DATA|Advantech|AEGO|AMD|Anobit|Apacer|Apple|ASUS|BHT|BIWIN|Chiprex|CLOVER|Colorful|Corsair|Crucial|Dell|DREVO|Espada|ExcelStor Technology|e2e4|faspeed|FASTDISK|Fordisk|FORESEE|Foxline|FUJITSU|Geil|GelL|GIGABYTE|Gigastone|GLOWAY|Goldendisk|Goldenfir|Goldkey|GOODRAM|Gost|HGST|Hitachi|HP|HYPERDISK|i-FlashDisk|IBM-Hitachi|IBM|Indilinx|INTEL|INTENSO|Kingchuxing|KingDian|KingFast|KINGMAX|KingPower|KINGRICH|KINGSHARE|KingSpec|Kingston|LDLC|LDNDISK|Lenovo|LEXAR|Lite-On|LITEON|LITEONIT|LONDISK|Magnetic Data|MARSHAL|Maxtor|MediaMax|MicroData|Micron|Mushkin|Myung|Netac|OCZ|oyunkey|PALIT|Patriot|PHISON|Platinet|PLEXTOR|PNY|PRETEC|QUANTUM|QUMO|Radeon|Ramaxel|Reeinno|RunCore|Samsung Electronics|SAMSUNG|SandForce|SanDisk|Seagate|SenDisk|Shinedisk|SILICONMOTION|SK hynix|Smartbuy|SMI|SPCC|TEAM|Teclast|TCSUNBOW|TEKET|TopSunligt|TOSHIBA|Transcend|Vaseky|Verbatim|WDC|Western Digital|XPG|XUNZHE|Zheino|ZOTAC";
+my $ALL_DRIVE_VENDORS = "ADATA|A\-DATA|Advantech|AEGO|AMD|Anobit|Apacer|Apple|ASUS|BHT|BIWIN|Chiprex|CLOVER|Colorful|Corsair|Crucial|Dell|DOGFISH|DREVO|Espada|ExcelStor Technology|e2e4|faspeed|FASTDISK|Fordisk|FORESEE|Foxline|FUJITSU|Geil|GelL|GIGABYTE|Gigastone|GLOWAY|Goldendisk|Goldenfir|Goldkey|GOODRAM|Gost|HECTRON|HGST|Hitachi|Hoodisk|HP|HYPERDISK|i-FlashDisk|IBM-Hitachi|IBM|Indilinx|INTEL|INTENSO|Kingchuxing|KingDian|KingFast|KINGMAX|KingPower|KINGRICH|KINGSHARE|KingSpec|Kingston|KLEVV|LDLC|LDNDISK|Lenovo|LEXAR|Lite-On|LITEON|LITEONIT|LONDISK|Magnetic Data|MARSHAL|Maxtor|MediaMax|MicroData|Micron|Mushkin|Myung|Netac|OCZ|oyunkey|PALIT|Patriot|PHISON|Platinet|PLEXTOR|PNY|PRETEC|QUANTUM|QUMO|Radeon|Ramaxel|Reeinno|RunCore|Samsung Electronics|SAMSUNG|SandForce|SanDisk|Seagate|SenDisk|Shinedisk|SILICONMOTION|SK hynix|Smartbuy|SMI|SPCC|TEAM|Teclast|TCSUNBOW|TEKET|TopSunligt|TOSHIBA|Transcend|Vaseky|Verbatim|WDC|Western Digital|Wolf Aure|XPG|XUNZHE|Zheino|ZOTAC";
 
 my $ALL_VENDORS = "Brother|Canon|Epson|HP|Hewlett\-Packard|Kyocera|Samsung|Xerox";
 
@@ -6935,7 +6979,7 @@ sub probeHW()
         }
     }
     
-    if(not $Sys{"Microarch"} and $CpuInfo)
+    if($CpuInfo)
     {
         my ($CPU_Vendor, $CPU_Family, $CPU_ModelNum) = ();
         
@@ -6956,9 +7000,43 @@ sub probeHW()
             elsif($Attr eq "model") {
                 $CPU_ModelNum = $Val;
             }
+            elsif($Attr eq "cpu model")
+            {
+                if(not $CPU_ID and $Val=~s/\A(MIPS) //)
+                {
+                    my %CpuDev = ();
+                    $CpuDev{"Vendor"} = $1;
+                    $CpuDev{"Device"} = $Val;
+                    $CpuDev{"Type"} = "cpu";
+                    $CPU_ID = "cpu:".fmtID(devID(nameID($CpuDev{"Vendor"}), $CpuDev{"Device"}));
+                    $HW{$CPU_ID} = \%CpuDev;
+                }
+            }
+            elsif($Attr eq "machine")
+            {
+                if(not $Sys{"Vendor"} and $Val=~s/\A(TP-LINK) //)
+                {
+                    $Sys{"Vendor"} = $1;
+                    $Sys{"Model"} = $Val;
+                }
+            }
+            elsif($Attr eq "system type")
+            {
+                if(not $Board_ID and $Val=~s/\A(Qualcomm) //)
+                {
+                    my %BoardDev = ();
+                    $BoardDev{"Vendor"} = $1;
+                    $BoardDev{"Device"} = $Val;
+                    $BoardDev{"Type"} = "motherboard";
+                    $Board_ID = "board:".fmtID(devID(nameID($BoardDev{"Vendor"}), $BoardDev{"Device"}));
+                    $HW{$Board_ID} = \%BoardDev;
+                }
+            }
         }
         
-        $Sys{"Microarch"} = detectMicroarch($CPU_Vendor, $CPU_Family, $CPU_ModelNum);
+        if(not $Sys{"Microarch"}) {
+            $Sys{"Microarch"} = detectMicroarch($CPU_Vendor, $CPU_Family, $CPU_ModelNum);
+        }
     }
     
     my $Meminfo = "";
@@ -7086,7 +7164,7 @@ sub probeHW()
                 $Sys{"Dual_boot"} = 1;
             }
             
-            if($L[0]=~/\A(sd[a-z]+|nvme\d+n\d+|mmcblk\d+)\Z/)
+            if($L[0]=~/\A(sd[a-z]+|nvme\d+n\d+|mmcblk\d+|mtdblock\d+)\Z/)
             {
                 my $HDD_File = "/dev/".$L[0];
                 my $HDD_Size = $L[1];
@@ -8236,7 +8314,7 @@ sub guessDriveKind($$)
 }
 
 sub nonVendor($) {
-    return (length($_[0])<2 or $_[0]=~/\A\d+GB\Z/ or grep { lc($_[0]) eq lc($_) } ("SSD", "mSATA", "SATAII", "SATAIII", "SATA", "SATA2", "SATA3", "PATA", "M.2", "PCIe", "Series"));
+    return (length($_[0])<2 or $_[0]=~/\A\d+GB\Z/ or grep { lc($_[0]) eq lc($_) } ("SSD", "mSATA", "SATAII", "SATAIII", "SATA", "SATA2", "SATA3", "PATA", "M.2", "PCIe", "Series", "SC2", "SB"));
 }
 
 sub fixDrive($)
@@ -8419,9 +8497,9 @@ sub guessDriveVendor($)
         }
     }
     
-    if($Name=~/\A(MT|MSH|P3|P3D|T|PA25)\-(60|64|120|128|240|256|512|1TB|2TB)\Z/
-    or grep { $Name eq $_ } ("V-32", "NT-256", "NT-512", "Q-360"))
-    { # MT-64 MSH-256 P3-128 P3D-240 P3-2TB T-60 V-32 PA25-128
+    if($Name=~/\A(MT|MSH|NT|P3|P3D|P4|T|PA25)\-(60|64|120|128|240|256|512|960|1TB|2TB)\Z/
+    or grep { $Name eq $_ } ("V-32", "NT-256", "NT-512", "Q-360", "Q-720"))
+    { # MT-64 MSH-256 P3-128 P3D-240 P3-2TB T-60 V-32 PA25-128 NT-64
         return "KingSpec";
     }
 
@@ -9856,8 +9934,8 @@ sub probeDistr()
         and $Release=~/\A\d\d\d\d\d\d\d\d\Z/) {
             return ("opensuse-".$Release, "");
         }
-        elsif($Descr=~/\AMaui/i) {
-            $Name = $Descr;
+        elsif($Descr=~/\A(Maui|KDE neon)/i) {
+            $Name = $1;
         }
     }
     
@@ -9876,21 +9954,28 @@ sub probeDistr()
         if($OS_Rel=~/\bNAME=\s*[\"\']*([^"'\n]+)/)
         {
             my $RealName = $1;
-            if(grep {$RealName eq $_} ("Peppermint", "Pop!_OS", "KDE neon")) {
-                $Name = $RealName;
+            if($RealName=~/(Peppermint|Pop\!_OS|KDE neon|Acronis Cyber Infrastructure)/) {
+                $Name = $1;
             }
         }
         
         if($OS_Rel=~/\bPRETTY_NAME=\s*[\"\']*([^"'\n]+)/)
         {
             my $PrettyName = $1;
-            if(grep {$PrettyName=~/$_/} ("OpenVZ")) {
-                $Name = "openvz";
+            if($PrettyName=~/(OpenVZ)/) {
+                $Name = $1;
             }
         }
         
         if($OS_Rel=~/\bVERSION_ID=\s*[\"\']*([^"'\n]+)/) {
             $Release = lc($1);
+        }
+        
+        if($Name=~/Acronis/)
+        {
+            if($OS_Rel=~/\bVERSION=\s*[\"\']*([^"'\n]+)/) {
+                $Release = lc($1);
+            }
         }
         
         if($Release eq "n/a") {
@@ -9911,6 +9996,9 @@ sub probeDistr()
     {
         $Release = undef;
         $Name = "Virtuozzo";
+    }
+    elsif($Name eq "blackpantheros") {
+        $Name = "blackpanther-os";
     }
     
     $Name = shortOS($Name);
@@ -12143,6 +12231,9 @@ sub downloadProbe($$)
             elsif($Url eq "index.php?probe=$ID") {
                 $Line=~s/\Q$Url\E/index.html/;
             }
+            elsif($Url=~/\A#/) {
+                # Do nothing
+            }
             else {
                 $Line=~s/\Q$Url\E/$URL\/$Url/g;
             }
@@ -12221,72 +12312,130 @@ sub importProbes($)
     if(not -d $Dir)
     {
         mkpath($Dir);
-        setPublic($Dir);
+        if(not $Opt{"Group"}) {
+            setPublic($Dir);
+        }
     }
 
     my ($Imported, $OneProbe) = (undef, undef);
-
+    
     my $IndexInfo = eval ( readFile($Dir."/index.info") ) || {};
-
-    my @Paths = ();
-    if(-d $PROBE_DIR)
-    {
-        foreach my $P (listDir($PROBE_DIR)) {
-            push(@Paths, $PROBE_DIR."/".$P);
-        }
-    }
     
-    my $OldProbes = getOldProbeDir();
-    if($OldProbes and -d $OldProbes)
-    { # ROSA: changed probe place in 1.3
-        foreach my $P (listDir($OldProbes)) {
-            push(@Paths, $OldProbes."/".$P);
-        }
-    }
-    
-    foreach my $D (@Paths)
+    if(my $Inv = $Opt{"Group"})
     {
-        my $P = basename($D);
-        if($P eq "LATEST" or not -d $D or not listDir($D)) {
-            next;
-        }
-        
-        if(defined $IndexInfo->{"SkipProbes"}{$P}) {
-            next;
-        }
-        
-        my $To = $Dir."/".$P;
-        if(not -e $To or not -e "$To/logs")
+        my $TopPage = downloadFileContent("$URL/index.php?view=computers&inventory=".$Inv);
+        my @Computers = ($TopPage=~/Computer ([a-f\d]+) /g);
+        foreach my $C (@Computers)
         {
-            if(downloadProbe($P, $To)!=-1)
+            print "Computer $C\n";
+            
+            my $ComputerPage = downloadFileContent("$URL/index.php?computer=".$C."&inventory=".$Inv);
+            my @ComputerProbes = ($ComputerPage=~/ Probe ([a-f\d]+) /g);
+            my $MaxElems = 2;
+            
+            if($#ComputerProbes>$MaxElems-1) {
+                splice(@ComputerProbes, $MaxElems);
+            }
+            
+            foreach my $P (@ComputerProbes)
             {
-                my $TmpDir = $TMP_DIR."/hw.info";
-                system("tar -xf $D/* -C $TMP_DIR");
-                
-                my %Prop = ();
-                foreach my $Line (split(/\n/, readFile($TmpDir."/host")))
-                {
-                    if($Line=~/(\w+):(.*)/) {
-                        $Prop{$1} = $2;
-                    }
+                if(defined $IndexInfo->{"SkipProbes"}{$P}) {
+                    next;
                 }
                 
-                my @DStat = stat($TmpDir);
-                $Prop{"date"} = $DStat[9]; # last modify time
-                $Prop{"hwaddr"} = uc($Prop{"hwaddr"});
-                writeFile($To."/probe.info", Data::Dumper::Dumper(\%Prop));
-                $Imported = $P;
-                setPublic($To, "-R");
-                rmtree($TmpDir);
+                my $To = $Dir."/".$P;
+                if(not -e $To or not -e "$To/logs")
+                {
+                    
+                    if(downloadProbe($P, $To)!=-1)
+                    {
+                        my %Prop = ();
+                        $Prop{"hwaddr"} = uc($C);
+                        
+                        if($ComputerPage=~/Probe $P (.+?) -->/)
+                        {
+                            foreach (split(";", $1))
+                            {
+                                if(/\A(\w+?):'(.+)'\Z/) {
+                                    $Prop{$1} = $2;
+                                }
+                            }
+                        }
+                        
+                        writeFile($To."/probe.info", Data::Dumper::Dumper(\%Prop));
+                        $Imported = $P;
+                    }
+                    else {
+                        $IndexInfo->{"SkipProbes"}{$P} = 1;
+                    }
+                }
             }
-            else {
-                $IndexInfo->{"SkipProbes"}{$P} = 1;
+        }
+    }
+    else
+    {
+        my @Paths = ();
+        if(-d $PROBE_DIR)
+        {
+            foreach my $P (listDir($PROBE_DIR)) {
+                push(@Paths, $PROBE_DIR."/".$P);
+            }
+        }
+        
+        my $OldProbes = getOldProbeDir();
+        if($OldProbes and -d $OldProbes)
+        { # ROSA: changed probe place in 1.3
+            foreach my $P (listDir($OldProbes)) {
+                push(@Paths, $OldProbes."/".$P);
+            }
+        }
+        
+        foreach my $D (@Paths)
+        {
+            my $P = basename($D);
+            if($P eq "LATEST" or not -d $D or not listDir($D)) {
+                next;
+            }
+            
+            if(defined $IndexInfo->{"SkipProbes"}{$P}) {
+                next;
+            }
+            
+            my $To = $Dir."/".$P;
+            if(not -e $To or not -e "$To/logs")
+            {
+                if(downloadProbe($P, $To)!=-1)
+                {
+                    my $TmpDir = $TMP_DIR."/hw.info";
+                    system("tar -xf $D/* -C $TMP_DIR");
+                    
+                    my %Prop = ();
+                    foreach my $Line (split(/\n/, readFile($TmpDir."/host")))
+                    {
+                        if($Line=~/(\w+):(.*)/) {
+                            $Prop{$1} = $2;
+                        }
+                    }
+                    
+                    my @DStat = stat($TmpDir);
+                    $Prop{"date"} = $DStat[9]; # last modify time
+                    $Prop{"hwaddr"} = uc($Prop{"hwaddr"});
+                    writeFile($To."/probe.info", Data::Dumper::Dumper(\%Prop));
+                    $Imported = $P;
+                    setPublic($To, "-R");
+                    rmtree($TmpDir);
+                }
+                else {
+                    $IndexInfo->{"SkipProbes"}{$P} = 1;
+                }
             }
         }
     }
     
     writeFile($Dir."/index.info", Data::Dumper::Dumper($IndexInfo));
-    setPublic($Dir."/index.info");
+    if(not $Opt{"Group"}) {
+        setPublic($Dir."/index.info");
+    }
     
     if(not $Imported) {
         print "No probes to import\n";
@@ -12339,8 +12488,11 @@ sub importProbes($)
         $LIST .= "<h2>$Title</h2>\n";
         $LIST .= "<table class='tbl highlight local_timeline'>\n";
         $LIST .= "<tr>\n";
-        $LIST .= "<th>Probe</th><th>Arch</th><th>System</th><th>Date</th><th>Desc</th>\n";
-        $LIST .= "</tr>\n";
+        $LIST .= "<th>Probe</th><th>Arch</th><th>System</th><th>Date</th>";
+        if(not $Opt{"Group"}) {
+            $LIST .= "<th>Desc</th>";
+        }
+        $LIST .= "\n</tr>\n";
         foreach my $P (@Probes)
         {
             my $System = $Indexed{$HWaddr}{$P}->{"system"};
@@ -12367,9 +12519,12 @@ sub importProbes($)
             $LIST .= getDateStamp($Indexed{$HWaddr}{$P}->{"date"});
             $LIST .= "</td>\n";
             
-            $LIST .= "<td>\n";
-            $LIST .= $Indexed{$HWaddr}{$P}->{"id"};
-            $LIST .= "</td>\n";
+            if(not $Opt{"Group"})
+            {
+                $LIST .= "<td>\n";
+                $LIST .= $Indexed{$HWaddr}{$P}->{"id"};
+                $LIST .= "</td>\n";
+            }
             
             $LIST .= "</tr>\n";
         }
@@ -12384,7 +12539,10 @@ sub importProbes($)
     $INDEX=~s{(['"])(css|js|images)/}{$1$OneProbe/$2/}g;
 
     writeFile($Dir."/index.html", $INDEX);
-    setPublic($Dir."/index.html");
+    
+    if(not $Opt{"Group"}) {
+        setPublic($Dir."/index.html");
+    }
     
     print "Created index: $Dir/index.html\n";
 }
@@ -13643,7 +13801,7 @@ sub scenario()
     
     if($Opt{"ImportProbes"})
     {
-        if(not $Admin)
+        if(not $Admin and not $Opt{"Group"})
         {
             printMsg("ERROR", "you should run as root (sudo or su)");
             exitStatus(1);

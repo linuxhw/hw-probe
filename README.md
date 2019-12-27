@@ -203,6 +203,8 @@ For other Linux distributions see install manual here: https://flatpak.org/setup
 Inventory
 ---------
 
+Since hw-probe 1.5.
+
 Request inventory ID:
 
     hw-probe -get-inventory-id
@@ -217,9 +219,11 @@ Find your computers by the inventory ID on this page: https://linux-hardware.org
 Offline view
 ------------
 
-Save your probes HTML view to a directory for offline use:
+Since hw-probe 1.5.
 
-    sudo hw-probe -import DIR
+Save your probes HTML view to a directory DIR for offline use:
+
+    sudo hw-probe -import ./DIR -inventory-id ID
 
 
 ACPI dump
