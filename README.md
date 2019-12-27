@@ -223,7 +223,7 @@ Since hw-probe 1.5.
 
 Save your probes HTML view to a directory DIR for offline use:
 
-    sudo hw-probe -import ./DIR -inventory-id ID
+    hw-probe -import ./DIR -inventory-id ID
 
 
 ACPI dump
