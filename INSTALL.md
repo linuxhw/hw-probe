@@ -5,7 +5,7 @@ HW Probe 1.4 (April 14, 2018)
 
 This file explains how to install and setup environment for the tool in your computer.
 
-See more info in the [README.md](https://github.com/linuxhw/hw-probe/).
+See more info in the [README.md](README.md).
 
 
 Contents
@@ -34,7 +34,7 @@ Contents
 Run without Installing
 ----------------------
 
-You can probe your computer by [AppImage](https://github.com/linuxhw/hw-probe/blob/master/README.md#appimage), [Docker](https://github.com/linuxhw/hw-probe#docker), [Snap](https://github.com/linuxhw/hw-probe#snap), [Flatpak](https://github.com/linuxhw/hw-probe#flatpak) or [Live CD](https://github.com/linuxhw/hw-probe#live-cd) without the need to install anything on your host.
+You can probe your computer by [AppImage](README.md#appimage), [Docker](README.md#docker), [Snap](README.md#snap), [Flatpak](README.md#flatpak) or [Live CD](README.md#live-cd) without the need to install anything on your host.
 
 
 Command line to Run
@@ -67,7 +67,7 @@ https://launchpad.net/~mikhailnov/+archive/ubuntu/hw-probe
 
 ###### Snap
 
-The [Snap package](https://github.com/linuxhw/hw-probe#snap) is also available to install and run easily on Ubuntu without the need to install any Deb packages to your system.
+The [Snap package](README.md#snap) is also available to install and run easily on Ubuntu without the need to install any Deb packages to your system.
 
 
 Install on Debian
