@@ -178,7 +178,7 @@ parts:
     prime:
       - sbin/hdparm
   smartmontools:
-    source: https://github.com/linuxhw/build-stuff/releases/download/1.4/smartmontools-7.0.tar.gz
+    source: https://github.com/linuxhw/build-stuff/releases/download/1.4/smartmontools-7.1.tar.gz
     source-type: tar
     plugin: make
     override-build: |

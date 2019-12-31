@@ -923,7 +923,7 @@ my $DESKTOP_TYPE = "desktop|nettop|all in one|box|space\-saving|mini|tower|bus e
 my $SERVER_TYPE  = "server|rack|blade";
 my $MOBILE_TYPE  = "notebook|laptop|portable|tablet|convertible|detachable|docking|stick|hand";
 
-my $HID_BATTERY = "wacom|wiimote|hidpp_|controller_|hid\-";
+my $HID_BATTERY = "wacom|wiimote|hidpp_|controller_|hid\-|steam-controller|power_supply\/bms";
 
 # SDIO IDs
 my %SdioInfo;
@@ -3285,6 +3285,8 @@ sub probeHW()
                     { # pci
                         $C = devID($1, $2, $3);
                     }
+                    
+                    $Device{$Key} = $Val;
                 }
             }
             elsif($Key eq "Resolution"
@@ -3593,6 +3595,13 @@ sub probeHW()
         #    }
         #}
         
+        if($Bus eq "none")
+        {
+            if($Device{"Module Alias"}=~/\Aplatform:/) {
+                $Bus = "platform";
+            }
+        }
+        
         if($Bus eq "none") {
             next;
         }
@@ -3889,6 +3898,7 @@ sub probeHW()
         delete($Device{"Attached"});
         delete($Device{"AllFiles"});
         delete($Device{"Files"});
+        delete($Device{"Module Alias"});
         
         if($C) {
             $Device{"Class"} = $C;
@@ -5140,6 +5150,10 @@ sub probeHW()
                 elsif($Key eq "Thread Count") {
                     $CPU_Threads += $Val;
                 }
+            }
+            
+            if(not $Device{"Vendor"}) {
+                next;
             }
             
             $CPU_Sockets += 1;
@@ -8710,7 +8724,7 @@ sub emptyVal($)
 {
     my $Val = $_[0];
     
-    if($Val=~/\A[\[\(]*(not specified|not available|out of spec|not defined|No Device Manufacturer|No Device Part Number|invalid|error|unkn|unknown|undefined|unknow|uknown|empty|n\/a|none|default string|vendor|device|unknown vendor|default|customer|model|_|unde|null|reserved|Unknown \(0\)|[\.\}\*\_]+)[\)\]]*\Z/i
+    if($Val=~/\A[\[\(]*(not specified|not available|out of spec|not defined|No Device Manufacturer|No Device Part Number|invalid|error|unkn|unknown|undefined|unknow|uknown|empty|n\/a|none|default string|vendor|device|unknown vendor|default|customer|model|_|unde|null|reserved|Unknown \(0\)|\?|unknown unknown|[\.\}\*\_]+)[\)\]]*\Z/i
     or $Val=~/(\A|\b|\d)(to be filled|unclassified device|not defined|bad index|does not exist|unkn|uknown|default)(\b|\Z)/i) {
         return 1;
     }
@@ -8798,7 +8812,7 @@ sub nameID(@)
         $Name=~s/\s*\[[^\[\]]*\]//g;
     }
     
-    while ($Name=~s/(\s*\,\s*|\s+)(Inc|Ltda|Ltd|Co|GmbH|Corp|Pte|LLC|Sdn|Bhd|BV|AG|RSS|PLC|s\.r\.l\.|srl|S\.P\.A|B\.V|S\.A|s r\. o|s\.r\.o|z\.s\.p\.o|Ind|e\.V|a\.s|Co\.Ltd|Int\'l|Intl|I\.T\.G)(\.|\.*\Z)//gi) {}
+    while ($Name=~s/(\s*\,\s*|\s+)(Inc|Ltda|Ltd|Co|GmbH|Corp|Tech\.|Pte|LLC|Sdn|Bhd|BV|AG|RSS|PLC|s\.r\.l\.|srl|S\.P\.A|B\.V|S\.A|s r\. o|s\.r\.o|z\.s\.p\.o|Ind|e\.V|a\.s|Co\.Ltd|Int\'l|Intl|I\.T\.G)(\.|\.*\Z)//gi) {}
     
     $Name=~s/,?\s+[a-z]{2,4}\.//gi;
     $Name=~s/,(.+)\Z//gi;
@@ -8857,7 +8871,7 @@ sub fixModel($$$)
     
     if($Vendor eq "Hewlett-Packard")
     {
-        $Model=~s/\AHP\s+//g;
+        $Model=~s/\AHP\s+//gi;
         $Model=~s/\s+Notebook PC\s*\Z//gi;
         $Model=~s/PAVILION/Pavilion/gi;
         $Model=~s/Envy/ENVY/gi;
@@ -9100,7 +9114,7 @@ sub fixFFByCPU($)
     my $CPU = $_[0];
     if($Sys{"Type"}!~/$DESKTOP_TYPE|$SERVER_TYPE/)
     {
-        if($CPU=~/Celeron CPU E\d+|Pentium (CPU G\d+|D CPU|Dual-Core CPU E\d+) |Core 2 CPU \d+ |Core 2 Duo CPU E\d+|Core 2 Quad CPU Q\d+|Core i\d CPU \d+ |Core i\d-\d+ CPU|CPU Q(9400|8200)|Athlon 64 X2 Dual Core Processor \d+|Athlon X4 \d+|Athlon 64 Processor \d+\+|Phenom II X[24] B?\d+|FX-\d+ Six-Core|A10\-\d+K|Xeon CPU (\d+|[EXW]\d{4}|(E5|D)-\d{4}) |Core i7-\d+ CPU|FX-\d+ Eight-Core|Atom CPU C3508/ and $CPU!~/Mobile/) {
+        if($CPU=~/Celeron CPU E\d+|Pentium (CPU G\d+|D CPU|Dual-Core CPU E\d+) |Core 2 CPU \d+ |Core 2 Duo CPU E\d+|Core 2 Quad CPU Q\d+|Core i\d CPU \d+ |Core i\d-\d+ CPU|CPU Q(9400|8200)|Athlon 64 X2 Dual Core Processor \d+|Athlon X4 \d+|Athlon 64 Processor \d+\+|Phenom II X[24] B?\d+|FX-\d+ Six-Core|A10\-\d+K|Xeon CPU (\d+|[EXW]\d{4}|(E5|D)-\d{4}) |Core i7-\d+ CPU|FX-\d+ Eight-Core|Atom CPU C3508|Ryzen 5 1600/ and $CPU!~/Mobile/) {
             $Sys{"Type"} = "desktop";
         }
     }
@@ -9134,7 +9148,7 @@ sub fixFFByBoard($)
     my $Board = $_[0];
     if($Sys{"Type"}!~/$DESKTOP_TYPE|$SERVER_TYPE/)
     {
-        if($Board=~/\b(D510MO|GA-K8NMF-9|DG965RY|DG33BU|D946GZIS|N3150ND3V|D865GSA|DP55WG|H61MXT1|D875PBZ|F2A55|Z68XP-UD3|Z77A-GD65|M4A79T|775Dual-880Pro|P4Dual-915GL|P4i65GV|D5400XS|D201GLY|MicroServer|IPPSB-DB|MS-AA53|C2016-BSWI-D2|N3160TN|D915PBL|Aptio CRB|EIRD-SAM|D865PERL|D410PT|D525MW|D945GCNL|BSWI-D2|B202|D865GBF|G1-CPU-IMP)\b/) {
+        if($Board=~/\b(D510MO|GA-K8NMF-9|DG965RY|DG33BU|D946GZIS|N3150ND3V|D865GSA|DP55WG|H61MXT1|D875PBZ|F2A55|Z68XP-UD3|Z77A-GD65|M4A79T|775Dual-880Pro|P4Dual-915GL|P4i65GV|D5400XS|D201GLY|MicroServer|IPPSB-DB|MS-AA53|C2016-BSWI-D2|N3160TN|D915PBL|EIRD-SAM|D865PERL|D410PT|D525MW|D945GCNL|BSWI-D2|B202|D865GBF|G1-CPU-IMP|Aptio CRB)\b/) {
             $Sys{"Type"} = "desktop";
         }
     }
@@ -9181,7 +9195,8 @@ sub fixFFByModel($$)
     
     if($Sys{"Type"}!~/$SERVER_TYPE/)
     {
-        if($M=~/X10DRG-O\+-CPU/) {
+        if($M=~/X10DRG-O\+-CPU|ML10Gen/
+        or ($V=~/Neousys/i and $M=~/Nuvo/)) {
             $Sys{"Type"} = "server";
         }
     }
@@ -9203,7 +9218,7 @@ sub fixFFByModel($$)
     
     if($Sys{"Type"} ne "nettop")
     {
-        if($M=~/MS-B120/i) {
+        if($M=~/MS-B120|IdeaCentre Q150/i) {
             $Sys{"Type"} = "nettop";
         }
     }
@@ -9214,25 +9229,36 @@ sub fixFFByModel($$)
         if(($V=~/Intel/i and $M=~/\ANUC\d/)
         or ($V=~/Radiant/i and $M=~/P845/)
         or ($V=~/ZOTAC/i and $M=~/\AZBOX/)
+        or ($V=~/Beelink/i and $M=~/\ASII/)
+        or ($V=~/Orbsmart/i and $M=~/\AAW/)
+        or ($V=~/Compulab/i and $M=~/\A(Intense|fitlet|Airtop)/)
         or $M=~/\AZBOX\-/
-        or $M=~/Macmini|ESPRIMO Q510|MMLP5AP-SI|Mini PC/) {
+        or $M=~/Macmini|ESPRIMO Q510|MMLP5AP-SI|Mini PC|TL-WR842N|Thin Client|Thin Mini|VMac mini|TERRA_PC|Aptio CRB|Propc Nano/) {
             $Sys{"Type"} = "mini pc";
         }
     }
     
     if($Sys{"Type"} ne "all in one")
     {
-        if($M=~/(IdeaCentre B)/) {
+        if($M=~/( AiO PC)/
+        or $V eq "AIO"
+        or ($V=~/Apple/i and $M=~/\AiMac/)
+        or ($V=~/Lenovo/i and $M=~/\A(S310|IdeaCentre B|ThinkCentre M90z) /)
+        or ($V=~/Hewlett/i and $M=~/ Aio\Z/i)
+        or ($V=~/MiTAC/i and $M=~/\AAIO /)) {
             $Sys{"Type"} = "all in one";
         }
     }
     
     if($Sys{"Type"} ne "tablet")
     {
-        if($M=~/(Hi10 .+ tablet|Visconte4U)/i
-        or ($V=~/ONDA/i and $M=~/Tablet/i)
+        if($M=~/(Hi10 .+ tablet|Visconte4U|TERRA_PAD)/i
+        or ($V=~/ONDA/i and $M=~/Tablet|V919/i)
         or ($V=~/Microsoft/i and $M=~/Surface/i)
-        or ($V=~/Hampoo/i and $M=~/\A(E4D6|D4D6|I1D6|P02BD6)/i)) {
+        or ($V=~/Hampoo/i and $M=~/\A(E4D6|D4D6|I1D6|P02BD6)/i)
+        or ($V=~/Acer/i and $M=~/ICONIA Tab/i)
+        or ($V=~/TMAX/i and $M=~/TM/i)
+        or ($V=~/Wacom/i and $M=~/Citiq/i)) {
             $Sys{"Type"} = "tablet";
         }
     }
@@ -9283,7 +9309,7 @@ sub fixFFByDisk($)
     my $Disk = $_[0];
     if($Sys{"Type"}!~/$DESKTOP_TYPE|$SERVER_TYPE/)
     {
-        if($Disk=~/HD321KJ|ST3500413AS/) {
+        if($Disk=~/HD321KJ|ST3500413AS|ST2000DM001/) {
             $Sys{"Type"} = "desktop";
         }
     }
@@ -9390,7 +9416,7 @@ sub fixChassis()
             $Sys{"Model"} = "Nexus 7";
             $Sys{"System"} = "android";
         }
-        elsif($Sys{"Kernel"}=~/\-(LuisKERNEL|Dark-Ages)\-|\-perf\+|SM-N9500|lineageos/i)
+        elsif($Sys{"Kernel"}=~/\-(LuisKERNEL|Dark-Ages)\-|\-perf\+|SM-N9500|lineageos|FKernel-v/i)
         {
             $Sys{"Type"} = "phone";
             $Sys{"System"} = "android";
@@ -12850,7 +12876,7 @@ sub fixLogs($)
         }
     }
     
-    foreach my $L ("pstree")
+    foreach my $L ("pstree", "findmnt", "fdisk", "df")
     { # Support for HW Probe 1.4
         if(-f "$Dir/$L"
         and -s "$Dir/$L" < $EMPTY_LOG_SIZE)
