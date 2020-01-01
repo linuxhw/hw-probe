@@ -6387,35 +6387,34 @@ sub probeHW()
     
     if((not $Sys{"Model"} or $Sys{"Model"} eq "rpi") and $Sys{"Arch"}=~/arm|aarch/i)
     {
-        if(index($Dmesg, "Machine")!=-1)
+        if($Dmesg=~/(Machine(| model)|Hardware name): (.+)/)
         {
-            if($Dmesg=~/Machine(| model): (.+)/)
-            {
-                $Sys{"Model"} = $2;
-                
-                if($Sys{"Model"}=~/(Orange Pi|Banana Pi|Raspberry Pi|Odroid|rockchip)/i) {
-                    $Sys{"Type"} = "system on chip";
-                }
-                if($Sys{"Model"}=~/\A(Raspberry Pi) /) {
-                    $Sys{"Vendor"} = "Raspberry Pi Foundation";
-                }
-                elsif($Sys{"Model"}=~/\Arockchip,(.+)\Z/)
-                {
-                    $Sys{"Model"} = $1;
-                    $Sys{"Vendor"} = "Rockchip";
-                    $Sys{"System"} = "android";
-                }
-                elsif($Sys{"Model"}=~s/\A(Xunlong|Hardkernel) //) {
-                    $Sys{"Vendor"} = $1;
-                }
-                elsif($Sys{"Model"}=~/Pine64/)
-                {
-                    $Sys{"Type"} = "system on chip";
-                    $Sys{"Vendor"} = "Pine Microsystems";
-                }
-                
-                $Sys{"Model"}=~s/\s+Board\Z//i;
+            $Sys{"Model"} = $3;
+            
+            if($Sys{"Model"}=~/(Orange Pi|Banana Pi|Raspberry Pi|Odroid|rockchip)/i) {
+                $Sys{"Type"} = "system on chip";
             }
+            if($Sys{"Model"}=~/\A(Raspberry Pi) /) {
+                $Sys{"Vendor"} = "Raspberry Pi Foundation";
+            }
+            elsif($Sys{"Model"}=~/\Arockchip,(.+)\Z/)
+            {
+                $Sys{"Model"} = $1;
+                $Sys{"Vendor"} = "Rockchip";
+                $Sys{"System"} = "android";
+            }
+            elsif($Sys{"Model"}=~s/\A(Xunlong|Hardkernel|FriendlyElec) //)
+            {
+                $Sys{"Vendor"} = $1;
+                $Sys{"Type"} = "system on chip";
+            }
+            elsif($Sys{"Model"}=~/Pine64/)
+            {
+                $Sys{"Type"} = "system on chip";
+                $Sys{"Vendor"} = "Pine Microsystems";
+            }
+            
+            $Sys{"Model"}=~s/\s+Board\Z//i;
         }
     }
     
@@ -9458,6 +9457,7 @@ sub probeHWaddr()
             $IFConfig = runCmd("ifconfig -a 2>&1");
             $IFConfig = hideIPs($IFConfig);
             $IFConfig = encryptMACs($IFConfig);
+            $IFConfig=~s/(inet6 |inet |netmask |broadcast )[^\s]+/$1\XXX/g;
             
             if($Opt{"HWLogs"}) {
                 writeLog($LOG_DIR."/ifconfig", $IFConfig);
@@ -9470,6 +9470,7 @@ sub probeHWaddr()
             {
                 $IPaddr = hideIPs($IPaddr);
                 $IPaddr = encryptMACs($IPaddr);
+                $IPaddr=~s/(inet6 |inet |brd )[^\s]+/$1\XXX/g;
                 $IFConfig = ipAddr2ifConfig($IPaddr);
                 
                 if($Opt{"HWLogs"}) {
