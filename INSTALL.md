@@ -11,26 +11,26 @@ See more info in the [README.md](README.md).
 Contents
 --------
 
-* [ Run without Installing ](#run-without-installing)
-* [ Command line to Run        ](#command-line-to-run)
-* [ Install on Ubuntu          ](#install-on-ubuntu)
-* [ Install on Debian          ](#install-on-debian)
-* [ Install on openSUSE        ](#install-on-opensuse)
-* [ Install on Manjaro         ](#install-on-manjaro)
-* [ Install on Arch Linux      ](#install-on-arch-linux)
-* [ Install on Fedora          ](#install-on-fedora)
-* [ Install on CentOS 8        ](#install-on-centos-8)
-* [ Install on CentOS 7        ](#install-on-centos-7)
-* [ Install on CentOS 6        ](#install-on-centos-6)
-* [ Install on OpenVZ 7        ](#install-on-openvz-7)
-* [ Install on RHEL 8          ](#install-on-rhel-8)
-* [ Install on RHEL 7          ](#install-on-rhel-7)
-* [ Install on RHEL 6          ](#install-on-rhel-6)
-* [ Install on Gentoo          ](#install-on-gentoo)
-* [ Install on Alpine          ](#install-on-alpine)
-* [ Install on Puppy           ](#install-on-puppy)
-* [ Install on blackPanther OS ](#install-on-blackpanther-os)
-* [ Install from Source        ](#install-from-source)
+* [ Run without Installing  ](#run-without-installing)
+* [ Command line to Run     ](#command-line-to-run)
+* [ Install on Ubuntu       ](#install-on-ubuntu)
+* [ Install on Debian       ](#install-on-debian)
+* [ Install on openSUSE     ](#install-on-opensuse)
+* [ Install on Manjaro      ](#install-on-manjaro)
+* [ Install on Arch Linux   ](#install-on-arch-linux)
+* [ Install on Fedora       ](#install-on-fedora)
+* [ Install on CentOS 8     ](#install-on-centos-8)
+* [ Install on CentOS 7     ](#install-on-centos-7)
+* [ Install on CentOS 6     ](#install-on-centos-6)
+* [ Install on OpenVZ 7     ](#install-on-openvz-7)
+* [ Install on RHEL 8       ](#install-on-rhel-8)
+* [ Install on RHEL 7       ](#install-on-rhel-7)
+* [ Install on RHEL 6       ](#install-on-rhel-6)
+* [ Install on Gentoo       ](#install-on-gentoo)
+* [ Install on Alpine       ](#install-on-alpine)
+* [ Install on Puppy        ](#install-on-puppy)
+* [ Install on blackPanther ](#install-on-blackpanther)
+* [ Install from Source     ](#install-from-source)
 
 Run without Installing
 ----------------------
@@ -231,12 +231,14 @@ Install `perl-base`, `hwinfo`, `util-linux` and `smartmontools` by Menu > Setup 
     curl https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | sudo dd of=/usr/bin/hw-probe
     sudo chmod +x /usr/bin/hw-probe
 
-Install on blackPanther OS
----------------------------
+Install on blackPanther
+-----------------------
+
+For blackPanther OS 16.2 and later:
 
     installing hw-probe
 
-This command it will install the all dependencies as well
+This command will install all the dependencies as well.
 
 Install from Source
 -------------------
