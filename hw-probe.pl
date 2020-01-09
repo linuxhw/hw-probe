@@ -235,8 +235,8 @@ PRIVACY:
   Private information (including the username, machine's hostname, IP addresses,
   MAC addresses and serial numbers) is NOT uploaded to the database.
   
-  The tool uploads salted SHA512 hash of MAC addresses and serial numbers to
-  properly identify unique computers and hard drives. All the data is uploaded
+  The tool uploads 32-byte prefix of salted SHA512 hash of MAC addresses and serial
+  numbers to properly identify unique computers and hard drives. All the data is uploaded
   securely via HTTPS.
 
 INFORMATION OPTIONS:
@@ -6403,7 +6403,7 @@ sub probeHW()
                 $Sys{"Vendor"} = "Rockchip";
                 $Sys{"System"} = "android";
             }
-            elsif($Sys{"Model"}=~s/\A(Xunlong|Hardkernel|FriendlyElec) //)
+            elsif($Sys{"Model"}=~s/\A(Xunlong|Hardkernel|FriendlyElec|Radxa) //)
             {
                 $Sys{"Vendor"} = $1;
                 $Sys{"Type"} = "system on chip";
@@ -9232,7 +9232,7 @@ sub fixFFByModel($$)
         or ($V=~/Orbsmart/i and $M=~/\AAW/)
         or ($V=~/Compulab/i and $M=~/\A(Intense|fitlet|Airtop)/)
         or $M=~/\AZBOX\-/
-        or $M=~/Macmini|ESPRIMO Q510|MMLP5AP-SI|Mini PC|TL-WR842N|Thin Client|Thin Mini|VMac mini|TERRA_PC|Aptio CRB|Propc Nano/) {
+        or $M=~/Macmini|ESPRIMO Q510|MMLP5AP-SI|Mini PC|TL-WR842N|Thin Client|Thin Mini|VMac mini|TERRA_PC|Aptio CRB|Propc Nano|XS35V5/) {
             $Sys{"Type"} = "mini pc";
         }
     }
@@ -9240,6 +9240,7 @@ sub fixFFByModel($$)
     if($Sys{"Type"} ne "all in one")
     {
         if($M=~/( AiO PC)/
+        or $M=~/\A(MS-6657)\Z/
         or $V eq "AIO"
         or ($V=~/Apple/i and $M=~/\AiMac/)
         or ($V=~/Lenovo/i and $M=~/\A(S310|IdeaCentre B|ThinkCentre M90z) /)
@@ -9275,7 +9276,7 @@ sub fixFFByMonitor($)
     
     if($Sys{"Type"}!~/$MOBILE_TYPE/)
     {
-        if($Mon=~/LGD02E9|SEC3445|LPLA500|CMO1680/) {
+        if($Mon=~/LGD02E9|SEC3445|LPLA500|CMO1680|LGD018B/) {
             $Sys{"Type"} = "notebook";
         }
     }
@@ -9308,7 +9309,7 @@ sub fixFFByDisk($)
     my $Disk = $_[0];
     if($Sys{"Type"}!~/$DESKTOP_TYPE|$SERVER_TYPE/)
     {
-        if($Disk=~/HD321KJ|ST3500413AS|ST2000DM001/) {
+        if($Disk=~/HD321KJ|ST3500413AS|ST2000DM001|WD205BA/) {
             $Sys{"Type"} = "desktop";
         }
     }
