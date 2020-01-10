@@ -63,8 +63,8 @@ https://launchpad.net/~mikhailnov/+archive/ubuntu/hw-probe
 
     sudo add-apt-repository universe
     sudo add-apt-repository ppa:mikhailnov/hw-probe
-    sudo apt update
-    sudo apt install hw-probe --no-install-recommends
+    sudo apt-get update
+    sudo apt-get install hw-probe --no-install-recommends
 
 ###### Snap
 
@@ -74,13 +74,7 @@ The [Snap package](README.md#snap) is also available to install and run easily o
 Install on Debian
 -----------------
 
-###### Debian Sid
-
-Enable Unstable repository and install:
-
-    echo "deb http://http.us.debian.org/debian unstable main non-free contrib" | sudo tee -a /etc/apt/sources.list
-    sudo apt-get update
-    sudo apt-get install hw-probe --no-install-recommends
+On Debian and Debian based Linux distributions (Kali, MX Linux, PureOS, etc.).
 
 ###### Any Debian
 
@@ -88,8 +82,15 @@ Download Deb package [hw-probe_1.4-1_all.deb](http://ftp.debian.org/debian/pool/
 
     sudo apt-get update
     sudo dpkg -i ./hw-probe_1.4-1_all.deb
-    sudo apt install -f --no-install-recommends
+    sudo apt-get install -f --no-install-recommends
 
+###### Debian Sid
+
+Enable Unstable repository and install:
+
+    echo "deb http://http.us.debian.org/debian unstable main non-free contrib" | sudo tee -a /etc/apt/sources.list
+    sudo apt-get update
+    sudo apt-get install hw-probe --no-install-recommends
 
 Install on openSUSE
 -------------------

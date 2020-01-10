@@ -165,6 +165,7 @@ modules:
   - name: usbutils
     buildsystem: simple
     build-commands:
+      - sed -i -e 's/usbhid-dump//' Makefile.*
       - ./configure --prefix=/ LIBUSB_CFLAGS='-I'$FLATPAK_DEST'/include/libusb-1.0' LIBUSB_LIBS='-L'$FLATPAK_DEST'/lib64 -L'$FLATPAK_DEST'/lib -lusb-1.0'
       - sed -i -e 's/ -g / -s /' Makefile
       - make -j $FLATPAK_BUILDER_N_JOBS
