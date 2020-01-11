@@ -5,7 +5,7 @@
 #
 # WWW: https://linux-hardware.org
 #
-# Copyright (C) 2014-2019 Andrey Ponomarenko's Linux Hardware Project
+# Copyright (C) 2014-2020 Andrey Ponomarenko's Linux Hardware Project
 #
 # Written by Andrey Ponomarenko
 # LinkedIn: https://www.linkedin.com/in/andreyponomarenko
@@ -128,7 +128,7 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "check-memory!" => \$Opt{"CheckMemory"},
   "check-cpu!" => \$Opt{"CheckCpu"},
   "id|name=s" => \$Opt{"PC_Name"},
-  "upload!" => \$Opt{"Upload"},
+  "upload|confirm-upload-of-hashed-ids!" => \$Opt{"Upload"},
   "hwinfo-path=s" => \$Opt{"HWInfoPath"},
   "log!" => \$Opt{"ShowLog"},
 # Inventory
@@ -297,8 +297,12 @@ GENERAL OPTIONS:
       Any description of the probe.
   
   -upload
-      Upload result to the Linux hardware DB. You will get a
-      permanent URL to view the probe.
+      Upload result to the Linux hardware database. You will get
+      a permanent URL to view the probe.
+      
+      By use of this option you confirm uploading of 32-byte
+      prefix of salted SHA512 hash of MAC addresses and serial
+      numbers to prevent duplication of computers in the DB.
   
   -hwinfo-path PATH
       Path to a local hwinfo binary.
@@ -1575,8 +1579,7 @@ sub encryptSerials(@)
     }
     foreach my $Ser (sort keys(%Serials))
     {
-        if(grep {$Ser eq $_} ("Not Specified", "To Be Filled By O.E.M.", "No Asset Information", "None", "Not Available")
-        or index($Ser, ":")!=-1) {
+        if(grep {$Ser eq $_} ("Not Specified", "To Be Filled By O.E.M.", "No Asset Information", "None", "Not Available")) {
             next;
         }
         
@@ -1587,6 +1590,11 @@ sub encryptSerials(@)
         }
         else {
             $Enc = clientHash($Ser);
+        }
+        
+        if(index($Ser, ":")!=-1)
+        {
+            $Enc = "...";
         }
         
         $Content=~s/(\Q$Tag\E\s*[:=]\s*"?)\Q$Ser\E("?\s*\n)/$1$Enc$2/g;
@@ -1625,6 +1633,13 @@ sub hideTags($$)
 {
     my ($Content, $Tags) = @_;
     $Content=~s/(($Tags)\s*[:=]\s*).*?(\n|\Z)/$1...$3/g;
+    return $Content;
+}
+
+sub hideAAC($)
+{
+    my $Content = $_[0];
+    $Content=~s/(AAC\d+: serial ).+?(\n|\Z)/$1...$2/g;
     return $Content;
 }
 
@@ -6320,6 +6335,7 @@ sub probeHW()
         $Dmesg = hideIPs($Dmesg);
         $Dmesg = hideMACs($Dmesg);
         $Dmesg = hidePaths($Dmesg);
+        $Dmesg = hideAAC($Dmesg);
         
         if($Opt{"HWLogs"}) {
             writeLog($LOG_DIR."/dmesg", $Dmesg);
@@ -7479,6 +7495,7 @@ sub runSmartctl(@)
     }
     
     $Output = encryptSerials($Output, "Serial Number");
+    $Output = encryptSerials($Output, "Serial number");
     $Output = hideWWNs($Output);
     # $Output=~s/\A.*?(\=\=\=)/$1/sg;
     
@@ -10285,6 +10302,7 @@ sub writeLogs()
             $Dmesg_Old = hideIPs($Dmesg_Old);
             $Dmesg_Old = hideMACs($Dmesg_Old);
             $Dmesg_Old = hidePaths($Dmesg_Old);
+            $Dmesg_Old = hideAAC($Dmesg_Old);
             writeLog($LOG_DIR."/dmesg.1", $Dmesg_Old);
         }
     }
