@@ -11189,11 +11189,8 @@ sub writeLogs()
         
         if($Opt{"DecodeACPI"})
         {
-            if(-s "$LOG_DIR/acpidump")
-            {
-                if(decodeACPI("$LOG_DIR/acpidump", "$LOG_DIR/acpidump_decoded")) {
-                    unlink("$LOG_DIR/acpidump");
-                }
+            if(-s "$LOG_DIR/acpidump") {
+                decodeACPI("$LOG_DIR/acpidump", "$LOG_DIR/acpidump_decoded");
             }
         }
     }
@@ -11299,10 +11296,6 @@ sub decodeACPI($$)
     chdir($ORIG_DIR);
     
     writeFile($Output, $DSL);
-    
-    if($DSL) {
-        unlink($Dump);
-    }
     
     rmtree($TmpDir);
     
@@ -13699,15 +13692,8 @@ sub scenario()
         {
             if(-s "$FixProbe_Logs/acpidump")
             {
-                if(decodeACPI("$FixProbe_Logs/acpidump", "$FixProbe_Logs/acpidump_decoded")) {
-                    unlink("$FixProbe_Logs/acpidump");
-                }
+                decodeACPI("$FixProbe_Logs/acpidump", "$FixProbe_Logs/acpidump_decoded");
             }
-        }
-
-        if(-s "$FixProbe_Logs/acpidump"
-        and -s "$FixProbe_Logs/acpidump_decoded") {
-            unlink("$FixProbe_Logs/acpidump");
         }
         
         if($USE_JSON_XS) {
