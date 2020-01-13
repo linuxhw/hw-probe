@@ -5,7 +5,7 @@
   <metadata_license>CC-BY-3.0</metadata_license>
   <project_license>LGPL-2.1+</project_license>
   <name>Hardware Probe</name>
-  <summary>Check operability of computer hardware</summary>
+  <summary>Check operability of computer hardware and find drivers</summary>
 
   <description>
     <p>
@@ -13,17 +13,25 @@
       to the Linux hardware database.
     </p>
     <p>
-      Probe — is a snapshot of your computer hardware state and system
-      logs. The tool returns a permanent URL to view the probe of the
-      computer.
+      Probe — is a snapshot of your computer hardware state and logs.
+      The tool checks operability of devices by analysis of logs and
+      returns a permanent url to view the probe of the computer.
     </p>
     <p>
-      The tool is intended to simplify collecting of logs necessary for
-      investigating hardware related problems. Just ask user to run one
-      simple command to collect all the system logs at once:
+      The probes are intended to simplify collecting of logs necessary for
+      investigating hardware related problems. Just run one simple command
+      to check hardware and collect all the system logs at once:
     </p>
     <p>
       sudo hw-probe -all -upload
+    </p>
+    <p>
+      If some of your computer devices does not work due to a missed driver
+      then the tool will suggest a proper Linux kernel version according
+      to the LKDDb or third-party drivers.
+    </p>
+    <p>
+      Private info is not collected.
     </p>
     <p>
       By creating probes you contribute to the HDD/SSD Real-Life

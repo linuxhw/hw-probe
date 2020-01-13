@@ -57,8 +57,8 @@ script:
   - make install PREFIX=/usr DESTDIR=$BUILD_APPDIR SHARED=no LIBKMOD=yes HWDB=no ZLIB=no DNS=no
   - sed -i -e 's|/usr|././|g' $BUILD_APPDIR/usr/sbin/lspci
   # acpica-unix
-  - tar -xf $BUILD_SOURCE_DIR/acpica-unix-20191018.tar.gz -C $BUILD_SOURCE_DIR
-  - cd $BUILD_SOURCE_DIR/acpica-unix-20191018
+  - tar -xf $BUILD_SOURCE_DIR/acpica-unix-20191213.tar.gz -C $BUILD_SOURCE_DIR
+  - cd $BUILD_SOURCE_DIR/acpica-unix-20191213
   - make
   - make install DESTDIR=$BUILD_APPDIR
   # hdparm
@@ -67,17 +67,17 @@ script:
   - make
   - make install DESTDIR=$BUILD_APPDIR
   # smartmontools
-  - tar -xf $BUILD_SOURCE_DIR/smartmontools-7.0.tar.gz -C $BUILD_SOURCE_DIR
-  - cd $BUILD_SOURCE_DIR/smartmontools-7.0
+  - tar -xf $BUILD_SOURCE_DIR/smartmontools-7.1.tar.gz -C $BUILD_SOURCE_DIR
+  - cd $BUILD_SOURCE_DIR/smartmontools-7.1
   - sh autogen.sh
   - ./configure --with-nvme-devicescan --prefix=/
   - sed -i -e 's/ -g / -s /' Makefile
   - make
   - make install DESTDIR=$BUILD_APPDIR
   # libx86emu
-  - tar -xf $BUILD_SOURCE_DIR/libx86emu-1.14.tar.gz -C $BUILD_SOURCE_DIR
-  - cd $BUILD_SOURCE_DIR/libx86emu-1.14
-  - echo '1.14' > VERSION
+  - tar -xf $BUILD_SOURCE_DIR/libx86emu-2.4.tar.gz -C $BUILD_SOURCE_DIR
+  - cd $BUILD_SOURCE_DIR/libx86emu-2.4
+  - echo '2.4' > VERSION
   - rm -f git2log
   - sed -i -e 's/ -g / -s /' Makefile
   - make
@@ -98,8 +98,8 @@ script:
   - CFLAGS="-I$BUILD_APPDIR/usr/include" LDFLAGS="-L$BUILD_APPDIR/usr/lib64 -L$BUILD_APPDIR/usr/lib -lx86emu" LD_LIBRARY_PATH="$BUILD_APPDIR/usr/lib64:$BUILD_APPDIR/usr/lib" make
   - make install DESTDIR=$BUILD_APPDIR
   # hw-probe
-  - tar -xf $BUILD_SOURCE_DIR/hw-probe-1.4-AI.tar.gz -C $BUILD_SOURCE_DIR
-  - cd $BUILD_SOURCE_DIR/hw-probe-1.4-AI
+  - tar -xf $BUILD_SOURCE_DIR/hw-probe-1.5-AI.tar.gz -C $BUILD_SOURCE_DIR
+  - cd $BUILD_SOURCE_DIR/hw-probe-1.5-AI
   - make install prefix=$BUILD_APPDIR/usr
   # create Perl5 directory
   - mkdir -p $BUILD_APPDIR/usr/lib/perl5

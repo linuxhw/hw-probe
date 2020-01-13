@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=Hardware Probe
-Comment=Probe for hardware and upload result to the Linux hardware database
+Comment=Probe for hardware, check operability and find drivers
 Exec=hw-probe
 Icon=${SNAP}/usr/share/icons/hw-probe.png
 Terminal=true

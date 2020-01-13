@@ -1,5 +1,5 @@
 name: hw-probe
-version: 1.4-11
+version: 1.5-1
 summary: Check operability of computer hardware and find drivers
 description: >
  A tool to check operability of computer hardware and upload result
@@ -398,7 +398,7 @@ parts:
       - make
       - perl
   hw-probe:
-    source: https://github.com/linuxhw/build-stuff/releases/download/1.4/hw-probe-1.4-AI.tar.gz
+    source: https://github.com/linuxhw/build-stuff/releases/download/1.5/hw-probe-1.5-AI.tar.gz
     source-type: tar
     plugin: make
     override-build: |

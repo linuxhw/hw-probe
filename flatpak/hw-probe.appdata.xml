@@ -70,9 +70,9 @@
   </content_rating>
 
   <releases>
-    <release version="1.4" date="2018-04-14">
+    <release version="1.5" date="2020-01-13">
       <description>
-        Hardware Probe Tool 1.4
+        Hardware Probe Tool 1.5
       </description>
     </release>
   </releases>
