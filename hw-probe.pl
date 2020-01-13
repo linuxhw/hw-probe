@@ -12,7 +12,7 @@
 #
 # PLATFORMS
 # =========
-#  Linux (Fedora, CentOS, RHEL, Ubuntu, Debian, Mint, Arch,
+#  Linux (Fedora, CentOS, RHEL, Ubuntu, Debian, Mint, MX, Arch,
 #         Gentoo, ROSA, Mandriva, Clear Linux, Alpine ...)
 #
 # REQUIRES
