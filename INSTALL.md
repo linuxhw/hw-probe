@@ -41,7 +41,7 @@ You can probe your computer by [AppImage](README.md#appimage), [Docker](README.m
 Command line to Run
 -------------------
 
-    sudo hw-probe -all -upload
+    sudo -E hw-probe -all -upload
 
 
 Install on Ubuntu
@@ -74,9 +74,16 @@ The [Snap package](README.md#snap) is also available to install and run easily o
 Install on Debian
 -----------------
 
-On Debian and Debian based Linux distributions (Kali, MX Linux, PureOS, etc.).
+On Debian and Debian based Linux distributions (Kali, MX Linux, PureOS, etc.):
 
-###### Any Debian
+    sudo apt-get install debian-archive-keyring
+    sudo sh -c 'echo deb http://deb.debian.org/debian unstable main > /etc/apt/sources.list.d/debian-sid.list'
+    sudo apt-get update
+    sudo apt-get install --no-install-recommends hw-probe
+    sudo rm -f /etc/apt/sources.list.d/debian-sid.list
+    sudo apt-get update
+
+###### Standalone
 
 Download Deb package [hw-probe_1.4-1_all.deb](http://ftp.debian.org/debian/pool/main/h/hw-probe/hw-probe_1.4-1_all.deb) and install:
 
@@ -84,13 +91,6 @@ Download Deb package [hw-probe_1.4-1_all.deb](http://ftp.debian.org/debian/pool/
     sudo dpkg -i ./hw-probe_1.4-1_all.deb
     sudo apt-get install -f --no-install-recommends
 
-###### Debian Sid
-
-Enable Unstable repository and install:
-
-    echo "deb http://http.us.debian.org/debian unstable main non-free contrib" | sudo tee -a /etc/apt/sources.list
-    sudo apt-get update
-    sudo apt-get install hw-probe --no-install-recommends
 
 Install on openSUSE
 -------------------
