@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #########################################################################
-# Hardware Probe 1.4
+# Hardware Probe 1.5
 # A tool to probe for hardware, check operability and find drivers
 #
 # WWW: https://linux-hardware.org
@@ -78,7 +78,7 @@ use File::Copy qw(copy move);
 use File::Basename qw(basename dirname);
 use Cwd qw(abs_path cwd);
 
-my $TOOL_VERSION = "1.4";
+my $TOOL_VERSION = "1.5";
 my $URL = "https://linux-hardware.org";
 my $GITHUB = "https://github.com/linuxhw/hw-probe";
 
@@ -1592,8 +1592,8 @@ sub encryptSerials(@)
             $Enc = clientHash($Ser);
         }
         
-        if(index($Ser, ":")!=-1)
-        {
+        if(index($Ser, ":")!=-1 and index($Ser, ".")!=-1)
+        { # usb-devices
             $Enc = "...";
         }
         
@@ -7562,7 +7562,7 @@ sub registerBattery($)
             $Device->{"Size"} = sprintf("%.0f", $1).$2;
         }
         $ID = devID(nameID($Device->{"Vendor"}), lc($Device->{"Device"}), $Device->{"Technology"}, $Device->{"Size"});
-        if($Device->{"Serial"}) {
+        if($Device->{"Serial"} and $Device->{"Serial"} ne " ") {
             $ID = devID($ID, "serial", $Device->{"Serial"});
         }
     }
