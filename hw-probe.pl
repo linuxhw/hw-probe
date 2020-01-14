@@ -1509,6 +1509,7 @@ my $USE_JSON_XS = 0;
 my $USE_IA = 0;
 
 my $HASH_LEN_CLIENT = 32;
+my $UUID_LEN_CLIENT = 32;
 my $SALT_CLIENT = "GN-4w?T]>r3FS/*_";
 
 my $MAX_LOG_SIZE = 1048576; # 1Mb
@@ -1532,10 +1533,16 @@ sub getSha512L($$)
     return substr($Hash, 0, $Len);
 }
 
-sub clientHash($)
+sub clientHash(@)
 {
-    my $Subj = $_[0];
-    return uc(getSha512L($Subj."+".$SALT_CLIENT, $HASH_LEN_CLIENT));
+    my $Subj = shift(@_);
+    
+    my $Len = $HASH_LEN_CLIENT;
+    if(@_) {
+        $Len = shift(@_);
+    }
+    
+    return uc(getSha512L($Subj."+".$SALT_CLIENT, $Len));
 }
 
 sub encryptSerialsInPaths($)
@@ -1593,8 +1600,13 @@ sub encryptSerials(@)
         }
         
         if(index($Ser, ":")!=-1 and index($Ser, ".")!=-1)
-        { # usb-devices
-            $Enc = "...";
+        { # 0000:00:1a.0
+            if($Name and grep { $Name eq $_ } ("hwinfo", "usb-devices")) {
+                $Enc = "...";
+            }
+            else {
+                next;
+            }
         }
         
         $Content=~s/(\Q$Tag\E\s*[:=]\s*"?)\Q$Ser\E("?\s*\n)/$1$Enc$2/g;
@@ -1604,6 +1616,28 @@ sub encryptSerials(@)
         }
     }
     return $Content;
+}
+
+sub encryptUUIDs($)
+{
+    my $Content = $_[0];
+    
+    my %UUIDs = ();
+    while($Content=~/([a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12})/gi) {
+        $UUIDs{$1} = 1;
+    }
+    foreach my $UUID (sort keys(%UUIDs))
+    {
+        my $Enc = clientHash(lc($UUID), $UUID_LEN_CLIENT);
+        $Enc=~s/\A(\w{8})(\w{4})(\w{4})(\w{4})(\w{12})\Z/$1-$2-$3-$4-$5/;
+        $Content=~s/\Q$UUID\E/$Enc/g;
+    }
+    return $Content;
+}
+
+sub hideDevDiskUUIDs($)
+{
+    return hideByRegexp($_[0], qr/([a-f\d]{8}\Q\x2d\E[a-f\d]{4}\Q\x2d\E[a-f\d]{4}\Q\x2d\E[a-f\d]{4}\Q\x2d\E[a-f\d]{12})/);
 }
 
 sub encryptWWNs($)
@@ -2890,6 +2924,7 @@ sub probeHW()
         $DevFiles = hideLVM($DevFiles);
         $DevFiles = hideByRegexp($DevFiles, qr/\/([^\s\/]+?)-vg/);
         $DevFiles = hidePaths($DevFiles);
+        $DevFiles = encryptUUIDs($DevFiles);
         
         writeLog($LOG_DIR."/dev", $DevFiles);
     }
@@ -3999,6 +4034,8 @@ sub probeHW()
         $Udevadm = runCmd("udevadm info --export-db 2>/dev/null");
         $Udevadm = hideTags($Udevadm, "ID_NET_NAME_MAC|ID_SERIAL|ID_SERIAL_SHORT|DEVLINKS|ID_WWN|ID_WWN_WITH_EXTENSION");
         $Udevadm=~s/(by\-id\/(ata|usb|nvme|wwn)\-).+/$1.../g;
+        $Udevadm = encryptUUIDs($Udevadm);
+        $Udevadm = encryptSerials($Udevadm, "SERIAL_NUMBER");
         if(enabledLog("udev-db")) {
             writeLog($LOG_DIR."/udev-db", $Udevadm);
         }
@@ -4333,6 +4370,7 @@ sub probeHW()
             }
             
             $Lsusb=~s/(iSerial\s+\d+\s*)[^\s]+$/$1.../mg;
+            $Lsusb = encryptUUIDs($Lsusb);
             
             if(length($Lsusb)<60 and $Lsusb=~/unable to initialize/i) {
                 $Lsusb = "";
@@ -4547,7 +4585,7 @@ sub probeHW()
         {
             listProbe("logs", "usb-devices");
             $Usb_devices = runCmd("usb-devices -v 2>&1");
-            $Usb_devices = encryptSerials($Usb_devices, "SerialNumber");
+            $Usb_devices = encryptSerials($Usb_devices, "SerialNumber", "usb-devices");
         }
         
         if($Opt{"HWLogs"}) {
@@ -6336,6 +6374,7 @@ sub probeHW()
         $Dmesg = hideMACs($Dmesg);
         $Dmesg = hidePaths($Dmesg);
         $Dmesg = hideAAC($Dmesg);
+        $Dmesg = encryptUUIDs($Dmesg);
         
         if($Opt{"HWLogs"}) {
             writeLog($LOG_DIR."/dmesg", $Dmesg);
@@ -6460,6 +6499,7 @@ sub probeHW()
         {
             $XLog = hideTags($XLog, "Serial#");
             $XLog = hidePaths($XLog);
+            $XLog = encryptUUIDs($XLog);
             if(my $HostName = $ENV{"HOSTNAME"}) {
                 $XLog=~s/ $HostName / NODE /g;
             }
@@ -7176,6 +7216,8 @@ sub probeHW()
         $Lsblk = hideByRegexp($Lsblk, qr/(.+?)\s+[^\s]+?\s+crypt\s+/);
         $Lsblk = hidePaths($Lsblk);
         $Lsblk = hideLVM($Lsblk);
+        $Lsblk = encryptUUIDs($Lsblk);
+        $Lsblk = hideByRegexp($Lsblk, qr/\s([a-f\d]{8})\-\d\d\n/); # PARTUUID
         writeLog($LOG_DIR."/lsblk", $Lsblk);
     }
     
@@ -7331,6 +7373,7 @@ sub probeHW()
         $Fstab = hideIPs($Fstab);
         $Fstab = hideUrls($Fstab);
         $Fstab = hidePass($Fstab);
+        $Fstab = encryptUUIDs($Fstab);
         $Fstab=~s/LABEL=[^\s]+/LABEL=XXXX/g;
         $Fstab=~s/sshfs#.+/sshfs.../g;
         $Fstab=~s/#.*\n//g;
@@ -9979,8 +10022,13 @@ sub probeDistr()
         and $Release=~/\A\d\d\d\d\d\d\d\d\Z/) {
             return ("opensuse-".$Release, "");
         }
-        elsif($Descr=~/\A(Maui|KDE neon)/i) {
+        elsif($Descr=~/\A(Maui|KDE neon|RED OS)/i) {
             $Name = $1;
+        }
+        elsif($Descr=~/\A(antiX)-(\d+)/i)
+        {
+            $Name = $1;
+            $Release = $2;
         }
     }
     
@@ -10247,6 +10295,9 @@ sub readHost($)
     $Sys{"Ram_total"} = undef;
     
     $Sys{"Filesystem"} = undef;
+    
+    $Sys{"System"} = undef;
+    $Sys{"Systemrel"} = undef;
 }
 
 sub getUser()
@@ -10303,6 +10354,7 @@ sub writeLogs()
             $Dmesg_Old = hideMACs($Dmesg_Old);
             $Dmesg_Old = hidePaths($Dmesg_Old);
             $Dmesg_Old = hideAAC($Dmesg_Old);
+            $Dmesg_Old = encryptUUIDs($Dmesg_Old);
             writeLog($LOG_DIR."/dmesg.1", $Dmesg_Old);
         }
     }
@@ -10322,6 +10374,7 @@ sub writeLogs()
         
         $XLog_Old = hideTags($XLog_Old, "Serial#");
         $XLog_Old = hidePaths($XLog_Old);
+        $XLog_Old = encryptUUIDs($XLog_Old);
         if(my $HostName = $ENV{"HOSTNAME"}) {
             $XLog_Old=~s/ $HostName / NODE /g;
         }
@@ -10372,6 +10425,7 @@ sub writeLogs()
             listProbe("logs", "grub.cfg");
             my $GrubCfg = readFile("/boot/grub2/grub.cfg");
             $GrubCfg = hidePaths($GrubCfg);
+            $GrubCfg = encryptUUIDs($GrubCfg);
             writeLog($LOG_DIR."/grub.cfg", $GrubCfg);
         }
     }
@@ -10384,6 +10438,8 @@ sub writeLogs()
         $BootLog=~s&(Mounted|Mounting)\s+/.+&$1 XXXXX&g;
         $BootLog=~s&(Setting hostname\s+).+:&$1XXXXX:&g;
         $BootLog = hideLVM($BootLog);
+        $BootLog = encryptUUIDs($BootLog);
+        $BootLog = hideDevDiskUUIDs($BootLog);
         writeLog($LOG_DIR."/boot.log", $BootLog);
     }
     
@@ -10623,6 +10679,7 @@ sub writeLogs()
         my $NmCli = runCmd("nmcli c 2>&1");
         $NmCli=~s/.+\s+([^\s]+\s+[^\s]+\s+[^\s]+\s*\n)/XXX   $1/g;
         $NmCli=~s/\AXXX /NAME/g;
+        $NmCli = encryptUUIDs($NmCli);
         if($NmCli) {
             writeLog($LOG_DIR."/nmcli", $NmCli);
         }
@@ -10639,6 +10696,7 @@ sub writeLogs()
                 $Fdisk = "";
             }
             $Fdisk = hidePaths($Fdisk);
+            $Fdisk = hideTags($Fdisk, "Disk identifier");
             writeLog($LOG_DIR."/fdisk", $Fdisk);
         }
     }
@@ -10733,6 +10791,8 @@ sub writeLogs()
             my $Sctl = runCmd("systemctl 2>/dev/null");
             $Sctl=~s/( of user)\s+\Q$SessUser\E/$1 USER/g;
             $Sctl = decorateSystemd($Sctl);
+            $Sctl = encryptUUIDs($Sctl);
+            $Sctl = hideDevDiskUUIDs($Sctl);
             writeLog($LOG_DIR."/systemctl", $Sctl);
         }
     }
@@ -10918,6 +10978,7 @@ sub writeLogs()
         $SystemdAnalyze .= "\n";
         $SystemdAnalyze .= runCmd("systemd-analyze blame 2>/dev/null");
         $SystemdAnalyze = decorateSystemd($SystemdAnalyze);
+        $SystemdAnalyze = hideDevDiskUUIDs($SystemdAnalyze);
         writeLog($LOG_DIR."/systemd-analyze", $SystemdAnalyze);
     }
     
@@ -11113,6 +11174,7 @@ sub writeLogs()
     {
         listProbe("logs", "xvinfo");
         my $XVInfo = runCmd("xvinfo 2>&1");
+        $XVInfo = encryptUUIDs($XVInfo);
         writeLog($LOG_DIR."/xvinfo", clearLog_X11($XVInfo));
     }
     
@@ -13613,6 +13675,17 @@ sub scenario()
                         }
                     }
                 }
+            }
+        }
+        
+        # Support for MX
+        if($Distr=~/\Adebian/)
+        {
+            my $Debs = readFile("$FixProbe_Logs/debs");
+            if($Debs=~/(mx-system|ddm-mx) (\d+)/)
+            {
+                $Distr = "mx-".$2;
+                $Rel = $Distr;
             }
         }
         

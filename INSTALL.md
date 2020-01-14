@@ -1,7 +1,7 @@
 INSTALL HOWTO
 =============
 
-HW Probe 1.4 (April 14, 2018)
+HW Probe 1.5 (January 15, 2020)
 
 This file explains how to install and setup environment for the tool in your computer.
 

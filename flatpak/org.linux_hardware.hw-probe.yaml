@@ -425,7 +425,7 @@ modules:
     sources:
       - type: archive
         url: https://github.com/linuxhw/build-stuff/releases/download/1.5/hw-probe-1.5-AI.tar.gz
-        sha256: f7bd8b6946b5248acc47d1b92aeb43c903b63ef0a57ce2844c49dc3139f881d4
+        sha256: cccf9b377eb137a5980de3f90c1ba52f8c87095acd49d606ad127e0713dda995
   - name: perl-base
     buildsystem: simple
     build-commands:
