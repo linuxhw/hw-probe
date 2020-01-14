@@ -154,6 +154,7 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "pnp-ids=s" => \$Opt{"PnpIDs"},
   "list!" => \$Opt{"ListProbes"},
   "clean!" => \$Opt{"Clean"},
+  "save-uploaded!" => \$Opt{"SaveUploaded"},
   "debug|d!" => \$Opt{"Debug"},
   "dump-acpi!" => \$Opt{"DumpACPI"},
   "decode-acpi!" => \$Opt{"DecodeACPI"},
@@ -205,10 +206,12 @@ elsif($Opt{"Flatpak"})
     $PROBE_DIR = $ENV{"XDG_DATA_HOME"}."/HW_PROBE";
 }
 
-my $DATA_DIR = $PROBE_DIR."/LATEST/hw.info";
-my $LOG_DIR = $DATA_DIR."/logs";
-my $TEST_DIR = $DATA_DIR."/tests";
+my $LATEST_DIR = $PROBE_DIR."/LATEST";
+my $TMP_PROBE_DIR = $LATEST_DIR."/".basename($TMP_DIR);
+my $TMP_PROBE = $TMP_PROBE_DIR."/hw.info";
 my $PROBE_LOG = $PROBE_DIR."/LOG";
+
+my ($DATA_DIR, $LOG_DIR, $TEST_DIR) = initDataDir($LATEST_DIR."/hw.info");
 
 my $HelpMessage="
 NAME:
@@ -358,7 +361,10 @@ OTHER OPTIONS:
       List executed probes (for debugging).
   
   -clean
-      Remove the probe data after the probe is uploaded.
+      Do nothing. Obsolete option.
+  
+  -save-uploaded
+      Save uploaded probes.
   
   -debug|-d
       Do nothing. Obsolete option.
@@ -378,7 +384,7 @@ OTHER OPTIONS:
       Provide inventory ID by -i option in order to import your inventory.
 
 DATA LOCATION:
-  Probes are saved in the $PROBE_DIR directory.
+  Probes info is saved in the $PROBE_DIR directory.
 
 ";
 
@@ -1804,6 +1810,12 @@ sub exitStatus($)
     if($Opt{"Flatpak"} and -d $TMP_DIR) {
         rmtree($TMP_DIR);
     }
+    if(-d $TMP_PROBE_DIR) {
+        rmtree($TMP_PROBE_DIR);
+    }
+    if(not listDir($LATEST_DIR)) {
+        rmtree($LATEST_DIR);
+    }
     exit($St);
 }
 
@@ -1905,7 +1917,7 @@ sub generateGroup()
     if($Log=~/(Group|Inventory) ID: (\w+)/)
     {
         my $ID = $2;
-        my $GroupLog = "INVENTORY\n=====\n".localtime(time)."\nInventory ID: $ID\n";
+        my $GroupLog = "INVENTORY\n=========\n".localtime(time)."\nInventory ID: $ID\n";
         appendFile($PROBE_LOG, $GroupLog."\n");
     }
 }
@@ -2128,22 +2140,25 @@ sub uploadData()
     # save uploaded probe and its ID
     if($RecentProbe)
     {
-        my $NewProbe = $PROBE_DIR."/".$RecentProbe;
-        
-        if(-d $NewProbe)
+        if($Opt{"SaveUploaded"})
         {
-            printMsg("ERROR", "the probe with ID \'$RecentProbe\' already exists, overwriting ...");
-            unlink($NewProbe."/hw.info.txz");
-        }
-        else {
-            mkpath($NewProbe);
-        }
-        
-        if($Opt{"Source"}) {
-            copy($Pkg, $NewProbe);
-        }
-        else {
-            move($Pkg, $NewProbe);
+            my $NewProbe = $PROBE_DIR."/".$RecentProbe;
+            
+            if(-d $NewProbe)
+            {
+                printMsg("ERROR", "the probe with ID \'$RecentProbe\' already exists, overwriting ...");
+                unlink($NewProbe."/hw.info.txz");
+            }
+            else {
+                mkpath($NewProbe);
+            }
+            
+            if($Opt{"Source"}) {
+                copy($Pkg, $NewProbe);
+            }
+            else {
+                move($Pkg, $NewProbe);
+            }
         }
         
         my $Time = time;
@@ -2272,11 +2287,8 @@ sub setupMonitoring()
 
 sub cleanData()
 {
-    if($Opt{"Clean"})
-    {
-        if(-d $DATA_DIR) {
-            rmtree($DATA_DIR);
-        }
+    if(-d $LATEST_DIR) {
+        rmtree($LATEST_DIR);
     }
 }
 
@@ -2378,24 +2390,7 @@ sub createPackage()
     }
     else
     {
-        if(-d $DATA_DIR)
-        {
-            if(not -f "$DATA_DIR/devices" and not -f "$DATA_DIR/devices.json")
-            {
-                printMsg("ERROR", "\'$DATA_DIR/devices\' file is not found, please make probe first");
-                exitStatus(1);
-            }
-            
-            updateHost($DATA_DIR, "id", $Opt{"PC_Name"});
-            $HWaddr = readHostAttr($DATA_DIR, "hwaddr");
-            
-            $Pkg = $TMP_DIR."/hw.info.txz";
-            
-            chdir(dirname($DATA_DIR));
-            system("tar", "-cJf", $Pkg, basename($DATA_DIR));
-            chdir($ORIG_DIR);
-        }
-        else
+        if(not -d $DATA_DIR)
         {
             if($Admin) {
                 printMsg("ERROR", "can't access '".$DATA_DIR."', please make probe first");
@@ -2405,6 +2400,21 @@ sub createPackage()
             }
             exitStatus(1);
         }
+        
+        if(not -f "$DATA_DIR/devices" and not -f "$DATA_DIR/devices.json")
+        {
+            printMsg("ERROR", "\'$DATA_DIR/devices\' file is not found, please make probe first");
+            exitStatus(1);
+        }
+        
+        updateHost($DATA_DIR, "id", $Opt{"PC_Name"});
+        $HWaddr = readHostAttr($DATA_DIR, "hwaddr");
+        
+        $Pkg = $TMP_DIR."/hw.info.txz";
+        
+        chdir(dirname($DATA_DIR));
+        system("tar", "-cJf", $Pkg, basename($DATA_DIR));
+        chdir($ORIG_DIR);
     }
     
     return ($Pkg, $HWaddr);
@@ -11864,7 +11874,7 @@ sub checkHW()
             my $Cmd = "hdparm -t $Dr";
             my $Out = runCmd($Cmd);
             $Out=~s/\A\n\Q$Dr\E\:\n//;
-            $HDD_Read .= $HddInfo->{"Vendor"}." ".$HddInfo->{"Device"}."\n";
+            $HDD_Read .= "Drive ".$HddInfo->{"Vendor"}." ".$HddInfo->{"Device"}."\n";
             $HDD_Read .= "$Cmd\n";
             $HDD_Read .= $Out."\n";
             
@@ -12447,7 +12457,6 @@ sub importProbes($)
                 my $To = $Dir."/".$P;
                 if(not -e $To or not -e "$To/logs")
                 {
-                    
                     if(downloadProbe($P, $To)!=-1)
                     {
                         my %Prop = ();
@@ -13211,6 +13220,12 @@ sub fixDE()
     return $DE;
 }
 
+sub initDataDir($)
+{
+    my $Dir = $_[0];
+    return ($Dir, $Dir."/logs", $Dir."/tests");
+}
+
 sub scenario()
 {
     if($Opt{"Help"})
@@ -13433,6 +13448,10 @@ sub scenario()
         $Opt{"Logs"} = 0;
     }
     
+    if($Opt{"Probe"} and ($Opt{"Upload"} or $Opt{"Save"})) {
+        ($DATA_DIR, $LOG_DIR, $TEST_DIR) = initDataDir($TMP_PROBE);
+    }
+    
     if($Opt{"Check"})
     {
         $Opt{"CheckGraphics"} = 1;
@@ -13613,7 +13632,7 @@ sub scenario()
     {
         makeProbe();
         
-        if(not $Opt{"Upload"} and not $Opt{"Show"} and not $Opt{"ShowDevices"}) {
+        if(not $Opt{"Upload"} and not $Opt{"Save"} and not $Opt{"Show"} and not $Opt{"ShowDevices"}) {
             print "Local probe path: $DATA_DIR\n";
         }
     }
@@ -13840,8 +13859,10 @@ sub scenario()
         uploadData();
         cleanData();
     }
-    elsif($Opt{"Save"}) {
+    elsif($Opt{"Save"})
+    {
         saveProbe($Opt{"Save"});
+        cleanData();
     }
     
     if($Opt{"GenerateGroup"})
