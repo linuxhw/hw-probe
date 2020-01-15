@@ -1,4 +1,4 @@
-HW PROBE 1.4
+HW PROBE 1.5
 ============
 
 Hardware Probe Tool (hw-probe) — a tool to probe for hardware, check its operability and find drivers.
