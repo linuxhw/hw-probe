@@ -1457,6 +1457,7 @@ my @ProtectedLogs = (
     "ifconfig",
     "ip_addr",
     "lsb_release",
+    "lsb-release",
     "lsmod",
     "lspci",
     "lspci_all",
@@ -9947,7 +9948,21 @@ sub probeDistr()
         }
     }
     
-    my ($Name, $Release, $FName) = ();
+    my $LSB_Rel_F = "";
+    
+    if($Opt{"FixProbe"}) {
+        $LSB_Rel_F = readFile($FixProbe_Logs."/lsb-release");
+    }
+    else
+    {
+        listProbe("logs", "lsb-release");
+        $LSB_Rel_F = readFile("/etc/lsb-release");
+        if($Opt{"HWLogs"} and $LSB_Rel_F) {
+            writeLog($LOG_DIR."/lsb-release", $LSB_Rel_F);
+        }
+    }
+    
+    my ($Name, $Release) = ();
     
     if($LSB_Rel)
     { # Desktop
@@ -9970,10 +9985,6 @@ sub probeDistr()
         
         if($Release and $Name) {
             $Release=~s/\A$Name[\s\-]+//i;
-        }
-        
-        if($LSB_Rel=~/NAME:\s*(.*)/) {
-            $FName = $1;
         }
         
         if($LSB_Rel=~/Description:\s*(.*)/) {
@@ -10044,6 +10055,17 @@ sub probeDistr()
     
     if(grep { $Release eq $_ } ("amd64", "x86_64")) {
         $Release = undef;
+    }
+    
+    if($LSB_Rel_F)
+    {
+        if($LSB_Rel=~/DISTRIB_ID:\s*(.*)/) {
+            $Name = $1;
+        }
+        
+        if($LSB_Rel=~/DISTRIB_RELEASE:\s*(.*)/) {
+            $Release = lc($1);
+        }
     }
     
     if((not $Name or not $Release) and $OS_Rel)
