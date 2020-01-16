@@ -86,6 +86,7 @@ my $LOCALE = "C";
 my $ORIG_DIR = cwd();
 
 my $TMP_DIR = tempdir(CLEANUP=>1);
+my $TMP_LOCAL = ".tmp_".basename($TMP_DIR);
 
 my $SNAP_DESKTOP = (defined $ENV{"BAMF_DESKTOP_FILE_HINT"});
 my $FLATPAK_DESKTOP = (grep { $_ eq "-flatpak" } @ARGV);
@@ -1813,6 +1814,9 @@ sub exitStatus($)
     }
     if(-d $TMP_PROBE_DIR) {
         rmtree($TMP_PROBE_DIR);
+    }
+    if(-d $TMP_LOCAL) {
+        rmtree($TMP_LOCAL);
     }
     if(not listDir($LATEST_DIR)) {
         rmtree($LATEST_DIR);
@@ -10785,6 +10789,7 @@ sub writeLogs()
                 if($Opt{"Snap"} and $Efibootmgr=~/Permission denied/) {
                     $Efibootmgr = "";
                 }
+                $Efibootmgr = encryptUUIDs($Efibootmgr);
                 writeLog($LOG_DIR."/efibootmgr", $Efibootmgr);
             }
         }
@@ -13548,20 +13553,28 @@ sub scenario()
             exitStatus(1);
         }
         
-        if(isPkg($Opt{"FixProbe"}))
+        if(-f $Opt{"FixProbe"} and isPkg($Opt{"FixProbe"}))
         { # package
             my $PName = basename($Opt{"FixProbe"});
             $FixProbe_Pkg = abs_path($Opt{"FixProbe"});
             $Opt{"FixProbe"} = $FixProbe_Pkg;
             
-            copy($Opt{"FixProbe"}, $TMP_DIR."/".$PName);
-            chdir($TMP_DIR);
+            my $TmpDir = $TMP_DIR;
+            
+            if(-s $Opt{"FixProbe"} > 1048576)
+            {
+                $TmpDir = $TMP_LOCAL;
+                mkpath($TmpDir);
+            }
+            
+            copy($Opt{"FixProbe"}, $TmpDir."/".$PName);
+            chdir($TmpDir);
             system("tar", "-m", "-xf", $PName);
             chdir($ORIG_DIR);
             
-            $Opt{"FixProbe"} = $TMP_DIR."/hw.info";
+            $Opt{"FixProbe"} = $TmpDir."/hw.info";
         }
-        elsif(-f $Opt{"FixProbe"})
+        else
         {
             printMsg("ERROR", "unsupported probe format '".$Opt{"FixProbe"}."'");
             exitStatus(1);
@@ -13822,7 +13835,7 @@ sub scenario()
         if($FixProbe_Pkg)
         { # package
             my $PName = basename($FixProbe_Pkg);
-            chdir($TMP_DIR);
+            chdir(dirname($Opt{"FixProbe"}));
             
             my $Compress = "";
             
@@ -13863,7 +13876,7 @@ sub scenario()
             }
             chdir($ORIG_DIR);
             
-            rmtree($TMP_DIR."/hw.info");
+            rmtree($Opt{"FixProbe"});
         }
     }
     

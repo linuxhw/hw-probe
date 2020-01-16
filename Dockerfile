@@ -1,11 +1,11 @@
-FROM alpine:3.10
+FROM alpine:3.11
 
 RUN apk update \
     && apk add --no-cache perl curl xz dmidecode pciutils usbutils \
-    smartmontools hdparm sysstat util-linux lm_sensors acpi iw wireless-tools \
-    alsa-utils xrandr xdpyinfo xinput acpica iasl \
-    && apk add --no-cache --virtual build-deps git gcc make libc-dev flex linux-headers \
-    && git clone https://git.linuxtv.org/cgit.cgi/edid-decode.git \
+    smartmontools hdparm sysstat util-linux util-linux-dev lm_sensors acpi iw wireless-tools \
+    alsa-utils xrandr xdpyinfo xinput acpica iasl perl-libwww \
+    && apk add --no-cache --virtual build-deps git gcc g++ make libc-dev flex linux-headers \
+    && git clone https://git.linuxtv.org/edid-decode.git \
     && cd edid-decode \
     && make \
     && make install \
@@ -25,6 +25,7 @@ RUN apk update \
     && rm -fr hwinfo \
     && git clone https://github.com/linuxhw/hw-probe.git \
     && cd hw-probe \
+    && git checkout tags/1.5 -b v1.5 \
     && make install \
     && cd .. \
     && rm -fr hw-probe \
