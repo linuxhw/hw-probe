@@ -1,5 +1,5 @@
 name: hw-probe
-version: 1.5-4
+version: 1.5-5
 summary: Check operability of computer hardware and find drivers
 description: >
  A tool to check operability of computer hardware and upload result
@@ -150,7 +150,7 @@ parts:
       - usr/sbin/lspci
       - usr/share/pci.ids
   acpica-unix:
-    source: https://acpica.org/sites/acpica/files/acpica-unix-20191213.tar.gz
+    source: https://acpica.org/sites/acpica/files/acpica-unix-20200110.tar.gz
     source-type: tar
     plugin: make
     build-attributes: [no-patchelf]
@@ -244,11 +244,11 @@ parts:
       - make
   hwinfo:
     after: [libx86emu]
-    source: https://github.com/openSUSE/hwinfo/archive/21.64.tar.gz
+    source: https://github.com/openSUSE/hwinfo/archive/21.68.tar.gz
     source-type: tar
     plugin: make
     override-build: |
-      echo '21.64' > VERSION
+      echo '21.68' > VERSION
       rm -f git2log
       sed -i -e 's/ -g / -s /' Makefile.common
       CFLAGS='-I'$SNAPCRAFT_STAGE'/usr/include' LDFLAGS='-L'$SNAPCRAFT_STAGE'/usr/lib64 -L'$SNAPCRAFT_STAGE'/usr/lib -lx86emu' make
