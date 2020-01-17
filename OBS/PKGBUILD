@@ -1,15 +1,15 @@
 # Maintainer: Andrey Ponomarenko <andrewponomarenko [at] yandex [dot] ru>
 
 pkgname=hw-probe
-pkgver=1.4
+pkgver=1.5
 pkgrel=1
-pkgdesc="A tool to check operability of computer hardware"
+pkgdesc="Check operability of computer hardware and find drivers"
 arch=('any')
 url="https://github.com/linuxhw/hw-probe"
 license=('LGPLv2.1+')
 source=("$pkgname-$pkgver.tar.gz")
-sha256sums=('90f3ea83bf641348b209e4a2a910f65d836ae7828c0be0f660236ea413bc46bb')
-depends=('perl>=5' 'curl' 'hwinfo' 'dmidecode' 'pciutils' 'usbutils' 'smartmontools' 'hdparm' 'net-tools' 'mesa-demos' 'glew' 'lm_sensors' 'lsb-release')
+sha256sums=('8bb7d6ff272c1412e26fcfd86e9df5c3e34e1584552404b930c281b8498b25ea')
+depends=('perl>=5' 'curl' 'perl-libwww' 'hwinfo' 'dmidecode' 'pciutils' 'usbutils' 'smartmontools' 'hdparm' 'net-tools' 'mesa-demos' 'glew' 'lm_sensors' 'lsb-release')
 optdepends=('acpica' 'sysstat' 'iw' 'ethtool' 'alsa-utils' 'efibootmgr')
 
 package() {

@@ -57,8 +57,8 @@ script:
   - make install PREFIX=/usr DESTDIR=$BUILD_APPDIR SHARED=no LIBKMOD=yes HWDB=no ZLIB=no DNS=no
   - sed -i -e 's|/usr|././|g' $BUILD_APPDIR/usr/sbin/lspci
   # acpica-unix
-  - tar -xf $BUILD_SOURCE_DIR/acpica-unix-20191213.tar.gz -C $BUILD_SOURCE_DIR
-  - cd $BUILD_SOURCE_DIR/acpica-unix-20191213
+  - tar -xf $BUILD_SOURCE_DIR/acpica-unix-20200110.tar.gz -C $BUILD_SOURCE_DIR
+  - cd $BUILD_SOURCE_DIR/acpica-unix-20200110
   - make
   - make install DESTDIR=$BUILD_APPDIR
   # hdparm
@@ -90,9 +90,9 @@ script:
   - make
   - cp -fr ./src/xdemos/{glxgears,glxinfo} $BUILD_APPDIR/usr/bin/
   # hwinfo
-  - tar -xf $BUILD_SOURCE_DIR/hwinfo-21.64.tar.gz -C $BUILD_SOURCE_DIR
-  - cd $BUILD_SOURCE_DIR/hwinfo-21.64
-  - echo '21.64' > VERSION
+  - tar -xf $BUILD_SOURCE_DIR/hwinfo-21.68.tar.gz -C $BUILD_SOURCE_DIR
+  - cd $BUILD_SOURCE_DIR/hwinfo-21.68
+  - echo '21.68' > VERSION
   - rm -f git2log
   - sed -i -e 's/ -g / -s /' Makefile.common
   - CFLAGS="-I$BUILD_APPDIR/usr/include" LDFLAGS="-L$BUILD_APPDIR/usr/lib64 -L$BUILD_APPDIR/usr/lib -lx86emu" LD_LIBRARY_PATH="$BUILD_APPDIR/usr/lib64:$BUILD_APPDIR/usr/lib" make

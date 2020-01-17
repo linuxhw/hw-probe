@@ -1,6 +1,6 @@
-Summary:    A tool to check operability of computer hardware
+Summary:    Check operability of computer hardware and find drivers
 Name:       hw-probe
-Version:    1.4
+Version:    1.5
 Release:    1
 Group:      Development/Other
 BuildArch:  noarch
@@ -40,15 +40,16 @@ Requires:   acpica-tools
 A tool to check operability of computer hardware and upload result
 to the Linux hardware database.
 
-Probe — is a snapshot of your computer's hardware state and system
-logs. The tool returns a permanent URL to view the probe of the
-computer.
+Probe — is a snapshot of your computer hardware state and system
+logs. The tool checks operability of devices by analysis of logs
+and returns a permanent url to view the probe of the computer.
 
 The tool is intended to simplify collecting of logs necessary for
-investigating hardware related problems. Just ask user to run one
-simple command to collect all the system logs at once:
+investigating hardware related problems. Just run one simple
+command in the console to check your hardware and collect all the
+system logs at once:
 
-    sudo hw-probe -all -upload
+    sudo -E hw-probe -all -upload
 
 By creating probes you contribute to the HDD/SSD Real-Life
 Reliability Test study: https://github.com/linuxhw/SMART

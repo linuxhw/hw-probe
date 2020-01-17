@@ -6398,8 +6398,17 @@ sub probeHW()
     
     if(not $Sys{"System"} and $Dmesg)
     {
-        if($Dmesg=~/Linux version.+\-Ubuntu /) {
-            $Sys{"System"} = "ubuntu";
+        if($Dmesg=~/Linux version (.+)/)
+        {
+            my $LinVer = $1;
+            foreach my $Lin ("endless", "ubuntu")
+            {
+                if($LinVer=~/$Lin/i)
+                {
+                    $Sys{"System"} = $Lin;
+                    last;
+                }
+            }
         }
     }
     
@@ -6541,17 +6550,19 @@ sub probeHW()
             $CmdLine = $1;
         }
         
-        if(not $Sys{"system"} or $Sys{"system"}=~/freedesktop/)
+        if(not $Sys{"System"} or $Sys{"System"}=~/freedesktop/)
         {
-            foreach my $Prefix ("Current Operating System", "Build Operating System")
+            foreach my $Prefix ("Current Operating System", "Build Operating System", "Kernel command line")
             {
                 if($XLog=~/$Prefix:(.*)/)
                 {
                     my $Linux = lc($1);
-                    foreach my $Lin ("deepin", "debian", "arch")
+                    foreach my $Lin ("deepin", "clearlinux", "debian", "arch")
                     {
-                        if(index($Linux, $Lin) != -1) {
+                        if(index($Linux, $Lin) != -1)
+                        {
                             $Sys{"System"} = lc($Lin);
+                            last;
                         }
                     }
                 }
@@ -13812,6 +13823,14 @@ sub scenario()
                         $Sys{"Systemrel"} = "rosafresh-r1";
                     }
                 }
+            }
+        }
+        
+        if(not $Sys{"System"})
+        {
+            if($Sys{"Kernel"}=~/\.fc(\d\d)\./)
+            {
+                $Sys{"System"} = "fedora-$1";
             }
         }
         

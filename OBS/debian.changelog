@@ -1,3 +1,9 @@
+hw-probe (1.5-1) stable; urgency=low
+
+  * Update to 1.5
+
+ -- Andrey Ponomarenko <andrewponomarenko@yandex.ru>  Fri, 17 Jan 2020 22:55:00 +0300
+
 hw-probe (1.4-1) stable; urgency=low
 
   * Initial Package on OBS
