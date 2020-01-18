@@ -1,5 +1,5 @@
 name: hw-probe
-version: 1.5-5
+version: 1.5-6
 summary: Check operability of computer hardware and find drivers
 description: >
  A tool to check operability of computer hardware and upload result
@@ -257,6 +257,7 @@ parts:
       - gcc
       - make
       - flex
+      - uuid-dev
     prime:
       - usr/lib64/libhd*
       - usr/lib/libhd*
