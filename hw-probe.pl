@@ -1770,7 +1770,7 @@ sub hideByRegexp(@)
     
     my @Matches = ($Content=~/$Regexp/gi);
     
-    my @Skip = ("cdrom", "live", "livecd", "live-rw", "tmpfs");
+    my @Skip = ("cdrom", "live", "livecd", "live-rw", "tmpfs", "control");
     
     foreach my $Match (@Matches)
     {
