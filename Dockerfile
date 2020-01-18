@@ -23,12 +23,12 @@ RUN apk update \
     && make install \
     && cd .. \
     && rm -fr hwinfo \
-    && git clone https://github.com/linuxhw/hw-probe.git \
-    && cd hw-probe \
-    && git checkout tags/1.5 -b v1.5 \
+    && curl -L https://github.com/linuxhw/build-stuff/releases/download/1.5/hw-probe-1.5-AI.tar.gz > hw-probe-1.5-AI.tar.gz \
+    && tar -xf hw-probe-1.5-AI.tar.gz \
+    && cd hw-probe-1.5-AI \
     && make install \
     && cd .. \
-    && rm -fr hw-probe \
+    && rm -fr hw-probe-1.5-AI \
     && apk del build-deps
 
 ENV LD_LIBRARY_PATH /usr/lib64:/usr/lib
