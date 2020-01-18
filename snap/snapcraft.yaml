@@ -218,7 +218,7 @@ parts:
     override-build: |
       ./configure --prefix=/usr
       sed -i -e 's/ -g / -s /' Makefile
-      make
+      make dmesg
       mkdir -p $SNAPCRAFT_PART_INSTALL/usr/bin/
       cp -f ./dmesg $SNAPCRAFT_PART_INSTALL/usr/bin/
       find $SNAPCRAFT_PART_INSTALL -type f | perl -lne 'print if -B and -x' | xargs strip

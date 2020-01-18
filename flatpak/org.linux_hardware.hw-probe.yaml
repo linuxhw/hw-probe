@@ -222,7 +222,8 @@ modules:
     build-commands:
       - ./configure --prefix=/
       - sed -i -e 's/ -g / -s /' Makefile
-      - make -j $FLATPAK_BUILDER_N_JOBS
+      - make -j $FLATPAK_BUILDER_N_JOBS dmesg
+      - make -j $FLATPAK_BUILDER_N_JOBS lscpu
       - find . -type f | perl -lne 'print if -B and -x' | xargs strip
       - install -D ./dmesg $FLATPAK_DEST/bin/dmesg
       - install -D ./lscpu $FLATPAK_DEST/bin/lscpu
@@ -425,7 +426,7 @@ modules:
     sources:
       - type: archive
         url: https://github.com/linuxhw/build-stuff/releases/download/1.5/hw-probe-1.5-AI.tar.gz
-        sha256: c7000cc9b7dfc3d388fed75204bb24c5589bf3b5837afbe6c56a99352cd41cdc
+        sha256: 013eeede383bff7d806d5241fa9bb6e766d70cae0ee2e5e67243c6fe758a2569
   - name: perl-base
     buildsystem: simple
     build-commands:
