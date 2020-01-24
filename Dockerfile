@@ -2,9 +2,9 @@ FROM alpine:3.11
 
 RUN apk update \
     && apk add --no-cache perl curl xz dmidecode pciutils usbutils \
-    smartmontools hdparm sysstat util-linux util-linux-dev lm_sensors acpi iw wireless-tools \
+    smartmontools hdparm sysstat util-linux lm_sensors acpi iw wireless-tools \
     alsa-utils xrandr xdpyinfo xinput acpica iasl perl-libwww \
-    && apk add --no-cache --virtual build-deps git gcc g++ make libc-dev flex linux-headers \
+    && apk add --no-cache --virtual build-deps git gcc g++ make libc-dev util-linux-dev flex linux-headers \
     && git clone https://git.linuxtv.org/edid-decode.git \
     && cd edid-decode \
     && make \

@@ -393,6 +393,7 @@ DATA LOCATION:
 my %HW;
 my %HW_Count;
 my %LongID;
+my %DevBySysID;
 my %KernMod;
 my %WorkMod;
 my %WLanInterface;
@@ -654,6 +655,7 @@ my %DiskVendor = (
     "HDS"       => "Hitachi",
     "HDT"       => "Hitachi",
     "HUA"       => "Hitachi",
+    "HUS"       => "HGST",
     "HFS"       => "SK hynix",
     "HS-SSD"    => "Hikvision",
     "HT"        => "Hitachi",
@@ -670,7 +672,9 @@ my %DiskVendor = (
     "MBG4"      => "Samsung",
     "MD0"       => "Magnetic Data",
     "MD"        => "MicroData",
+    "Mercury Electra" => "OWC",
     "MKN"       => "Mushkin",
+    "MK0"       => "HPE",
     "MTF"       => "Micron",
     "MZM"       => "Samsung",
     "OCZ"       => "OCZ",
@@ -692,6 +696,7 @@ my %DiskVendor = (
     "S9M"       => "Chiprex",
     "SC2 M2"    => "MyDigitalSSD",
     "SB M2"     => "MyDigitalSSD",
+    "SB2"       => "MyDigitalSSD",
     "SG9"       => "Samsung",
     "SH00"      => "China",
     "SPK"       => "KingSpec",
@@ -1504,7 +1509,7 @@ my %TypeOrder = (
     "graphics card"=>"A"
 );
 
-my $ALL_DRIVE_VENDORS = "ADATA|A\-DATA|Advantech|AEGO|AMD|Anobit|Apacer|Apple|ASUS|BHT|BIWIN|Chiprex|CLOVER|Colorful|Corsair|Crucial|Dell|DOGFISH|DREVO|Espada|ExcelStor Technology|e2e4|faspeed|FASTDISK|Fordisk|FORESEE|Foxline|FUJITSU|Geil|GelL|GIGABYTE|Gigastone|GLOWAY|Goldendisk|Goldenfir|Goldkey|GOODRAM|Gost|HECTRON|HGST|Hitachi|Hoodisk|HP|HYPERDISK|i-FlashDisk|IBM-Hitachi|IBM|Indilinx|INTEL|INTENSO|Kingchuxing|KingDian|KingFast|KINGMAX|KingPower|KINGRICH|KINGSHARE|KingSpec|Kingston|KLEVV|LDLC|LDNDISK|Lenovo|LEXAR|Lite-On|LITEON|LITEONIT|LONDISK|Magnetic Data|MARSHAL|Maxtor|MediaMax|MicroData|Micron|Mushkin|Myung|Netac|OCZ|oyunkey|PALIT|Patriot|PHISON|Platinet|PLEXTOR|PNY|PRETEC|QUANTUM|QUMO|Radeon|Ramaxel|Reeinno|RunCore|Samsung Electronics|SAMSUNG|SandForce|SanDisk|Seagate|SenDisk|Shinedisk|SILICONMOTION|SK hynix|Smartbuy|SMI|SPCC|TEAM|Teclast|TCSUNBOW|TEKET|TopSunligt|TOSHIBA|Transcend|Vaseky|Verbatim|WDC|Western Digital|Wolf Aure|XPG|XUNZHE|Zheino|ZOTAC";
+my $ALL_DRIVE_VENDORS = "ADATA|A\-DATA|Advantech|AEGO|AMD|Anobit|Apacer|Apple|ASUS|BHT|BIWIN|Chiprex|CLOVER|Colorful|Corsair|Crucial|Dell|DOGFISH|DREVO|Espada|ExcelStor Technology|e2e4|faspeed|FASTDISK|Fordisk|FORESEE|Foxline|FUJITSU|Geil|GelL|GIGABYTE|Gigastone|GLOWAY|Goldendisk|Goldenfir|Goldkey|GOODRAM|Gost|HECTRON|HGST|Hitachi|Hoodisk|HP|HYPERDISK|i-FlashDisk|IBM-Hitachi|IBM|Indilinx|INTEL|INTENSO|Kingchuxing|KingDian|KingFast|KINGMAX|KingPower|KINGRICH|KINGSHARE|KingSpec|Kingston|KLEVV|LDLC|LDNDISK|Lenovo|LEXAR|Lite-On|LITEON|LITEONIT|LONDISK|Magnetic Data|MARSHAL|MARVELL|Maxtor|MediaMax|MicroData|Micron|Mushkin|Myung|Netac|OCZ|OWC|oyunkey|PALIT|Patriot|PHISON|Platinet|PLEXTOR|PNY|PRETEC|QUANTUM|QUMO|Radeon|Ramaxel|Reeinno|RunCore|Samsung Electronics|SAMSUNG|SandForce|SanDisk|SATADOM|Seagate|SenDisk|Shinedisk|SILICONMOTION|Silicon Motion|SK hynix|Smartbuy|SMI|SPCC|SuperMicro|TEAM|Teclast|TCSUNBOW|TEKET|TopSunligt|TOSHIBA|Transcend|Vaseky|Verbatim|WDC|Western Digital|Wolf Aure|XPG|XUNZHE|Zheino|ZOTAC";
 
 my $ALL_VENDORS = "Brother|Canon|Epson|HP|Hewlett\-Packard|Kyocera|Samsung|Xerox";
 
@@ -1695,7 +1700,7 @@ sub hideHostname($)
 sub hidePaths($)
 {
     my $Content = $_[0];
-    foreach my $Dir ("mnt", "mount", "home", "media", "data", "shares", "vhosts", "mapper", "pstorage") {
+    foreach my $Dir ("mnt", "mount", "home", "media", "data", "shares", "vhosts", "mapper", "pstorage", "snap") {
         $Content = hideByRegexp($Content, qr/$Dir\/([^\s]+)/);
     }
     return $Content;
@@ -2786,6 +2791,12 @@ sub getDefaultType($$$)
             elsif($Name=~/PCI Bridge/i) {
                 return "bridge";
             }
+            elsif($Name=~/(\A|\s)SD Host Controller/i) {
+                return "sd host controller";
+            }
+            elsif($Name=~/High Definition Audio Controller/i and $Name!~/HD Graphics/i) {
+                return "sound";
+            }
         }
         elsif($Bus eq "pcmcia")
         {
@@ -3475,6 +3486,9 @@ sub probeHW()
             elsif($Key eq "SysFS Device Link" ) {
                 $Device{$Key} = $Val;
             }
+            elsif($Key eq "SysFS ID" ) {
+                $Device{$Key} = $Val;
+            }
         }
         
         cleanValues(\%Device);
@@ -3965,6 +3979,8 @@ sub probeHW()
         delete($Device{"Files"});
         delete($Device{"Module Alias"});
         
+        delete($Device{"SysFS Device Link"});
+        
         if($C) {
             $Device{"Class"} = $C;
         }
@@ -3994,6 +4010,12 @@ sub probeHW()
                 $Sys{"Type"} = "notebook";
             }
         }
+        
+        if($Bus eq "pci" and $Device{"SysFS ID"}=~/\/0000\:([^\/]+)\Z/) {
+            $DevBySysID{$1} = $ID;
+        }
+        
+        delete($Device{"SysFS ID"});
         
         $DeviceIDByNum{$DevNum} = $BusID;
         $DeviceNumByID{$BusID} = $DevNum;
@@ -4241,12 +4263,17 @@ sub probeHW()
             if($1 eq "Rev") {
                 next;
             }
+            
+            if($1 eq "Device" and not defined $Device{$1}) {
+                $Device{"SysFsId"} = $2;
+            }
+            
             $Device{$1} = $2;
         }
         
         foreach ("Vendor", "Device", "SVendor", "SDevice")
         {
-            if($Device{$_}=~s/\s*\[(\w{4})\]//) {
+            if($Device{$_}=~s/\s*\[(\w{4})\]\s*\Z//) {
                 push(@IDs, $1);
             }
         }
@@ -4300,7 +4327,13 @@ sub probeHW()
             next;
         }
         
-        if(my $L_ID = getLongPCI("pci:".$ID))
+        if($Device{"SysFsId"} and my $OrigID = $DevBySysID{$Device{"SysFsId"}})
+        {
+            if($ID ne $OrigID) {
+                $ID = $OrigID;
+            }
+        }
+        elsif(my $L_ID = getLongPCI("pci:".$ID))
         {
             my $S_ID = $ID;
             $ID = $L_ID;
@@ -4324,44 +4357,50 @@ sub probeHW()
         
         my $NewDevice = (not defined $HW{"pci:".$ID});
         
-        if(not $NewDevice and not $HW{"pci:".$ID}{"Type"})
+        $Device{"Type"} = getDefaultType("pci", $IDs[1], \%Device);
+        
+        if(not $Device{"Type"})
         {
-            $Device{"Type"} = getDefaultType("pci", $IDs[1], \%Device);
-            
-            if(not $Device{"Type"})
-            {
-                if($Class[0] eq "02")
-                { # pci:10ec-8136-10ec-8136
-                    $Device{"Type"} = "network";
-                }
-            }
-            
-            if(not $Device{"Type"})
-            {
-                if(@Class) {
-                    $Device{"Type"} = getClassType("pci", devID(@Class));
-                }
-            }
-            
-            if(not $Device{"Type"})
-            {
-                if($Device{"Device"}=~/Ethernet Controller/i) {
-                    $Device{"Type"} = "network";
-                }
-            }
-            
-            if(not $Device{"Type"}) {
-                $Device{"Type"} = lc($ClassName);
+            if($Class[0] eq "02")
+            { # pci:10ec-8136-10ec-8136
+                $Device{"Type"} = "network";
             }
         }
         
-        foreach (keys(%Device))
+        if(not $Device{"Type"})
         {
-            if(my $Val = $Device{$_})
+            if(@Class) {
+                $Device{"Type"} = getClassType("pci", devID(@Class));
+            }
+        }
+        
+        if(not $Device{"Type"})
+        {
+            if($Device{"Device"}=~/Ethernet Controller/i) {
+                $Device{"Type"} = "network";
+            }
+        }
+        
+        if(not $Device{"Type"}) {
+            $Device{"Type"} = lc($ClassName);
+        }
+        
+        foreach my $Attr (keys(%Device))
+        {
+            if(my $Val = $Device{$Attr})
             {
-                if($NewDevice or $_ ne "Driver") {
-                    $HW{"pci:".$ID}{$_} = $Val;
+                if(not $NewDevice)
+                {
+                    if($Attr eq "Driver") {
+                        next;
+                    }
+                    
+                    if($Attr eq "Type" and $HW{"pci:".$ID}{$Attr}) {
+                        next;
+                    }
                 }
+                
+                $HW{"pci:".$ID}{$Attr} = $Val;
             }
         }
     }
@@ -4581,10 +4620,10 @@ sub probeHW()
         
         cleanValues(\%Device);
         
-        foreach (keys(%Device))
+        foreach my $Attr (keys(%Device))
         {
-            if($Device{$_}) {
-                $HW{"usb:".$ID}{$_} = $Device{$_};
+            if(my $Val = $Device{$Attr}) {
+                $HW{"usb:".$ID}{$Attr} = $Val;
             }
         }
     }
@@ -6131,7 +6170,13 @@ sub probeHW()
                 
                 $Drv{"Device"} .= addCapacity($Drv{"Device"}, $Drv{"Capacity"});
                 
-                my $DiskId = $PCI_DISK_BUS.":".devID("solid-state-drive", $Drv{"Capacity"});
+                my $DiskId = $PCI_DISK_BUS.":";
+                if($Drv{"Vendor"}) {
+                    $DiskId .= devID(nameID($Drv{"Vendor"}), "solid-state-drive", $Drv{"Capacity"});
+                }
+                else {
+                    $DiskId .= devID("solid-state-drive", $Drv{"Capacity"});
+                }
                 $HW{$DiskId} = \%Drv;
                 countDevice($DiskId, $Drv{"Type"});
             }
@@ -8175,7 +8220,7 @@ sub detectDrive(@)
         }
     }
     
-    if($Desc=~/Serial Number:\s*(.+?)(\Z|\n)/) {
+    if($Desc=~/Serial [Nn]umber:\s*(.+?)(\Z|\n)/) {
         $Device->{"Serial"} = $1;
     }
     
@@ -8185,6 +8230,10 @@ sub detectDrive(@)
     }
     elsif($Desc=~/Model Number:\s*(.+?)(\Z|\n)/)
     { # NVMe
+        $Device->{"Device"} = $1;
+    }
+    elsif($Desc=~/Product:\s*(.+?)(\Z|\n)/)
+    { # SAS
         $Device->{"Device"} = $1;
     }
     
@@ -8236,6 +8285,10 @@ sub detectDrive(@)
     elsif($Desc=~/Size\/Capacity:.*\[(.+?)\]/)
     { # NVMe
         $Device->{"Capacity"} = $1;
+    }
+    
+    if($Desc=~/Vendor:\s*(.+?)(\Z|\n)/) {
+        $Device->{"Vendor"} = $1;
     }
     
     $Device->{"Capacity"}=~s/,/./g;
@@ -8475,9 +8528,9 @@ sub fixDrive($)
         if(grep {$Device->{"Device"} eq $_} ("SSD", "SATA SSD", "SATA-III SSD", "Solid State Disk",
         "SSD Sata III", "DISK", "SSD DISK") or grep {uc($Device->{"Vendor"}) eq $_} ("OCZ", "ADATA", "A-DATA", "PATRIOT", "SPCC", "SAMSUNG", "CORSAIR", "HYPERDISK", "TOSHIBA"))
         {
-            if($Device->{"Capacity"}=~/\A([\d\.]+)/)
+            if($Device->{"Capacity"}=~/\A([\d\.]+)(.+?)\Z/)
             {
-                my ($S1, $S2) = (int($1), ceilNum($1));
+                my ($S1, $S2, $Suffix) = (int($1), ceilNum($1), $2);
                 if($S1 % 2 != 0) {
                     $S1 += 1;
                 }
@@ -8485,8 +8538,16 @@ sub fixDrive($)
                     $S2 += 1;
                 }
                 my $S3 = $S2 + 2;
-                if($Device->{"Device"}!~/[^1-9]+($S1|$S2|$S3|16|24|32|120|128|256|512|1024|2048)([^\d]+|\Z)/) { # TODO: fix expression (add '\A')
-                    $Device->{"Device"} .= addCapacity($Device->{"Device"}, $Device->{"Capacity"});
+                if($Device->{"Device"}!~/[^1-9]+($S1|$S2|$S3|16|24|32|120|128|256|512|1024|2048)([^\d]+|\Z)/)
+                { # TODO: fix expression (add '\A')
+                    my $CapacityTitle = $Device->{"Capacity"};
+                    if(isPowerOfTwo($S1)) {
+                        $CapacityTitle = $S1.$Suffix;
+                    }
+                    elsif($S2 ne $S1 and isPowerOfTwo($S2)) {
+                        $CapacityTitle = $S2.$Suffix;
+                    }
+                    $Device->{"Device"} .= addCapacity($Device->{"Device"}, $CapacityTitle);
                 }
             }
         }
@@ -8515,6 +8576,11 @@ sub fixDrive($)
             }
         }
     }
+}
+
+sub isPowerOfTwo($)
+{
+    return not $_[0] & $_[0]-1;
 }
 
 sub isUnknownRam($)
@@ -8565,7 +8631,7 @@ sub guessDriveVendor($)
     
     foreach my $Len (6, 5, 4, 3)
     {
-        if($Name=~/\A([A-Z\d\-\_]{$Len})[A-Z\d\-]+/
+        if($Name=~/\A([A-Z\d\-\_]{$Len})([A-Z\d\-]+|\Z)/
         and defined $DiskVendor{$1}) {
             return $DiskVendor{$1};
         }
@@ -9233,7 +9299,7 @@ sub fixFFByBoard($)
     my $Board = $_[0];
     if($Sys{"Type"}!~/$DESKTOP_TYPE|$SERVER_TYPE/)
     {
-        if($Board=~/\b(D510MO|GA-K8NMF-9|DG965RY|DG33BU|D946GZIS|N3150ND3V|D865GSA|DP55WG|H61MXT1|D875PBZ|F2A55|Z68XP-UD3|Z77A-GD65|M4A79T|775Dual-880Pro|P4Dual-915GL|P4i65GV|D5400XS|D201GLY|MicroServer|IPPSB-DB|MS-AA53|C2016-BSWI-D2|N3160TN|D915PBL|EIRD-SAM|D865PERL|D410PT|D525MW|D945GCNL|BSWI-D2|B202|D865GBF|G1-CPU-IMP|Aptio CRB)\b/) {
+        if($Board=~/\b(D510MO|GA-K8NMF-9|DG965RY|DG33BU|D946GZIS|N3150ND3V|D865GSA|DP55WG|H61MXT1|D875PBZ|F2A55|Z68XP-UD3|Z77A-GD65|M4A79T|775Dual-880Pro|P4Dual-915GL|P4i65GV|D5400XS|D201GLY|MicroServer|IPPSB-DB|MS-AA53|C2016-BSWI-D2|N3160TN|D915PBL|EIRD-SAM|D865PERL|D410PT|D525MW|D945GCNL|BSWI-D2|B202|D865GBF|G1-CPU-IMP|Aptio CRB|A1SRi|D865GVHZ)\b/) {
             $Sys{"Type"} = "desktop";
         }
     }
@@ -10102,7 +10168,7 @@ sub probeDistr()
         if($OS_Rel=~/\bPRETTY_NAME=\s*[\"\']*([^"'\n]+)/)
         {
             my $PrettyName = $1;
-            if($PrettyName=~/(OpenVZ)/) {
+            if($PrettyName=~/(OpenVZ|Docker Desktop)/) {
                 $Name = $1;
             }
         }
@@ -10836,12 +10902,14 @@ sub writeLogs()
         and checkCmd("systemctl"))
         {
             listProbe("logs", "systemctl");
-            my $Sctl = runCmd("systemctl 2>/dev/null");
-            $Sctl=~s/( of user)\s+\Q$SessUser\E/$1 USER/g;
-            $Sctl = decorateSystemd($Sctl);
-            $Sctl = encryptUUIDs($Sctl);
-            $Sctl = hideDevDiskUUIDs($Sctl);
-            writeLog($LOG_DIR."/systemctl", $Sctl);
+            if(my $Sctl = runCmd("systemctl 2>/dev/null"))
+            {
+                $Sctl=~s/( of user)\s+\Q$SessUser\E/$1 USER/g;
+                $Sctl = decorateSystemd($Sctl);
+                $Sctl = encryptUUIDs($Sctl);
+                $Sctl = hideDevDiskUUIDs($Sctl);
+                writeLog($LOG_DIR."/systemctl", $Sctl);
+            }
         }
     }
     
@@ -11022,12 +11090,18 @@ sub writeLogs()
     and checkCmd("systemd-analyze"))
     {
         listProbe("logs", "systemd-analyze");
-        my $SystemdAnalyze = runCmd("systemd-analyze 2>/dev/null");
-        $SystemdAnalyze .= "\n";
-        $SystemdAnalyze .= runCmd("systemd-analyze blame 2>/dev/null");
-        $SystemdAnalyze = decorateSystemd($SystemdAnalyze);
-        $SystemdAnalyze = hideDevDiskUUIDs($SystemdAnalyze);
-        writeLog($LOG_DIR."/systemd-analyze", $SystemdAnalyze);
+        if(my $SystemdAnalyze = runCmd("systemd-analyze 2>/dev/null"))
+        {
+            $SystemdAnalyze .= "\n";
+            $SystemdAnalyze .= runCmd("systemd-analyze blame 2>/dev/null");
+            
+            if($SystemdAnalyze)
+            {
+                $SystemdAnalyze = decorateSystemd($SystemdAnalyze);
+                $SystemdAnalyze = hideDevDiskUUIDs($SystemdAnalyze);
+                writeLog($LOG_DIR."/systemd-analyze", $SystemdAnalyze);
+            }
+        }
     }
     
     if(enabledLog("gpu-manager.log")
@@ -12918,11 +12992,14 @@ sub fixLogs($)
         }
     }
 
-    if(-f "$Dir/iostat"
-    and -s "$Dir/iostat" < 50)
-    { # Support for HW Probe 1.3
+    foreach my $L ("iostat", "systemd-analyze", "systemctl")
+    { # Support for HW Probe 1.3-1.4
       # iostat: command not found
-        unlink($Dir."/iostat");
+        if(-f "$Dir/$L"
+        and -s "$Dir/$L" < 50)
+        {
+            unlink($Dir."/$L");
+        }
     }
 
     foreach my $L ("glxinfo", "xdpyinfo", "xinput", "vdpauinfo", "xrandr")
