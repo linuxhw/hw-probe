@@ -877,6 +877,7 @@ my @DE_Package = (
     [ "plasma5-settings", "KDE5" ],
     [ "plasma5-workspace", "KDE5" ],
     [ "plasma-desktop-5", "KDE5" ],
+    [ "plasma-desktop 5", "KDE5" ],
     [ "plasma5-config-fresh", "KDE5" ],
     [ "task-plasma5", "KDE5" ],
     
@@ -1775,7 +1776,7 @@ sub hideByRegexp(@)
     
     my @Matches = ($Content=~/$Regexp/gi);
     
-    my @Skip = ("cdrom", "live", "livecd", "live-rw", "tmpfs", "control");
+    my @Skip = ("cdrom", "live", "livecd", "live-rw", "tmpfs", "control", "system");
     
     foreach my $Match (@Matches)
     {
@@ -13302,7 +13303,7 @@ sub detectDE($)
     foreach my $Pkg (@DE_Package)
     {
         my $P = $Pkg->[0];
-        if(index($Pkgs, $P)!=-1 and $Pkgs=~/\b$P\b/) {
+        if(index($Pkgs, $P)!=-1 and $Pkgs=~/\b\Q$P\E\b/) {
             return $Pkg->[1];
         }
     }
@@ -13838,7 +13839,7 @@ sub scenario()
             }
         }
         
-        if($Sys{"DE"} eq "KDE")
+        if($Sys{"DE"} eq "KDE" or $Sys{"DE"} eq "GNOME")
         {
             if(my $FixDE = fixDE())
             {
