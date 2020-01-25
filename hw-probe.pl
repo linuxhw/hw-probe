@@ -1698,6 +1698,13 @@ sub hideHostname($)
     return $Content;
 }
 
+sub hideHost($)
+{
+    my $Content = $_[0];
+    $Content=~s/(Current Operating System: Linux) [^\s]+/$1 NODE/g;
+    return $Content;
+}
+
 sub hidePaths($)
 {
     my $Content = $_[0];
@@ -6571,8 +6578,9 @@ sub probeHW()
             $XLog = hidePaths($XLog);
             $XLog = encryptUUIDs($XLog);
             if(my $HostName = $ENV{"HOSTNAME"}) {
-                $XLog=~s/ $HostName / NODE /g;
+                $XLog=~s/ \Q$HostName\E / NODE /g;
             }
+            $XLog = hideHost($XLog);
         }
         
         if(not $Opt{"Docker"} or $XLog) {
@@ -10490,8 +10498,9 @@ sub writeLogs()
         $XLog_Old = hidePaths($XLog_Old);
         $XLog_Old = encryptUUIDs($XLog_Old);
         if(my $HostName = $ENV{"HOSTNAME"}) {
-            $XLog_Old=~s/ $HostName / NODE /g;
+            $XLog_Old=~s/ \Q$HostName\E / NODE /g;
         }
+        $XLog_Old = hideHost($XLog_Old);
         writeLog($LOG_DIR."/xorg.log.1", $XLog_Old);
     }
     
