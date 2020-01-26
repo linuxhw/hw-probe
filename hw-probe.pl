@@ -1637,7 +1637,7 @@ sub encryptUUIDs($)
     my $Content = $_[0];
     
     my %UUIDs = ();
-    while($Content=~/([a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12})/gi) {
+    while($Content=~/([a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}|[a-zA-Z\d]{6}-[a-zA-Z\d]{4}-[a-zA-Z\d]{4}-[a-zA-Z\d]{4}-[a-zA-Z\d]{4}-[a-zA-Z\d]{4}-[a-zA-Z\d]{6}|[a-zA-Z\d]{64})/gi) {
         $UUIDs{$1} = 1;
     }
     foreach my $UUID (sort keys(%UUIDs))
@@ -1688,6 +1688,13 @@ sub hideAAC($)
 {
     my $Content = $_[0];
     $Content=~s/(AAC\d+: serial ).+?(\n|\Z)/$1...$2/g;
+    return $Content;
+}
+
+sub hideAudit($)
+{
+    my $Content = $_[0];
+    $Content=~s/(acct\=)"[^"]*"/$1=XXX/g;
     return $Content;
 }
 
@@ -2763,7 +2770,7 @@ sub getDefaultType($$$)
             elsif($Name=~/bluetooth/i) {
                 return "bluetooth";
             }
-            elsif($Name=~/(\A| )(WLAN|NIC|11n Adapter)( |\Z)|Wireless.*Adapter|Wireless Network|Wireless LAN|WiMAX|WiFi|802\.11/i) {
+            elsif($Name=~/(\A| )(WLAN|NIC|11n Adapter)( |\Z)|Wireless.*Adapter|Wireless Network|Wireless LAN|WiMAX|WiFi|802\.11|Mobile Broadband/i) {
                 return "network";
             }
             elsif($Name=~/converter/i) {
@@ -4392,6 +4399,8 @@ sub probeHW()
         if(not $Device{"Type"}) {
             $Device{"Type"} = lc($ClassName);
         }
+        
+        delete($Device{"SysFsId"});
         
         foreach my $Attr (keys(%Device))
         {
@@ -6443,6 +6452,7 @@ sub probeHW()
         $Dmesg = hidePaths($Dmesg);
         $Dmesg = hideAAC($Dmesg);
         $Dmesg = encryptUUIDs($Dmesg);
+        $Dmesg = hideAudit($Dmesg);
         
         if($Opt{"HWLogs"}) {
             writeLog($LOG_DIR."/dmesg", $Dmesg);
@@ -6581,6 +6591,7 @@ sub probeHW()
                 $XLog=~s/ \Q$HostName\E / NODE /g;
             }
             $XLog = hideHost($XLog);
+            $XLog = hideByRegexp($XLog, qr/\s?([\w\s]+\’s)/);
         }
         
         if(not $Opt{"Docker"} or $XLog) {
@@ -9297,7 +9308,7 @@ sub fixFFByCDRom($)
     my $CDRom = $_[0];
     if($Sys{"Type"}!~/$DESKTOP_TYPE|$SERVER_TYPE/)
     {
-        if($CDRom=~/(DVR-118L|DDU1615|SH-222AB|DVR-111D|GSA-H10N|CRX230EE|iHAS122|DVR-112D|GH22LP20|AD-7200A|TS-H553A|AD-7173A|DVDRAM_GSA-H60N)/) {
+        if($CDRom=~/(DVR-118L|DDU1615|SH-222AB|DVR-111D|GSA-H10N|CRX230EE|iHAS122|DVR-112D|GH22LP20|AD-7200A|TS-H553A|AD-7173A|DVDRAM_GSA-H60N|GH24NSB0)/) {
             $Sys{"Type"} = "desktop";
         }
     }
@@ -9320,7 +9331,7 @@ sub fixFFByBoard($)
     }
     if($Sys{"Type"}!~/$MOBILE_TYPE/)
     {
-        if($Board=~/\b(W7430|Poyang|PSMBOU|Lhotse-II|Nettiling|EI Capitan)\b/) {
+        if($Board=~/\b(W7430|Poyang|PSMBOU|Lhotse-II|Nettiling|EI Capitan|JV11-ML)\b/) {
             $Sys{"Type"} = "notebook";
         }
         if($Board=~/\b(SurfTab)\b/) {
@@ -9545,7 +9556,7 @@ sub fixChassis()
     $Board_ID = detectBoard(\%Board);
     
     if(not $Sys{"Type"}
-    or grep {$Sys{"Type"} eq $_} ("soc", "system on chip", "notebook"))
+    or grep {$Sys{"Type"} eq $_} ("soc", "system on chip", "notebook", "hand held"))
     {
         if($Sys{"Kernel"}=~/\-(sunxi|sunxi64|raspi2)\Z/i
         or $Sys{"Vendor"}=~/raspberry/i) {
@@ -9565,6 +9576,13 @@ sub fixChassis()
         {
             $Sys{"Type"} = "system on chip";
             $Sys{"Vendor"} = "Rockchip";
+        }
+        elsif($Sys{"Kernel"}=~/_(byt\-g9ff829d)\Z/i)
+        {
+            $Sys{"Type"} = "tablet";
+            $Sys{"Vendor"} = "Lenovo";
+            $Sys{"Model"} = "YOGA";
+            $Sys{"System"} = "android";
         }
     }
     
@@ -10477,6 +10495,7 @@ sub writeLogs()
             $Dmesg_Old = hidePaths($Dmesg_Old);
             $Dmesg_Old = hideAAC($Dmesg_Old);
             $Dmesg_Old = encryptUUIDs($Dmesg_Old);
+            $Dmesg_Old = hideAudit($Dmesg_Old);
             writeLog($LOG_DIR."/dmesg.1", $Dmesg_Old);
         }
     }
@@ -10501,6 +10520,7 @@ sub writeLogs()
             $XLog_Old=~s/ \Q$HostName\E / NODE /g;
         }
         $XLog_Old = hideHost($XLog_Old);
+        $XLog_Old = hideByRegexp($XLog_Old, qr/\s?([\w\s]+\’s)/);
         writeLog($LOG_DIR."/xorg.log.1", $XLog_Old);
     }
     
@@ -10918,6 +10938,7 @@ sub writeLogs()
                 $Sctl = decorateSystemd($Sctl);
                 $Sctl = encryptUUIDs($Sctl);
                 $Sctl = hideDevDiskUUIDs($Sctl);
+                $Sctl=~s/(User Slice of|Session \d+ of user).+/$1 XXXXX/g;
                 writeLog($LOG_DIR."/systemctl", $Sctl);
             }
         }
