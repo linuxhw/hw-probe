@@ -2970,6 +2970,16 @@ sub probeHW()
         writeLog($LOG_DIR."/dev", $DevFiles);
     }
     
+    if(not $Sys{"System"} or $Sys{"System"}=~/freedesktop/)
+    {
+        if(index($DevFiles, "/dev/chromeos-low-mem") != -1) {
+            $Sys{"System"} = "chrome_os";
+        }
+        elsif(index($DevFiles, "eos-swap") != -1) {
+            $Sys{"System"} = "elementary";
+        }
+    }
+    
     my %DevIdByName = ();
     my %DevNameById = ();
     
@@ -6464,13 +6474,17 @@ sub probeHW()
         if($Dmesg=~/Linux version (.+)/)
         {
             my $LinVer = $1;
-            foreach my $Lin ("endless", "ubuntu")
+            foreach my $Lin ("endless", "ubuntu", "debian")
             {
                 if($LinVer=~/$Lin/i)
                 {
                     $Sys{"System"} = $Lin;
                     last;
                 }
+            }
+            
+            if(index($LinVer, "neverware\@cloudready-builder") != -1) {
+                $Sys{"System"} = "chrome_os";
             }
         }
     }
@@ -6622,13 +6636,17 @@ sub probeHW()
                 if($XLog=~/$Prefix:(.*)/)
                 {
                     my $Linux = lc($1);
-                    foreach my $Lin ("deepin", "clearlinux", "debian", "arch")
+                    foreach my $Lin ("deepin", "clearlinux", "debian", "arch", "opensuse", "alt linux")
                     {
                         if(index($Linux, $Lin) != -1)
                         {
                             $Sys{"System"} = lc($Lin);
                             last;
                         }
+                    }
+                    
+                    if($Linux=~/alt linux (p\d+)/) {
+                        $Sys{"System"} = "alt-$1";
                     }
                 }
             }
@@ -13897,7 +13915,7 @@ sub scenario()
         
         if($Sys{"Kernel"}=~/\drosa\b/)
         {
-            if(not $Sys{"System"})
+            if(not $Sys{"System"} or $Sys{"System"}=~/freedesktop/)
             {
                 if($Sys{"Kernel"}=~/\A3\.0\./) {
                     $Sys{"System"} = "rosa-2012lts";
@@ -13910,6 +13928,9 @@ sub scenario()
                 }
                 elsif($Sys{"Kernel"}=~/\A4\./) {
                     $Sys{"System"} = "rosa-2014.1";
+                }
+                elsif($Sys{"Kernel"}=~/\A5\./) {
+                    $Sys{"System"} = "rosa-2016.1";
                 }
                 else
                 {
@@ -13934,11 +13955,13 @@ sub scenario()
             }
         }
         
-        if(not $Sys{"System"})
+        if(not $Sys{"System"} or $Sys{"System"}=~/freedesktop/)
         {
-            if($Sys{"Kernel"}=~/\.fc(\d\d)\./)
-            {
+            if($Sys{"Kernel"}=~/\.fc(\d\d)\./) {
                 $Sys{"System"} = "fedora-$1";
+            }
+            elsif($Sys{"Kernel"}=~/\.el(\d)\./) {
+                $Sys{"System"} = "centos-$1";
             }
         }
         
