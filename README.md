@@ -210,13 +210,15 @@ Since hw-probe 1.5.
 
 Request inventory ID:
 
-    hw-probe -get-inventory-id
+    hw-probe -generate-inventory -email YOUR@EMAIL
 
 Mark your probes by this ID:
 
-    sudo hw-probe -all -upload -inventory-id ID
+    sudo hw-probe -all -upload -i ID
 
 Find your computers by the inventory ID on this page: https://linux-hardware.org/?view=computers
+
+The Email is needed to get notifications if hardware failures are detected on your computer.
 
 
 Offline view
