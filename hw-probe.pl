@@ -890,9 +890,6 @@ my @DE_Package = (
     [ "task-lxqt", "LXQt" ],
     
     [ "manjaro-xfce", "XFCE" ],
-    [ "xfce4-settings", "XFCE" ],
-    [ "task-xfce", "XFCE" ],
-    [ "xfce4-session", "XFCE" ],
     
     [ "manjaro-kde-settings", "KDE5" ],
     [ "plasma5-settings", "KDE5" ],
@@ -905,17 +902,24 @@ my @DE_Package = (
     [ "plasma-desktop 4:4", "KDE4" ],
     [ "kde-settings-plasma", "KDE4" ],
     [ "task-kde4", "KDE4" ],
+    
     [ "gnome-flashback", "GNOME Flashback" ],
     
     [ "manjaro-gnome-assets", "GNOME" ],
     [ "gnome-session", "GNOME" ],
-    [ "gnome-desktop", "GNOME" ],
     
     [ "manjaro-awesome-settings", "Awesome" ],
     [ "manjaro-openbox-settings", "Openbox" ],
     [ "manjaro-fluxbox-settings", "FluxBox" ],
     [ "i3-manjaro", "i3" ],
-    [ "i3-wm", "i3" ]
+    [ "i3-wm", "i3" ],
+    [ "manjaro-i3-settings", "i3" ],
+    
+    [ "gnome-desktop", "GNOME" ],
+    
+    [ "xfce4-settings", "XFCE" ],
+    [ "task-xfce", "XFCE" ],
+    [ "xfce4-session", "XFCE" ]
 );
 
 my %ChassisType = (
@@ -6656,7 +6660,7 @@ sub probeHW()
                 if($XLog=~/$Prefix:(.*)/)
                 {
                     my $Linux = lc($1);
-                    foreach my $Lin ("deepin", "clearlinux", "debian", "arch", "opensuse", "alt linux")
+                    foreach my $Lin ("deepin", "clearlinux", "debian", "arch", "opensuse", "alt linux", "ubuntu")
                     {
                         if(index($Linux, $Lin) != -1)
                         {
@@ -7991,6 +7995,11 @@ sub detectBIOS($)
         else {
             delete($Sys{"Year"});
         }
+        
+        if($Sys{"Year"} and $Sys{"Year"}>getYear() + 1)
+        {
+            delete($Sys{"Year"});
+        }
     }
     
     $Device->{"Device"} = join(" ", @Name);
@@ -9210,6 +9219,10 @@ sub probeSys()
     $Sys{"DE"} = $ENV{"XDG_CURRENT_DESKTOP"};
     if(not $Sys{"DE"}) {
         $Sys{"DE"} = $ENV{"DESKTOP_SESSION"};
+    }
+    
+    if($Sys{"DE"}) {
+        $Sys{"Current_desktop"} = $Sys{"DE"};
     }
     
     $Sys{"Display_server"} = ucfirst($ENV{"XDG_SESSION_TYPE"});
@@ -12868,6 +12881,15 @@ sub getTimeStamp($)
     return $Date;
 }
 
+sub getYear($)
+{
+    my $Date = localtime($_[0]);
+    if($Date=~/ (\d+)\Z/) {
+        return $1;
+    }
+    return undef;
+}
+
 sub setPublic(@)
 {
     my $Path = shift(@_);
@@ -13900,20 +13922,10 @@ sub scenario()
             }
         }
         
-        if(not $Sys{"DE"})
+        if(not $Sys{"DE"} or (not $Sys{"Current_desktop"} and $Sys{"DE"}=~/KDE|GNOME|XFCE/))
         {
             if(my $FixDE = fixDE()) {
                 $Sys{"DE"} = $FixDE;
-            }
-        }
-        
-        if($Sys{"DE"} eq "KDE" or $Sys{"DE"} eq "GNOME")
-        {
-            if(my $FixDE = fixDE())
-            {
-                if($FixDE=~/KDE|Plasma/) {
-                    $Sys{"DE"} = $FixDE;
-                }
             }
         }
         
