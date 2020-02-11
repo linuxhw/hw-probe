@@ -10914,12 +10914,48 @@ sub writeLogs()
         writeLog($LOG_DIR."/inxi", $Inxi);
     }
     
+    my $I2cdetect = "";
+    
     if(enabledLog("i2cdetect")
     and checkCmd("i2cdetect"))
     {
         listProbe("logs", "i2cdetect");
-        my $I2cdetect = runCmd("i2cdetect -l 2>&1");
+        $I2cdetect = runCmd("i2cdetect -l 2>&1");
         writeLog($LOG_DIR."/i2cdetect", $I2cdetect);
+    }
+    
+    if($Admin and $Sys{"Type"}!~/$MOBILE_TYPE/ and $Sys{"Model"}!~/VirtualBox|QEMU|VMWare|Virtual Machine|Parallels Virtual/ and enabledLog("ddcutil") and checkCmd("ddcutil"))
+    {
+        listProbe("logs", "ddcutil");
+        my $DDCUtil = "";
+        
+        my @Range = (0 .. 15);
+        if($I2cdetect)
+        {
+            @Range = ();
+            foreach my $L (split(/\n/, $I2cdetect))
+            {
+                if($L=~/i2c-(\d+).+(NVIDIA|nvkm|i915|Radeon|AMDGPU)/)
+                {
+                    push(@Range, $1);
+                }
+            }
+        }
+        
+        foreach my $N (@Range)
+        {
+            if(my $DDCProbe = runCmd("ddcutil probe --bus $N 2>/dev/null"))
+            {
+                if($DDCProbe!~/No monitor detected|communication failed/)
+                {
+                    $DDCUtil .= "# ddcutil probe --bus $N\n";
+                    $DDCUtil .= $DDCProbe."\n";
+                }
+            }
+        }
+        if($Opt{"HWLogs"} and $DDCUtil) {
+            writeLog($LOG_DIR."/ddcutil", $DDCUtil);
+        }
     }
     
     if(-e "/sys/firmware/efi") # defined $KernMod{"efivarfs"}
@@ -11520,6 +11556,8 @@ sub decodeACPI($$)
     # list data
     my $DSL = runCmd("acpixtract -l \"$Dump\" 2>&1");
     $DSL .= "\n";
+    
+    $DSL=~s{\Q$Dump\E}{acpidump};
     
     # extract *.dat
     system("acpixtract -a \"$Dump\" >/dev/null 2>&1");
@@ -12139,6 +12177,7 @@ my %EnabledLog = (
         "boot_efi",
         "cpuid",
         "cpupower",
+        "ddcutil",
         "dkms_status",
         "dpkg",
         "efibootmgr",
