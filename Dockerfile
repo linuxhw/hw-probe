@@ -4,7 +4,7 @@ RUN apk update \
     && apk add --no-cache perl curl xz dmidecode pciutils usbutils \
     smartmontools hdparm sysstat util-linux lm_sensors acpi iw wireless-tools \
     alsa-utils xrandr xdpyinfo xinput acpica iasl perl-libwww \
-    && apk add --no-cache --virtual build-deps git gcc g++ make libc-dev util-linux-dev flex linux-headers glib-dev libxrandr-dev zlib-dev findutils \
+    && apk add --no-cache --virtual build-deps git gcc g++ make libc-dev util-linux-dev flex linux-headers glib-dev libxrandr-dev zlib-dev eudev-dev \
     && git clone https://git.linuxtv.org/edid-decode.git \
     && cd edid-decode \
     && make \
@@ -15,8 +15,7 @@ RUN apk update \
     && curl -L https://github.com/linuxhw/build-stuff/releases/download/1.5/ddcutil-20200211.tar.xz > ddcutil-20200211.tar.xz \
     && tar -xf ddcutil-20200211.tar.xz \
     && cd ddcutil-20200211 \
-    && NOCONFIGURE=1 NO_CONFIGURE=1 sh autogen.sh \
-    && ./configure --prefix=/usr \
+    && ./configure --prefix=/usr ZLIB_LIBS="-lz" \
     && make \
     && find . -type f | perl -lne 'print if -B and -x' | xargs strip \
     && make install \
@@ -42,7 +41,14 @@ RUN apk update \
     && make install \
     && cd .. \
     && rm -fr hw-probe-1.5-AI \
-    && apk del build-deps
+    && apk del build-deps \
+    && rm -fr /usr/bin/{acpibin,acpiexamples,acpiexec,acpihelp,acpinames,acpisrc,lsusb.py,usbhid-dump} \
+    && rm -fr /usr/sbin/{convert_hd,check_hd,mk_isdnhwdb,getsysinfo,fancontrol,pwmconfig,isadump,isaset,ownership,setpci,vpddecode,update-smart-drivedb,smartd} \
+    && rm -fr /usr/share/{man,doc,pkgconfig,cmake,ddcutil} \
+    && rm -fr /usr/include \
+    && rm -fr /usr/lib/{pkgconfig,systemd} \
+    && rm -fr /usr/share/perl5/vendor_perl/libwww/*.pod \
+    && rm -fr /usr/bin/lwp-*
 
 ENV LD_LIBRARY_PATH /usr/lib64:/usr/lib
 ENV DISPLAY :0
