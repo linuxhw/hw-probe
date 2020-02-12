@@ -10924,37 +10924,52 @@ sub writeLogs()
         writeLog($LOG_DIR."/i2cdetect", $I2cdetect);
     }
     
-    if($Admin and $Sys{"Type"}!~/$MOBILE_TYPE/ and $Sys{"Model"}!~/VirtualBox|QEMU|VMWare|Virtual Machine|Parallels Virtual/ and enabledLog("ddcutil") and checkCmd("ddcutil"))
+    if($Admin and enabledLog("ddcutil") and $Sys{"Type"}!~/$MOBILE_TYPE/ and $Sys{"Model"}!~/VirtualBox|QEMU|VMWare|Virtual Machine|Parallels Virtual/)
     {
-        listProbe("logs", "ddcutil");
-        my $DDCUtil = "";
+        my $DDCUtilCmd = undef;
         
-        my @Range = (0 .. 15);
-        if($I2cdetect)
-        {
-            @Range = ();
-            foreach my $L (split(/\n/, $I2cdetect))
-            {
-                if($L=~/i2c-(\d+).+(NVIDIA|nvkm|i915|Radeon|AMDGPU)/)
-                {
-                    push(@Range, $1);
-                }
-            }
+        if($Opt{"Snap"} or $Opt{"AppImage"} or $Opt{"Flatpak"}) {
+            $DDCUtilCmd = findCmd("ddcutil");
+        }
+        elsif(checkCmd("ddcutil")) {
+            $DDCUtilCmd = "ddcutil";
         }
         
-        foreach my $N (@Range)
+        if($DDCUtilCmd)
         {
-            if(my $DDCProbe = runCmd("ddcutil probe --bus $N 2>/dev/null"))
+            listProbe("logs", "ddcutil");
+            my $DDCUtil = "";
+            
+            my @Range = (0 .. 31);
+            if($I2cdetect)
             {
-                if($DDCProbe!~/No monitor detected|communication failed/)
+                @Range = ();
+                foreach my $L (split(/\n/, $I2cdetect))
                 {
-                    $DDCUtil .= "# ddcutil probe --bus $N\n";
-                    $DDCUtil .= $DDCProbe."\n";
+                    if($L=~/i2c-(\d+).+(NVIDIA|nvkm|i915|Radeon|AMDGPU)/)
+                    {
+                        push(@Range, $1);
+                    }
                 }
             }
-        }
-        if($Opt{"HWLogs"} and $DDCUtil) {
-            writeLog($LOG_DIR."/ddcutil", $DDCUtil);
+            
+            foreach my $N (@Range)
+            {
+                if(my $DDCProbe = runCmd("$DDCUtilCmd probe --bus $N 2>/dev/null"))
+                {
+                    if($DDCProbe!~/No monitor detected|communication failed/)
+                    {
+                        $DDCUtil .= "# ddcutil probe --bus $N\n";
+                        $DDCUtil .= $DDCProbe."\n";
+                    }
+                }
+            }
+            if($Opt{"HWLogs"} and $DDCUtil)
+            {
+                $DDCUtil = encryptSerials($DDCUtil, "sn");
+                $DDCUtil=~s/(binary serial number ).+?(\n)/$1...$2/g;
+                writeLog($LOG_DIR."/ddcutil", $DDCUtil);
+            }
         }
     }
     
@@ -13946,6 +13961,16 @@ sub scenario()
                             last;
                         }
                     }
+                }
+            }
+            elsif(-f "$FixProbe_Logs/debs")
+            {
+                my $Debs = readFile("$FixProbe_Logs/debs");
+                if($Debs=~/(termux-elf)/)
+                {
+                    $Distr = "android";
+                    $Rel = $Distr;
+                    $Sys{"Type"} = "smartphone";
                 }
             }
         }
