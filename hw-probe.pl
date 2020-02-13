@@ -6660,7 +6660,7 @@ sub probeHW()
                 if($XLog=~/$Prefix:(.*)/)
                 {
                     my $Linux = lc($1);
-                    foreach my $Lin ("deepin", "clearlinux", "debian", "arch", "opensuse", "alt linux", "ubuntu")
+                    foreach my $Lin ("deepin", "clearlinux", "debian", "arch", "opensuse", "alt linux", "ubuntu", "manjaro")
                     {
                         if(index($Linux, $Lin) != -1)
                         {
@@ -8042,6 +8042,13 @@ sub detectMonitor($)
     if($Info=~/Manufacturer:\s*(.+?)\s+Model\s+(.+?)\s+Serial/)
     {
         ($V, $D) = ($1, $2);
+        
+        if($D=~/\A\d+\Z/ and $Info!~/\(valid\)/)
+        { # new format by edid-decode c498d2224d (2019-11-30)
+          # revert to HEX
+            $D = sprintf('%x', $D);
+        }
+        
         if(length($D)<4)
         {
             foreach (1 .. 4 - length($D)) {
@@ -8061,22 +8068,22 @@ sub detectMonitor($)
         return;
     }
     
-    if($Info=~/Monitor name:[ ]*(.*?)(\n|\Z)/)
+    if($Info=~/(Monitor name|Display Product Name):[ ]*(.*?)(\n|\Z)/)
     {
-        $Device{"Device"} = $1;
+        $Device{"Device"} = $2;
     }
     else
     {
-        # if($Info=~s/ASCII string:\s*(.*?)(\n|\Z)//)
+        # if($Info=~s/(ASCII string|Alphanumeric Data String):\s*(.*?)(\n|\Z)//)
         # { # broken data
-        #     if($Info=~s/ASCII string:\s*(.*?)(\n|\Z)//)
+        #     if($Info=~s/(ASCII string|Alphanumeric Data String):\s*(.*?)(\n|\Z)//)
         #     {
-        #         $Device{"Device"} = $1;
+        #         $Device{"Device"} = $2;
         #     }
         # }
     }
     
-    foreach my $Attr ("Maximum image size", "Screen size", "Detailed mode")
+    foreach my $Attr ("Maximum image size", "Screen size", "Detailed mode", "DTD 1", "DTD 2")
     {
         if($Info=~/$Attr:(.+?)\n/i)
         {
@@ -8099,7 +8106,7 @@ sub detectMonitor($)
         $Device{"Size"} = undef;
     }
     
-    $Info=~s/CTA extension block.+//s;
+    $Info=~s/(CTA extension block|CTA-861 Extension Block).+//s;
     
     my %Resolutions = ();
     while($Info=~s/(\d+)x(\d+)\@\d+//) {
