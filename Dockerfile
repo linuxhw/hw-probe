@@ -43,11 +43,11 @@ RUN apk update \
     && cd .. \
     && rm -fr hw-probe-1.5-AI \
     && apk del build-deps \
-    && rm -fr /usr/bin/{acpibin,acpiexamples,acpiexec,acpihelp,acpinames,acpisrc,lsusb.py,usbhid-dump} \
-    && rm -fr /usr/sbin/{convert_hd,check_hd,mk_isdnhwdb,getsysinfo,fancontrol,pwmconfig,isadump,isaset,ownership,setpci,vpddecode,update-smart-drivedb,smartd} \
-    && rm -fr /usr/share/{man,doc,pkgconfig,cmake,ddcutil} \
+    && rm -fr /usr/bin/acpibin /usr/bin/acpiexamples /usr/bin/acpiexec /usr/bin/acpihelp /usr/bin/acpinames /usr/bin/acpisrc /usr/bin/lsusb.py /usr/bin/usbhid-dump \
+    && rm -fr /usr/sbin/convert_hd /usr/sbin/check_hd /usr/sbin/mk_isdnhwdb /usr/sbin/getsysinfo /usr/sbin/fancontrol /usr/sbin/pwmconfig /usr/sbin/isadump /usr/sbin/isaset /usr/sbin/ownership /usr/sbin/setpci /usr/sbin/vpddecode /usr/sbin/update-smart-drivedb /usr/sbin/smartd \
+    && rm -fr /usr/share/man /usr/share/doc /usr/share/pkgconfig /usr/share/cmake /usr/share/ddcutil \
     && rm -fr /usr/include \
-    && rm -fr /usr/lib/{pkgconfig,systemd} \
+    && rm -fr /usr/lib/pkgconfig /usr/lib/systemd /usr/lib/libddc* \
     && rm -fr /usr/share/perl5/vendor_perl/libwww/*.pod \
     && rm -fr /usr/bin/lwp-*
 

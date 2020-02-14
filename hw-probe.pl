@@ -13907,7 +13907,7 @@ sub scenario()
     {
         makeProbe();
         
-        if(not $Opt{"Upload"} and not $Opt{"Save"} and not $Opt{"Show"} and not $Opt{"ShowDevices"}) {
+        if(not $Opt{"Upload"} and not $Opt{"Save"} and not $Opt{"Show"} and not $Opt{"ShowDevices"} and not $Opt{"Docker"}) {
             print "Local probe path: $DATA_DIR\n";
         }
     }
