@@ -11535,7 +11535,13 @@ sub checkCmd(@)
         return $Cmd;
     }
     
-    foreach my $Dir (sort {length($a)<=>length($b)} split(/:/, $ENV{"PATH"}))
+    my @Paths = split(/:/, $ENV{"PATH"});
+    
+    if(not $Verify) {
+        @Paths = sort {length($a)<=>length($b)} @Paths;
+    }
+    
+    foreach my $Dir (@Paths)
     {
         if(-x "$Dir/$Cmd")
         {
