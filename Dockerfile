@@ -38,6 +38,7 @@ RUN apk update \
     && rm -fr hwinfo \
     && curl -L https://github.com/linuxhw/build-stuff/releases/download/1.5/hw-probe-1.5-AI.tar.gz > hw-probe-1.5-AI.tar.gz \
     && tar -xf hw-probe-1.5-AI.tar.gz \
+    && rm -fr hw-probe-1.5-AI.tar.gz \
     && cd hw-probe-1.5-AI \
     && make install \
     && cd .. \
@@ -49,7 +50,8 @@ RUN apk update \
     && rm -fr /usr/include \
     && rm -fr /usr/lib/pkgconfig /usr/lib/systemd /usr/lib/libddc* \
     && rm -fr /usr/share/perl5/vendor_perl/libwww/*.pod \
-    && rm -fr /usr/bin/lwp-*
+    && rm -fr /usr/bin/lwp-* \
+    && rm -fr /var/cache/apk/*
 
 ENV LD_LIBRARY_PATH /usr/lib64:/usr/lib
 ENV DISPLAY :0
