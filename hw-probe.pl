@@ -6660,7 +6660,7 @@ sub probeHW()
                 if($XLog=~/$Prefix:(.*)/)
                 {
                     my $Linux = lc($1);
-                    foreach my $Lin ("deepin", "clearlinux", "debian", "arch", "opensuse", "alt linux", "ubuntu", "manjaro")
+                    foreach my $Lin ("deepin", "clearlinux", "debian", "arch", "opensuse", "alt linux", "ubuntu", "manjaro", "artix")
                     {
                         if(index($Linux, $Lin) != -1)
                         {
@@ -9389,7 +9389,7 @@ sub fixFFByBoard($)
     }
     if($Sys{"Type"}!~/$MOBILE_TYPE/)
     {
-        if($Board=~/\b(W7430|Poyang|PSMBOU|Lhotse-II|Nettiling|EI Capitan|JV11-ML)\b/) {
+        if($Board=~/\b(W7430|Poyang|PSMBOU|Lhotse-II|Nettiling|EI Capitan|JV11-ML|M7x0S Bottom)\b/) {
             $Sys{"Type"} = "notebook";
         }
         if($Board=~/\b(SurfTab)\b/) {
@@ -9424,7 +9424,7 @@ sub fixFFByModel($$)
     
     if($Sys{"Type"}!~/$SERVER_TYPE/)
     {
-        if($M=~/X10DRG-O\+-CPU|ML10Gen/
+        if($M=~/X10DRG-O\+-CPU|ML10Gen|Super Server/
         or ($V=~/Neousys/i and $M=~/Nuvo/)) {
             $Sys{"Type"} = "server";
         }
@@ -10209,7 +10209,7 @@ sub probeDistr()
         and $Release=~/\A\d\d\d\d\d\d\d\d\Z/) {
             return ("opensuse-".$Release, "");
         }
-        elsif($Descr=~/\A(Maui|KDE neon|RED OS)/i) {
+        elsif($Descr=~/\A(Maui|KDE neon|RED OS|Pop\!_OS)/i) {
             $Name = $1;
         }
         elsif($Descr=~/\A(antiX)-(\d+)/i)
@@ -10253,7 +10253,7 @@ sub probeDistr()
         if($OS_Rel=~/\bPRETTY_NAME=\s*[\"\']*([^"'\n]+)/)
         {
             my $PrettyName = $1;
-            if($PrettyName=~/(OpenVZ|Docker Desktop)/) {
+            if($PrettyName=~/(OpenVZ|Docker Desktop|Pop\!_OS)/) {
                 $Name = $1;
             }
         }
@@ -10931,7 +10931,7 @@ sub writeLogs()
         writeLog($LOG_DIR."/i2cdetect", $I2cdetect);
     }
     
-    if($Admin and enabledLog("ddcutil") and $Sys{"Type"}!~/$MOBILE_TYPE/ and $Sys{"Model"}!~/VirtualBox|QEMU|VMWare|Virtual Machine|Parallels Virtual/)
+    if($Admin and (enabledLog("ddcutil") or enabledLog("ddc")) and $Sys{"Type"}!~/$MOBILE_TYPE/ and $Sys{"Model"}!~/VirtualBox|QEMU|VMWare|Virtual Machine|Parallels Virtual/)
     {
         my $DDCUtilCmd = undef;
         
@@ -10948,17 +10948,18 @@ sub writeLogs()
             my $DDCUtil = "";
             
             my @Range = (0 .. 31);
-            if($I2cdetect)
-            {
-                @Range = ();
-                foreach my $L (split(/\n/, $I2cdetect))
-                {
-                    if($L=~/i2c-(\d+).+(NVIDIA|nvkm|i915|Radeon|AMDGPU)/)
-                    {
-                        push(@Range, $1);
-                    }
-                }
-            }
+            
+            #if($I2cdetect)
+            #{
+            #    @Range = ();
+            #    foreach my $L (split(/\n/, $I2cdetect))
+            #    {
+            #        if($L=~/i2c-(\d+).+(NVIDIA|nvkm|i915|Radeon|AMDGPU|DPD)/)
+            #        {
+            #            push(@Range, $1);
+            #        }
+            #    }
+            #}
             
             foreach my $N (@Range)
             {
@@ -11543,6 +11544,8 @@ sub checkCmd(@)
     
     foreach my $Dir (@Paths)
     {
+        $Dir=~s{/+\Z}{}g;
+        
         if(-x "$Dir/$Cmd")
         {
             if($Verify)
@@ -12205,7 +12208,6 @@ my %EnabledLog = (
         "boot_efi",
         "cpuid",
         "cpupower",
-        "ddcutil",
         "dkms_status",
         "dpkg",
         "efibootmgr",
@@ -12251,6 +12253,8 @@ my %EnabledLog = (
         "alsactl",
         "cups_access_log",
         "cups_error_log",
+        "ddcutil",
+        "ddc",
         "findmnt",
         "firmware",
         "fstab",

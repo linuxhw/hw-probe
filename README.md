@@ -63,7 +63,7 @@ AppImage
 The portable app that runs anywhere, no need to install anything. Just download [hw-probe-1.5-149-x86_64.AppImage](https://github.com/linuxhw/hw-probe/releases/download/1.5/hw-probe-1.5-149-x86_64.AppImage) and run the following command in terminal to probe your computer:
 
     chmod +x ./hw-probe-1.5-149-x86_64.AppImage
-    sudo ./hw-probe-1.5-149-x86_64.AppImage -all -upload
+    sudo -E ./hw-probe-1.5-149-x86_64.AppImage -all -upload
 
 You may need to install `fuse-libs` or `libfuse2` package if it is not pre-installed in your Linux distribution to run appimages. Also try [old AppImage](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe-1.4-135-x86_64.AppImage) if you have troubles to run the latest image (e.g. on ancient Linux versions).
 
@@ -96,7 +96,7 @@ Docker
 
 You can easily make a probe on any Linux distribution without installing the tool with the help of the Docker image:
 
-    sudo docker run -it \
+    sudo -E docker run -it \
     -v /dev:/dev:ro \
     -v /lib/modules:/lib/modules:ro \
     -v /etc/os-release:/etc/os-release:ro \
@@ -134,7 +134,7 @@ Connect `block-devices` interface to check SMART attributes of drives:
 
 Now you can create computer probes:
 
-    sudo hw-probe -all -upload
+    sudo -E hw-probe -all -upload
 
 Note: You need a Snap runtime (`snapd` package) and `/snap` symlink to `/var/lib/snapd/snap` (by `sudo ln -s /var/lib/snapd/snap /snap`) in your system to install and run snaps (pre-installed on Ubuntu 16.04 and later).
 
@@ -157,7 +157,7 @@ Connect system interfaces:
 
 Create computer probes:
 
-    sudo hw-probe -all -upload
+    sudo -E hw-probe -all -upload
 
 ###### Supported systems
 
@@ -182,7 +182,7 @@ Install universal package:
 
 Now you can create computer probes:
 
-    sudo flatpak run org.linux_hardware.hw-probe -all -upload
+    sudo -E flatpak run org.linux_hardware.hw-probe -all -upload
 
 ###### App Center
 
@@ -214,7 +214,7 @@ Request inventory ID:
 
 Mark your probes by this ID:
 
-    sudo hw-probe -all -upload -i ID
+    sudo -E hw-probe -all -upload -i ID
 
 Find your computers by the inventory ID on this page: https://linux-hardware.org/?view=computers
 
@@ -236,7 +236,7 @@ ACPI dump
 
 Dump and decode ACPI table:
 
-    sudo hw-probe -all -upload -dump-acpi -decode-acpi
+    sudo -E hw-probe -all -upload -dump-acpi -decode-acpi
 
 NOTE: `acpica-tools` package should be installed
 
@@ -246,7 +246,7 @@ Operability
 
 The tool checks operability of devices on board by analysis of collected log files. You can perform additional operability sanity tests by the following command:
 
-    sudo hw-probe -all -check -upload
+    sudo -E hw-probe -all -check -upload
 
 The following tests are executed:
 
@@ -265,7 +265,7 @@ You can disable collecting of unwanted logs by the `-disable A,B,C,...` option.
 
 For example, to disable collecting of `lsblk` and `xorg.conf` run:
 
-    sudo hw-probe -all -upload -disable lsblk,xorg.conf
+    sudo -E hw-probe -all -upload -disable lsblk,xorg.conf
 
 
 Privacy
