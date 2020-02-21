@@ -51,11 +51,11 @@ On Ubuntu and Ubuntu based Linux distributions (Linux Mint, elementary OS, etc.)
 
 ###### Deb package
 
-Download Debian package [hw-probe_1.4-1_all.deb](http://ftp.debian.org/debian/pool/main/h/hw-probe/hw-probe_1.4-1_all.deb) and install:
+Download Debian package [hw-probe_1.4-3_all.deb](http://ftp.debian.org/debian/pool/main/h/hw-probe/hw-probe_1.4-3_all.deb) and install:
 
     sudo add-apt-repository universe
     sudo apt-get update
-    sudo apt-get install ./hw-probe_1.4-1_all.deb --no-install-recommends
+    sudo apt-get install ./hw-probe_1.4-3_all.deb --no-install-recommends
 
 ###### PPA
 
@@ -85,10 +85,10 @@ On Debian and Debian based Linux distributions (Kali, MX Linux, PureOS, etc.):
 
 ###### Standalone
 
-Download Deb package [hw-probe_1.4-1_all.deb](http://ftp.debian.org/debian/pool/main/h/hw-probe/hw-probe_1.4-1_all.deb) and install:
+Download Deb package [hw-probe_1.4-3_all.deb](http://ftp.debian.org/debian/pool/main/h/hw-probe/hw-probe_1.4-3_all.deb) and install:
 
     sudo apt-get update
-    sudo dpkg -i ./hw-probe_1.4-1_all.deb
+    sudo dpkg -i ./hw-probe_1.4-3_all.deb
     sudo apt-get install -f --no-install-recommends
 
 

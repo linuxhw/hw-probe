@@ -873,6 +873,8 @@ my @DE_Package = (
     [ "enlightenment", "Enlightenment" ],
     [ "pantheon-xsession-settings", "Pantheon" ],
     
+    [ "gnustep", "GNUstep" ],
+    
     [ "manjaro-cinnamon-settings", "Cinnamon" ],
     [ "cinnamon-session", "Cinnamon" ],
     
@@ -2470,10 +2472,6 @@ sub createPackage()
     return ($Pkg, $HWaddr);
 }
 
-sub ceilNum($) {
-    return int($_[0]+0.99);
-}
-
 sub copyFiles($$)
 {
     my ($P1, $P2) = @_;
@@ -2868,12 +2866,13 @@ sub addCapacity($$)
 {
     my ($Device, $Capacity) = @_;
     
+    $Capacity=~s/\.0\d+//;
     $Capacity=~s/(\.\d)\d+/$1/;
+    $Capacity=~s/\s+//g;
     
     if($Capacity)
     {
-        $Capacity=~s/\s+//g;
-        if($Device!~/(\A|\s|\-)[\d\.\,]+\s*([MGTP]B|[MGT])(\s|\Z)/
+        if($Device!~/(\A|\s|\-)[\d\.\,]+\s*([MGT]B|[MGT])(\s|\Z)/
         and $Device!~/reader|bridge|\/sd\/|adapter/i and $Device!~/\Q$Capacity\E/i) {
             return " ".$Capacity;
         }
@@ -7379,7 +7378,7 @@ sub probeHW()
                     $HDD_Size=~s/\,/./;
                 }
                 
-                if($HDD_Size!~/\A\d.*[A-Z]\Z\Z/) {
+                if($HDD_Size!~/\A\d.*[A-Z]\Z/) {
                     next;
                 }
                 
@@ -7412,6 +7411,8 @@ sub probeHW()
                 elsif(defined $MMC{$HDD_File}) {
                     $HDD_Id = $MMC{$HDD_File};
                 }
+                
+                $HDD_Size = fixCapacity($HDD_Size);
                 
                 if($HDD_Size and defined $HDD_Id)
                 {
@@ -7784,10 +7785,15 @@ sub rmArrayVal($$)
 sub fixCapacity($)
 {
     my $Capacity = $_[0];
-    if($Capacity=~/\A(\d+)GB\Z/)
+    if($Capacity=~/\A([\d\.]+)GB\Z/)
     {
         my $Gb = $1;
-        if($Gb>24 and $Gb % 16!=0)
+        
+        if($Gb=~/\./) {
+            $Gb = roundToNearest($Gb);
+        }
+        
+        if($Gb>24 and $Gb % 16 != 0)
         {
             my $Nearest = int(($Capacity+15)/16)*16;
             
@@ -7796,7 +7802,11 @@ sub fixCapacity($)
                 $Capacity=~s/\A\Q$Gb\E(GB)\Z/$Nearest$1/;
             }
         }
+        else {
+            $Capacity = $Gb."GB";
+        }
     }
+    
     return $Capacity;
 }
 
@@ -8601,33 +8611,47 @@ sub fixDrive($)
     {
         if(grep {$Device->{"Device"} eq $_} ("SSD", "SATA SSD", "SATA-III SSD", "Solid State Disk",
         "SSD Sata III", "DISK", "SSD DISK") or grep {uc($Device->{"Vendor"}) eq $_} ("OCZ", "ADATA", "A-DATA", "PATRIOT", "SPCC", "SAMSUNG", "CORSAIR", "HYPERDISK", "TOSHIBA"))
-        {
-            if($Device->{"Capacity"}=~/\A([\d\.]+)(.+?)\Z/)
+        { # Modify device ID to distinguish SSDs
+            if($Device->{"Capacity"}=~/\A([\d\.]+)([GT]B)\Z/)
             {
-                my ($S1, $S2, $Suffix) = (int($1), ceilNum($1), $2);
-                if($S1 % 2 != 0) {
-                    $S1 += 1;
+                my ($C, $Suffix) = ($1, $2);
+                
+                my $Cap = undef;
+                
+                if($Suffix eq "TB")
+                {
+                    $C = int($C);
+                    $Cap = $Device->{"Capacity"};
                 }
-                if($S2 % 2 != 0) {
-                    $S2 += 1;
+                elsif($Suffix eq "GB")
+                {
+                    if($C>=7)
+                    {
+                        if($C % 2 != 0) {
+                            $C += 1;
+                        }
+                        
+                        if(!isPowerOfTwo($C))
+                        {
+                            if(isPowerOfTwo($C + 2)) {
+                                $C = $C + 2;
+                            }
+                            elsif(isPowerOfTwo($C + 4)) {
+                                $C = $C + 4;
+                            }
+                        }
+                    }
+                    
+                    $Cap = $C."GB";
                 }
-                my $S3 = $S2 + 2;
-                if($Device->{"Device"}!~/[^1-9]+($S1|$S2|$S3|16|24|32|120|128|256|512|1024|2048)([^\d]+|\Z)/)
-                { # TODO: fix expression (add '\A')
-                    my $CapacityTitle = $Device->{"Capacity"};
-                    if(isPowerOfTwo($S1)) {
-                        $CapacityTitle = $S1.$Suffix;
-                    }
-                    elsif($S2 ne $S1 and isPowerOfTwo($S2)) {
-                        $CapacityTitle = $S2.$Suffix;
-                    }
-                    $Device->{"Device"} .= addCapacity($Device->{"Device"}, $CapacityTitle);
+                
+                if($Device->{"Device"}!~/[^1-9]+$C([^\d]+|\Z)/) {
+                    $Device->{"Device"} .= addCapacity($Device->{"Device"}, $Cap);
                 }
             }
         }
     }
-    
-    if($Device->{"Device"} eq "ZALMAN") {
+    elsif($Device->{"Device"} eq "ZALMAN") {
         $Device->{"Device"} .= addCapacity($Device->{"Device"}, $Device->{"Capacity"});
     }
     
@@ -10963,7 +10987,19 @@ sub writeLogs()
             
             foreach my $N (@Range)
             {
-                if(my $DDCProbe = runCmd("$DDCUtilCmd probe --bus $N 2>/dev/null"))
+                my $DDCCmd = "$DDCUtilCmd probe --bus $N";
+                
+                # if($Opt{"AppImage"} or $Opt{"Docker"}) {
+                #     $DDCCmd .= " --f1";
+                # }
+                
+                my $DDCProbe = runCmd($DDCCmd." --sleep-multiplier 0.5 | grep -v 'DDC Null Response'");
+                
+                if($DDCProbe=~/Maximum retries exceeded/) {
+                    $DDCProbe = runCmd($DDCCmd);
+                }
+                
+                if($DDCProbe)
                 {
                     if($DDCProbe!~/No monitor detected|communication failed/)
                     {
@@ -14003,7 +14039,7 @@ sub scenario()
             }
         }
         
-        if(not $Sys{"DE"} or (not $Sys{"Current_desktop"} and $Sys{"DE"}=~/KDE|GNOME|XFCE/))
+        if(not $Sys{"DE"} or (not $Sys{"Current_desktop"} and not $Sys{"Display_server"} and $Sys{"DE"}=~/KDE|GNOME|XFCE|Cinnamon/))
         {
             if(my $FixDE = fixDE()) {
                 $Sys{"DE"} = $FixDE;
