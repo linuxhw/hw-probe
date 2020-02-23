@@ -404,6 +404,7 @@ my %HDD;
 my %HDD_Info;
 my %MMC;
 my %MMC_Info;
+my %BlockCapacity;
 
 my $Board_ID;
 my $CPU_ID;
@@ -3103,6 +3104,96 @@ sub probeHW()
         }
     }
     
+    my $Lsblk = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Lsblk = readFile($FixProbe_Logs."/lsblk");
+    }
+    elsif(enabledLog("lsblk") and checkCmd("lsblk"))
+    {
+        listProbe("logs", "lsblk");
+        my $LsblkCmd = "lsblk -al -o NAME,SIZE,TYPE,FSTYPE,UUID,MOUNTPOINT,MODEL,PARTUUID";
+        if($Opt{"Flatpak"}) {
+            $LsblkCmd .= " 2>/dev/null";
+        }
+        else {
+            $LsblkCmd .= " 2>&1";
+        }
+        my $Lsblk = runCmd($LsblkCmd);
+        
+        if($Lsblk=~/unknown column/)
+        { # CentOS 6: no PARTUUID column
+            $LsblkCmd=~s/\,PARTUUID//g;
+            $Lsblk = runCmd($LsblkCmd);
+        }
+        
+        if($Opt{"Snap"} and $Lsblk=~/Permission denied/) {
+            $Lsblk = "";
+        }
+        $Lsblk = hideByRegexp($Lsblk, qr/(.+?)\s+[^\s]+?\s+crypt\s+/);
+        $Lsblk = hidePaths($Lsblk);
+        $Lsblk = hideLVM($Lsblk);
+        $Lsblk = encryptUUIDs($Lsblk);
+        $Lsblk = hideByRegexp($Lsblk, qr/\s([a-f\d]{8})\-\d\d\n/); # PARTUUID
+        writeLog($LOG_DIR."/lsblk", $Lsblk);
+    }
+    
+    if($Lsblk)
+    {
+        foreach my $Line (split(/\n/, $Lsblk))
+        {
+            if($Line=~/\blive-/) {
+                next;
+            }
+            
+            my @L = split(/\s+/, $Line);
+            
+            if($L[0]=~/\A(sd[a-z]+|nvme\d+n\d+|mmcblk\d+|mtdblock\d+)\Z/)
+            {
+                my $HDD_File = "/dev/".$L[0];
+                my $HDD_Size = $L[1];
+                
+                if(index($HDD_Size, ":")!=-1)
+                { # old lsblk log
+                    $HDD_Size = $L[3];
+                    $HDD_Size=~s/\,/./;
+                }
+                
+                if($HDD_Size!~/\A\d.*[A-Z]\Z/) {
+                    next;
+                }
+                
+                if($HDD_Size=~/\A([\d\.]+)([A-Z]+)\Z/)
+                {
+                    my ($N, $S) = ($1, $2);
+                    if($S eq "T") {
+                        $N = $N*1.11111111111;
+                    }
+                    elsif($S eq "G") {
+                        $N = $N*1.07355;
+                    }
+                    
+                    $HDD_Size = sprintf("%.1f", $N).$S;
+                    $HDD_Size=~s/\.\d+//;
+                }
+                
+                if($HDD_Size!~/B\Z/) {
+                    $HDD_Size .= "B";
+                }
+                
+                if($HDD_Size eq "1000GB") {
+                    $HDD_Size = "1TB";
+                }
+                
+                $HDD_Size = fixCapacity($HDD_Size);
+                
+                if($HDD_Size) {
+                    $BlockCapacity{$HDD_File} = $HDD_Size;
+                }
+            }
+        }
+    }
+    
     if(not $Opt{"FixProbe"} and $Opt{"Logs"})
     {
         if(enabledLog("modinfo")
@@ -3471,7 +3562,7 @@ sub probeHW()
             {
                 foreach my $F (split(/,\s*/, $Val))
                 {
-                    if(index($F, "nvme-nvme")==-1 and $F=~/by-id\/((ata|nvme|usb)-.*)\Z/) {
+                    if(index($F, "nvme-nvme")==-1 and $F=~/by-id\/((ata|nvme|usb|mmc)-.*)\Z/) {
                         $Device{"FsId"} = $1;
                     }
                     $Device{"AllFiles"}{$F} = 1;
@@ -3643,6 +3734,10 @@ sub probeHW()
         
         if($Device{"Type"} eq "disk")
         {
+            if(not $Device{"Capacity"} and defined $BlockCapacity{$Device{"File"}}) {
+                $Device{"Capacity"} = $BlockCapacity{$Device{"File"}};
+            }
+            
             $DriveNumByFile{$Device{"File"}} = $DevNum;
             
             if(index($Device{"File"}, "nvme")!=-1)
@@ -3695,7 +3790,7 @@ sub probeHW()
             {
                 $Bus = "mmc";
                 
-                if($Device{"FsId"} and $Device{"FsId"}=~/\Ammc-(.+?)[_]+(0x[a-f\d]{8})\Z/)
+                if($Device{"FsId"} and $Device{"FsId"}=~/mmc-(.+?)[_]+(0x[a-f\d]{8})/)
                 {
                     $Device{"Device"} = $1;
                     $Device{"Serial"} = clientHash($2);
@@ -6675,9 +6770,6 @@ sub probeHW()
             }
         }
         
-        $Nomodeset = (index($CmdLine, " nomodeset")!=-1 or index($CmdLine, " nokmsboot")!=-1);
-        $ForceVESA = (index($CmdLine, "xdriver=vesa")!=-1);
-        
         my @CheckDrivers = @G_DRIVERS;
         
         if(not defined $GraphicsCards{"10de"}) {
@@ -6690,6 +6782,16 @@ sub probeHW()
         
         if(not defined $GraphicsCards{"8086"}) {
             rmArrayVal(\@CheckDrivers, \@G_DRIVERS_INTEL);
+        }
+        
+        if($Sys{"Kernel"} and index($XLog, $Sys{"Kernel"})==-1)
+        { # Do not check old X11 log
+            @CheckDrivers = ();
+        }
+        else
+        {
+            $Nomodeset = (index($CmdLine, " nomodeset")!=-1 or index($CmdLine, " nokmsboot")!=-1);
+            $ForceVESA = (index($CmdLine, "xdriver=vesa")!=-1);
         }
         
         foreach my $D (@CheckDrivers)
@@ -7319,40 +7421,6 @@ sub probeHW()
     $Sys{"Dual_boot"} = 0;
     $Sys{"Dual_boot_win"} = 0;
     
-    my $Lsblk = "";
-    
-    if($Opt{"FixProbe"}) {
-        $Lsblk = readFile($FixProbe_Logs."/lsblk");
-    }
-    elsif(enabledLog("lsblk") and checkCmd("lsblk"))
-    {
-        listProbe("logs", "lsblk");
-        my $LsblkCmd = "lsblk -al -o NAME,SIZE,TYPE,FSTYPE,UUID,MOUNTPOINT,MODEL,PARTUUID";
-        if($Opt{"Flatpak"}) {
-            $LsblkCmd .= " 2>/dev/null";
-        }
-        else {
-            $LsblkCmd .= " 2>&1";
-        }
-        my $Lsblk = runCmd($LsblkCmd);
-        
-        if($Lsblk=~/unknown column/)
-        { # CentOS 6: no PARTUUID column
-            $LsblkCmd=~s/\,PARTUUID//g;
-            $Lsblk = runCmd($LsblkCmd);
-        }
-        
-        if($Opt{"Snap"} and $Lsblk=~/Permission denied/) {
-            $Lsblk = "";
-        }
-        $Lsblk = hideByRegexp($Lsblk, qr/(.+?)\s+[^\s]+?\s+crypt\s+/);
-        $Lsblk = hidePaths($Lsblk);
-        $Lsblk = hideLVM($Lsblk);
-        $Lsblk = encryptUUIDs($Lsblk);
-        $Lsblk = hideByRegexp($Lsblk, qr/\s([a-f\d]{8})\-\d\d\n/); # PARTUUID
-        writeLog($LOG_DIR."/lsblk", $Lsblk);
-    }
-    
     if($Lsblk)
     {
         foreach my $Line (split(/\n/, $Lsblk))
@@ -7361,71 +7429,10 @@ sub probeHW()
                 next;
             }
             
-            my @L = split(/\s+/, $Line);
-            
             if($Line=~/ (ext[234]) / and index($Line, "/")==-1) {
                 $Sys{"Dual_boot"} = 1;
             }
-            
-            if($L[0]=~/\A(sd[a-z]+|nvme\d+n\d+|mmcblk\d+|mtdblock\d+)\Z/)
-            {
-                my $HDD_File = "/dev/".$L[0];
-                my $HDD_Size = $L[1];
-                
-                if(index($HDD_Size, ":")!=-1)
-                { # old lsblk log
-                    $HDD_Size = $L[3];
-                    $HDD_Size=~s/\,/./;
-                }
-                
-                if($HDD_Size!~/\A\d.*[A-Z]\Z/) {
-                    next;
-                }
-                
-                if($HDD_Size=~/\A([\d\.]+)([A-Z]+)\Z/)
-                {
-                    my ($N, $S) = ($1, $2);
-                    if($S eq "T") {
-                        $N = $N*1.11111111111;
-                    }
-                    elsif($S eq "G") {
-                        $N = $N*1.07355;
-                    }
-                    
-                    $HDD_Size = sprintf("%.1f", $N).$S;
-                    $HDD_Size=~s/\.\d+//;
-                }
-                
-                if($HDD_Size!~/B\Z/) {
-                    $HDD_Size .= "B";
-                }
-                
-                if($HDD_Size eq "1000GB") {
-                    $HDD_Size = "1TB";
-                }
-                
-                my $HDD_Id = undef;
-                if(defined $HDD{$HDD_File}) {
-                    $HDD_Id = $HDD{$HDD_File};
-                }
-                elsif(defined $MMC{$HDD_File}) {
-                    $HDD_Id = $MMC{$HDD_File};
-                }
-                
-                $HDD_Size = fixCapacity($HDD_Size);
-                
-                if($HDD_Size and defined $HDD_Id)
-                {
-                    if(defined $HW{$HDD_Id} and not defined $HW{$HDD_Id}{"Capacity"})
-                    {
-                        $HW{$HDD_Id}{"Capacity"} = $HDD_Size;
-                        $HW{$HDD_Id}{"Device"} .= addCapacity($HW{$HDD_Id}{"Device"}, $HDD_Size);
-                        $HW{$HDD_Id}{"Device"}=~s/ (SSD) ([^\s]+)\Z/ $2 $1/;
-                    }
-                }
-            }
         }
-        
         if(index($Lsblk, " ntfs ")!=-1) {
             $Sys{"Dual_boot_win"} = 1;
         }
@@ -7795,16 +7802,20 @@ sub fixCapacity($)
         
         if($Gb>24 and $Gb % 16 != 0)
         {
-            my $Nearest = int(($Capacity+15)/16)*16;
+            my $Nearest = int(($Gb + 15)/16)*16;
             
-            if($Nearest-$Gb<=5)
-            {
-                $Capacity=~s/\A\Q$Gb\E(GB)\Z/$Nearest$1/;
+            if($Nearest-$Gb<=5) {
+                $Gb = $Nearest;
             }
         }
-        else {
-            $Capacity = $Gb."GB";
+        elsif($Gb=~/\A1[345]\Z/) {
+            $Gb = 16;
         }
+        elsif($Gb==23) {
+            $Gb = 24;
+        }
+        
+        return $Gb."GB";
     }
     
     return $Capacity;
