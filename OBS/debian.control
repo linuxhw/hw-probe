@@ -54,7 +54,7 @@ Description: Check operability of computer hardware and find drivers
  command in the console to check your hardware and collect all the
  system logs at once:
  .
-     sudo hw-probe -all -upload
+     sudo -E hw-probe -all -upload
  .
- By creating probes you contribute to the HDD/SSD Real-Life
+ By creating probes you contribute to the HDD/SSD Desktop-Class
  Reliability Test study: https://github.com/linuxhw/SMART

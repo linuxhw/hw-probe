@@ -51,7 +51,7 @@ system logs at once:
 
     sudo -E hw-probe -all -upload
 
-By creating probes you contribute to the HDD/SSD Real-Life
+By creating probes you contribute to the HDD/SSD Desktop-Class
 Reliability Test study: https://github.com/linuxhw/SMART
 
 %prep

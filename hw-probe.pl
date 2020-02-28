@@ -146,6 +146,7 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "save=s" => \$Opt{"Save"},
   "fix=s" => \$Opt{"FixProbe"},
   "show-devices!" => \$Opt{"ShowDevices"},
+  "show-host!" => \$Opt{"ShowHost"},
   "show!" => \$Opt{"Show"},
   "compact!" => \$Opt{"Compact"},
   "verbose!" => \$Opt{"Verbose"},
@@ -223,7 +224,7 @@ DESCRIPTION:
   Hardware Probe ($CmdName) is a tool to probe for hardware,
   check its operability and upload result to the Linux hardware database.
   
-  By creating probes you contribute to the \"HDD/SSD Real-Life Reliability
+  By creating probes you contribute to the \"HDD/SSD Desktop-Class Reliability
   Test\" study: https://github.com/linuxhw/SMART
 
   This tool is free software: you can redistribute it and/or modify it
@@ -348,6 +349,9 @@ OTHER OPTIONS:
   
   -show
       Show host info and devices list.
+  
+  -show-host
+      Show host info only.
   
   -verbose
       Use with -show option to show type and status of the device.
@@ -874,7 +878,7 @@ my @DE_Package = (
     [ "enlightenment", "Enlightenment" ],
     [ "pantheon-xsession-settings", "Pantheon" ],
     
-    [ "gnustep", "GNUstep" ],
+    [ "gnustep ", "GNUstep" ],
     
     [ "manjaro-cinnamon-settings", "Cinnamon" ],
     [ "cinnamon-session", "Cinnamon" ],
@@ -895,16 +899,17 @@ my @DE_Package = (
     [ "manjaro-xfce", "XFCE" ],
     
     [ "manjaro-kde-settings", "KDE5" ],
-    [ "plasma5-settings", "KDE5" ],
     [ "plasma5-workspace", "KDE5" ],
     [ "plasma-desktop-5", "KDE5" ],
     [ "plasma-desktop 5", "KDE5" ],
-    [ "plasma5-config-fresh", "KDE5" ],
     [ "task-plasma5", "KDE5" ],
+    [ "plasma-workspace 4:5", "KDE5" ],
     
     [ "plasma-desktop 4:4", "KDE4" ],
     [ "kde-settings-plasma", "KDE4" ],
     [ "task-kde4", "KDE4" ],
+    [ "drakconf-kde4", "KDE4" ],
+    [ "kdebase4-workspace", "KDE4" ],
     
     [ "gnome-flashback", "GNOME Flashback" ],
     
@@ -912,7 +917,7 @@ my @DE_Package = (
     [ "gnome-session", "GNOME" ],
     
     [ "manjaro-awesome-settings", "Awesome" ],
-    [ "manjaro-openbox-settings", "Openbox" ],
+    
     [ "manjaro-fluxbox-settings", "FluxBox" ],
     [ "i3-manjaro", "i3" ],
     [ "i3-wm", "i3" ],
@@ -922,7 +927,24 @@ my @DE_Package = (
     
     [ "xfce4-settings", "XFCE" ],
     [ "task-xfce", "XFCE" ],
-    [ "xfce4-session", "XFCE" ]
+    [ "xfce4-session", "XFCE" ],
+    
+    [ "openbox-lxde-session", "Openbox" ],
+    [ "manjaro-openbox-settings", "Openbox" ],
+    
+    [ "lxde", "LXDE" ]
+);
+
+my @DisplayServer_Package = (
+    [ "x11-server-xwayland", "Wayland" ],
+    [ "xorg-server-xwayland", "Wayland" ],
+    [ "xorg-x11-server-Xwayland", "Wayland" ],
+    [ "xwayland", "Wayland" ],
+    
+    [ "x11-server-xorg", "X11" ],
+    [ "xorg-x11-server-Xorg", "X11" ],
+    [ "xserver-xorg", "X11" ],
+    [ "xorg-x11-server", "X11" ]
 );
 
 my %ChassisType = (
@@ -1674,6 +1696,18 @@ sub encryptUUIDs($)
         $Enc=~s/\A(\w{8})(\w{4})(\w{4})(\w{4})(\w{12})\Z/$1-$2-$3-$4-$5/;
         $Content=~s/\Q$UUID\E/$Enc/g;
     }
+    
+    %UUIDs = ();
+    while($Content=~/[ \/]([a-fA-F\d]{4}-[a-fA-F\d]{4})\s/g) {
+        $UUIDs{$1} = 1;
+    }
+    foreach my $UUID (sort keys(%UUIDs))
+    {
+        my $Enc = clientHash(lc($UUID), $UUID_LEN_CLIENT);
+        $Enc=~s/\A(\w{4})(\w{4}).+\Z/$1-$2/;
+        $Content=~s/\Q$UUID\E/$Enc/g;
+    }
+    
     return $Content;
 }
 
@@ -1743,7 +1777,7 @@ sub hideHost($)
 sub hidePaths($)
 {
     my $Content = $_[0];
-    foreach my $Dir ("mnt", "mount", "home", "media", "data", "shares", "vhosts", "mapper", "pstorage", "snap") {
+    foreach my $Dir ("mnt", "mount", "home", "media", "data", "shares", "vhosts", "mapper", "pstorage", "snap", "shm") {
         $Content = hideByRegexp($Content, qr/$Dir\/([^\s]+)/);
     }
     return $Content;
@@ -2987,6 +3021,7 @@ sub probeHW()
         $DevFiles = encryptSerialsInPaths($DevFiles);
         $DevFiles = encryptWWNs($DevFiles);
         $DevFiles = hideByRegexp($DevFiles, qr/\/by-partlabel\/([^\s]+)/);
+        $DevFiles = hideByRegexp($DevFiles, qr/\/by-partuuid\/([a-f\d]{8})\-\d\d/);
         $DevFiles = hideLVM($DevFiles);
         $DevFiles = hideByRegexp($DevFiles, qr/\/([^\s\/]+?)-vg/);
         $DevFiles = hidePaths($DevFiles);
@@ -3596,7 +3631,8 @@ sub probeHW()
                 }
                 elsif($Device{"Type"} eq "network interface")
                 {
-                    if(index($Device{"SysFS Device Link"}, "\/usb")!=-1) {
+                    if(index($Device{"SysFS Device Link"}, "\/usb")!=-1
+                    or index($Device{"SysFS Device Link"}, "/devices/virtual")!=-1) {
                         $ExtraConnection{$Val} = 1;
                     }
                 }
@@ -6677,7 +6713,7 @@ sub probeHW()
                 $Sys{"Vendor"} = "Rockchip";
                 $Sys{"System"} = "android";
             }
-            elsif($Sys{"Model"}=~s/\A(Xunlong|Hardkernel|FriendlyElec|Radxa) //)
+            elsif($Sys{"Model"}=~s/\A(Xunlong|Hardkernel|FriendlyElec|Radxa|NVIDIA) //)
             {
                 $Sys{"Vendor"} = $1;
                 $Sys{"Type"} = "system on chip";
@@ -6729,6 +6765,12 @@ sub probeHW()
         if(not $Opt{"Docker"} or $XLog) {
             writeLog($LOG_DIR."/xorg.log", $XLog);
         }
+    }
+    
+    my $X11LogMatch = index($XLog, $Sys{"Kernel"})!=-1;
+    
+    if(not $Sys{"Display_server"} and $X11LogMatch) {
+        $Sys{"Display_server"} = "X11";
     }
     
     my $CmdLine = "";
@@ -6784,7 +6826,7 @@ sub probeHW()
             rmArrayVal(\@CheckDrivers, \@G_DRIVERS_INTEL);
         }
         
-        if($Sys{"Kernel"} and index($XLog, $Sys{"Kernel"})==-1)
+        if($Sys{"Kernel"} and not $X11LogMatch)
         { # Do not check old X11 log
             @CheckDrivers = ();
         }
@@ -7577,6 +7619,23 @@ sub probeHW()
         }
     }
     
+    my $XInput = "";
+    
+    if($Opt{"FixProbe"}) {
+        $XInput = readFile($FixProbe_Logs."/xinput");
+    }
+    elsif(enabledLog("xinput")
+    and checkCmd("xinput"))
+    {
+        listProbe("logs", "xinput");
+        $XInput = runCmd("xinput list --long 2>&1");
+        writeLog($LOG_DIR."/xinput", clearLog_X11($XInput));
+    }
+    
+    if(not $Sys{"Display_server"} and $XInput=~/xwayland/i) {
+        $Sys{"Display_server"} = "Wayland";
+    }
+    
     print "Ok\n";
 }
 
@@ -8017,8 +8076,7 @@ sub detectBIOS($)
             delete($Sys{"Year"});
         }
         
-        if($Sys{"Year"} and $Sys{"Year"}>getYear() + 1)
-        {
+        if($Sys{"Year"} and $Sys{"Year"}>getYear(time) + 1) {
             delete($Sys{"Year"});
         }
     }
@@ -10768,14 +10826,6 @@ sub writeLogs()
         }
     }
     
-    if(enabledLog("xinput")
-    and checkCmd("xinput"))
-    {
-        listProbe("logs", "xinput");
-        my $XInput = runCmd("xinput list --long 2>&1");
-        writeLog($LOG_DIR."/xinput", clearLog_X11($XInput));
-    }
-    
     if(enabledLog("rpms")
     and checkCmd("rpm"))
     {
@@ -11054,6 +11104,8 @@ sub writeLogs()
                     $Efibootmgr = "";
                 }
                 $Efibootmgr = encryptUUIDs($Efibootmgr);
+                $Efibootmgr = hideByRegexp($Efibootmgr, qr/MAC\((.+?)\)/);
+                $Efibootmgr = hideByRegexp($Efibootmgr, qr/0x([a-f\d]{8})/);
                 writeLog($LOG_DIR."/efibootmgr", $Efibootmgr);
             }
         }
@@ -11091,11 +11143,19 @@ sub writeLogs()
             listProbe("logs", "systemctl");
             if(my $Sctl = runCmd("systemctl 2>/dev/null"))
             {
+                $Sctl = hideByRegexp($Sctl, qr/\/home\/([^\s]+)/);
+                $Sctl = hideByRegexp($Sctl, qr/\/media\/([^\s]+)/);
+                
+                $Sctl = hideByRegexp($Sctl, qr/home-([^\s]+)/);
+                $Sctl = hideByRegexp($Sctl, qr/media-([^\s]+)/);
+                
+                $Sctl=~s/(User Slice of|Session \d+ of user).+/$1 XXXXX/g;
                 $Sctl=~s/( of user)\s+\Q$SessUser\E/$1 USER/g;
+                
                 $Sctl = decorateSystemd($Sctl);
                 $Sctl = encryptUUIDs($Sctl);
                 $Sctl = hideDevDiskUUIDs($Sctl);
-                $Sctl=~s/(User Slice of|Session \d+ of user).+/$1 XXXXX/g;
+                
                 writeLog($LOG_DIR."/systemctl", $Sctl);
             }
         }
@@ -11891,7 +11951,7 @@ sub showInfo()
     
     print "\n";
     
-    if($Opt{"Show"})
+    if($Opt{"Show"} or $Opt{"ShowHost"})
     {
         print "Host Info\n";
         print "=========\n\n";
@@ -13511,7 +13571,21 @@ sub detectDE($)
     foreach my $Pkg (@DE_Package)
     {
         my $P = $Pkg->[0];
-        if(index($Pkgs, $P)!=-1 and $Pkgs=~/\b\Q$P\E\b/) {
+        if(index($Pkgs, $P)!=-1 and $Pkgs=~/(\A|\n)\Q$P\E\b/) {
+            return $Pkg->[1];
+        }
+    }
+    
+    return undef;
+}
+
+sub detectDisplayServer($)
+{
+    my $Pkgs = ${$_[0]};
+    foreach my $Pkg (@DisplayServer_Package)
+    {
+        my $P = $Pkg->[0];
+        if(index($Pkgs, $P)!=-1 and $Pkgs=~/(\A|\n)\Q$P\E\b/) {
             return $Pkg->[1];
         }
     }
@@ -13542,6 +13616,31 @@ sub fixDE()
     }
     
     return $DE;
+}
+
+sub fixDisplayServer()
+{
+    my $DisplayServer = undef;
+    
+    if(not $DisplayServer and -e "$FixProbe_Logs/rpms")
+    {
+        my $Rpms = readFile("$FixProbe_Logs/rpms");
+        $DisplayServer = detectDisplayServer(\$Rpms);
+    }
+    
+    if(not $DisplayServer and -e "$FixProbe_Logs/debs")
+    {
+        my $Debs = readFile("$FixProbe_Logs/debs");
+        $DisplayServer = detectDisplayServer(\$Debs);
+    }
+    
+    if(not $DisplayServer and -e "$FixProbe_Logs/pkglist")
+    {
+        my $PkgList = readFile("$FixProbe_Logs/pkglist");
+        $DisplayServer = detectDisplayServer(\$PkgList);
+    }
+    
+    return $DisplayServer;
 }
 
 sub initDataDir($)
@@ -13964,7 +14063,7 @@ sub scenario()
     {
         makeProbe();
         
-        if(not $Opt{"Upload"} and not $Opt{"Save"} and not $Opt{"Show"} and not $Opt{"ShowDevices"} and not $Opt{"Docker"}) {
+        if(not $Opt{"Upload"} and not $Opt{"Save"} and not $Opt{"Show"} and not $Opt{"ShowDevices"} and not $Opt{"ShowHost"} and not $Opt{"Docker"}) {
             print "Local probe path: $DATA_DIR\n";
         }
     }
@@ -14050,10 +14149,17 @@ sub scenario()
             }
         }
         
-        if(not $Sys{"DE"} or (not $Sys{"Current_desktop"} and not $Sys{"Display_server"} and $Sys{"DE"}=~/KDE|GNOME|XFCE|Cinnamon/))
+        if(not $Sys{"DE"} or not $Sys{"Current_desktop"} or $Sys{"DE"} eq "KDE")
         {
             if(my $FixDE = fixDE()) {
                 $Sys{"DE"} = $FixDE;
+            }
+        }
+        
+        if(not $Sys{"Display_server"})
+        {
+            if(my $FixDisplayServer = fixDisplayServer()) {
+                $Sys{"Display_server"} = $FixDisplayServer;
             }
         }
         
@@ -14195,7 +14301,7 @@ sub scenario()
         setPublic($PROBE_DIR, "-R");
     }
     
-    if($Opt{"Show"} or $Opt{"ShowDevices"}) {
+    if($Opt{"Show"} or $Opt{"ShowDevices"} or $Opt{"ShowHost"}) {
         showInfo();
     }
     

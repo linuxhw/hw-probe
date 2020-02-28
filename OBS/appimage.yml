@@ -15,14 +15,25 @@ build:
     - libusb-1_0-devel
     - libudev-devel
     - libkmod-devel
+    - libuuid-devel
+    - glib2-devel
+    - libXrandr-devel
+    - zlib-devel
 
 script:
   # edid-decode
-  - tar -xf $BUILD_SOURCE_DIR/edid-decode-20180622.tar.gz -C $BUILD_SOURCE_DIR
-  - cd $BUILD_SOURCE_DIR/edid-decode-20180622
+  - tar -xf $BUILD_SOURCE_DIR/edid-decode-20200211.tar.xz -C $BUILD_SOURCE_DIR
+  - cd $BUILD_SOURCE_DIR/edid-decode-20200211
+  - sed -i -e 's/ -g / -s /' Makefile
+  - CPPFLAGS='-std=c++0x' make
+  - make install DESTDIR=$BUILD_APPDIR
+  # ddcutil
+  - tar -xf $BUILD_SOURCE_DIR/ddcutil-20200218.tar.xz -C $BUILD_SOURCE_DIR
+  - cd $BUILD_SOURCE_DIR/ddcutil-20200218
+  - ./configure --prefix=/usr ZLIB_LIBS="-lz"
   - sed -i -e 's/ -g / -s /' Makefile
   - make
-  - make install DESTDIR=$BUILD_APPDIR
+  - install -D ./src/ddcutil $BUILD_APPDIR/usr/bin/ddcutil
   # dmidecode
   - tar -xf $BUILD_SOURCE_DIR/dmidecode-3.2.tar.xz -C $BUILD_SOURCE_DIR
   - cd $BUILD_SOURCE_DIR/dmidecode-3.2
@@ -69,8 +80,8 @@ script:
   # smartmontools
   - tar -xf $BUILD_SOURCE_DIR/smartmontools-7.1.tar.gz -C $BUILD_SOURCE_DIR
   - cd $BUILD_SOURCE_DIR/smartmontools-7.1
-  - sh autogen.sh
-  - ./configure --with-nvme-devicescan --prefix=/
+  - NOCONFIGURE=1 NO_CONFIGURE=1 sh autogen.sh
+  - ./configure --with-nvme-devicescan --prefix=/usr
   - sed -i -e 's/ -g / -s /' Makefile
   - make
   - make install DESTDIR=$BUILD_APPDIR
@@ -185,16 +196,16 @@ script:
   # remove unused files
   - cd $BUILD_APPDIR
   # header files
-  - rm -fr usr/include share/smartmontools/
+  - rm -fr usr/include
   # binaries
   - rm -fr usr/bin/{lsusb.py,acpibin,acpiexamples,acpiexec,acpihelp,acpinames,acpisrc,usbhid-dump,sensors-conf-convert}
-  - rm -fr sbin/{update-smart-drivedb,smartd}
-  - rm -fr usr/sbin/{convert_hd,update-usbids.sh,check_hd,mk_isdnhwdb,getsysinfo,fancontrol,pwmconfig,update-pciids,isadump,isaset,ownership,setpci,vpddecode,sensors-detect}
+  - rm -fr usr/sbin/{convert_hd,update-usbids.sh,check_hd,mk_isdnhwdb,getsysinfo,fancontrol,pwmconfig,update-pciids,isadump,isaset,ownership,setpci,vpddecode,sensors-detect,update-smart-drivedb,smartd}
   # configs
   - rm -fr usr/lib/{pkgconfig,systemd,libkmod.la}
   - rm -fr usr/lib64/pkgconfig
   - rm -fr etc/{sensors.d,smartd*,zypp}
-  - rm -fr usr/share/{hwinfo,man,doc,pkgconfig}
+  - rm -fr usr/share/{hwinfo,man,doc,pkgconfig,cmake,ddcutil,smartmontools,usb.ids.gz}
+  - rm -fr usr/etc
   # other
   - rm -fr var share usr/man
   - rm -fr usr/lib/perl5/libwww/*.pod

@@ -1,9 +1,7 @@
 HW PROBE 1.5
 ============
 
-Hardware Probe Tool (hw-probe) — a tool to probe for hardware, check its operability and find drivers.
-
-The probes are uploaded to the Linux hardware database: https://linux-hardware.org
+Hardware Probe Tool (hw-probe) — a tool to probe for hardware, check operability and find drivers with the help of Linux Hardware Database: https://linux-hardware.org
 
 
 Contents
@@ -38,7 +36,7 @@ Sample probe: https://linux-hardware.org/?probe=b394035f90
 
 You can make a probe of your computer with the help of [AppImage](#appimage), [Docker](#docker), [Snap](#snap), [Flatpak](#flatpak), [Live CD](#live-cd) or RPM/Deb package.
 
-By creating probes you contribute to the "HDD/SSD Real-Life Reliability Test" study: https://github.com/linuxhw/SMART
+By creating probes you contribute to the "HDD/SSD Desktop-Class Reliability Test" study: https://github.com/linuxhw/SMART
 
 
 Install

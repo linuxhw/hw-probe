@@ -1,5 +1,5 @@
 name: hw-probe
-version: 1.5-6
+version: 1.5-7
 summary: Check operability of computer hardware and find drivers
 description: >
  A tool to check operability of computer hardware and upload result
@@ -22,7 +22,7 @@ description: >
  Enable all interfaces in Permissions in order to collect more info.
  Private info is not collected.
      
- By creating probes you contribute to the HDD/SSD Real-Life
+ By creating probes you contribute to the HDD/SSD Desktop-Class
  Reliability Test study: https://github.com/linuxhw/SMART
      
  The tool is released under the GNU LGPL 2.1+ license.
