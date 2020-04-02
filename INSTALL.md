@@ -30,6 +30,7 @@ Contents
 * [ Install on Alpine       ](#install-on-alpine)
 * [ Install on Puppy        ](#install-on-puppy)
 * [ Install on blackPanther ](#install-on-blackpanther)
+* [ Install on Clear Linux  ](#install-on-clear-linux)
 * [ Install from Source     ](#install-from-source)
 
 Run without Installing
@@ -236,6 +237,7 @@ Install `perl-base`, `hwinfo`, `util-linux` and `smartmontools` by Menu > Setup 
     curl https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | sudo dd of=/usr/bin/hw-probe
     sudo chmod +x /usr/bin/hw-probe
 
+
 Install on blackPanther
 -----------------------
 
@@ -244,6 +246,17 @@ For blackPanther OS 16.2 and later:
     installing hw-probe
 
 This command will install all the dependencies as well.
+
+
+Install on Clear Linux
+----------------------
+
+See https://clearlinux.org/software/flathub/hardware-probe
+
+    sudo swupd bundle-add desktop
+    flatpak install flathub org.linux_hardware.hw-probe
+    sudo flatpak run org.linux_hardware.hw-probe -all -upload
+
 
 Install from Source
 -------------------

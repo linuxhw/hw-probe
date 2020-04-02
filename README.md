@@ -1,7 +1,7 @@
 HW PROBE 1.5
 ============
 
-Hardware Probe Tool (hw-probe) — a tool to probe for hardware, check operability and find drivers with the help of Linux Hardware Database: https://linux-hardware.org
+Hardware Probe Tool (hw-probe) — a tool to probe for hardware, check operability and find drivers with the help of Linux hardware database: https://linux-hardware.org
 
 
 Contents
@@ -89,6 +89,7 @@ The app runs on all 64-bit Linux distributions with `Glibc >= 2.14` including:
 * Sabayon 13 and newer
 * Slackware 14.2 and newer
 
+
 Docker
 ------
 
@@ -167,6 +168,7 @@ Create computer probes:
 
 For other Linux distributions see install manual here: https://docs.snapcraft.io/installing-snapd/6735
 
+
 Flatpak
 -------
 
@@ -176,7 +178,7 @@ Add a remote:
 
 Install universal package:
 
-    sudo flatpak install flathub org.linux_hardware.hw-probe
+    flatpak install flathub org.linux_hardware.hw-probe
 
 Now you can create computer probes:
 
@@ -194,12 +196,25 @@ The app is available in the Flathub: https://flathub.org/apps/details/org.linux_
 
 ###### Supported systems
 
+Out of the box:
+
 * Endless OS 3 and newer
 * Linux Mint 18.3 and newer
 * Fedora 27 and newer
 * CentOS 7.6 GNOME and newer
 
-For other Linux distributions see install manual here: https://flatpak.org/setup/
+Need to setup Flatpak (https://flatpak.org/setup/):
+
+* elementary OS 5 and newer
+* Pop!_OS 18.04 and newer
+* Solus 3 and newer
+* Clear Linux of any version
+* Mageia 6 and newer
+* openSUSE Leap 15 and newer
+* RHEL 7.6 and newer
+* Arch Linux
+* Chrome OS
+
 
 Inventory
 ---------

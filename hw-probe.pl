@@ -652,6 +652,8 @@ foreach my $V (sort keys(%VendorRam))
 my %DiskVendor = (
     "ACJ"       => "KingSpec",
     "ACS"       => "KingSpec",
+    "APS-SL"    => "Pioneer",
+    "AS25 1"    => "ASENNO",
     "AXM"       => "ADATA",
     "C3-60G"    => "SenDisk",
     "CF Card"   => "SanDisk",
@@ -665,6 +667,7 @@ my %DiskVendor = (
     "D2R"       => "OCZ",
     "DB40"      => "SanDisk",
     "DEN"       => "OCZ",
+    "EK60H"     => "Kingston",
     "FASTDISK"  => "FASTDISK",
     "FB0"       => "HP",
     "FLD"       => "Foxline",
@@ -672,12 +675,15 @@ my %DiskVendor = (
     "Force MP"  => "Corsair",
     "FTM50"     => "Super Talent",
     "G2242"     => "BIWIN",
+    "G2 series" => "Micro Center",
     "G3 Series" => "Myung",
     "GB0"       => "HP",
     "GB1000EA"  => "HP",
+    "GJ0"       => "HP",
     "Gen2A400"  => "Anobit",
     "GKH84"     => "Goldkey",
     "GOODRAM"   => "GOODRAM",
+    "HBS3A"     => "WDC",
     "HDS"       => "Hitachi",
     "HDT"       => "Hitachi",
     "HUA"       => "Hitachi",
@@ -691,18 +697,26 @@ my %DiskVendor = (
     "InM2"      => "Indilinx",
     "IR_SSDPR"  => "GOODRAM",
     "IR-SSDPR"  => "GOODRAM",
+    "JAJS"      => "Leven",
+    "LK04"      => "HPE",
+    "LK16"      => "HPE",
     "M2SCF-6M"  => "ACPI",
     "M4-CT"     => "Crucial",
+    "MB00"      => "HPE",
     "MB1000"    => "HP",
-    "MB2000G"   => "HP",
+    "MB2000"    => "HP",
     "MBG4"      => "Samsung",
     "MD0"       => "Magnetic Data",
     "MD"        => "MicroData",
     "Mercury Electra" => "OWC",
     "MKN"       => "Mushkin",
     "MK0"       => "HPE",
+    "MM1000"    => "HPE",
+    "MM2000"    => "HPE",
+    "MR00024"   => "HPE",
     "MTF"       => "Micron",
     "MZM"       => "Samsung",
+    "MZ7"       => "Samsung",
     "OCZ"       => "OCZ",
     "OOS500G"   => "Seagate",
     "OOS1000G"  => "Seagate",
@@ -725,18 +739,23 @@ my %DiskVendor = (
     "SB2"       => "MyDigitalSSD",
     "SG9"       => "Samsung",
     "SH00"      => "China",
+    "SPCC"      => "SPCC",
     "SPK"       => "KingSpec",
     "SQF-S2"    => "Advantech",
+    "SSD2S240"  => "Hypertec",
     "SSD2SC"    => "PNY",
     "SSDPAMM"   => "Intel",
     "SSDPR"     => "GOODRAM", # SSDPR-CL, SSDPR-CX, etc.
     "SSDSA2S"   => "Intel",
+    "SSDSC2"    => "Intel",
     "ST"        => "Seagate",
     "SU04G"     => "SanDisk",
     "SU08G"     => "SanDisk",
+    "T650-120"  => "Goldenfir",
     "TE2"       => "SanDisk",
     "TEAML5"    => "Team",
     "Thinklife" => "Lenovo",
+    "THNSF"     => "Toshiba",
     "TP00"      => "China",
     "TRO-SSD7"  => "Eluktro",
     "TS"        => "Transcend",
@@ -746,10 +765,14 @@ my %DiskVendor = (
     "WD"        => "WDC",
     "WDC WD10"  => "WDC",
     "WL"        => "WD MediaMax",
+    "XA1920"    => "Seagate",
+    "XF1230"    => "Seagate",
     "XUNZHE"    => "XUNZHE",
     "Y6-"       => "Yunhaitian",
     "ZALMAN"    => "ZALMAN",
-    "ZF18-64"   => "Espada"
+    "ZF18-64"   => "Espada",
+    "ZTC-SM"    => "ZTC",
+    "ZTSSD"     => "ZOTAC"
 );
 
 my %DiskModelVendor = (
@@ -1035,6 +1058,7 @@ my %MonVendor = (
     "AOP" => "AOpen",
     "APP" => "Apple Computer",
     "ASB" => "Prestigio", # ASBIS
+    "ATE" => "Megavision",
     "ATV" => "Ativa",
     "AUO" => "AU Optronics",
     "AUS" => "ASUS",
@@ -1062,11 +1086,14 @@ my %MonVendor = (
     "CPQ" => "Compaq Computer",
     "CTL" => "CTL",
     "CTX" => "CTX",
+    "CYS" => "Aosiman",
     "DEL" => "Dell",
     "DIC" => "Dinner",
     "DNS" => "DNS",
     "DON" => "DENON",
     "DSG" => "DSGR",
+    "DTB" => "DTEN Board",
+    "DUS" => "VOXICON",
     "DVM" => "RoverScan",
     "DWE" => "Daewoo",
     "EIZ" => "Eizo",
@@ -1077,6 +1104,7 @@ my %MonVendor = (
     "ENC" => "Eizo",
     "ENV" => "Envision Peripherals",
     "EPI" => "Envision",
+    "EST" => "Estecom",
     "FAC" => "Yuraku",
     "FSN" => "D&T",
     "FUS" => "Fujitsu Siemens",
@@ -1090,6 +1118,7 @@ my %MonVendor = (
     "GWY" => "Gateway",
     "HAI" => "Haier",
     "HAR" => "Haier",
+    "HAT" => "Huion",
     "HCM" => "HCL",
     "HEC" => "Hitachi",
     "HED" => "Hedy",
@@ -1107,20 +1136,24 @@ my %MonVendor = (
     "HVR" => "HVR", # VR Headsets
     "HWP" => "HP",
     "HPN" => "HP",
+    "HSE" => "Hisense",
     "HUG" => "Hugon",
     "HUN" => "Huion",
     "IBM" => "IBM",
     "ICB" => "Pixio",
     "IGM" => "Videoseven",
+    "IMP" => "Impression", # V7
     "INL" => "InnoLux Display",
     "INN" => "PRISM+",
     "IQT" => "Hyundai ImageQuest",
+    "ITA" => "Easy Living",
     "ITR" => "INFOTRONIC",
     "IVM" => "Iiyama",
     "IVO" => "InfoVision",
     "JDI" => "JDI", # Japan Display Inc.
     "JEN" => "Jean",
     "JVC" => "JVC",
+    "KGN" => "Kogan",
     "KOA" => "Konka",
     "KOS" => "KOIOS",
     "KTC" => "KTC",
@@ -1131,6 +1164,7 @@ my %MonVendor = (
     "LEO" => "Lenovo",
     "LGD" => "LG Display",
     "LGP" => "LG Philips",
+    "LHC" => "Denver",
     "LNX" => "Lanix",
     "LPL" => "LG Philips",
     "LTN" => "Lite-On",
@@ -1155,13 +1189,16 @@ my %MonVendor = (
     "NCI" => "NECCI",
     "NCP" => "PANDA", # Nanjing CEC Panda
     "NEC" => "NEC",
+    "NIK" => "Niko",
     "NON" => "Positivo",
+    "NRC" => "AOC",
     "NVD" => "Nvidia",
     "NVT" => "Novatek",
     "OCM" => "oCOSMO",
     "ONK" => "Onkyo",
     "ONN" => "ONN",
     "ORN" => "Orion",
+    "OTS" => "AOC",
     "PEA" => "Pegatron",
     "PEB" => "Proview",
     "PEG" => "PEGA",
@@ -1197,6 +1234,7 @@ my %MonVendor = (
     "SPT" => "Sceptre Tech",
     "SPV" => "Sunplus",
     "STC" => "Sampo",
+    "STI" => "Semp Toshiba",
     "STK" => "S2-Tek",
     "STN" => "Samsung",
     "SUN" => "Sun",
@@ -1207,10 +1245,12 @@ my %MonVendor = (
     "TCL" => "TCL",
     "TEU" => "Relisys",
     "TLX" => "Tianma XM",
+    "TMN" => "Thomson",
     "TNJ" => "Toppoly",
     "TOP" => "TopView",
     "TOS" => "Toshiba",
     "TPV" => "Top Victory",
+    "TRL" => "Royal Information",
     "TSB" => "Toshiba",
     "UMC" => "UMC",
     "UPS" => "UpStar",
@@ -1236,30 +1276,31 @@ my %MonVendor = (
 );
 
 my @UnknownMonVendor = (
-    "AAA", "ACA", "ADA", "ADP", "AGO", "AML", "ARS", "AVO", "AQU", # Prestigio (ARS)?
+    "AAA", "ACA", "ADA", "ADE", "ADP", "AGO", "AML", "ARS", "AVO", "AQU", # Prestigio (ARS)?
     "BBY", "BGT",
-    "CDR", "CHD", "CHE", "CHI", "CHR", "CNA", "CNC", "CRO", "CSL", "CTV", "CVA", "CVT", "CYX",
-    "DCL", "DDL", "DGI", "DLM", "DMI", "DPC", "DPL", "DTV", "DVI",
+    "CDR", "CHD", "CHE", "CHI", "CHR", "CNA", "CNC", "CON", "CRO", "CSL", "CTV", "CVA", "CVT", "CYX",
+    "DCL", "DDL", "DGI", "DLM", "DMI", "DPC", "DPL", "DSC", "DTV", "DVI",
     "ECS", "ETC", "EXP",
-    "FNI", "FRT", "FZC",
+    "FMX", "FNI", "FRT", "FZC",
     "GBM", "GDH", "GEN", "GER", "GKE", "GKK", "GLE", "GML", "GVT",
-    "JCH", "JRY", "JXJ",
-    "HCG", "HHT", "HJW", "HSI", "HYO", "HYT",
+    "JCH", "JRY", "JXJ", "JXT",
+    "HCG", "HHT", "HIC", "HJW", "HKL", "HSI", "HXA", "HYO", "HYT",
     "IFS", "INS", "IPS", "IOD", "ITE", # Songren (IPS)?
     "KDC", "KEB", "KET", "KNK", "KRF", "KTC",
-    "LLE", "LLP", "LLL", "LOE", "LOS", "LSC", "LTM",
-    "MIT", "MOT", "MTD", "MTK", # MotoAttach (MOT)? VIZIO (MTK)?
+    "LLE", "LLP", "LLL", "LOE", "LOS", "LSC", "LTM", "LYT",
+    "MIT", "MON", "MOT", "MTD", "MTK", # MotoAttach (MOT)? VIZIO (MTK)?
     "NEX", "NOD", "NOV", "NTS", "NUL", "NXG",
     "ODE", "OEM", "OMS", "ONB", "ORM", "OUT",
-    "PAR", "PBN", "PDI", "PKV", "PNP", "PPP", "PRI", "PTF", "PVS",
-    "RCA", "RGB", "RJT", "RLT", "ROW", "RRR", "RTD", "RTK", "RX_",
-    "SAC", "SBI", "SFX", "SGT", "SIS", "SKK", "SKY", "SMC", "SNC", "SSD", "STA", "STB", "STD", "SYK",
+    "PAR", "PBN", "PDI", "PKV", "PNP", "PPP", "PRI", "PTC", "PTF", "PVS",
+    "RAT", "RCA", "RGB", "RJT", "RLT", "ROW", "RRR", "RTD", "RTK", "RX_",
+    "SAC", "SBI", "SFX", "SGT", "SIS", "SKK", "SKY", "SMC", "SMP", "SNC", "SSD", "STA", "STB", "STD", "SYK",
     "TBD", "TFC", "TMA", "TSN", "TVT", "TVW",
-    "UME", "UTV",
-    "VBO", "VIE", "VID", "VMO", "VOR", "VST",
+    "UME", "UTV", "UGD",
+    "VBO", "VIE", "VID", "VMO", "VOR", "VSD", "VST",
     "WIN", "WRP", "WST", "WYT",
     "XXE", "XXX", "XYK", "XYY",
     "YHI", "YSP",
+    "ZLS", "ZTY",
     "___"
 );
 
@@ -1560,7 +1601,7 @@ my %TypeOrder = (
     "graphics card"=>"A"
 );
 
-my $ALL_DRIVE_VENDORS = "ADATA|A\-DATA|Advantech|AEGO|AMD|Anobit|Apacer|Apple|ASUS|BHT|BIWIN|Chiprex|CLOVER|Colorful|Corsair|Crucial|Dell|DOGFISH|DREVO|Espada|ExcelStor Technology|e2e4|faspeed|FASTDISK|Fordisk|FORESEE|Foxline|FUJITSU|Geil|GelL|GIGABYTE|Gigastone|GLOWAY|Goldendisk|Goldenfir|Goldkey|GOODRAM|Gost|HECTRON|HGST|Hitachi|Hoodisk|HP|HYPERDISK|i-FlashDisk|IBM-Hitachi|IBM|Indilinx|INTEL|INTENSO|Kingchuxing|KingDian|KingFast|KINGMAX|KingPower|KINGRICH|KINGSHARE|KingSpec|Kingston|KLEVV|LDLC|LDNDISK|Lenovo|LEXAR|Lite-On|LITEON|LITEONIT|LONDISK|Magnetic Data|MARSHAL|MARVELL|Maxtor|MediaMax|MicroData|Micron|Mushkin|Myung|Netac|OCZ|OWC|oyunkey|PALIT|Patriot|PHISON|Platinet|PLEXTOR|PNY|PRETEC|QUANTUM|QUMO|Radeon|Ramaxel|Reeinno|RunCore|Samsung Electronics|SAMSUNG|SandForce|SanDisk|SATADOM|Seagate|SenDisk|Shinedisk|SILICONMOTION|Silicon Motion|SK hynix|Smartbuy|SMI|SPCC|SuperMicro|TEAM|Teclast|TCSUNBOW|TEKET|TopSunligt|TOSHIBA|Transcend|Vaseky|Verbatim|WDC|Western Digital|Wolf Aure|XPG|XUNZHE|Zheino|ZOTAC";
+my $ALL_DRIVE_VENDORS = "ADATA|A\-DATA|Advantech|AEGO|AMD|Anobit|Apacer|Apple|ASUS|BHT|BIWIN|Chiprex|CLOVER|Colorful|Corsair|Crucial|Dell|DOGFISH|DREVO|Emtec|Espada|ExcelStor Technology|e2e4|faspeed|FASTDISK|Fordisk|FORESEE|Foxline|FUJITSU|Geil|GelL|GIGABYTE|Gigastone|GLOWAY|Goldendisk|Goldenfir|Goldkey|GOODRAM|Gost|HECTRON|HGST|Hitachi|Hoodisk|HP|HYPERDISK|i-FlashDisk|IBM-Hitachi|IBM|Indilinx|INTEL|INTENSO|Kingchuxing|KingDian|KingFast|KINGMAX|KingPower|KINGRICH|KINGSHARE|KingSpec|Kingston|KLEVV|LDLC|LDNDISK|Lenovo|LEXAR|Lite-On|LITEON|LITEONIT|LONDISK|Magnetic Data|MARSHAL|MARVELL|Maxtor|MediaMax|MicroData|Micron|Mushkin|Myung|Netac|OCZ|OEM|OWC|oyunkey|PALIT|Patriot|PHISON|Platinet|PLEXTOR|PNY|PRETEC|QUANTUM|QUMO|Radeon|Ramaxel|Reeinno|RunCore|Samsung Electronics|SAMSUNG|SandForce|SanDisk|SATADOM|Seagate|SenDisk|Shinedisk|SILICONMOTION|Silicon Motion|SK hynix|Smartbuy|SMI|SPCC|SuperMicro|TAISU|TEAM|Teclast|TCSUNBOW|TEKET|TopSunligt|TOSHIBA|Transcend|Vaseky|Verbatim|WDC|Western Digital|Wolf Aure|XPG|XUNZHE|Zheino|ZOTAC";
 
 my $ALL_VENDORS = "Brother|Canon|Epson|HP|Hewlett\-Packard|Kyocera|Samsung|Xerox";
 
@@ -1606,6 +1647,12 @@ sub clientHash(@)
         $Len = shift(@_);
     }
     
+    if(length($Subj)==$Len
+    and $Subj=~/\A[\dA-F]+\Z/)
+    { # Hash
+        return $Subj;
+    }
+    
     return uc(getSha512L($Subj."+".$SALT_CLIENT, $Len));
 }
 
@@ -1621,6 +1668,11 @@ sub encryptSerialsInPaths($)
     foreach my $Ser (sort keys(%DiskSer))
     {
         my $Enc = clientHash($Ser);
+        
+        if($Enc eq $Ser) {
+            next;
+        }
+        
         $Content=~s/_\Q$Ser\E\b/_$Enc/g; # /dev/disk/by-id/ata-Samsung_SSD_850_EVO_250GB_XXXXXXXXXXXXXXX
     }
     
@@ -1671,6 +1723,10 @@ sub encryptSerials(@)
             else {
                 next;
             }
+        }
+        
+        if($Enc eq $Ser) {
+            next;
         }
         
         $Content=~s/(\Q$Tag\E\s*[:=]\s*"?)\Q$Ser\E("?\s*\n)/$1$Enc$2/g;
@@ -3139,6 +3195,15 @@ sub probeHW()
         }
     }
     
+    if(not $Sys{"Type"} and not $Sys{"Model"})
+    {
+        if(defined $KernMod{"raspberrypi_hwmon"})
+        {
+            $Sys{"Type"} = "system on chip";
+            $Sys{"Model"} = "Raspberry Pi";
+        }
+    }
+    
     my $Lsblk = "";
     
     if($Opt{"FixProbe"}) {
@@ -3373,10 +3438,8 @@ sub probeHW()
         if(index($HWInfo, "Serial ID:")) {
             $HWInfo = encryptSerials($HWInfo, "Serial ID", "hwinfo");
         }
-        else
-        { # Snap
-            $HWInfo = encryptSerialsInPaths($HWInfo);
-        }
+        
+        $HWInfo = encryptSerialsInPaths($HWInfo);
         $HWInfo = encryptWWNs($HWInfo);
         
         if($Opt{"HWLogs"}) {
@@ -3788,7 +3851,7 @@ sub probeHW()
                         $Device{"Serial"} = $3;
                         $Device{"Device"} = $Device{"Model"};
                         
-                        if($Device{"Serial"}!~/\A[A-F]{$HASH_LEN_CLIENT}\Z/) {
+                        if($Device{"Serial"}!~/\A[\dA-F]{$HASH_LEN_CLIENT}\Z/) {
                             $Device{"Serial"} = clientHash($Device{"Serial"});
                         }
                         
@@ -6096,7 +6159,7 @@ sub probeHW()
                     }
                 }
                 
-                if($Block=~/POWER_SUPPLY_SERIAL_NUMBER=(.+)/i) {
+                if($Block=~/POWER_SUPPLY_SERIAL_NUMBER=\s*(.+)/i) {
                     $Device{"Serial"} = $1;
                 }
                 
@@ -6628,7 +6691,7 @@ sub probeHW()
         if($Dmesg=~/Linux version (.+)/)
         {
             my $LinVer = $1;
-            foreach my $Lin ("endless", "ubuntu", "debian")
+            foreach my $Lin ("endless", "ubuntu", "debian", "arch")
             {
                 if($LinVer=~/$Lin/i)
                 {
@@ -7563,6 +7626,24 @@ sub probeHW()
         writeLog($LOG_DIR."/fstab", $Fstab);
     }
     
+    my $LocaleConf = "";
+    
+    if($Opt{"FixProbe"}) {
+        $LocaleConf = readFile($FixProbe_Logs."/locale");
+    }
+    elsif(enabledLog("locale"))
+    {
+        listProbe("logs", "locale");
+        $LocaleConf = readFile("/etc/locale.conf");
+        if($LocaleConf) {
+            writeLog($LOG_DIR."/fstab", $LocaleConf);
+        }
+    }
+    
+    if(not $Sys{"Lang"} and $LocaleConf=~/LANG="(.+)"/) {
+        $Sys{"Lang"} = $1;
+    }
+    
     my $Mount = "";
     
     if($Opt{"FixProbe"}) {
@@ -7634,6 +7715,35 @@ sub probeHW()
     
     if(not $Sys{"Display_server"} and $XInput=~/xwayland/i) {
         $Sys{"Display_server"} = "Wayland";
+    }
+    
+    my $BootLog = "";
+    
+    if($Opt{"FixProbe"}) {
+        $BootLog = readFile($FixProbe_Logs."/boot.log");
+    }
+    elsif(enabledLog("boot.log")
+    and -f "/var/log/boot.log")
+    {
+        listProbe("logs", "boot.log");
+        $BootLog = clearLog(readFile("/var/log/boot.log"));
+        $BootLog=~s&(Mounted|Mounting)\s+/.+&$1 XXXXX&g;
+        $BootLog=~s&(Setting hostname\s+).+:&$1XXXXX:&g;
+        $BootLog = hideLVM($BootLog);
+        $BootLog = encryptUUIDs($BootLog);
+        $BootLog = hideDevDiskUUIDs($BootLog);
+        writeLog($LOG_DIR."/boot.log", $BootLog);
+    }
+    
+    if(not $Sys{"System"})
+    {
+        if($BootLog=~/Starting (.+?) Post-Boot Flatpak Installer/)
+        {
+            my $FlatSys = $1;
+            if($FlatSys=~/(Endless)/) {
+                $Sys{"System"} = lc($1);
+            }
+        }
     }
     
     print "Ok\n";
@@ -8003,9 +8113,8 @@ sub detectBoard($)
         delete($Device->{"Version"});
     }
     
-    if($Device->{"Device"}=~/\bName\d*\b/i)
-    { # no info
-        return;
+    if($Device->{"Device"}=~/\bName\d*\b/i) {
+        $Device->{"Device"} = "Board";
     }
     
     if(my $Ver = $Device->{"Version"}) {
@@ -8017,32 +8126,40 @@ sub detectBoard($)
     $Device->{"Type"} = "motherboard";
     $Device->{"Status"} = "works";
     
-    if(not $Device->{"Vendor"}) {
-        $Device->{"Vendor"} = $VendorByModel{shortModel($Device->{"Device"})};
-    }
-    
-    if(not $Device->{"Vendor"})
-    {
-        if($Device->{"Device"}=~/\AMS\-\d+\Z/) {
-            $Device->{"Vendor"} = "MSI";
-        }
-        elsif($Device->{"Device"}=~/\ASiS\-\d+/) {
-            $Device->{"Vendor"} = "SiS Technology";
-        }
-        elsif($Device->{"Device"}=~/\A(4CoreDual|4Core1600|775XFire|ALiveNF|ConRoe[A-Z\d])/)
-        { # ConRoe1333, ConRoeXFire
-            $Device->{"Vendor"} = "ASRock";
-        }
-    }
-    
-    if(not $Device->{"Vendor"} or not $Device->{"Device"}) {
+    if(not $Device->{"Vendor"} and not $Device->{"Device"}) {
         return;
+    }
+    
+    if($Device->{"Device"})
+    {
+        if(not $Device->{"Vendor"}) {
+            $Device->{"Vendor"} = $VendorByModel{shortModel($Device->{"Device"})};
+        }
+        
+        if(not $Device->{"Vendor"})
+        {
+            if($Device->{"Device"}=~/\AMS\-\d+\Z/) {
+                $Device->{"Vendor"} = "MSI";
+            }
+            elsif($Device->{"Device"}=~/\ASiS\-\d+/) {
+                $Device->{"Vendor"} = "SiS Technology";
+            }
+            elsif($Device->{"Device"}=~/\A(4CoreDual|4Core1600|775XFire|ALiveNF|ConRoe[A-Z\d])/)
+            { # ConRoe1333, ConRoeXFire
+                $Device->{"Vendor"} = "ASRock";
+            }
+        }
+    }
+    else {
+        $Device->{"Device"} = "Board";
     }
     
     my $ID = devID(nameID($Device->{"Vendor"}), devSuffix($Device));
     $ID = fmtID($ID);
     
-    $Device->{"Device"} = "Motherboard ".$Device->{"Device"};
+    if($Device->{"Device"} ne "Board") {
+        $Device->{"Device"} = "Motherboard ".$Device->{"Device"};
+    }
     
     my $MID = "board:".$ID;
     $HW{$MID} = $Device;
@@ -8114,29 +8231,41 @@ sub detectMonitor($)
         $Device{"Kind"} = "Analog";
     }
     
-    if($Info=~/Made in (.+)/) {
+    if($Info=~/Made in:? (.+)/) {
         $Device{"Made"} = $1;
     }
     
-    if($Info=~/Manufacturer:\s*(.+?)\s+Model\s+(.+?)\s+Serial/)
-    {
+    if($Info=~/Manufacturer:\s*(.+?)\s+Model\s+(.+?)\s+Serial/) {
         ($V, $D) = ($1, $2);
-        
-        if($D=~/\A\d+\Z/ and $Info!~/\(valid\)/)
-        { # new format by edid-decode c498d2224d (2019-11-30)
-          # revert to HEX
-            $D = sprintf('%x', $D);
-        }
-        
-        if(length($D)<4)
-        {
-            foreach (1 .. 4 - length($D)) {
-                $D = "0".$D;
-            }
-        }
     }
     elsif($Info=~/EISA ID:\s*(\w{3})(\w+)/) {
         ($V, $D) = (uc($1), uc($2));
+    }
+    
+    if(not $V and not $D)
+    { # edid-decode 2020
+        if($Info=~/Manufacturer:\s*(.+)/) {
+            $V = $1;
+        }
+        if($Info=~/Model:\s*(.+)/) {
+            $D = $1;
+        }
+        if($Info=~/Serial Number:\s*(.+)/) {
+            $Device{"Serial"} = $1;
+        }
+    }
+    
+    if($D=~/\A\d+\Z/ and $Info!~/\(valid\)/)
+    { # new format by edid-decode c498d2224d (2019-11-30)
+      # revert to HEX
+        $D = sprintf('%x', $D);
+    }
+    
+    if(length($D)<4)
+    {
+        foreach (1 .. 4 - length($D)) {
+            $D = "0".$D;
+        }
     }
 
     if(not $V or not $D) {
@@ -8161,6 +8290,8 @@ sub detectMonitor($)
         #     }
         # }
     }
+    
+    $Device{"Device"}=~s/\A\'(.+)\'\Z/$1/;
     
     foreach my $Attr ("Maximum image size", "Screen size", "Detailed mode", "DTD 1", "DTD 2")
     {
@@ -8202,6 +8333,13 @@ sub detectMonitor($)
             if(not defined $Resolutions{$W} or $H>$Resolutions{$W}) {
                 $Resolutions{$W} = $H;
             }
+        }
+    }
+    
+    if(not keys(%Resolutions))
+    { # edid-decode 2020
+        while($Info=~s/ (\d+)x(\d+) //) {
+            $Resolutions{$1} = $2;
         }
     }
     
@@ -8415,16 +8553,16 @@ sub detectDrive(@)
     
     if(not $Device->{"Kind"})
     {
-        if($Desc=~/Rotation Rate:.*Solid State Device/
-        or $Device->{"Device"}=~/\bSSD/
-        or $Device->{"Family"}=~/\bSSD/) {
-            $Device->{"Kind"} = "SSD";
-        }
-        elsif($Desc=~/NVM Commands|NVMe Log/
+        if($Desc=~/NVM Commands|NVMe Log/
         or $Device->{"Device"}=~/\bNVMe\b/i)
         {
             $Device->{"Kind"} = "NVMe";
             $Bus = $PCI_DISK_BUS;
+        }
+        elsif($Desc=~/Rotation Rate:.*Solid State Device/
+        or $Device->{"Device"}=~/\bSSD/
+        or $Device->{"Family"}=~/\bSSD/) {
+            $Device->{"Kind"} = "SSD";
         }
         else {
             $Device->{"Kind"} = "HDD";
@@ -8489,6 +8627,12 @@ sub detectDrive(@)
     $Device->{"Device"}=~s/ \Z//g;
     
     fixDrive($Device);
+    
+    if($Device->{"Vendor"}=~/Hitachi|MARVELL/i)
+    { # HUA7210SASUN1.0T XXXXXXXXXX
+      # SD88SA024SA0 SUN24G XXXXXXXXXX
+        $Device->{"Device"}=~s/(\s\d\w{4,})+\Z//;
+    }
     
     $Device->{"Model"} = $Device->{"Device"};
     
@@ -8679,7 +8823,7 @@ sub fixDrive($)
     or $Device->{"Kind"} eq "NVMe")
     {
         if(grep {$Device->{"Device"} eq $_} ("SSD", "SATA SSD", "SATA-III SSD", "Solid State Disk",
-        "SSD Sata III", "DISK", "SSD DISK") or grep {uc($Device->{"Vendor"}) eq $_} ("OCZ", "ADATA", "A-DATA", "PATRIOT", "SPCC", "SAMSUNG", "CORSAIR", "HYPERDISK", "TOSHIBA"))
+        "SSD Sata III", "DISK", "SSD DISK") or (grep {uc($Device->{"Vendor"}) eq $_} ("OCZ", "ADATA", "A-DATA", "PATRIOT", "SPCC", "SAMSUNG", "CORSAIR", "HYPERDISK", "TOSHIBA") and $Device->{"Device"}!~/\A(THNS)/))
         { # Modify device ID to distinguish SSDs
             if($Device->{"Capacity"}=~/\A([\d\.]+)([GT]B)\Z/)
             {
@@ -8738,7 +8882,14 @@ sub fixDrive($)
     {
         if(my $Oui = $Device->{"IEEE_OUI"})
         {
-            if(defined $IeeeOui{$Oui}) {
+            if(defined $IeeeOui{$Oui})
+            {
+                if($Opt{"IdentifyDrive"}) {
+                    $Device->{"Err"} = "identifying by IEEE OUI";
+                }
+                else {
+                    printMsg("ERROR", "identifying unknown vendor by IEEE OUI for drive ".$Device->{"Device"});
+                }
                 $Device->{"Vendor"} = $IeeeOui{$Oui};
             }
         }
@@ -8829,7 +8980,7 @@ sub guessDriveVendor($)
         }
     }
     
-    if($Name=~/\A(MT|MSH|NT|P3|P3D|P4|T|PA25)\-(60|64|120|128|240|256|512|960|1TB|2TB)\Z/
+    if($Name=~/\A(MT|MSH|NT|P3|P3D|P4|T|PA25)\-(60|64|120|128|240|256|480|512|960|1TB|2TB)\Z/
     or grep { $Name eq $_ } ("V-32", "NT-256", "NT-512", "Q-360", "Q-720"))
     { # MT-64 MSH-256 P3-128 P3D-240 P3-2TB T-60 V-32 PA25-128 NT-64
         return "KingSpec";
@@ -9042,7 +9193,10 @@ sub emptyVal($)
 {
     my $Val = $_[0];
     
-    if($Val=~/\A[\[\(]*(not specified|not available|out of spec|not defined|No Device Manufacturer|No Device Part Number|invalid|error|unkn|unknown|undefined|unknow|uknown|empty|n\/a|none|default string|vendor|device|unknown vendor|default|customer|model|_|unde|null|reserved|Unknown \(0\)|\?|unknown unknown|[\.\}\*\_]+)[\)\]]*\Z/i
+    $Val=~s/\A\s+//;
+    $Val=~s/\s+\Z//;
+    
+    if($Val=~/\A[\[\(]*(not specified|not available|out of spec|not defined|No Device Manufacturer|No Device Part Number|invalid|error|unkn|unknown|undefined|unknow|uknown|empty|n\/a|none|default string|vendor|device|unknown vendor|default|MB serial number|PCA serial|customer|model|_|unde|null|reserved|Unknown \(0\)|\?|unknown unknown|[\.\}\*\_]+)[\)\]]*\Z/i
     or $Val=~/(\A|\b|\d)(to be filled|unclassified device|not defined|bad index|does not exist|unkn|uknown|default)(\b|\Z)/i) {
         return 1;
     }
@@ -9470,7 +9624,7 @@ sub fixFFByBoard($)
     my $Board = $_[0];
     if($Sys{"Type"}!~/$DESKTOP_TYPE|$SERVER_TYPE/)
     {
-        if($Board=~/\b(D510MO|GA-K8NMF-9|DG965RY|DG33BU|D946GZIS|N3150ND3V|D865GSA|DP55WG|H61MXT1|D875PBZ|F2A55|Z68XP-UD3|Z77A-GD65|M4A79T|775Dual-880Pro|P4Dual-915GL|P4i65GV|D5400XS|D201GLY|MicroServer|IPPSB-DB|MS-AA53|C2016-BSWI-D2|N3160TN|D915PBL|EIRD-SAM|D865PERL|D410PT|D525MW|D945GCNL|BSWI-D2|B202|D865GBF|G1-CPU-IMP|Aptio CRB|A1SRi|D865GVHZ)\b/) {
+        if($Board=~/\b(D510MO|GA-K8NMF-9|DG965RY|DG33BU|D946GZIS|N3150ND3V|D865GSA|DP55WG|H61MXT1|D875PBZ|F2A55|Z68XP-UD3|Z77A-GD65|M4A79T|775Dual-880Pro|P4Dual-915GL|P4i65GV|D5400XS|D201GLY|MicroServer|IPPSB-DB|MS-AA53|C2016-BSWI-D2|N3160TN|D915PBL|EIRD-SAM|D865PERL|D410PT|D525MW|D945GCNL|BSWI-D2|B202|D865GBF|G1-CPU-IMP|Aptio CRB|A1SRi|D865GVHZ|IC17X|N3050ND3H)\b/) {
             $Sys{"Type"} = "desktop";
         }
     }
@@ -9489,6 +9643,12 @@ sub fixFFByBoard($)
             $Sys{"Type"} = "tablet";
         }
     }
+    if($Sys{"Type"} ne "all in one")
+    {
+        if($Board=~/(AFLMB4-945GSE)/) {
+            $Sys{"Type"} = "all in one";
+        }
+    }
 }
 
 sub fixFFByModel($$)
@@ -9498,7 +9658,7 @@ sub fixFFByModel($$)
     if($Sys{"Type"}!~/$MOBILE_TYPE/)
     { # can't distinguish all-in-ones vs notebooks (very similar hardware: same cdroms, mobile graphics cards, etc.)
       # so need to check by exact model name
-        if($M=~/(Aspire (7720|5670|\d+Z)|EasyNote|Extensa \d+|MacBook|RoverBook|Pine Trail - M CRB)/
+        if($M=~/(Aspire (7720|5670|\d+Z)|EasyNote|Extensa \d+|MacBook|RoverBook|Pine Trail - M CRB|A410-K\.BE47P1)/
         or ($V=~/Samsung/i and $M=~/R50\/R51/)
         or ($V=~/Clevo/i and $M=~/M740TU/)
         or ($V=~/Toshiba/i and $M=~/Satellite/)
@@ -9510,7 +9670,7 @@ sub fixFFByModel($$)
     
     if($Sys{"Type"}!~/$DESKTOP_TYPE|$SERVER_TYPE/)
     {
-        if($M=~/MacPro|ESPRIMO P|Aspire easyStore/) {
+        if($M=~/MacPro|ESPRIMO P|Aspire easyStore|X11SSL-F|TERRA_PC/) {
             $Sys{"Type"} = "desktop";
         }
     }
@@ -9554,8 +9714,9 @@ sub fixFFByModel($$)
         or ($V=~/Beelink/i and $M=~/\ASII/)
         or ($V=~/Orbsmart/i and $M=~/\AAW/)
         or ($V=~/Compulab/i and $M=~/\A(Intense|fitlet|Airtop)/)
+        or ($V=~/Kontron/i and $M=~/SMX945/)
         or $M=~/\AZBOX\-/
-        or $M=~/Macmini|ESPRIMO Q510|MMLP5AP-SI|Mini PC|TL-WR842N|Thin Client|Thin Mini|VMac mini|TERRA_PC|Aptio CRB|Propc Nano|XS35V5/) {
+        or $M=~/Macmini|ESPRIMO Q510|MMLP5AP-SI|Mini PC|TL-WR842N|Thin Client|Thin Mini|VMac mini|Aptio CRB|Propc Nano|XS35V5/) {
             $Sys{"Type"} = "mini pc";
         }
     }
@@ -9563,7 +9724,7 @@ sub fixFFByModel($$)
     if($Sys{"Type"} ne "all in one")
     {
         if($M=~/( AiO PC)/
-        or $M=~/\A(MS-6657)\Z/
+        or $M=~/\A(MS-6657|EZ1601)\Z/
         or $V eq "AIO"
         or ($V=~/Apple/i and $M=~/\AiMac/)
         or ($V=~/Lenovo/i and $M=~/\A(S310|IdeaCentre B|ThinkCentre M90z) /)
@@ -9735,6 +9896,12 @@ sub fixChassis()
             $Sys{"Model"} = "YOGA";
             $Sys{"System"} = "android";
         }
+        elsif($Sys{"Kernel"}=~/-Microsoft\Z/i)
+        {
+            $Sys{"Type"} = "desktop";
+            $Sys{"Vendor"} = "Microsoft";
+            $Sys{"Model"} = "Windows Subsystem for Linux";
+        }
     }
     
     if(not $Sys{"Model"} and not $Sys{"Vendor"})
@@ -9746,7 +9913,7 @@ sub fixChassis()
             $Sys{"Model"} = "Nexus 7";
             $Sys{"System"} = "android";
         }
-        elsif($Sys{"Kernel"}=~/\-(LuisKERNEL|Dark-Ages)\-|\-perf\+|SM-N9500|lineageos|FKernel-v/i)
+        elsif($Sys{"Kernel"}=~/\-(LuisKERNEL|Dark-Ages)\-|\-perf\+|SM-N9500|lineageos|FKernel-v|lineage/i)
         {
             $Sys{"Type"} = "phone";
             $Sys{"System"} = "android";
@@ -10059,6 +10226,9 @@ sub selectHWAddr($$)
             push(@Other, $Addr);
         }
     }
+    
+    # TODO: sort i-faces on next re-gen of the DB
+    # @Eth = sort @Eth;
     
     my $Sel = undef;
     
@@ -10722,19 +10892,6 @@ sub writeLogs()
             $GrubCfg = encryptUUIDs($GrubCfg);
             writeLog($LOG_DIR."/grub.cfg", $GrubCfg);
         }
-    }
-    
-    if(enabledLog("boot.log")
-    and -f "/var/log/boot.log")
-    {
-        listProbe("logs", "boot.log");
-        my $BootLog = clearLog(readFile("/var/log/boot.log"));
-        $BootLog=~s&(Mounted|Mounting)\s+/.+&$1 XXXXX&g;
-        $BootLog=~s&(Setting hostname\s+).+:&$1XXXXX:&g;
-        $BootLog = hideLVM($BootLog);
-        $BootLog = encryptUUIDs($BootLog);
-        $BootLog = hideDevDiskUUIDs($BootLog);
-        writeLog($LOG_DIR."/boot.log", $BootLog);
     }
     
     if(checkCmd("xrandr"))
@@ -14129,7 +14286,7 @@ sub scenario()
             elsif(-f "$FixProbe_Logs/debs")
             {
                 my $Debs = readFile("$FixProbe_Logs/debs");
-                if($Debs=~/(termux-elf)/)
+                if(index($Debs, "termux-")!=-1)
                 {
                     $Distr = "android";
                     $Rel = $Distr;
