@@ -100,10 +100,17 @@ Download Deb package [hw-probe_1.5-1_all.deb](https://github.com/linuxhw/hw-prob
 Install on openSUSE
 -------------------
 
-Setup an OBS repository and install the package:
+Select and install an RPM package for your openSUSE distribution: https://software.opensuse.org/package/hw-probe
 
-    sudo zypper addrepo https://download.opensuse.org/repositories/hardware/openSUSE_Leap_15.0/ hardware
-    sudo zypper install --no-recommends hw-probe
+openSUSE Leap 15.1:
+
+    sudo zypper addrepo https://download.opensuse.org/repositories/hardware/openSUSE_Leap_15.1/ hardware
+    sudo zypper install hw-probe
+
+openSUSE Tumbleweed:
+
+    sudo zypper addrepo https://download.opensuse.org/repositories/hardware/openSUSE_Tumbleweed/ hardware
+    sudo zypper install hw-probe
 
 
 Install on Manjaro
