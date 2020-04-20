@@ -35,6 +35,7 @@ Contents
 * [ Install on EasyOS       ](#install-on-easyos)
 * [ Install on blackPanther ](#install-on-blackpanther)
 * [ Install on Clear Linux  ](#install-on-clear-linux)
+* [ Install on Endless      ](#install-on-endless)
 * [ Install on Solus        ](#install-on-solus)
 * [ Install on QTS          ](#install-on-qts)
 * [ Install from Source     ](#install-from-source)
