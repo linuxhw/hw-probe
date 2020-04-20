@@ -8250,8 +8250,10 @@ sub detectMonitor($)
         if($Info=~/Model:\s*(.+)/) {
             $D = $1;
         }
-        if($Info=~/Serial Number:\s*(.+)/) {
+        if($Info=~/Product Serial Number:\s*(.+)/)
+        {
             $Device{"Serial"} = $1;
+            $Device{"Serial"}=~s/\A\'(.+)\'\Z/$1/;
         }
     }
     
