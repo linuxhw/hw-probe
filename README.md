@@ -80,6 +80,7 @@ The app runs on all 64-bit Linux distributions with `Glibc >= 2.14` including:
 * Fedora 15 and newer (need to add `fuse-libs` package on Fedora 15, 16 and 17)
 * RHEL 7 and newer
 * CentOS 7 and newer
+* Solus 3 and newer
 * Puppy Linux 6.0 and newer (Tahr64, XenialPup64, BionicPup64, etc.)
 * Clear Linux of any version
 * Pop!_OS 17 and newer
@@ -202,6 +203,7 @@ Out of the box:
 * Linux Mint 18.3 and newer
 * Fedora 27 and newer
 * CentOS 7.6 GNOME and newer
+* Pop!_OS 20.04 and newer
 
 Need to setup Flatpak (https://flatpak.org/setup/):
 

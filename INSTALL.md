@@ -5,6 +5,8 @@ HW Probe 1.5 (January 15, 2020)
 
 This file explains how to install and setup environment for the tool in your computer.
 
+Just find the name of your Linux distribution on this page.
+
 See more info in the [README.md](README.md).
 
 
@@ -26,9 +28,11 @@ Contents
 * [ Install on RHEL 8       ](#install-on-rhel-8)
 * [ Install on RHEL 7       ](#install-on-rhel-7)
 * [ Install on RHEL 6       ](#install-on-rhel-6)
+* [ Install on ClearOS      ](#install-on-clearos)
 * [ Install on Gentoo       ](#install-on-gentoo)
 * [ Install on Alpine       ](#install-on-alpine)
 * [ Install on Puppy        ](#install-on-puppy)
+* [ Install on EasyOS       ](#install-on-easyos)
 * [ Install on blackPanther ](#install-on-blackpanther)
 * [ Install on Clear Linux  ](#install-on-clear-linux)
 * [ Install from Source     ](#install-from-source)
@@ -48,13 +52,17 @@ Command line to Run
 Install on Ubuntu
 -----------------
 
-On Ubuntu and Ubuntu based Linux distributions (Linux Mint, elementary OS, etc.).
+On Ubuntu and Ubuntu based Linux distributions (Linux Mint, Zorin, Pop!_OS, elementary OS, KDE neon, Peppermint, etc.).
 
 ###### Ubuntu package
 
-The package is available in Ubuntu 20.04: https://packages.ubuntu.com/focal/hw-probe
+The package is available in Ubuntu 20.04 or newer and its derivatives (https://packages.ubuntu.com/focal/hw-probe):
 
-###### Deb package
+    sudo add-apt-repository universe
+    sudo apt-get update
+    sudo apt-get install hw-probe --no-install-recommends
+
+###### Upstream package
 
 Download Debian package [hw-probe_1.5-1_all.deb](https://github.com/linuxhw/hw-probe/releases/download/1.5/hw-probe_1.5-1_all.deb) and install:
 
@@ -79,7 +87,17 @@ The [Snap package](README.md#snap) is also available to install and run easily o
 Install on Debian
 -----------------
 
-On Debian and Debian based Linux distributions (Kali, MX Linux, PureOS, etc.):
+On Debian and Debian based Linux distributions (Kali, MX Linux, PureOS, Parrot, deepin, SolydXK, SparkyLinux, etc.).
+
+Enable sudo by https://wiki.debian.org/sudo
+
+###### Debian package
+
+The package is available in Debian 11 Bullseye or newer and its derivatives (https://packages.debian.org/bullseye/hw-probe):
+
+    sudo apt install hw-probe --no-install-recommends
+
+###### Unstable package
 
     sudo apt-get install debian-archive-keyring
     sudo sh -c 'echo deb http://deb.debian.org/debian unstable main > /etc/apt/sources.list.d/debian-sid.list'
@@ -88,7 +106,7 @@ On Debian and Debian based Linux distributions (Kali, MX Linux, PureOS, etc.):
     sudo rm -f /etc/apt/sources.list.d/debian-sid.list
     sudo apt-get update
 
-###### Standalone
+###### Upstream package
 
 Download Deb package [hw-probe_1.5-1_all.deb](https://github.com/linuxhw/hw-probe/releases/download/1.5/hw-probe_1.5-1_all.deb) and install:
 
@@ -212,9 +230,19 @@ Install on RHEL 6
     sudo yum install hw-probe
 
 
+Install on ClearOS
+------------------
+
+    sudo yum-config-manager --enable clearos-centos
+    sudo yum-config-manager --enable clearos-epel
+    sudo yum install hw-probe
+
 Install on Gentoo
 -----------------
 
+With [app-eselect/eselect-repository](https://wiki.gentoo.org/wiki/Eselect/Repository) installed:
+
+    sudo eselect repository enable bobwya
     sudo emerge --ask sys-apps/hw-probe
 
 ###### Manual
@@ -243,6 +271,18 @@ Install `perl-base`, `hwinfo`, `util-linux` and `smartmontools` by Menu > Setup 
 
     curl https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | sudo dd of=/usr/bin/hw-probe
     sudo chmod +x /usr/bin/hw-probe
+
+
+Install on EasyOS
+-----------------
+
+Update local database by Menu > Setup > PETget Package Manager > Configure package manager > Update now.
+Install `perl-base`, `libhd`, `hwinfo`, `util-linux` and `smartmontools` by Menu > Setup > PETget Package Manager.
+
+Open the console:
+
+    curl https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | dd of=/usr/bin/hw-probe
+    chmod +x /usr/bin/hw-probe
 
 
 Install on blackPanther
