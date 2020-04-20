@@ -89,7 +89,7 @@ The [Snap package](README.md#snap) is also available to install and run easily o
 Install on Debian
 -----------------
 
-On Debian and Debian based Linux distributions (Kali, MX Linux, PureOS, Parrot, deepin, SolydXK, SparkyLinux, etc.).
+On Debian and Debian based Linux distributions (Kali, MX Linux, Antix, PureOS, Parrot, deepin, SolydXK, SparkyLinux, etc.).
 
 Enable sudo by https://wiki.debian.org/sudo
 
@@ -305,6 +305,14 @@ See https://clearlinux.org/software/flathub/hardware-probe
     sudo swupd bundle-add desktop
     flatpak install flathub org.linux_hardware.hw-probe
     sudo flatpak run org.linux_hardware.hw-probe -all -upload
+
+
+Install on Endless
+------------------
+
+Search for Hardware Probe program in the App Center.
+
+See https://flathub.org/apps/details/org.linux_hardware.hw-probe
 
 
 Install on Solus
