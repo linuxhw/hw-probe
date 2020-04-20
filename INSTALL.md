@@ -35,6 +35,8 @@ Contents
 * [ Install on EasyOS       ](#install-on-easyos)
 * [ Install on blackPanther ](#install-on-blackpanther)
 * [ Install on Clear Linux  ](#install-on-clear-linux)
+* [ Install on Solus        ](#install-on-solus)
+* [ Install on QTS          ](#install-on-qts)
 * [ Install from Source     ](#install-from-source)
 
 Run without Installing
@@ -303,6 +305,18 @@ See https://clearlinux.org/software/flathub/hardware-probe
     sudo swupd bundle-add desktop
     flatpak install flathub org.linux_hardware.hw-probe
     sudo flatpak run org.linux_hardware.hw-probe -all -upload
+
+
+Install on Solus
+----------------
+
+Use [AppImage](README.md#appimage).
+
+
+Install on QTS
+--------------
+
+Use [Docker](README.md#docker).
 
 
 Install from Source
