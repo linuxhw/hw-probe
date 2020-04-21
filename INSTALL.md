@@ -38,6 +38,7 @@ Contents
 * [ Install on Endless      ](#install-on-endless)
 * [ Install on Solus        ](#install-on-solus)
 * [ Install on QTS          ](#install-on-qts)
+* [ Install on Chrome OS    ](#install-on-chrome-os)
 * [ Install from Source     ](#install-from-source)
 
 Run without Installing
@@ -326,6 +327,12 @@ Install on QTS
 --------------
 
 Use [Docker](README.md#docker).
+
+
+Install on Chrome OS
+--------------------
+
+Open settings, turn on support for Linux and open the Linux Terminal. Now use [AppImage](README.md#appimage) or install the [Flatpak](README.md#flatpak).
 
 
 Install from Source
