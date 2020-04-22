@@ -83,6 +83,8 @@ The app runs on all 64-bit Linux distributions with `Glibc >= 2.14` including:
 * Solus 3 and newer
 * Puppy Linux 6.0 and newer (Tahr64, XenialPup64, BionicPup64, etc.)
 * Clear Linux of any version
+* Arch Linux of any version
+* EndeavourOS 2019 and newer
 * Pop!_OS 17 and newer
 * Mageia 2 and newer
 * Alt Linux 7 and newer

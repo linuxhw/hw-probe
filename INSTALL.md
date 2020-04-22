@@ -30,12 +30,15 @@ Contents
 * [ Install on RHEL 6       ](#install-on-rhel-6)
 * [ Install on ClearOS      ](#install-on-clearos)
 * [ Install on Gentoo       ](#install-on-gentoo)
+* [ Install on Mageia       ](#install-on-mageia)
 * [ Install on Alpine       ](#install-on-alpine)
 * [ Install on Puppy        ](#install-on-puppy)
 * [ Install on EasyOS       ](#install-on-easyos)
 * [ Install on blackPanther ](#install-on-blackpanther)
 * [ Install on Clear Linux  ](#install-on-clear-linux)
 * [ Install on Endless      ](#install-on-endless)
+* [ Install on Void Linux   ](#install-on-void-linux)
+* [ Install on PCLinuxOS    ](#install-on-pclinuxos)
 * [ Install on Solus        ](#install-on-solus)
 * [ Install on QTS          ](#install-on-qts)
 * [ Install on Chrome OS    ](#install-on-chrome-os)
@@ -91,7 +94,7 @@ The [Snap package](README.md#snap) is also available to install and run easily o
 Install on Debian
 -----------------
 
-On Debian and Debian based Linux distributions (Kali, MX Linux, Antix, PureOS, Parrot, deepin, SolydXK, SparkyLinux, etc.).
+On Debian and Debian based Linux distributions (Kali, MX Linux, Antix, Devuan, PureOS, Parrot, deepin, SolydXK, SparkyLinux, etc.).
 
 Enable sudo by https://wiki.debian.org/sudo
 
@@ -146,19 +149,28 @@ For Manjaro 18 and later:
 Install on Arch Linux
 ---------------------
 
-On Arch Linux and Arch Linux based Linux distributions (Antergos, ArcoLinux, Chakra, KaOS, etc.):
+On Arch Linux and derivatives (ArcoLinux, EndeavourOS, KaOS, etc.):
 
 ###### From AUR
+
+Install missed dependencies (`dmidecode` and `edid-decode`):
+
+    sudo pacman -Sy dmidecode
+    git clone https://aur.archlinux.org/edid-decode-git.git
+    cd edid-decode-git
+    makepkg -sri
+
+Install hardware probe:
 
     git clone https://aur.archlinux.org/hw-probe.git
     cd hw-probe
     makepkg -sri
 
-###### Binary Package
+###### Upstream package
 
-Download package [hw-probe-1.4-1.ArchLinux-any.pkg.tar.xz](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe-1.4-1.ArchLinux-any.pkg.tar.xz) and install by pacman:
+Download package [hw-probe-1.5-ArchLinux-any.pkg.tar.xz](https://github.com/linuxhw/hw-probe/releases/download/1.5/hw-probe-1.5-ArchLinux-any.pkg.tar.xz) and install by pacman:
 
-    pacman -U ./hw-probe-1.4-1.ArchLinux-any.pkg.tar.xz
+    sudo pacman -U ./hw-probe-1.5-ArchLinux-any.pkg.tar.xz
 
 
 Install on Fedora
@@ -259,6 +271,18 @@ With [app-eselect/eselect-repository](https://wiki.gentoo.org/wiki/Eselect/Repos
     sudo chmod +x /usr/bin/hw-probe
 
 
+Install on Mageia
+-----------------
+
+Install sudo by https://wiki.mageia.org/en/Configuring_sudo
+
+###### Upstream package
+
+Download package [hw-probe-1.5-Mageia5.noarch.rpm](https://github.com/linuxhw/hw-probe/releases/download/1.5/hw-probe-1.5-Mageia5.noarch.rpm) and install:
+
+    sudo urpmi ./hw-probe-1.5-Mageia5.noarch.rpm edid-decode
+
+
 Install on Alpine
 -----------------
 
@@ -315,6 +339,18 @@ Install on Endless
 Search for Hardware Probe program in the App Center.
 
 See https://flathub.org/apps/details/org.linux_hardware.hw-probe
+
+
+Install on Void Linux
+---------------------
+
+Use [AppImage](README.md#appimage).
+
+
+Install on PCLinuxOS
+--------------------
+
+Use [AppImage](README.md#appimage).
 
 
 Install on Solus
