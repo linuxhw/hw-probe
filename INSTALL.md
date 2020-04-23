@@ -153,6 +153,14 @@ On Arch Linux and derivatives (ArcoLinux, EndeavourOS, KaOS, etc.):
 
 ###### From AUR
 
+Install edid-decode dependency:
+
+    git clone https://aur.archlinux.org/edid-decode-git.git
+    cd edid-decode-git
+    makepkg -sri
+
+Install hardware probe:
+
     git clone https://aur.archlinux.org/hw-probe.git
     cd hw-probe
     makepkg -sri
