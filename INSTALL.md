@@ -143,7 +143,7 @@ Install on Manjaro
 
 For Manjaro 18 and later:
 
-    sudo pacman -Sy hw-probe
+    sudo pacman -S hw-probe
 
 
 Install on Arch Linux
@@ -152,15 +152,6 @@ Install on Arch Linux
 On Arch Linux and derivatives (ArcoLinux, EndeavourOS, KaOS, etc.):
 
 ###### From AUR
-
-Install missed dependencies (`dmidecode` and `edid-decode`):
-
-    sudo pacman -Sy dmidecode
-    git clone https://aur.archlinux.org/edid-decode-git.git
-    cd edid-decode-git
-    makepkg -sri
-
-Install hardware probe:
 
     git clone https://aur.archlinux.org/hw-probe.git
     cd hw-probe
