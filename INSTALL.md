@@ -145,6 +145,7 @@ For Manjaro 18 and later:
 
     sudo pacman -S hw-probe
 
+Try `sudo pacman -Sy` if pacman can't find the package.
 
 Install on Arch Linux
 ---------------------
