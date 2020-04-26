@@ -898,7 +898,6 @@ my %DistPackage = (
 
 my @DE_Package = (
     [ "budgie-desktop", "Budgie" ],
-    [ "enlightenment", "Enlightenment" ],
     [ "pantheon-xsession-settings", "Pantheon" ],
     
     [ "gnustep ", "GNUstep" ],
@@ -946,14 +945,16 @@ my @DE_Package = (
     [ "i3-wm", "i3" ],
     [ "manjaro-i3-settings", "i3" ],
     
-    [ "gnome-desktop", "GNOME" ],
-    
-    [ "xfce4-settings", "XFCE" ],
+    [ "xfce4-settings", "XFCE" ], # 3b85d1aeb4 XFCE before GNOME
     [ "task-xfce", "XFCE" ],
     [ "xfce4-session", "XFCE" ],
     
+    [ "gnome-desktop", "GNOME" ],
+    
     [ "openbox-lxde-session", "Openbox" ],
     [ "manjaro-openbox-settings", "Openbox" ],
+    
+    [ "enlightenment", "Enlightenment" ],
     
     [ "lxde", "LXDE" ]
 );
@@ -969,6 +970,21 @@ my @DisplayServer_Package = (
     [ "xserver-xorg", "X11" ],
     [ "xorg-x11-server", "X11" ]
 );
+
+my %DisplayManager_Fix = (
+    "LIGHTDM" => "LightDM",
+    "SLIM" => "SLiM",
+    "KDE"  => "KDM",
+    "LY"  => "Ly",
+    "ENTRANCED" => "Entrance"
+);
+
+my @ALL_DISPLAY_MANAGERS = qw(lightdm sddm xdm gdm gdm3 slim kdm ldm lxdm cdm entranced mdm nodm pcdm tdm wdm xenodm ly);
+
+my @DisplayManager_Package = ();
+foreach my $DM (@ALL_DISPLAY_MANAGERS) {
+    push(@DisplayManager_Package, [$DM, uc($DM)]);
+}
 
 my %ChassisType = (
     1  => "Other",
@@ -1749,7 +1765,7 @@ sub encryptUUIDs($)
     foreach my $UUID (sort keys(%UUIDs))
     {
         my $Enc = clientHash(lc($UUID), $UUID_LEN_CLIENT);
-        $Enc=~s/\A(\w{8})(\w{4})(\w{4})(\w{4})(\w{12})\Z/$1-$2-$3-$4-$5/;
+        $Enc = strToUUID($Enc);
         $Content=~s/\Q$UUID\E/$Enc/g;
     }
     
@@ -1765,6 +1781,13 @@ sub encryptUUIDs($)
     }
     
     return $Content;
+}
+
+sub strToUUID($)
+{
+    my $Str = $_[0];
+    $Str=~s/\A(\w{8})(\w{4})(\w{4})(\w{4})(\w{12})\Z/$1-$2-$3-$4-$5/;
+    return $Str;
 }
 
 sub hideDevDiskUUIDs($)
@@ -3086,13 +3109,19 @@ sub probeHW()
         writeLog($LOG_DIR."/dev", $DevFiles);
     }
     
+    my @DevUUIDs = $DevFiles=~/by-uuid\/([^\s]{36})/g;
+    
+    if(@DevUUIDs) {
+        $Sys{"Uuid"} = getSysUUID(@DevUUIDs);
+    }
+    
     if(not $Sys{"System"} or $Sys{"System"}=~/freedesktop/)
     {
         if(index($DevFiles, "/dev/chromeos-low-mem") != -1) {
             $Sys{"System"} = "chrome_os";
         }
         elsif(index($DevFiles, "eos-swap") != -1) {
-            $Sys{"System"} = "elementary";
+            $Sys{"System"} = "endless";
         }
     }
     
@@ -3432,8 +3461,8 @@ sub probeHW()
             $HWInfo = runCmd($HWInfoCmd." --all 2>&1");
         }
         
-        $HWInfo = hideTags($HWInfo, "UUID|Asset Tag|HW Address");
-        $HWInfo = hideMACs($HWInfo);
+        $HWInfo = hideTags($HWInfo, "UUID|Asset Tag");
+        $HWInfo = encryptMACs($HWInfo);
         
         if(index($HWInfo, "Serial ID:")) {
             $HWInfo = encryptSerials($HWInfo, "Serial ID", "hwinfo");
@@ -6385,6 +6414,8 @@ sub probeHW()
         }
     }
     
+    my @DrSer = ();
+    
     foreach my $Dev (keys(%HDD))
     {
         if(not $HDD{$Dev})
@@ -6425,6 +6456,19 @@ sub probeHW()
                 countDevice($DiskId, $Drv{"Type"});
             }
         }
+        else
+        {
+            if(my $DSer = $HW{$HDD{$Dev}}->{"Serial"})
+            {
+                if(not $HW{$HDD{$Dev}}->{"Class"}) {
+                    push(@DrSer, $DSer);
+                }
+            }
+        }
+    }
+    
+    if(@DrSer) {
+        $Sys{"Uuid"} = getSysUUID(@DrSer);
     }
     
     foreach my $Dev (keys(%MMC))
@@ -6691,11 +6735,14 @@ sub probeHW()
         if($Dmesg=~/Linux version (.+)/)
         {
             my $LinVer = $1;
-            foreach my $Lin ("endless", "ubuntu", "debian", "arch")
+            foreach my $Lin ("endless", "ubuntu", "debian", "arch", "suse linux", "centos")
             {
                 if($LinVer=~/$Lin/i)
                 {
                     $Sys{"System"} = $Lin;
+                    if($Sys{"System"} eq "suse linux") {
+                        $Sys{"System"} = "opensuse";
+                    }
                     last;
                 }
             }
@@ -7737,7 +7784,7 @@ sub probeHW()
     
     if(not $Sys{"System"})
     {
-        if($BootLog=~/Starting (.+?) Post-Boot Flatpak Installer/)
+        if($BootLog=~/Starting (.+?) (Post-Boot Flatpak Installer|Companion App Enabler)/)
         {
             my $FlatSys = $1;
             if($FlatSys=~/(Endless)/) {
@@ -7746,7 +7793,56 @@ sub probeHW()
         }
     }
     
+    my $Sctl = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Sctl = readFile($FixProbe_Logs."/systemctl");
+    }
+    elsif(not $Opt{"Docker"} and enabledLog("systemctl")
+    and checkCmd("systemctl"))
+    {
+        listProbe("logs", "systemctl");
+        if($Sctl = runCmd("systemctl 2>/dev/null"))
+        {
+            $Sctl = hideByRegexp($Sctl, qr/\/home\/([^\s]+)/);
+            $Sctl = hideByRegexp($Sctl, qr/\/media\/([^\s]+)/);
+            
+            $Sctl = hideByRegexp($Sctl, qr/home-([^\s]+)/);
+            $Sctl = hideByRegexp($Sctl, qr/media-([^\s]+)/);
+            
+            $Sctl=~s/(User Slice of|Session \d+ of user).+/$1 XXXXX/g;
+            
+            if(my $SessUser = getUser()) {
+                $Sctl=~s/( of user)\s+\Q$SessUser\E/$1 USER/g;
+            }
+            
+            $Sctl = decorateSystemd($Sctl);
+            $Sctl = encryptUUIDs($Sctl);
+            $Sctl = hideDevDiskUUIDs($Sctl);
+            
+            writeLog($LOG_DIR."/systemctl", $Sctl);
+        }
+    }
+    
+    if(not $Sys{"Display_manager"} and $Sctl)
+    {
+        foreach my $DM (@ALL_DISPLAY_MANAGERS)
+        {
+            if(index($Sctl, $DM.".service")!=-1 and $Sctl=~/$DM\.service\s+loaded.+\s+running/)
+            {
+                $Sys{"Display_manager"} = fixDisplayManager($DM);
+                last;
+            }
+        }
+    }
+    
+    # TODO: add new fixes here
+    
     print "Ok\n";
+}
+
+sub getSysUUID(@) {
+    return strToUUID(clientHash("_".join("_", sort @_)));
 }
 
 sub detectMicroarch($$$)
@@ -9477,6 +9573,80 @@ sub probeSys()
         $Sys{"DE"} = $ENV{"DESKTOP_SESSION"};
     }
     
+    if(my $KDE_Ver = $ENV{"KDE_SESSION_VERSION"}
+    and $Sys{"DE"} eq "KDE") {
+        $Sys{"DE"} .= $KDE_Ver;
+    }
+    
+    if(not $Sys{"Display_manager"})
+    {
+        my $DmFile = "/etc/X11/default-display-manager";
+        if(-f $DmFile)
+        {
+            if(readFile($DmFile)=~/bin\/(.+)/) {
+                $Sys{"Display_manager"} = $1;
+            }
+        }
+    }
+    
+    if(not $Sys{"Display_manager"})
+    {
+        my $DmFile = "/etc/systemd/system/display-manager.service";
+        if(-f $DmFile)
+        {
+            if(readFile($DmFile)=~/ExecStart=([^\s]+)/) {
+                $Sys{"Display_manager"} = basename($1);
+            }
+        }
+    }
+    
+    if(not $Sys{"Display_manager"})
+    {
+        my $DmFile = "/etc/sysconfig/displaymanager";
+        if(-f $DmFile)
+        {
+            if(readFile($DmFile)=~/DISPLAYMANAGER="(.+)"/) {
+                $Sys{"Display_manager"} = $1;
+            }
+        }
+    }
+    
+    my $DeFile = "/etc/sysconfig/desktop";
+    if(-f $DeFile)
+    {
+        my $DeContent = readFile($DeFile);
+        
+        if(not $Sys{"DE"})
+        {
+            if($DeContent=~/DESKTOP="(.+)"/) {
+                $Sys{"DE"} = $1;
+            }
+        }
+        
+        if(not $Sys{"Display_manager"})
+        {
+            if($DeContent=~/DISPLAYMANAGER="(.+)"/) {
+                $Sys{"Display_manager"} = $1;
+            }
+        }
+    }
+    
+    foreach my $DM (@ALL_DISPLAY_MANAGERS)
+    {
+        if($DM eq "slim") {
+            $DM .= ".lock";
+        }
+        
+        if(-e "/run/$DM" or -e "/run/$DM.pid")
+        {
+            $DM=~s/\..+//g;
+            $Sys{"Display_manager"} = $DM;
+            last;
+        }
+    }
+    
+    $Sys{"Display_manager"} = fixDisplayManager($Sys{"Display_manager"});
+    
     if($Sys{"DE"}) {
         $Sys{"Current_desktop"} = $Sys{"DE"};
     }
@@ -9491,6 +9661,15 @@ sub probeSys()
     foreach (keys(%Sys)) {
         chomp($Sys{$_});
     }
+}
+
+sub fixDisplayManager($)
+{
+    my $DM = uc($_[0]);
+    if(my $Fixed = $DisplayManager_Fix{$DM}) {
+        return $Fixed;
+    }
+    return $DM;
 }
 
 sub probeDmi()
@@ -9626,7 +9805,7 @@ sub fixFFByBoard($)
     my $Board = $_[0];
     if($Sys{"Type"}!~/$DESKTOP_TYPE|$SERVER_TYPE/)
     {
-        if($Board=~/\b(D510MO|GA-K8NMF-9|DG965RY|DG33BU|D946GZIS|N3150ND3V|D865GSA|DP55WG|H61MXT1|D875PBZ|F2A55|Z68XP-UD3|Z77A-GD65|M4A79T|775Dual-880Pro|P4Dual-915GL|P4i65GV|D5400XS|D201GLY|MicroServer|IPPSB-DB|MS-AA53|C2016-BSWI-D2|N3160TN|D915PBL|EIRD-SAM|D865PERL|D410PT|D525MW|D945GCNL|BSWI-D2|B202|D865GBF|G1-CPU-IMP|Aptio CRB|A1SRi|D865GVHZ|IC17X|N3050ND3H)\b/) {
+        if($Board=~/\b(D510MO|GA-K8NMF-9|DG965RY|DG33BU|D946GZIS|N3150ND3V|D865GSA|DP55WG|H61MXT1|D875PBZ|F2A55|Z68XP-UD3|Z77A-GD65|M4A79T|775Dual-880Pro|P4Dual-915GL|P4i65GV|D5400XS|D201GLY|MicroServer|IPPSB-DB|MS-AA53|C2016-BSWI-D2|N3160TN|D915PBL|EIRD-SAM|D865PERL|D410PT|D525MW|D945GCNL|BSWI-D2|B202|D865GBF|G1-CPU-IMP|Aptio CRB|A1SRi|D865GVHZ|IC17X|N3050ND3H|Bettong CRB)\b/) {
             $Sys{"Type"} = "desktop";
         }
     }
@@ -10393,11 +10572,10 @@ sub probeDistr()
         }
     }
     
-    my ($Name, $Release) = ();
+    my ($Name, $Release, $Descr) = ();
     
     if($LSB_Rel)
     { # Desktop
-        my $Descr = undef;
         if($LSB_Rel=~/ID:\s*(.*)/) {
             $Name = $1;
         }
@@ -10490,12 +10668,22 @@ sub probeDistr()
     
     if($LSB_Rel_F)
     {
-        if($LSB_Rel=~/DISTRIB_ID:\s*(.*)/) {
+        if($LSB_Rel_F=~/DISTRIB_ID[:=]\s*(.*)/)
+        {
             $Name = $1;
+            $Name=~s/\A"(.+)"\Z/$1/;
         }
         
-        if($LSB_Rel=~/DISTRIB_RELEASE:\s*(.*)/) {
+        if($LSB_Rel_F=~/DISTRIB_RELEASE[:=]\s*(.*)/) {
             $Release = lc($1);
+        }
+        
+        if($LSB_Rel_F=~/DISTRIB_DESCRIPTION[:=]\s*(.*)/) {
+            $Descr = $1;
+        }
+        
+        if($Descr=~/Easy Buster/) {
+            $Name = "EasyOS";
         }
     }
     
@@ -10783,8 +10971,6 @@ sub writeLogs()
         print "\n";
     }
 
-    my $SessUser = getUser() || $ENV{"USER"};
-
     # level=minimal
     if(checkCmd("sensors"))
     {
@@ -11018,51 +11204,60 @@ sub writeLogs()
         }
     }
     
-    if(enabledLog("pkglist")
-    and checkCmd("pacman"))
-    { # Arch / Manjaro
-        listProbe("logs", "pkglist");
-        my $Pkglist = runCmd("pacman -Q 2>/dev/null");
-        
-        if($Pkglist) {
-            writeLog($LOG_DIR."/pkglist", $Pkglist);
-        }
-    }
-    
-    if(enabledLog("pkglist") and $Sys{"System"}=~/solus/i
-    and checkCmd("eopkg"))
+    if(enabledLog("pkglist"))
     {
-        listProbe("logs", "pkglist");
-        my $Pkglist = runCmd("eopkg list-installed -l 2>/dev/null | grep Name:");
+        if(checkCmd("pacman"))
+        { # Arch / Manjaro
+            listProbe("logs", "pkglist");
+            my $Pkglist = runCmd("pacman -Q 2>/dev/null");
+            
+            if($Pkglist) {
+                writeLog($LOG_DIR."/pkglist", $Pkglist);
+            }
+        }
         
-        if($Pkglist)
+        if($Sys{"System"}=~/solus/i and checkCmd("eopkg"))
         {
-            $Pkglist=~s/Name\: //g;
-            $Pkglist=~s/, version: / /g;
-            $Pkglist=~s/, release: / r/g;
-            writeLog($LOG_DIR."/pkglist", $Pkglist);
+            listProbe("logs", "pkglist");
+            my $Pkglist = runCmd("eopkg list-installed -l 2>/dev/null | grep Name:");
+            
+            if($Pkglist)
+            {
+                $Pkglist=~s/Name\: //g;
+                $Pkglist=~s/, version: / /g;
+                $Pkglist=~s/, release: / r/g;
+                writeLog($LOG_DIR."/pkglist", $Pkglist);
+            }
         }
-    }
-    
-    if(enabledLog("pkglist") and $Sys{"System"}=~/clear-linux/i
-    and checkCmd("swupd"))
-    {
-        listProbe("logs", "pkglist");
-        my $BundleList = runCmd("swupd bundle-list");
         
-        if($BundleList) {
-            writeLog($LOG_DIR."/bundle-list", $BundleList);
+        if($Sys{"System"}=~/clear-linux/i and checkCmd("swupd"))
+        {
+            listProbe("logs", "pkglist");
+            my $BundleList = runCmd("swupd bundle-list");
+            
+            if($BundleList) {
+                writeLog($LOG_DIR."/bundle-list", $BundleList);
+            }
         }
-    }
-    
-    if(enabledLog("pkglist") and $Sys{"System"}=~/slackware/i
-    and -d "/var/log/packages")
-    {
-        listProbe("logs", "pkglist");
-        my $LogPkgs = `ls -1 /var/log/packages | sort`;
         
-        if($LogPkgs) {
-            writeLog($LOG_DIR."/pkglist", $LogPkgs);
+        if($Sys{"System"}=~/slackware/i and -d "/var/log/packages")
+        {
+            listProbe("logs", "pkglist");
+            my $LogPkgs = `ls -1 /var/log/packages | sort`;
+            
+            if($LogPkgs) {
+                writeLog($LOG_DIR."/pkglist", $LogPkgs);
+            }
+        }
+        
+        if($Sys{"System"}=~/gentoo/i and -d "/var/db/pkg")
+        {
+            listProbe("logs", "pkglist");
+            my $DbPkgs = `ls /var/db/pkg/*`;
+            
+            if($DbPkgs) {
+                writeLog($LOG_DIR."/pkglist", $DbPkgs);
+            }
         }
     }
     
@@ -11292,32 +11487,6 @@ sub writeLogs()
         listProbe("logs", "input_devices");
         my $InputDevices = readFile("/proc/bus/input/devices");
         writeLog($LOG_DIR."/input_devices", $InputDevices);
-    }
-    
-    if(not $Opt{"Docker"})
-    {
-        if(enabledLog("systemctl")
-        and checkCmd("systemctl"))
-        {
-            listProbe("logs", "systemctl");
-            if(my $Sctl = runCmd("systemctl 2>/dev/null"))
-            {
-                $Sctl = hideByRegexp($Sctl, qr/\/home\/([^\s]+)/);
-                $Sctl = hideByRegexp($Sctl, qr/\/media\/([^\s]+)/);
-                
-                $Sctl = hideByRegexp($Sctl, qr/home-([^\s]+)/);
-                $Sctl = hideByRegexp($Sctl, qr/media-([^\s]+)/);
-                
-                $Sctl=~s/(User Slice of|Session \d+ of user).+/$1 XXXXX/g;
-                $Sctl=~s/( of user)\s+\Q$SessUser\E/$1 USER/g;
-                
-                $Sctl = decorateSystemd($Sctl);
-                $Sctl = encryptUUIDs($Sctl);
-                $Sctl = hideDevDiskUUIDs($Sctl);
-                
-                writeLog($LOG_DIR."/systemctl", $Sctl);
-            }
-        }
     }
     
     if(enabledLog("iostat")
@@ -11617,7 +11786,7 @@ sub writeLogs()
     {
         listProbe("logs", "top");
         my $TopInfo = runCmd("top -n 1 -b 2>&1");
-        if($SessUser) {
+        if(my $SessUser = getUser()) {
             $TopInfo=~s/ \Q$SessUser\E / USER /g;
         }
         writeLog($LOG_DIR."/top", $TopInfo);
@@ -13724,82 +13893,39 @@ sub makeProbe()
     writeHost();
 }
 
-sub detectDE($)
+sub fixByPkgs($)
 {
-    my $Pkgs = ${$_[0]};
-    foreach my $Pkg (@DE_Package)
+    my $Subj = $_[0];
+    
+    foreach my $PkgsFile ("rpms", "debs", "pkglist")
     {
-        my $P = $Pkg->[0];
-        if(index($Pkgs, $P)!=-1 and $Pkgs=~/(\A|\n)\Q$P\E\b/) {
-            return $Pkg->[1];
+        my $PkgsPath = "$FixProbe_Logs/$PkgsFile";
+        if(-e $PkgsPath)
+        {
+            my $Pkgs = readFile($PkgsPath);
+            my @CheckPkgs = ();
+            
+            if($Subj eq "DE") {
+                @CheckPkgs = @DE_Package;
+            }
+            elsif($Subj eq "DisplayServer") {
+                @CheckPkgs = @DisplayServer_Package;
+            }
+            elsif($Subj eq "DisplayManager") {
+                @CheckPkgs = @DisplayManager_Package;
+            }
+            
+            foreach my $CPkg (@CheckPkgs)
+            {
+                my $P = $CPkg->[0];
+                if(index($Pkgs, $P)!=-1 and $Pkgs=~/(\A|\n)\Q$P\E\b/) {
+                    return $CPkg->[1];
+                }
+            }
         }
     }
     
     return undef;
-}
-
-sub detectDisplayServer($)
-{
-    my $Pkgs = ${$_[0]};
-    foreach my $Pkg (@DisplayServer_Package)
-    {
-        my $P = $Pkg->[0];
-        if(index($Pkgs, $P)!=-1 and $Pkgs=~/(\A|\n)\Q$P\E\b/) {
-            return $Pkg->[1];
-        }
-    }
-    
-    return undef;
-}
-
-sub fixDE()
-{
-    my $DE = undef;
-    
-    if(not $DE and -e "$FixProbe_Logs/rpms")
-    {
-        my $Rpms = readFile("$FixProbe_Logs/rpms");
-        $DE = detectDE(\$Rpms);
-    }
-    
-    if(not $DE and -e "$FixProbe_Logs/debs")
-    {
-        my $Debs = readFile("$FixProbe_Logs/debs");
-        $DE = detectDE(\$Debs);
-    }
-    
-    if(not $DE and -e "$FixProbe_Logs/pkglist")
-    {
-        my $PkgList = readFile("$FixProbe_Logs/pkglist");
-        $DE = detectDE(\$PkgList);
-    }
-    
-    return $DE;
-}
-
-sub fixDisplayServer()
-{
-    my $DisplayServer = undef;
-    
-    if(not $DisplayServer and -e "$FixProbe_Logs/rpms")
-    {
-        my $Rpms = readFile("$FixProbe_Logs/rpms");
-        $DisplayServer = detectDisplayServer(\$Rpms);
-    }
-    
-    if(not $DisplayServer and -e "$FixProbe_Logs/debs")
-    {
-        my $Debs = readFile("$FixProbe_Logs/debs");
-        $DisplayServer = detectDisplayServer(\$Debs);
-    }
-    
-    if(not $DisplayServer and -e "$FixProbe_Logs/pkglist")
-    {
-        my $PkgList = readFile("$FixProbe_Logs/pkglist");
-        $DisplayServer = detectDisplayServer(\$PkgList);
-    }
-    
-    return $DisplayServer;
 }
 
 sub initDataDir($)
@@ -14310,15 +14436,25 @@ sub scenario()
         
         if(not $Sys{"DE"} or not $Sys{"Current_desktop"} or $Sys{"DE"} eq "KDE")
         {
-            if(my $FixDE = fixDE()) {
-                $Sys{"DE"} = $FixDE;
+            if(my $FixDE = fixByPkgs("DE"))
+            {
+                if($Sys{"DE"} ne "KDE" or $FixDE=~/KDE/) {
+                    $Sys{"DE"} = $FixDE;
+                }
             }
         }
         
         if(not $Sys{"Display_server"})
         {
-            if(my $FixDisplayServer = fixDisplayServer()) {
+            if(my $FixDisplayServer = fixByPkgs("DisplayServer")) {
                 $Sys{"Display_server"} = $FixDisplayServer;
+            }
+        }
+        
+        if(not $Sys{"Display_manager"})
+        {
+            if(my $FixDM = fixByPkgs("DisplayManager")) {
+                $Sys{"Display_manager"} = fixDisplayManager($FixDM);
             }
         }
         
