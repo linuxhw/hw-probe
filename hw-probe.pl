@@ -1839,6 +1839,13 @@ sub hideAudit($)
     return $Content;
 }
 
+sub hideEmail($)
+{
+    my $Content = $_[0];
+    $Content=~s/([<\(])[^()<>\s]+\@[^()<>\s]+([\)>])/$1\XXX\@\XXX$2/g;
+    return $Content;
+}
+
 sub hideHostname($)
 {
     my $Content = $_[0];
@@ -1889,6 +1896,34 @@ sub hideUrls($)
     my $Content = $_[0];
     $Content=~s{[\w\-]+\.[\w\.\-]+\:\/[^\s]+}{XXX:/XXX}g;
     $Content=~s{(\w+\:\/+)[^\s]+}{$1\XXX}g;
+    return $Content;
+}
+
+sub hideDf($)
+{
+    my $Content = $_[0];
+    
+    my $NewDf = "";
+    my @DfLines = split(/\n/, $Content);
+    for (my $i = 0; $i <= $#DfLines; $i++)
+    {
+        my $L = $DfLines[$i];
+        
+        if($i==0)
+        {
+            $NewDf .= $L."\n";
+            next;
+        }
+        
+        if($L!~/\A(Filesystem|cgroup|cgroup_root|clr_debug_fuse|dev|devtmpfs|\/(dev|home|run)|none|overlay|run|shm|tmpfs|udev|\s+)/)
+        {
+            $L = hideByRegexp($L, qr/\A([^\s]+)/);
+            $L = hideByRegexp($L, qr/([^\s]+)\Z/);
+        }
+        $NewDf .= $L."\n";
+    }
+    $Content = $NewDf;
+    
     return $Content;
 }
 
@@ -6724,6 +6759,9 @@ sub probeHW()
         $Dmesg = hideAAC($Dmesg);
         $Dmesg = encryptUUIDs($Dmesg);
         $Dmesg = hideAudit($Dmesg);
+        $Dmesg = hideEmail($Dmesg);
+        $Dmesg=~s/(Serial Number\s+)[^\s]+/$1.../g;
+        $Dmesg=~s/(serial\s*=\s*)[^\s]+/$1.../g;
         
         if($Opt{"HWLogs"}) {
             writeLog($LOG_DIR."/dmesg", $Dmesg);
@@ -7529,9 +7567,13 @@ sub probeHW()
     {
         listProbe("logs", "df");
         $Df = runCmd("df -Th 2>&1");
+        
         $Df = hidePaths($Df);
         $Df = hideIPs($Df);
         $Df = hideUrls($Df);
+        
+        $Df = hideDf($Df);
+        
         writeLog($LOG_DIR."/df", $Df);
     }
     
@@ -11005,6 +11047,10 @@ sub writeLogs()
             $Dmesg_Old = hideAAC($Dmesg_Old);
             $Dmesg_Old = encryptUUIDs($Dmesg_Old);
             $Dmesg_Old = hideAudit($Dmesg_Old);
+            $Dmesg_Old = hideEmail($Dmesg_Old);
+            $Dmesg_Old=~s/(Serial Number\s+)[^\s]+/$1.../g;
+            $Dmesg_Old=~s/(serial\s*=\s*)[^\s]+/$1.../g;
+            
             writeLog($LOG_DIR."/dmesg.1", $Dmesg_Old);
         }
     }
