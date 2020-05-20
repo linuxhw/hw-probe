@@ -1,7 +1,9 @@
-HW PROBE 1.5
-============
+HW PROBE 1.6 BETA
+=================
 
 Hardware Probe Tool (hw-probe) — a tool to probe for hardware, check operability and find drivers with the help of Linux hardware database: https://linux-hardware.org
+
+For BSD users: https://bsd-hardware.info
 
 
 Contents
@@ -45,6 +47,8 @@ Install
 You can probe your computer by [AppImage](#appimage), [Docker](#docker), [Snap](#snap), [Flatpak](#flatpak) or [Live CD](#live-cd).
 
 Also you can install a native package (RPM, Deb, Pkg, etc.) for your Linux distribution or install from source. See install instructions in the [INSTALL.md](INSTALL.md) file.
+
+See install instructions for BSD in the [INSTALL.BSD.md](INSTALL.BSD.md) file.
 
 
 Usage
@@ -235,7 +239,7 @@ Mark your probes by this ID:
 
 Find your computers by the inventory ID on this page: https://linux-hardware.org/?view=computers
 
-The Email is needed to get notifications if hardware failures are detected on your computer.
+The Email is needed to get notifications if hardware failures are detected on your computer in future probes.
 
 
 Offline view
@@ -261,7 +265,16 @@ NOTE: `acpica-tools` package should be installed
 Operability
 -----------
 
-The tool checks operability of devices on board by analysis of collected log files. You can perform additional operability sanity tests by the following command:
+The tool checks operability of devices on board by analysis of collected log files.
+
+| Status   | Meaning |
+|----------|---------|
+| works    | Driver is found and operates properly (passed static or dynamic tests) |
+| detected | Device is detected, driver is found, but not tested yet |
+| failed   | Driver is not found or device is broken |
+| malfunc  | Error operation of the device |
+
+You can perform additional operability sanity tests by the following command:
 
     sudo -E hw-probe -all -check -upload
 

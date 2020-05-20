@@ -1,6 +1,7 @@
 Contents
 --------
 
+* [ HW PROBE 1.6 BETA ](#hw-probe-16-beta)
 * [ HW PROBE 1.5 ](#hw-probe-15)
 * [ HW PROBE 1.4 ](#hw-probe-14)
 * [ HW PROBE 1.3 ](#hw-probe-13)
@@ -9,10 +10,62 @@ Contents
 * [ HW PROBE 1.0 ](#hw-probe-10)
 
 
+HW PROBE 1.6 BETA
+-----------------
+
+Released on May 20, 2020.
+
+In this release we add support for BSD systems (FreeBSD, OpenBSD, NetBSD, DragonFly, MidnightBSD, GhostBSD, NomadBSD, FreeNAS, pfSense, OS108, etc.), improve identification of hardware devices on board and fix several security issues in collected logs.
+
+### New Features
+* Support for BSD systems (FreeBSD, OpenBSD, NetBSD, DragonFly, MidnightBSD, GhostBSD, NomadBSD, FreeNAS, pfSense, OS108, etc.)
+* Probe for monitor DDC by ddcutil
+* Probe for display manager
+* Probe for locale language
+* Support for edid-decode 2020
+* Improve identifying of RAM modules
+* Improve identifying of hard drives
+* Improve identifying of Synaptics fingerprint readers
+* Improve identifying of drives
+* Improve identifying of OS
+* Improve identifying of computer type
+* Improve identifying of monitor model
+* Improve identifying of DE and display server
+* Handle (fix) large probes in a local .tmp_XXX directory instead of /tmp
+
+### Bug Fixes
+* Fix security issues in df and dmesg
+* Hide partial UUIDs in logs
+* Hide private strings in efibootmgr and systemctl logs
+* Fix identifying of hard drive size
+* Fix identifying of MMC drives
+* Do not parse inappropriate X11 logs to identify graphics card status
+* Fix identifying of OS in Flatpak probes (Chrome OS, Elementary, Fedora and CentOS)
+* Fix identifying of unknown mobile broadband devices
+* Hide more UUIDs
+* Fix leak of username in audit dmesg log, Xorg log and systemctl log
+* Make sure hostname is removed from Xorg log
+* Fix duplicated PCI devices by SysFS ID
+* Identify vendor of NVMe drives properly
+* Fix IDs of unknown SSD drives
+* Hide /snap/XXX paths
+* Hide UUIDs in efibootmgr
+* Fix Dockerfile
+
+### Other
+* Update install instructions
+* AppImage: add ddcutil, update edid-decode
+* Flatpak: add developer_name to appdata
+* Use sudo -E to make probes to preserve DE name
+* AppImage: always use built-in smartctl and ddcutil
+* Identify probes via termux
+* Snap&Flatpak: speedup build
+* Snap&Flatpak: update acpica to 20200110 and hwinfo to 21.68
+
 HW PROBE 1.5
 ------------
 
-Released this on Jan 15, 2020 (200fbb5).
+Released on Jan 15, 2020 (200fbb5).
 
 In this release we significantly improved anonymization of probes, added quick run-time tests for several devices and implemented more detailed identification of hardware devices on board.
 
@@ -197,7 +250,7 @@ In this release we significantly improved anonymization of probes, added quick r
 HW PROBE 1.4
 ------------
 
-Released this on Apr 14, 2018 (3a59093).
+Released on Apr 14, 2018 (3a59093).
 
 Most significant change in this release is the anonymization of probes on the client-side. Previously "private data" (like IPs, MACs, serials, hostname, username, etc.) was removed on the server-side. But now you do not have to worry how server will handle your "private data", since it's not uploaded at all. You can now upload probes from any computers and servers w/o the risk of security leak.
 
@@ -238,7 +291,7 @@ Most significant change in this release is the anonymization of probes on the cl
 HW PROBE 1.3
 ------------
 
-Released this on Dec 3, 2017 (d192aee).
+Released on Dec 3, 2017 (d192aee).
 
 ### New Features
 1. Docker image for HW Probe to run anywhere
@@ -259,7 +312,7 @@ Released this on Dec 3, 2017 (d192aee).
 HW PROBE 1.2
 ------------
 
-Released this on Mar 9, 2017 (c5f178b).
+Released on Mar 9, 2017 (c5f178b).
 
 1. Use `ip addr` command to detect hwaddr if `ifconfig` command is not available
 2. Fixed `hdparm` and `smartctl` logs
@@ -268,7 +321,7 @@ Released this on Mar 9, 2017 (c5f178b).
 HW PROBE 1.1
 ------------
 
-Released this on Sep 28, 2016 (144b0b7).
+Released on Sep 28, 2016 (144b0b7).
 
 1. Use secure HTTPS connection to upload probes
 2. Detect release of a Linux distribution
@@ -279,7 +332,7 @@ Released this on Sep 28, 2016 (144b0b7).
 HW PROBE 1.0
 ------------
 
-Released this on Nov 29, 2015 (4db41d1).
+Released on Nov 29, 2015 (4db41d1).
 
 This is a first public release of the tool, that was used internally for testing hardware compatibility of Linux distributions since 2014.
 

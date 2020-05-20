@@ -1,9 +1,10 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 #########################################################################
-# Hardware Probe 1.5
+# Hardware Probe 1.6 BETA
 # A tool to probe for hardware, check operability and find drivers
 #
-# WWW: https://linux-hardware.org
+# WWW (Linux): https://linux-hardware.org
+# WWW (BSD): https://bsd-hardware.info
 #
 # Copyright (C) 2014-2020 Andrey Ponomarenko's Linux Hardware Project
 #
@@ -15,8 +16,11 @@
 #  Linux (Fedora, CentOS, RHEL, Ubuntu, Debian, Mint, MX, Arch,
 #         Gentoo, ROSA, Mandriva, Clear Linux, Alpine ...)
 #
-# REQUIRES
-# ========
+#  BSD (FreeBSD, OpenBSD, NetBSD, GhostBSD, NomadBSD, DragonFly,
+#       MidnightBSD, FuryBSD, FreeNAS, pfSense, Junos OS ...)
+#
+# REQUIRES (Linux)
+# ================
 #  Perl 5
 #  perl-Digest-SHA
 #  perl-Data-Dumper
@@ -28,8 +32,8 @@
 #  usbutils (lsusb)
 #  edid-decode
 #
-# RECOMMENDS
-# ==========
+# RECOMMENDS (Linux)
+# ==================
 #  libwww-perl (if curl is missed)
 #  mcelog
 #  hdparm
@@ -46,14 +50,6 @@
 #  inxi
 #  i2c-tools
 #  opensc
-#
-# SUGGESTS
-# ========
-#  hplip (hp-probe)
-#  sane-backends (sane-find-scanner)
-#  pnputils (lspnp)
-#  avahi
-#  numactl
 #
 # This library is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -78,8 +74,11 @@ use File::Copy qw(copy move);
 use File::Basename qw(basename dirname);
 use Cwd qw(abs_path cwd);
 
-my $TOOL_VERSION = "1.5";
+my $TOOL_VERSION = "1.6";
+
 my $URL = "https://linux-hardware.org";
+my $URL_BSD = "https://bsd-hardware.info";
+
 my $GITHUB = "https://github.com/linuxhw/hw-probe";
 
 my $LOCALE = "C";
@@ -100,12 +99,20 @@ if($CmdName=~/\A\d+\Z/)
     $CmdName = "hw-probe";
 }
 
+my $CmdExample = "sudo -E $CmdName";
+my $GlobalSubject = "Linux";
+if(isBSD($^O))
+{
+    $CmdExample = $CmdName;
+    $GlobalSubject = "BSD";
+}
+
 my $ShortUsage = "Hardware Probe $TOOL_VERSION
 A tool to probe for hardware, check operability and find drivers
 License: GNU LGPL 2.1+
 
-Usage: sudo -E $CmdName [options]
-Example: sudo -E $CmdName -all -upload\n\n";
+Usage: $CmdExample [options]
+Example: $CmdExample -all -upload\n\n";
 
 my %Opt;
 GetOptions("h|help!" => \$Opt{"Help"},
@@ -155,7 +162,6 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "sdio-ids=s" => \$Opt{"SdioIDs"},
   "pnp-ids=s" => \$Opt{"PnpIDs"},
   "list!" => \$Opt{"ListProbes"},
-  "clean!" => \$Opt{"Clean"},
   "save-uploaded!" => \$Opt{"SaveUploaded"},
   "debug|d!" => \$Opt{"Debug"},
   "dump-acpi!" => \$Opt{"DumpACPI"},
@@ -174,7 +180,10 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "decode-acpi-to=s" => \$Opt{"DecodeACPI_To"},
   "fix-edid!" => \$Opt{"FixEdid"},
   "rm-log=s" => \$Opt{"RmLog"},
-  "truncate-log=s" => \$Opt{"TruncateLog"}
+  "truncate-log=s" => \$Opt{"TruncateLog"},
+  "install-deps!" => \$Opt{"InstallDeps"},
+  "skip-deps!" => \$Opt{"SkipDeps"},
+  "rm-obsolete!" => \$Opt{"RmObsolete"}
 ) or die "\n".$ShortUsage;
 
 if($#ARGV_COPY==-1)
@@ -222,7 +231,7 @@ NAME:
 
 DESCRIPTION:
   Hardware Probe ($CmdName) is a tool to probe for hardware,
-  check its operability and upload result to the Linux hardware database.
+  check its operability and upload result to the $GlobalSubject hardware database.
   
   By creating probes you contribute to the \"HDD/SSD Desktop-Class Reliability
   Test\" study: https://github.com/linuxhw/SMART
@@ -231,10 +240,10 @@ DESCRIPTION:
   under the terms of the GNU LGPL 2.1+.
 
 USAGE:
-  sudo -E $CmdName [options]
+  $CmdExample [options]
 
 EXAMPLE:
-  sudo -E $CmdName -all -upload
+  $CmdExample -all -upload
 
 PRIVACY:
   Private information (including the username, machine's hostname, IP addresses,
@@ -302,7 +311,7 @@ GENERAL OPTIONS:
       Any description of the probe.
   
   -upload
-      Upload result to the Linux hardware database. You will get
+      Upload result to the hardware database. You will get
       a permanent URL to view the probe.
       
       By use of this option you confirm uploading of 32-byte
@@ -411,7 +420,10 @@ my %MMC_Info;
 my %BlockCapacity;
 
 my $Board_ID;
+my $Bios_ID;
 my $CPU_ID;
+my $CDROM_ID;
+
 my %ComponentID;
 my %Monitor_ID;
 
@@ -423,6 +435,12 @@ my %GraphicsCards;
 my %GraphicsCards_All;
 my %GraphicsCards_InUse;
 my %UsedNetworkDev;
+
+my %DevAttachedRecursive;
+my %DevAttachedRecursive_R;
+
+my %DevAttached;
+my %DevAttached_R;
 
 my $SnapNoBlockDevices = 0;
 
@@ -461,11 +479,9 @@ my $FixProbe_Tests;
 my $RecentProbe;
 
 # PCI and USB IDs
-my %PciInfo;
-my %PciInfo_D;
-my %PciClass;
+my %PciInfo = ("I"=>{}, "D"=>{}, "V"=>{}, "C"=>{});
 
-my %PciVendor = (
+$PciInfo{"V"} = {
     "8086" => "Intel",
     "17aa" => "Lenovo",
     "14a4" => "Lite-On",
@@ -475,7 +491,7 @@ my %PciVendor = (
     "126f" => "Silicon Motion",
     "1c5c" => "SK hynix",
     "1179" => "Toshiba"
-);
+};
 
 my %UsbInfo;
 my %UsbVendor;
@@ -1035,11 +1051,6 @@ my $HID_BATTERY = "wacom|wiimote|hidpp_|controller_|hid\-|steam-controller|power
 my %SdioInfo;
 my %SdioVendor;
 
-# PCI and USB IDs (Additional)
-my %AddPciInfo;
-my %AddPciInfo_D;
-my %AddUsbInfo;
-
 # SDIO IDs (Additional)
 my %AddSdioInfo;
 my %AddSdioVendor;
@@ -1478,7 +1489,7 @@ my %UsbClassType = (
     "09" => "hub",
     "0a" => "cdc data",
     "0b" => "smartcard",
-    "0c" => "content security",
+    "0d" => "content security",
     "0e" => "video",
     "dc" => "diagnostic",
     "e0" => "wireless",
@@ -1558,6 +1569,7 @@ my @WrongAddr = (
 my @ProtectedLogs = (
     "acpidump",
     "acpidump_decoded",
+    "arcconf",
     "biosdecode",
     "cpuid",
     "dev",
@@ -1565,6 +1577,7 @@ my @ProtectedLogs = (
     "dmi_id",
     "edid",
     "ethtool_p",
+    "glxinfo",
     "hciconfig",
     "hdparm",
     "hwinfo",
@@ -1572,6 +1585,8 @@ my @ProtectedLogs = (
     "ip_addr",
     "lsb_release",
     "lsb-release",
+    "lsblk",
+    "lscpu",
     "lsmod",
     "lspci",
     "lspci_all",
@@ -1580,13 +1595,32 @@ my @ProtectedLogs = (
     "opensc-tool",
     "os-release",
     "power_supply",
+    "sensors",
     "smartctl",
     "smartctl_megaraid",
     "system-release",
     "upower",
     "usb-devices",
     "xrandr",
-    "xrandr_providers"
+    "xrandr_providers",
+    
+    # *BSD
+    "apm",
+    "camcontrol",
+    "devinfo",
+    "diskinfo",
+    "geom",
+    "hwstat",
+    "kldstat",
+    "mfiutil",
+    "pciconf",
+    "pcictl",
+    "pcictl_n",
+    "pcidump",
+    "sysinfo",
+    "usbconfig",
+    "usbctl",
+    "usbdevs"
 );
 
 my @ProtectFromRm = (
@@ -1617,13 +1651,20 @@ my %TypeOrder = (
     "graphics card"=>"A"
 );
 
-my $ALL_DRIVE_VENDORS = "ADATA|A\-DATA|Advantech|AEGO|AMD|Anobit|Apacer|Apple|ASUS|BHT|BIWIN|Chiprex|CLOVER|Colorful|Corsair|Crucial|Dell|DOGFISH|DREVO|Emtec|Espada|ExcelStor Technology|e2e4|faspeed|FASTDISK|Fordisk|FORESEE|Foxline|FUJITSU|Geil|GelL|GIGABYTE|Gigastone|GLOWAY|Goldendisk|Goldenfir|Goldkey|GOODRAM|Gost|HECTRON|HGST|Hitachi|Hoodisk|HP|HYPERDISK|i-FlashDisk|IBM-Hitachi|IBM|Indilinx|INTEL|INTENSO|Kingchuxing|KingDian|KingFast|KINGMAX|KingPower|KINGRICH|KINGSHARE|KingSpec|Kingston|KLEVV|LDLC|LDNDISK|Lenovo|LEXAR|Lite-On|LITEON|LITEONIT|LONDISK|Magnetic Data|MARSHAL|MARVELL|Maxtor|MediaMax|MicroData|Micron|Mushkin|Myung|Netac|OCZ|OEM|OWC|oyunkey|PALIT|Patriot|PHISON|Platinet|PLEXTOR|PNY|PRETEC|QUANTUM|QUMO|Radeon|Ramaxel|Reeinno|RunCore|Samsung Electronics|SAMSUNG|SandForce|SanDisk|SATADOM|Seagate|SenDisk|Shinedisk|SILICONMOTION|Silicon Motion|SK hynix|Smartbuy|SMI|SPCC|SuperMicro|TAISU|TEAM|Teclast|TCSUNBOW|TEKET|TopSunligt|TOSHIBA|Transcend|Vaseky|Verbatim|WDC|Western Digital|Wolf Aure|XPG|XUNZHE|Zheino|ZOTAC";
+my $ALL_DRIVE_VENDORS = "ADATA|A\-DATA|Advantech|AEGO|AMD|Anobit|Apacer|Apple|ASUS|BHT|BIWIN|Chiprex|CLOVER|Colorful|Corsair|Crucial|Dell|DOGFISH|DREVO|Emtec|Espada|ExcelStor Technology|e2e4|faspeed|FASTDISK|Fordisk|FORESEE|Foxline|FUJITSU|Geil|GelL|GIGABYTE|Gigastone|GLOWAY|Goldendisk|Goldenfir|Goldkey|GOODRAM|Gost|HECTRON|HGST|Hitachi|Hoodisk|HP|HYPERDISK|i-FlashDisk|IBM-Hitachi|IBM|Indilinx|INTEL|INTENSO|Kingchuxing|KingDian|KingFast|KINGMAX|KingPower|KINGRICH|KINGSHARE|KingSpec|Kingston|KLEVV|LDLC|LDNDISK|Lenovo|LEXAR|Lite-On|LITEON|LITEONIT|LONDISK|Magnetic Data|MARSHAL|MARVELL|Maxtor|MediaMax|MicroData|Micron|Mushkin|Myung|Netac|OCZ|OEM|OWC|oyunkey|PALIT|Patriot|PHISON|Platinet|PLEXTOR|PNY|PRETEC|QUANTUM|QUMO|Radeon|Ramaxel|Reeinno|RunCore|Samsung Electronics|SAMSUNG|SandForce|SanDisk|SATADOM|Seagate|SenDisk|Shinedisk|SILICONMOTION|Silicon Motion|SK hynix|Smartbuy|SMI|SPCC|SuperMicro|TAISU|TEAM|Teclast|TCSUNBOW|TEKET|TopSunligt|TOSHIBA|Transcend|Vaseky|Verbatim|VBOX|WDC|Western Digital|Wolf Aure|XPG|XUNZHE|Zheino|ZOTAC";
+
+my $ALL_CDROM_VENDORS = "AOPEN|ASUS|ASUSTek Computer|ATAPI|BENQ|CDEmu|COMBO|Compaq|Hewlett-Packard|Hitachi|HL-DT-ST|HP|JLMS|LG|Lite-On|LITEON|MAD DOG|MATSHITA|Memorex|MITSUMI|NEC Computers|Optiarc|PBDS|PHILIPS|PIONEER|PLDS|PLEXTOR|QSI|Samsung Electronics|Slimtype|Sony|TEAC|Toshiba|TSSTcorp|ZTE";
 
 my $ALL_VENDORS = "Brother|Canon|Epson|HP|Hewlett\-Packard|Kyocera|Samsung|Xerox";
 
 my $ALL_MON_VENDORS = "Acer|ADI|AGO|ALP|Ancor Communications Inc|AOC|Apple|Arnos Instruments|AU Optronics Corporation|AUS|BBY|BEK|BenQ|BOE Technology Group Co\., Ltd|Chi Mei Optoelectronics corp\.|CHI|CIS|CMN|CNC|COMPAL|COMPAQ|cPATH|CRO|CVTE|DELL|DENON, Ltd\.|Eizo|ELO|EQD|FNI|FUS|Gateway|GRUNDIG|HannStar Display Corp|HII|Hisense|HKC|HP|HPN|IBM|Idek Iiyama|ITR INFOTRONIC|IQT|KOA|Lenovo Group Limited|LGD|LG Electronics|LPL|Maxdata\/Belinea|MEB|Medion|Microstep|MS_ Nvidia|MSH|MST|MStar|NEC|NEX|Nvidia|OEM|ONKYO Corporation|Panasonic|Philips|Pioneer Electronic Corporation|PLN|Princeton Graphics|PRI|PKB|Samsung|Sangyo|Sceptre|SDC|Seiko\/Epson|SEK|SHARP|SONY|STN|TAR|Targa|Tech Concepts|TOSHIBA|Toshiba Matsushita Display Technology Co\., Ltd|UMC|Vestel|ViewSonic|VIZ|Wacom Tech|WDT";
 
+my @KNOWN_BSD = ("clonos", "desktopbsd", "dragonfly", "freenas", "fuguita", "furybsd", "ghostbsd", "hardenedbsd", "midnightbsd", "nomadbsd", "os108", "pcbsd", "pfsense", "trueos");
+my $KNOWN_BSD_ALL = join("|", @KNOWN_BSD);
+
 my $USE_DIGEST = 0;
+my $USE_DIGEST_ALT = "sha512sum";
+
 my $USE_DUMPER = 0;
 my $USE_JSON_XS = 0;
 
@@ -1647,8 +1688,13 @@ sub getSha512L($$)
     }
     else
     { # No module installed
-        $Hash = qx/echo -n \'$String\' | sha512sum/;
-        $Hash=~s/\A([\da-f]+).*?\Z/$1/;
+        $Hash = qx/echo -n \'$String\' | $USE_DIGEST_ALT 2>&1/;
+        if($Hash=~/([\da-f]{128})/) {
+            $Hash = $1;
+        }
+        else {
+            return $String;
+        }
     }
     
     return substr($Hash, 0, $Len);
@@ -1691,8 +1737,6 @@ sub encryptSerialsInPaths($)
         
         $Content=~s/_\Q$Ser\E\b/_$Enc/g; # /dev/disk/by-id/ata-Samsung_SSD_850_EVO_250GB_XXXXXXXXXXXXXXX
     }
-    
-    $Content=~s/(\/usb-[^\s]*_).+?([\s\n,]|\-[\da-z])/$1...$2/g;
     
     return $Content;
 }
@@ -1856,15 +1900,19 @@ sub hideHostname($)
 sub hideHost($)
 {
     my $Content = $_[0];
-    $Content=~s/(Current Operating System: Linux) [^\s]+/$1 NODE/g;
+    $Content=~s/(Current Operating System:\s+[^\s]+)\s+[^\s]+/$1 NODE/g;
     return $Content;
 }
 
 sub hidePaths($)
 {
     my $Content = $_[0];
-    foreach my $Dir ("mnt", "mount", "home", "media", "data", "shares", "vhosts", "mapper", "pstorage", "snap", "shm") {
-        $Content = hideByRegexp($Content, qr/$Dir\/([^\s]+)/);
+    my @Paths = ("mnt", "mount", "home", "media", "data", "shares", "vhosts", "mapper", "pstorage", "snap", "shm", "dev/serno", "serno");
+    if(isBSD()) {
+        push(@Paths, "diskid", "ufsid");
+    }
+    foreach my $Dir (@Paths) {
+        $Content = hideByRegexp($Content, qr/\Q$Dir\E\/([^\s'")<\\]+)/);
     }
     return $Content;
 }
@@ -1905,6 +1953,9 @@ sub hideDf($)
     
     my $NewDf = "";
     my @DfLines = split(/\n/, $Content);
+    
+    my $BSD = isBSD();
+    
     for (my $i = 0; $i <= $#DfLines; $i++)
     {
         my $L = $DfLines[$i];
@@ -1915,11 +1966,21 @@ sub hideDf($)
             next;
         }
         
-        if($L!~/\A(Filesystem|cgroup|cgroup_root|clr_debug_fuse|dev|devtmpfs|\/(dev|home|run)|none|overlay|run|shm|tmpfs|udev|\s+)/)
+        my $HideLine = undef;
+        
+        if($BSD) {
+            $HideLine = ($L!~/\A(Filesystem|<above>|build|cgroup|cgroup_root|clr_debug_fuse|dev|devfs|devtmpfs|fdescfs|freenas\-boot|\/(dev|home|run)|kernfs|linprocfs|map|none|overlay|procfs|ptyfs|run|serno|shm|tank|tmpfs|udev|zroot|\s+)/);
+        }
+        else {
+            $HideLine = ($L!~/\A(Filesystem|cgroup|cgroup_root|clr_debug_fuse|dev|devtmpfs|\/(dev|home|run)|none|overlay|run|shm|tmpfs|udev|\s+)/);
+        }
+        
+        if($HideLine)
         {
             $L = hideByRegexp($L, qr/\A([^\s]+)/);
             $L = hideByRegexp($L, qr/([^\s]+)\Z/);
         }
+        
         $NewDf .= $L."\n";
     }
     $Content = $NewDf;
@@ -1945,6 +2006,16 @@ sub encryptMACs($)
 {
     my $Content = $_[0];
     my @MACs = ($Content=~/[\da-f]{2}\:[\da-f]{2}\:[\da-f]{2}\:[\da-f]{2}\:[\da-f]{2}\:[\da-f]{2}/gi);
+    
+    if(isBSD())
+    {
+        my @FwIp = ($Content=~/[\da-f]+\.[\da-f]+\.[\da-f]+\.[\da-f]+\.[\da-f]+\.[\da-f]+\.[\da-f]+\.[\da-f]+\.[\da-f]+\.[\da-f]+\.[\da-f]+\.[\da-f]+\.[\da-f]+\.[\da-f]+\.[\da-f]+\.[\da-f]+/gi);
+        
+        if(@FwIp) {
+            push(@MACs, @FwIp);
+        }
+    }
+    
     foreach my $MAC (@MACs)
     {
         my $Enc = lc($MAC);
@@ -2068,7 +2139,13 @@ sub runCmd($)
         print "Executing: ".$Cmd."\n";
     }
     
-    return `LC_ALL=$LOCALE $Cmd`;
+    my $AddPath = "";
+    
+    if(isNetBSD()) {
+        $AddPath = "PATH=\$PATH:/usr/sbin:/sbin:/usr/pkg/sbin ";
+    }
+    
+    return `LC_ALL=$LOCALE $AddPath$Cmd`;
 }
 
 sub getOldProbeDir()
@@ -2302,11 +2379,32 @@ sub uploadData()
     @Cmd = (@Cmd, $UploadURL);
     
     my $CurlCmd = join(" ", @Cmd);
-    my $Log = qx/$CurlCmd 2>&1/;
+    
+    my $Log = runCmd("$CurlCmd 2>&1");
     my $Err = $?;
+    my $HttpsErr = 0;
+    
+    if(checkCmd("curl") and $Err and $Log=~/certificate|ssl/i)
+    {
+        $CurlCmd=~s/https/http/;
+        $Log = runCmd("$CurlCmd 2>&1");
+        $Err = $?;
+        $HttpsErr = 1;
+    }
     
     if($Err)
     {
+        if($Opt{"ListProbes"}) {
+            printMsg("ERROR", "failed to upload by curl: $Log");
+        }
+        
+        if(isNetBSD())
+        {
+            if(not -e "/etc/openssl/certs" or not listDir("/etc/openssl/certs")) {
+                printMsg("ERROR", "'mozilla-rootcerts-openssl' package is not installed");
+            }
+        }
+        
         if(my $WWWLog = postRequest($UploadURL, \%Data, "NoSSL"))
         {
             if(index($WWWLog, "probe=")==-1)
@@ -2328,6 +2426,12 @@ sub uploadData()
             printMsg("ERROR", "failed to upload data, curl error code \"".$ECode."\"");
             exitStatus(1);
         }
+    }
+    
+    if($HttpsErr)
+    {
+        $Log=~s/https/http/;
+        $URL=~s/https/http/;
     }
     
     $Log=~s/\s*Private access:\s*http.+?token\=(\w+)\s*/\n/;
@@ -2611,10 +2715,21 @@ sub createPackage()
         updateHost($DATA_DIR, "id", $Opt{"PC_Name"});
         $HWaddr = readHostAttr($DATA_DIR, "hwaddr");
         
-        $Pkg = $TMP_DIR."/hw.info.txz";
-        
         chdir(dirname($DATA_DIR));
-        system("tar", "-cJf", $Pkg, basename($DATA_DIR));
+        
+        # if(isOpenBSD() or isNetBSD()
+        # or (defined $Sys{"Freebsd_release"} and $Sys{"Freebsd_release"} < 7.3))
+        if(isBSD())
+        {
+            $Pkg = $TMP_DIR."/hw.info.tgz";
+            system("tar", "-czf", $Pkg, basename($DATA_DIR));
+        }
+        else
+        {
+            $Pkg = $TMP_DIR."/hw.info.txz";
+            system("tar", "-cJf", $Pkg, basename($DATA_DIR));
+        }
+        
         chdir($ORIG_DIR);
     }
     
@@ -2697,6 +2812,20 @@ sub updateHost($$$)
     }
     
     return 0;
+}
+
+sub fixCpuVendor($)
+{
+    my $Vendor = $_[0];
+    
+    foreach my $VV ("Intel", "AMD", "ARM")
+    {
+        if($Vendor=~/$VV/) {
+            return $VV;
+        }
+    }
+    
+    return $Vendor;
 }
 
 sub fmtVal($)
@@ -2843,16 +2972,16 @@ sub getPciVendor($)
 {
     my $V = $_[0];
     
-    if(defined $PciVendor{$V}) {
-        return $PciVendor{$V};
+    if(defined $PciInfo{"V"}{$V}) {
+        return $PciInfo{"V"}{$V};
     }
     
-    if(not keys(%PciInfo)) {
+    if(not keys(%{$PciInfo{"I"}})) {
         readVendorIds();
     }
     
-    if(defined $PciVendor{$V}) {
-        return $PciVendor{$V};
+    if(defined $PciInfo{"V"}{$V}) {
+        return $PciInfo{"V"}{$V};
     }
 
     return;
@@ -2876,7 +3005,7 @@ sub readVendorIds()
     foreach my $Line (split(/\n/, readFile($Path)))
     {
         if($Line=~/\A(\w{4})\s+(.*?)\Z/) {
-            $PciVendor{$1} = $2;
+            $PciInfo{"V"}{$1} = $2;
         }
     }
 }
@@ -2933,7 +3062,7 @@ sub getDefaultType($$$)
             elsif($Name=~/card reader/i) {
                 return "card reader";
             }
-            elsif($Name=~/fingerprint (reader|scanner|sensor|device)/i) {
+            elsif($Name=~/fingerprint (reader|scanner|sensor|device)|swipe sensor/i) {
                 return "fingerprint reader";
             }
             elsif($Name=~/USB Scanner|CanoScan|FlatbedScanner|Scanjet|EPSON Scanner/i) {
@@ -3054,6 +3183,12 @@ sub countDevice($$)
     }
 }
 
+sub setDevCount($$$)
+{
+    my ($DevId, $DevType, $Count) = @_;
+    $HW_Count{$DevId}{$DevType} = $Count;
+}
+
 sub getDeviceCount($)
 {
     my $DevId = $_[0];
@@ -3068,6 +3203,15 @@ sub getDeviceCount($)
     return 0;
 }
 
+sub getSysVer($)
+{
+    if($_[0]=~/\-(\d.*)\Z/) {
+        return int($1);
+    }
+    
+    return undef;
+}
+
 sub probeHW()
 {
     if($Opt{"FixProbe"}) {
@@ -3075,7 +3219,8 @@ sub probeHW()
     }
     else
     {
-        if(not defined $Opt{"HWInfoPath"} and not checkCmd("hwinfo"))
+        if(enabledLog("hwinfo") and not defined $Opt{"HWInfoPath"}
+        and not checkCmd("hwinfo"))
         {
             printMsg("ERROR", "'hwinfo' is not installed");
             exitStatus(1);
@@ -3083,23 +3228,145 @@ sub probeHW()
         
         if($Opt{"HWLogs"})
         {
-            foreach my $Prog ("dmidecode", "edid-decode")
+            my %CmdPackage = (
+                "dmidecode"   => "dmidecode",
+                "lspci"       => "pciutils",
+                "lsusb"       => "usbutils",
+                "lscpu"       => "lscpu",
+                "smartctl"    => "smartmontools",
+                "edid-decode" => "edid-decode",
+                "hwstat"      => "hwstat",
+                "curl"        => "curl",
+                "usbctl"      => "usbutil",
+                "cpuid"       => "cpuid",
+                "shasum"      => "p5-Digest-SHA"
+            );
+            
+            my @NeedProgs = ("dmidecode", "smartctl");
+            
+            if(isOpenBSD())
             {
-                if(not checkCmd($Prog)) {
-                    printMsg("WARNING", "'".$Prog."' package is not installed");
+                push(@NeedProgs, "lscpu", "usbctl", "curl"); # we have pcidump and usbdevs on OpenBSD by default
+                
+                if($Sys{"System_version"} < 6.3) {
+                    @NeedProgs = grep {$_!~/lscpu/} @NeedProgs;
+                }
+            }
+            elsif(isNetBSD()) {
+                push(@NeedProgs, "usbctl", "curl"); # we have pcictl and usbdevs on NetBSD by default
+            }
+            elsif($Sys{"System"}=~/midnightbsd/) {
+                push(@NeedProgs, "cpuid", "curl"); # using cpuid instead of lscpu on MidnightBSD due to huge recursive deps list
+            }
+            elsif($Sys{"System"}=~/dragonfly/) {
+                push(@NeedProgs, "hwstat", "lscpu", "curl");
+            }
+            elsif($Sys{"System"}=~/pfsense/) {
+                push(@NeedProgs, "curl"); # no hwstat and lscpu on pfSense
+            }
+            elsif(defined $Sys{"Freebsd_release"})
+            {
+                push(@NeedProgs, "hwstat", "lscpu", "curl"); # we have pciconf and usbconfig (since 8.0) on FreeBSD by default
+                if($Sys{"Freebsd_release"} < 11.2)
+                {
+                    @NeedProgs = grep {$_!~/lscpu/} @NeedProgs;
+                    push(@NeedProgs, "cpuid");
+                }
+                
+                if($Sys{"Freebsd_release"} < 8.1) {
+                    @NeedProgs = grep {$_!~/hwstat/} @NeedProgs;
+                }
+                
+                if($Sys{"Freebsd_release"} < 8.0) {
+                    push(@NeedProgs, "usbctl");
+                }
+                
+                if($Sys{"Freebsd_release"} < 7.0)
+                { # Use Perl instead of openssl
+                    push(@NeedProgs, "shasum");
+                }
+                
+                if($Sys{"Freebsd_release"} < 5.2) {
+                    @NeedProgs = grep {$_!~/smartctl/} @NeedProgs;
+                }
+            }
+            elsif(isBSD())
+            { # Unknown BSD
+                push(@NeedProgs, "cpuid", "curl");
+            }
+            else
+            { # Linux
+                push(@NeedProgs, "lspci", "lsusb", "edid-decode");
+            }
+            
+            my @NeedToInstall = ();
+            
+            foreach my $Prog (@NeedProgs)
+            {
+                if(enabledLog($Prog) and not checkCmd($Prog))
+                {
+                    if(isBSD())
+                    {
+                        if(not defined $Opt{"InstallDeps"}) {
+                            printMsg("ERROR", "'".$CmdPackage{$Prog}."' package is not installed");
+                        }
+                        push(@NeedToInstall, $CmdPackage{$Prog})
+                    }
+                    else {
+                        printMsg("WARNING", "'".$CmdPackage{$Prog}."' package is not installed");
+                    }
                 }
             }
             
-            if(not checkCmd("smartctl")) {
-                printMsg("WARNING", "'smartmontools' package is not installed");
+            if(@NeedToInstall)
+            {
+                my $NeedCmd = "pkg install";
+                if(isOpenBSD())
+                {
+                    $NeedCmd = "pkg_add";
+                    
+                    if($Sys{"System_version"} < 6.5)
+                    { # for old OpenBSD versions
+                        $NeedCmd = "PKG_PATH=https://ftp.nluug.nl/OpenBSD/".$Sys{"System_version"}."/packages/".$Sys{"Arch"}." pkg_add";
+                    }
+                }
+                elsif($Sys{"System"}=~/midnightbsd/) {
+                    $NeedCmd = "mport install";
+                }
+                elsif(isNetBSD()) {
+                    $NeedCmd = "pkgin install";
+                }
+                elsif(defined $Sys{"Freebsd_release"})
+                {
+                    if($Sys{"Freebsd_release"} < 10.0) {
+                        $NeedCmd = "pkg_add";
+                    }
+                    
+                    if($Sys{"Freebsd_release"} < 9.3)
+                    {
+                        $NeedCmd = "env PACKAGESITE='http://ftp-archive.freebsd.org/pub/FreeBSD-Archive/ports/".$Sys{"Arch"}."/packages-".$Sys{"Freebsd_release"}."-release/Latest/' pkg_add -r";
+                    }
+                }
+                
+                $NeedCmd .= " ".join(" ", @NeedToInstall);
+                
+                if(defined $Opt{"InstallDeps"})
+                {
+                    printMsg("INFO", "Installing dependencies ...");
+                    system($NeedCmd);
+                }
+                else {
+                    printMsg("TIP", "install missed packages by command (execute it by adding `-install-deps` option):\n\n     $NeedCmd\n");
+                }
+                
+                if(not defined $Opt{"SkipDeps"}) {
+                    exitStatus(1);
+                }
             }
-            
-            if(not checkCmd("lspci")) {
-                printMsg("WARNING", "'pciutils' package is not installed");
-            }
-            
-            if(not checkCmd("lsusb")) {
-                printMsg("WARNING", "'usbutils' package is not installed");
+            elsif(defined $Opt{"InstallDeps"})
+            {
+                printMsg("INFO", "Nothing to install");
+                exitStatus(0);
             }
         }
         
@@ -3145,6 +3412,12 @@ sub probeHW()
     }
     
     my @DevUUIDs = $DevFiles=~/by-uuid\/([^\s]{36})/g;
+    
+    if($Sys{"Kernel"}=~/raspi/)
+    {
+        my @MMCUuids = ($DevFiles=~/\/mmc-(\w+0x[a-f\d]{8}) /g);
+        push(@DevUUIDs, @MMCUuids);
+    }
     
     if(@DevUUIDs) {
         $Sys{"Uuid"} = getSysUUID(@DevUUIDs);
@@ -3193,7 +3466,7 @@ sub probeHW()
     if($Opt{"FixProbe"}) {
         $Lsmod = readFile($FixProbe_Logs."/lsmod");
     }
-    else
+    elsif(enabledLog("lsmod") and checkCmd("lsmod"))
     {
         listProbe("logs", "lsmod");
         if($Opt{"Snap"} or $Opt{"Flatpak"})
@@ -3244,6 +3517,52 @@ sub probeHW()
         }
     }
     
+    my $Kldstat = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Kldstat = readFile($FixProbe_Logs."/kldstat");
+    }
+    elsif(enabledLog("kldstat") and checkCmd("kldstat"))
+    {
+        listProbe("logs", "kldstat");
+        $Kldstat = runCmd("kldstat 2>/dev/null");
+        
+        if($Opt{"HWLogs"}) {
+            writeLog($LOG_DIR."/kldstat", $Kldstat);
+        }
+    }
+    
+    my $Kldstat_v = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Kldstat_v = readFile($FixProbe_Logs."/kldstat_v");
+    }
+    elsif(enabledLog("kldstat_v") and checkCmd("kldstat"))
+    {
+        listProbe("logs", "kldstat_v");
+        $Kldstat_v = runCmd("kldstat -v 2>/dev/null");
+        
+        if($Opt{"HWLogs"} and $Kldstat_v) {
+            writeLog($LOG_DIR."/kldstat_v", $Kldstat_v);
+        }
+    }
+    
+    my $KernelConfig = "";
+    
+    if($Opt{"FixProbe"}) {
+        $KernelConfig = readFile($FixProbe_Logs."/config");
+    }
+    elsif(enabledLog("config") and checkCmd("config")
+    and -e "/boot/kernel/kernel")
+    {
+        listProbe("logs", "config");
+        $KernelConfig = runCmd("config -x /boot/kernel/kernel 2>/dev/null");
+        
+        if($Opt{"HWLogs"} and $KernelConfig) {
+            writeLog($LOG_DIR."/config", $KernelConfig);
+        }
+    }
+    
     my @KernDrvs = ();
     foreach my $Line (split(/\n/, $Lsmod))
     {
@@ -3276,24 +3595,35 @@ sub probeHW()
     elsif(enabledLog("lsblk") and checkCmd("lsblk"))
     {
         listProbe("logs", "lsblk");
-        my $LsblkCmd = "lsblk -al -o NAME,SIZE,TYPE,FSTYPE,UUID,MOUNTPOINT,MODEL,PARTUUID";
-        if($Opt{"Flatpak"}) {
-            $LsblkCmd .= " 2>/dev/null";
+        my $LsblkCmd = undef;
+        
+        if(isBSD()) {
+            $LsblkCmd = "lsblk";
         }
-        else {
-            $LsblkCmd .= " 2>&1";
+        else
+        {
+            $LsblkCmd = "lsblk -al -o NAME,SIZE,TYPE,FSTYPE,UUID,MOUNTPOINT,MODEL,PARTUUID";
+            if($Opt{"Flatpak"}) {
+                $LsblkCmd .= " 2>/dev/null";
+            }
+            else {
+                $LsblkCmd .= " 2>&1";
+            }
         }
-        my $Lsblk = runCmd($LsblkCmd);
+        
+        $Lsblk = runCmd($LsblkCmd);
         
         if($Lsblk=~/unknown column/)
         { # CentOS 6: no PARTUUID column
-            $LsblkCmd=~s/\,PARTUUID//g;
-            $Lsblk = runCmd($LsblkCmd);
+            if($LsblkCmd=~s/\,PARTUUID//g) {
+                $Lsblk = runCmd($LsblkCmd);
+            }
         }
         
         if($Opt{"Snap"} and $Lsblk=~/Permission denied/) {
             $Lsblk = "";
         }
+        
         $Lsblk = hideByRegexp($Lsblk, qr/(.+?)\s+[^\s]+?\s+crypt\s+/);
         $Lsblk = hidePaths($Lsblk);
         $Lsblk = hideLVM($Lsblk);
@@ -3443,7 +3773,7 @@ sub probeHW()
     if($Opt{"FixProbe"}) {
         $HWInfo = readFile($FixProbe_Logs."/hwinfo");
     }
-    else
+    elsif(enabledLog("hwinfo"))
     {
         listProbe("logs", "hwinfo");
         
@@ -3593,17 +3923,8 @@ sub probeHW()
                 
                 if($Device{"Type"} eq "cpu")
                 { # fix cpu
-                    if($Key eq "Vendor")
-                    {
-                        if($Device{$Key}=~/Intel/) {
-                            $Device{$Key} = "Intel";
-                        }
-                        elsif($Device{$Key}=~/AMD/) {
-                            $Device{$Key} = "AMD";
-                        }
-                        elsif($Device{$Key}=~/ARM/) {
-                            $Device{$Key} = "ARM";
-                        }
+                    if($Key eq "Vendor") {
+                        $Device{$Key} = fixCpuVendor($Device{$Key});
                     }
                 }
                 
@@ -4108,7 +4429,8 @@ sub probeHW()
                     
                     $Suffix=~s/[_]+/ /g;
                     $Device{"Device"} .= $Suffix;
-                    if(not $Device{"Serial"}) {
+                    
+                    if(not $Device{"Serial"} and index($Ser, "...") == -1) {
                         $Device{"Serial"} = $Ser;
                     }
                 }
@@ -4354,7 +4676,339 @@ sub probeHW()
         }
     }
     
-    my %HDD_Serial = ();
+    my $Sysctl = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Sysctl = readFile($FixProbe_Logs."/sysctl");
+    }
+    elsif(enabledLog("sysctl") and checkCmd("sysctl"))
+    {
+        listProbe("logs", "sysctl");
+        $Sysctl = runCmd("sysctl -a 2>/dev/null");
+        
+        $Sysctl=~s{(<ident>)(.+)(</ident>)}{$1...$3}g;
+        $Sysctl=~s/((kern\.hostname|serialno|-serial|-asset-tag)\s*[:=]\s*).+/$1.../g;
+        $Sysctl=~s/ ([^\s]+) (login|syslogd)/ ... $2/g;
+        $Sysctl=~s/(Serial Number\s+)(.+)/$1.../g;
+        $Sysctl=~s/(sernum=)[^\s]+/$1.../g;
+        
+        $Sysctl = encryptUUIDs($Sysctl);
+        $Sysctl = encryptSerials($Sysctl, "kern.hostid");
+        $Sysctl = encryptMACs($Sysctl);
+        $Sysctl = hideIPs($Sysctl);
+        $Sysctl = hidePaths($Sysctl);
+        writeLog($LOG_DIR."/sysctl", $Sysctl);
+        
+        if(isOpenBSD())
+        {
+            if($Sysctl=~/kern\.allowkmem=0/) {
+                printMsg("WARNING", "DMI info cannot be collected, need kern.allowkmem=1 to be set");
+            }
+        }
+    }
+    
+    if($Sysctl)
+    {
+        if($Sysctl=~/hw\.physmem: (.+)/)
+        {
+            $Sys{"Ram_total"} = $1/1024;
+            
+            if($Sysctl=~/Free Memory:\s+(.+)/) {
+                $Sys{"Ram_used"} = $Sys{"Ram_total"} - $1;
+            }
+        }
+        
+        if(isOpenBSD())
+        {
+            if($Sysctl=~/hw\.disknames=(.+)/)
+            {
+                my $DrNames = $1;
+                my @Drs = ($DrNames=~/(\w+):/g);
+                foreach my $Dr (@Drs)
+                {
+                    if($Dr=~/\Acd\d+/)
+                    {
+                        # TODO: detect CDROM
+                    }
+                    else {
+                        $HDD{"/dev/".$Dr} = 0;
+                    }
+                }
+            }
+        }
+        elsif($Sys{"System"}=~/dragonfly|midnightbsd/
+        or defined $Sys{"Freebsd_release"})
+        {
+            if($Sysctl=~/kern\.disks: (.+)/)
+            {
+                my @Drs = split(/\s+/, $1);
+                foreach my $Dr (@Drs)
+                {
+                    if($Dr!~/\A(md|vn|cd)\d+/) {
+                        $HDD{"/dev/".$Dr} = 0;
+                    }
+                }
+            }
+        }
+        elsif(isNetBSD())
+        {
+            if($Sysctl=~/hw\.disknames = (.+)/)
+            {
+                my @Drs = split(/\s+/, $1);
+                foreach my $Dr (@Drs)
+                {
+                    if($Dr!~/\Acd\d+/) {
+                        $HDD{"/dev/".$Dr} = 0;
+                    }
+                }
+            }
+        }
+    }
+    
+    my $DevInfo = "";
+    
+    if($Opt{"FixProbe"}) {
+        $DevInfo = readFile($FixProbe_Logs."/devinfo");
+    }
+    elsif($Opt{"HWLogs"} and enabledLog("devinfo") and checkCmd("devinfo"))
+    {
+        listProbe("logs", "devinfo");
+        
+        $DevInfo .= runCmd("devinfo -v 2>&1");
+        $DevInfo=~s/(sernum=)[^\s]+/$1.../g;
+        
+        writeLog($LOG_DIR."/devinfo", $DevInfo);
+    }
+    
+    if($DevInfo)
+    { 
+        my %ParentDev = ();
+        
+        foreach my $Line (split(/\n/, $DevInfo))
+        {
+            if($Line=~/\A(\s*)(\w+\d+)/)
+            {
+                my $CurDepth = length($1)/2;
+                my $DevFile = $2;
+                
+                $ParentDev{$CurDepth} = $DevFile;
+                
+                foreach (0 .. $CurDepth - 1)
+                {
+                    $DevAttachedRecursive{$DevFile}{$ParentDev{$_}} = 1;
+                    $DevAttachedRecursive_R{$ParentDev{$_}}{$DevFile} = 1;
+                }
+                
+                if($CurDepth > 0)
+                {
+                    $DevAttached{$DevFile} = $ParentDev{$CurDepth - 1};
+                    $DevAttached_R{$ParentDev{$CurDepth - 1}}{$DevFile} = 1;
+                }
+            }
+        }
+    }
+    
+    my $FreeBSD7 = (defined $Sys{"Freebsd_release"} and $Sys{"Freebsd_release"} < 8.0);
+    
+    my $Dmesg = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Dmesg = readFile($FixProbe_Logs."/dmesg");
+    }
+    elsif(checkCmd("dmesg"))
+    {
+        listProbe("logs", "dmesg");
+        $Dmesg = runCmd("dmesg 2>&1");
+        $Dmesg = hideTags($Dmesg, "SerialNumber");
+        $Dmesg = hideHostname($Dmesg);
+        $Dmesg = hideIPs($Dmesg);
+        $Dmesg = encryptMACs($Dmesg);
+        $Dmesg = hidePaths($Dmesg);
+        $Dmesg = hideAAC($Dmesg);
+        $Dmesg = encryptUUIDs($Dmesg);
+        $Dmesg = hideAudit($Dmesg);
+        $Dmesg = hideEmail($Dmesg);
+        $Dmesg=~s/(Serial Number\s+)[^\s]+/$1.../g;
+        $Dmesg=~s/(serial\s*=\s*)[^\s]+/$1.../g;
+        
+        if($Opt{"HWLogs"}) {
+            writeLog($LOG_DIR."/dmesg", $Dmesg);
+        }
+    }
+    
+    my %PciNumDev = ();
+    my %PciPPb = ();
+    my %UsbAddrDev = ();
+    my %UsbAddrClass = ();
+    
+    if(isBSD())
+    {
+        if($Dmesg=~/<(PS\/2 Mouse)>.* on (\w+)\d+/) {
+            $HW{"ps/2:mouse"} = {"Device"=>$1, "Driver"=>$2, "Type"=>"mouse"};
+        }
+        
+        if($Dmesg=~/<(AT Keyboard)>.* on (\w+)\d+/) {
+            $HW{"ps/2:keyboard"} = {"Device"=>$1, "Driver"=>$2, "Type"=>"keyboard"};
+        }
+        
+        if(isOpenBSD())
+        {
+            if(not $Bios_ID and $Dmesg=~/bios0: vendor (.+) version "(.+)" date (.+)/) {
+                $Bios_ID = registerBIOS({"Vendor"=>fmtVal($1), "Version"=>$2, "Release Date"=>$3});
+            }
+        }
+        
+        my @DriversMap = ($Dmesg=~/(\w+\d+ at \w+\d+)/g);
+        foreach my $Dr (@DriversMap)
+        {
+            if($Dr=~/\A(\w+\d+) at (\w+\d+)\Z/)
+            {
+                my ($DevFile, $Parent) = ($1, $2);
+                
+                $DevAttached{$DevFile} = $Parent;
+                $DevAttached_R{$Parent}{$DevFile} = 1;
+            }
+        }
+        
+        foreach my $DevFile (keys(%DevAttached))
+        {
+            my $CurDevFile = $DevFile;
+            my %Recur = ();
+            while(defined $DevAttached{$CurDevFile})
+            {
+                if(defined $Recur{$CurDevFile}) {
+                    last;
+                }
+                
+                $DevAttachedRecursive{$DevFile}{$DevAttached{$CurDevFile}} = 1;
+                
+                $Recur{$CurDevFile} = 1;
+                $CurDevFile = $DevAttached{$CurDevFile};
+            }
+        }
+        
+        if(isOpenBSD() or (isNetBSD() and $Sys{"System_version"} < 9.0))
+        {
+            my @AllPpb = ($Dmesg=~/\n(pci\d+ at ppb\d+ bus \d+)/g);
+            foreach my $PciLine (@AllPpb)
+            {
+                if($PciLine=~/pci(\d+) at ppb\d+ bus (\d+)/) {
+                    $PciPPb{$1} = $2;
+                }
+            }
+            
+            my @AllPci = ($Dmesg=~/\n(\w+\d+ at pci\d+ dev \d+ function \d+)/g); # others are not configured
+            foreach my $PciLine (@AllPci)
+            {
+                if($PciLine=~/\A(\w+\d+) at pci(\d+) dev (\d+) function (\d+)\Z/)
+                {
+                    my $DevFile = $1;
+                    my ($Pn1, $Pn2, $Pn3) = ($2, $3, $4);
+                    
+                    if(defined $PciPPb{$Pn1}) {
+                        $Pn1 = $PciPPb{$Pn1};
+                    }
+                    
+                    $PciNumDev{$Pn1.":".$Pn2.":".$Pn3} = $DevFile;
+                }
+            }
+        }
+        
+        if(isNetBSD() or (isOpenBSD() and $Sys{"System_version"} < 6.3))
+        {
+            my @AllUsb = ($Dmesg=~/[ \n](\w+\d+ at \w+\d+.+? addr \d+)/g); # others are not configured
+            foreach my $UsbLine (@AllUsb)
+            {
+                if($UsbLine=~/\A(\w+\d+) at (\w+\d+).+? addr (\d+)\Z/)
+                {
+                    my ($DevFile, $Parent, $UsbAddr) = ($1, $2, $3);
+                    $UsbAddrDev{$Parent}{$UsbAddr} = $DevFile;
+                }
+            }
+        }
+        elsif($FreeBSD7)
+        {
+            my @AllUsb = ($Dmesg=~/\n(\w+\d+: .+? class [a-f\d]+\/[a-f\d]+.+? addr \d+.+? on \w+\d+)/g);
+            foreach my $UsbLine (@AllUsb)
+            {
+                if($UsbLine=~/\A(\w+\d+): .+? class ([a-f\d]+)\/([a-f\d]+).+? addr (\d+).+? on (\w+\d+)\Z/)
+                {
+                    my ($DevFile, $C1, $C2, $UsbAddr, $Parent) = ($1, $2, $3, $4, $5);
+                    $UsbAddrDev{$Parent}{$UsbAddr} = $DevFile;
+                    $UsbAddrClass{$Parent}{$UsbAddr} = devID((fNum($C1), fNum($C2)));
+                }
+            }
+        }
+        
+        foreach my $D (keys(%HDD))
+        {
+            my $DFile = basename($D);
+            if($Dmesg=~/\b\Q$DFile\E: <([^<>]+?)>/) {
+                $HDD_Info{$DFile}{"Title"} = $1;
+            }
+        }
+    }
+    
+    my $Geom = "";
+
+    if($Opt{"FixProbe"}) {
+        $Geom = readFile($FixProbe_Logs."/geom");
+    }
+    elsif(enabledLog("geom") and checkCmd("geom"))
+    {
+        listProbe("logs", "geom");
+        $Geom = runCmd("geom disk list 2>/dev/null");
+        $Geom = encryptSerials($Geom, "ident");
+        writeLog($LOG_DIR."/geom", $Geom);
+    }
+    
+    foreach my $DriveInfo (split(/\n\n/, $Geom))
+    {
+        if($DriveInfo=~/Geom name:\s+(.+)/)
+        {
+            my $DevFile = $1;
+            
+            if($DevFile=~/\Acd\d\Z/)
+            {
+                if(not $CDROM_ID and $DriveInfo=~/descr:\s+(.+)/) {
+                    $CDROM_ID = registerCdrom($1, $DevFile);
+                }
+            }
+            else {
+                $HDD{"/dev/".$DevFile} = 0;
+            }
+        }
+    }
+    
+    my $Sysinfo = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Sysinfo = readFile($FixProbe_Logs."/sysinfo");
+    }
+    elsif(enabledLog("sysinfo") and checkCmd("sysinfo"))
+    {
+        listProbe("logs", "sysinfo");
+        $Sysinfo = runCmd("sysinfo -a -v 1 -c -i 2>/dev/null");
+        $Sysinfo = encryptUUIDs($Sysinfo);
+        $Sysinfo = encryptMACs($Sysinfo);
+        $Sysinfo = hideIPs($Sysinfo);
+        $Sysinfo=~s/(Serial Number\s+)[^\s]+/$1.../g;
+        
+        if($Sysinfo) {
+            writeLog($LOG_DIR."/sysinfo", $Sysinfo);
+        }
+    }
+    
+    if($Sysinfo)
+    {
+        if($Sysinfo=~/Total real memory available:\s+(\d+) MB/) {
+            $Sys{"Ram_total"} = $1*1024;
+        }
+        
+        if($Sysinfo=~/Logically used memory:\s+(\d+) MB/) {
+            $Sys{"Ram_used"} = $1*1024;
+        }
+    }
     
     # UDEV
     my $Udevadm = "";
@@ -4397,6 +5051,8 @@ sub probeHW()
             }
         }
     }
+    
+    my %HDD_Serial = ();
     
     foreach my $Info (split(/\n\n/, $Udevadm))
     {
@@ -4494,7 +5150,7 @@ sub probeHW()
     if($Opt{"FixProbe"}) {
         $Lspci_A = readFile($FixProbe_Logs."/lspci_all");
     }
-    elsif(checkCmd("lspci"))
+    elsif(enabledLog("lspci_all") and checkCmd("lspci"))
     {
         listProbe("logs", "lspci_all");
         
@@ -4509,6 +5165,11 @@ sub probeHW()
         if($Opt{"HWLogs"}) {
             writeLog($LOG_DIR."/lspci_all", $Lspci_A);
         }
+    }
+    
+    if(isBSD())
+    { # collect but do not parse
+        $Lspci_A = "";
     }
     
     foreach my $Info (split(/\n\n/, $Lspci_A))
@@ -4548,7 +5209,12 @@ sub probeHW()
             listProbe("logs", "lspci");
             
             my $PciLink = createIDsLink("pci");
-            $Lspci = runCmd("lspci -vmnnk 2>&1");
+            if(isBSD()) {
+                $Lspci = runCmd("lspci -vmnn 2>&1");
+            }
+            else {
+                $Lspci = runCmd("lspci -vmnnk 2>&1");
+            }
             if($PciLink) {
                 unlink($PciLink);
             }
@@ -4557,6 +5223,11 @@ sub probeHW()
         if($Opt{"HWLogs"}) {
             writeLog($LOG_DIR."/lspci", $Lspci);
         }
+    }
+    
+    if(isBSD())
+    { # collect but do not parse
+        $Lspci = "";
     }
     
     foreach my $Info (split(/\n\n/, $Lspci))
@@ -4604,24 +5275,16 @@ sub probeHW()
         {
             if(not $Device{"Device"})
             { # get name of the device from local pci.ids file
-                if(my $Name = $PciInfo{$IDs[0]}{$IDs[1]}) {
+                if(my $Name = $PciInfo{"I"}{$IDs[0]}{$IDs[1]}) {
                     $Device{"Device"} = $Name;
                 }
             }
             
-            if(my $AddName = $AddPciInfo{$IDs[0]}{$IDs[1]}) {
-                $Device{"Device"} = $AddName;
-            }
-            
             if(not $Device{"SDevice"})
             {
-                if(my $Name = $PciInfo_D{$IDs[0]}{$IDs[1]}{$IDs[2]}{$IDs[3]}) {
+                if(my $Name = $PciInfo{"D"}{$IDs[0]}{$IDs[1]}{$IDs[2]}{$IDs[3]}) {
                     $Device{"SDevice"} = $Name;
                 }
-            }
-            
-            if(my $AddSubName = $AddPciInfo_D{$IDs[0]}{$IDs[1]}{$IDs[2]}{$IDs[3]}) {
-                $Device{"SDevice"} = $AddSubName;
             }
         }
         
@@ -4713,6 +5376,286 @@ sub probeHW()
         }
     }
     
+    my %PciCtlInfo = ();
+    my $PciCtl = "";
+    
+    if($Opt{"FixProbe"}) {
+        $PciCtl = readFile($FixProbe_Logs."/pcictl");
+    }
+    elsif(enabledLog("pcictl") and checkCmd("pcictl"))
+    {
+        listProbe("logs", "pcictl");
+        $PciCtl = runCmd("pcictl pci0 list -N 2>/dev/null");
+        if(not $PciCtl)
+        { # NetBSD 7.2
+            $PciCtl = runCmd("pcictl pci0 list 2>/dev/null");
+        }
+        if($Opt{"HWLogs"}) {
+            writeLog($LOG_DIR."/pcictl", $PciCtl);
+        }
+    }
+    
+    foreach my $Info (split(/\n/, $PciCtl))
+    {
+        if($Info=~/\A([^\s]+):\s+([^\s]+)\s+(.+?)\s+\((\w+)\s+([^,]+).*?\)\s+\[(\w+\d+)\]/)
+        {
+            $PciCtlInfo{$1} = {"Vendor"=>$2, "Device"=>$3, "SubType"=>$4, "Type"=>$5, "File"=>$6};
+        }
+        elsif($Info=~/\A([^\s]+):\s+([^\s]+)\s+(.+?)\s+\((\w+)\s+([^,]+).*?\)/)
+        {
+            my $BusNum = $1;
+            $PciCtlInfo{$BusNum} = {"Vendor"=>$2, "Device"=>$3, "SubType"=>$4, "Type"=>$5};
+            
+            my $ShortBus = $BusNum;
+            $ShortBus=~s/0+(\d:)/$1/g;
+            if(my $DevFile = $PciNumDev{$ShortBus}) {
+                $PciCtlInfo{$BusNum}{"File"} = $DevFile;
+            }
+        }
+    }
+    
+    my $PciCtl_n = "";
+    
+    if($Opt{"FixProbe"}) {
+        $PciCtl_n = readFile($FixProbe_Logs."/pcictl_n");
+    }
+    elsif(enabledLog("pcictl_n") and checkCmd("pcictl"))
+    {
+        listProbe("logs", "pcictl_n");
+        $PciCtl_n = runCmd("pcictl pci0 list -Nn 2>/dev/null");
+        if(not $PciCtl_n)
+        { # NetBSD 7.2
+            $PciCtl_n = runCmd("pcictl pci0 list -n 2>/dev/null");
+        }
+        if($Opt{"HWLogs"}) {
+            writeLog($LOG_DIR."/pcictl_n", $PciCtl_n);
+        }
+    }
+    
+    foreach my $Info (split(/\n/, $PciCtl_n))
+    {
+        my ($V, $D, $SV, $SD) = ();
+        my %Device = ();
+        
+        if($Info=~/\A([^\s]+):\s*0x([a-f\d]{4})([a-f\d]{4})\s+\(0x([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})\)/)
+        {
+            if(defined $PciCtlInfo{$1})
+            {
+                %Device = %{$PciCtlInfo{$1}};
+                $Device{"Driver"} = $Device{"File"};
+                $Device{"Driver"}=~s/\d+\Z//;
+            }
+            ($V, $D) = ($3, $2);
+            $Device{"Class"} = devID(($4, $5, $6));
+        }
+        
+        if($Device{"Class"}) {
+            $Device{"Type"} = getClassType("pci", $Device{"Class"});
+        }
+        
+        my $ID = devID(($V, $D, $SV, $SD));
+        my $BusID = "pci:".$ID;
+        
+        foreach my $Attr (keys(%Device)) {
+            $HW{$BusID}{$Attr} = $Device{$Attr};
+        }
+        
+        countDevice($BusID, $Device{"Type"});
+    }
+    
+    my $PciDump = "";
+    
+    if($Opt{"FixProbe"}) {
+        $PciDump = readFile($FixProbe_Logs."/pcidump");
+    }
+    elsif(enabledLog("pcidump") and checkCmd("pcidump"))
+    {
+        listProbe("logs", "pcidump");
+        $PciDump = runCmd("pcidump -v 2>/dev/null");
+        
+        if($Opt{"HWLogs"}) {
+            writeLog($LOG_DIR."/pcidump", $PciDump);
+        }
+    }
+    
+    $PciDump=~s/\n( \w)/\n\n$1/g;
+    
+    foreach my $Info (split(/\n\n/, $PciDump))
+    {
+        my ($V, $D, $SV, $SD) = ();
+        
+        my %Device = ();
+        my $BusNum = undef;
+        
+        if($Info=~/\A\s*([\d\:]+?):\s+([^\s]+)\s*(.+?)\n/)
+        {
+            ($Device{"Vendor"}, $Device{"Device"}) = ($2, $3);
+            $BusNum = $1;
+        }
+        
+        if($Info=~/Vendor ID:\s*([a-f\d]{4})/) {
+            $V = $1;
+        }
+        
+        if($Info=~/Product ID:\s*([a-f\d]{4})/) {
+            $D = $1;
+        }
+        
+        if($Info=~/Subsystem Vendor ID:\s*([a-f\d]{4}).+?Product ID:\s*([a-f\d]{4})/)
+        {
+            if($1 ne "0000" or $2 ne "0000") {
+                ($SV, $SD) = ($1, $2);
+            }
+        }
+        
+        my @Class = ();
+        if($Info=~/Class:\s*([a-f\d]{2})/) {
+             push(@Class, $1);
+        }
+        if($Info=~/Subclass:\s*([a-f\d]{2})/) {
+             push(@Class, $1);
+        }
+        if($Info=~/Interface:\s*([a-f\d]{2})/) {
+             push(@Class, $1);
+        }
+        if(@Class) {
+            $Device{"Class"} = devID(@Class);
+        }
+        
+        if($Info=~/Class:\s*[a-f\d]{2}\s+(.+?),/) {
+             $Device{"Type"} = lc($1);
+        }
+        
+        if($Info=~/Subclass:\s*[a-f\d]{2}\s+(.+?),/) {
+             $Device{"SubType"} = $1;
+        }
+        
+        if($Device{"Class"}) {
+            $Device{"Type"} = getClassType("pci", $Device{"Class"});
+        }
+        
+        if(my $DevFile = $PciNumDev{$BusNum})
+        {
+            $Device{"File"} = $DevFile;
+            $Device{"Driver"} = $DevFile;
+            $Device{"Driver"}=~s/\d+\Z//;
+        }
+        
+        my $ID = devID(($V, $D, $SV, $SD));
+        my $BusID = "pci:".$ID;
+        
+        foreach my $Attr (keys(%Device)) {
+            $HW{$BusID}{$Attr} = $Device{$Attr};
+        }
+        
+        countDevice($BusID, $Device{"Type"});
+    }
+    
+    my $PciConf = "";
+    
+    if($Opt{"FixProbe"}) {
+        $PciConf = readFile($FixProbe_Logs."/pciconf");
+    }
+    elsif(enabledLog("pciconf") and checkCmd("pciconf"))
+    {
+        listProbe("logs", "pciconf");
+        $PciConf = runCmd("pciconf -l -bcv 2>/dev/null"); # -BbcevV ?
+        $PciConf=~s/\n(\w)/\n\n$1/g;
+        if($Opt{"HWLogs"}) {
+            writeLog($LOG_DIR."/pciconf", $PciConf);
+        }
+    }
+    
+    foreach my $Info (split(/\n\n/, $PciConf))
+    {
+        my ($V, $D, $SV, $SD) = ();
+        my %Device = ();
+        
+        if($Info=~/chip=0x([a-f\d]{4})([a-f\d]{4})/) {
+            ($D, $V) = ($1, $2);
+        }
+        
+        if($Info=~/card=0x([a-f\d]{4})([a-f\d]{4})/)
+        {
+            if($1 ne "0000") {
+                ($SD, $SV) = ($1, $2);
+            }
+        }
+        
+        if($Info=~/vendor=0x([a-f\d]{4})/)
+        { # FreeBSD 13
+            $V = $1;
+        }
+        
+        if($Info=~/device=0x([a-f\d]{4})/)
+        { # FreeBSD 13
+            $D = $1;
+        }
+        
+        if($Info=~/subvendor=0x([a-f\d]{4})/)
+        { # FreeBSD 13
+            $SV = $1;
+        }
+        
+        if($Info=~/subdevice=0x([a-f\d]{4})/)
+        { # FreeBSD 13
+            $SD = $1;
+        }
+        
+        if($SD eq "0000") {
+            ($SV, $SD) = ();
+        }
+        
+        if(not $D or not $V) {
+            next;
+        }
+        
+        if($Info=~/class=0x([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})/) {
+            $Device{"Class"} = devID(($1, $2, $3));
+        }
+        
+        if($Info=~/(.+)\@/)
+        {
+            $Device{"Driver"} = $1;
+            $Device{"File"} = $1;
+            
+            $Device{"Driver"}=~s/\d+\Z//;
+            if($Device{"Driver"} eq "none") {
+                $Device{"Driver"} = undef;
+            }
+        }
+        
+        if($Info=~/vendor\s+=\s+'(.+)'/) {
+            $Device{"Vendor"} = $1;
+        }
+        
+        if($Info=~/device\s+=\s+'(.+)'/) {
+            $Device{"Device"} = $1;
+        }
+        
+        if($Info=~/\sclass\s+=\s+(.+)/)
+        {
+            $Device{"Type"} = $1;
+            
+            if($Info=~/subclass\s+=\s+(.+)/) {
+                $Device{"SubType"} = $1;
+            }
+        }
+        
+        if($Device{"Class"}) {
+            $Device{"Type"} = getClassType("pci", $Device{"Class"});
+        }
+        
+        my $ID = devID(($V, $D, $SV, $SD));
+        my $BusID = "pci:".$ID;
+        
+        foreach my $Attr (keys(%Device)) {
+            $HW{$BusID}{$Attr} = $Device{$Attr};
+        }
+        
+        countDevice($BusID, $Device{"Type"});
+    }
+    
     # USB
     my $Lsusb = "";
     
@@ -4744,6 +5687,11 @@ sub probeHW()
         }
     }
     
+    if(isBSD())
+    { # collect but do not parse
+        $Lsusb = "";
+    }
+    
     foreach my $Info (split(/\n\n/, $Lsusb))
     {
         my %Device = ();
@@ -4768,13 +5716,13 @@ sub probeHW()
         }
         
         if($Info=~/bInterfaceClass\s+(\w+)\s+/) {
-            push(@Class, fNum(sprintf('%x',$1)));
+            push(@Class, fNum(sprintf('%x', $1)));
         }
         if($Info=~/bInterfaceSubClass\s+(\w+)\s+/) {
-            push(@Class, fNum(sprintf('%x',$1)));
+            push(@Class, fNum(sprintf('%x', $1)));
         }
         if($Info=~/bInterfaceProtocol\s+(\w+)\s+/) {
-            push(@Class, fNum(sprintf('%x',$1)));
+            push(@Class, fNum(sprintf('%x', $1)));
         }
         
         $Device{"Class"} = devID(@Class);
@@ -4828,22 +5776,6 @@ sub probeHW()
                         if($Name ne $OldVendor) {
                             $Device{"Device"} = $Name;
                         }
-                    }
-                }
-            }
-            
-            if(my $AddName = $AddUsbInfo{$V}{$D})
-            {
-                if($Vendor)
-                {
-                    if($AddName ne $Vendor) {
-                        $Device{"Device"} = $AddName;
-                    }
-                }
-                else
-                {
-                    if($AddName ne $OldVendor) {
-                        $Device{"Device"} = $AddName;
                     }
                 }
             }
@@ -4936,12 +5868,329 @@ sub probeHW()
         }
     }
     
+    my $UsbDevs = "";
+    
+    if($Opt{"FixProbe"}) {
+        $UsbDevs = readFile($FixProbe_Logs."/usbdevs");
+    }
+    elsif(enabledLog("usbdevs") and checkCmd("usbdevs"))
+    {
+        listProbe("logs", "usbdevs");
+        $UsbDevs = runCmd("usbdevs -vv 2>/dev/null");
+        $UsbDevs=~s/(serial\s+)([^\s]+)/$1.../g;
+        if($Opt{"HWLogs"}) {
+            writeLog($LOG_DIR."/usbdevs", $UsbDevs);
+        }
+    }
+    
+    $UsbDevs=~s/(addr |Controller )/\n$1/g;
+    
+    my $UsbController = undef;
+    my @UsbCtrls = ();
+    
+    foreach my $Info (split(/\n\n/, $UsbDevs))
+    {
+        my ($V, $D) = ();
+        my %Device = ();
+        my $UsbAddr = undef;
+        
+        if($Info=~/Controller (.+):/)
+        {
+            push(@UsbCtrls, $1);
+            $UsbController = basename($1);
+            next;
+        }
+        
+        if($Info=~/addr\s+(\d+):.*?,\s*([^,]+?)\(0x([a-f\d]{4})\),\s*([^,]+?)\(0x([a-f\d]{4})\)/i)
+        { # NetBSD, FreeBSD < 8.0, OpenBSD < 6.3
+            ($V, $D) = ($5, $3);
+            $Device{"Vendor"} = $4;
+            $Device{"Device"} = $2;
+            $UsbAddr = $1;
+            
+            if($Info=~/  ([^,]+)\(0x([a-f\d]{2})\),\s*([^,]+?)\(0x([a-f\d]{2})\)/i)
+            {
+                $Device{"BSDType"} = lc($1);
+                $Device{"SubType"} = lc($3);
+                $Device{"Class"} = devID(($2, $4));
+            }
+        }
+        elsif($Info=~/addr\s+\d+:\s*([a-f\d]{4}):([a-f\d]{4})\s+([^,]+),\s*(.+)/i)
+        { # OpenBSD
+            ($V, $D) = ($1, $2);
+            $Device{"Vendor"} = $3;
+            $Device{"Device"} = $4;
+        }
+        
+        my @Drs = ($Info=~/driver:\s*([^\s]+)/g);
+        foreach (@Drs)
+        {
+            $Device{"File"} = $_;
+            $Device{"Driver"} = $_;
+            $Device{"Driver"}=~s/\d+\Z//;
+        }
+        
+        if(not $V and not $D) {
+            next;
+        }
+        
+        $Device{"Type"} = getDefaultType("usb", $D, \%Device);
+        if(not $Device{"Type"} and $Device{"Class"} and $Device{"Class"}!~/\Af[fe]/) {
+            $Device{"Type"} = getClassType("usb", $Device{"Class"});
+        }
+        if(not $Device{"Type"}) {
+            $Device{"Type"} = $Device{"BSDType"};
+        }
+        
+        if(not $Device{"File"})
+        { # NetBSD, FreeBSD < 8.0, OpenBSD < 6.3
+            my $DevFile = undef;
+            
+            if(defined $UsbAddrDev{$UsbController}
+            and defined $UsbAddrDev{$UsbController}{$UsbAddr}) {
+                $DevFile = $UsbAddrDev{$UsbController}{$UsbAddr};
+            }
+            
+            if(not $DevFile)
+            {
+                foreach (keys(%{$DevAttached_R{$UsbController}}))
+                {
+                    if(defined $UsbAddrDev{$_}{$UsbAddr}) {
+                        $DevFile = $UsbAddrDev{$_}{$UsbAddr};
+                    }
+                    last;
+                }
+            }
+            
+            if($DevFile)
+            {
+                $Device{"File"} = $DevFile;
+                $Device{"Driver"} = $DevFile;
+                $Device{"Driver"}=~s/\d+\Z//;
+            }
+        }
+        
+        if(not $Device{"Class"})
+        { # FreeBSD < 8.0
+            if(defined $UsbAddrClass{$UsbController}
+            and defined $UsbAddrClass{$UsbController}{$UsbAddr})
+            {
+                $Device{"Class"} = $UsbAddrClass{$UsbController}{$UsbAddr};
+                $Device{"Type"} = getClassType("usb", $Device{"Class"});
+            }
+        }
+        
+        my $ID = devID(($V, $D));
+        my $BusID = "usb:".$ID;
+        
+        foreach my $Attr (keys(%Device)) {
+            $HW{$BusID}{$Attr} = $Device{$Attr};
+        }
+        
+        countDevice($BusID, $Device{"Type"});
+    }
+    
+    my $UsbCtl = "";
+    
+    if($Opt{"FixProbe"}) {
+        $UsbCtl = readFile($FixProbe_Logs."/usbctl");
+    }
+    elsif(enabledLog("usbctl") and checkCmd("usbctl"))
+    {
+        listProbe("logs", "usbctl");
+        
+        foreach (@UsbCtrls) {
+            $UsbCtl .= runCmd("usbctl -f $_ 2>/dev/null")."\n";
+        }
+        $UsbCtl=~s/(iSerialNumber=)([^\s]+)/$1.../g;
+        
+        if($Opt{"HWLogs"}) {
+            writeLog($LOG_DIR."/usbctl", $UsbCtl);
+        }
+    }
+    
+    if(not (isOpenBSD() or $FreeBSD7 or isNetBSD())) {
+        $UsbCtl = "";
+    }
+    
+    $UsbCtl=~s/(-----\n)(\w)/$1\n$2/g;
+    $UsbCtl=~s/(\nDEVICE addr )/\n$1/g;
+    
+    foreach my $Info (split(/\n\n\n/, $UsbCtl))
+    { # detect USB class on OpenBSD
+        if($Info=~/idVendor=0x([a-f\d]{4})\s+idProduct=0x([a-f\d]{4})/)
+        {
+            my ($V, $D) = ($1, $2);
+            my ($C1, $C2, $C3) = ();
+            
+            if($Info=~/bDeviceClass=([^\s+]+)\s+bDeviceSubClass=([^\s+]+)/)
+            {
+                ($C1, $C2) = ($1, $2);
+                if($Info=~/bDeviceProtocol=([^\s+]+)/) {
+                    $C3 = $1;
+                }
+            }
+            
+            if($Info=~/bInterfaceClass=([^\s+]+)\s+bInterfaceSubClass=([^\s+]+)/)
+            {
+                ($C1, $C2) = ($1, $2);
+                if($Info=~/bInterfaceProtocol=([^\s+]+)/) {
+                    $C3 = $1;
+                }
+            }
+            
+            my $BusId = "usb:".devID(($V, $D));
+            my $Class = devID((fNum(sprintf('%x', $C1)), fNum(sprintf('%x', $C2)), fNum(sprintf('%x', $C3))));
+            
+            if($Class eq "03-01-01")
+            {
+                if(defined $DevAttached_R{$HW{$BusId}{"File"}}{"ums0"}) {
+                    $Class = "03-01-02"
+                }
+            }
+            
+            $HW{$BusId}{"Class"} = $Class;
+            
+            if(not $HW{$BusId}{"Type"} and $Class!~/\Af[fe]/) {
+                $HW{$BusId}{"Type"} = getClassType("usb", $Class);
+            }
+        }
+    }
+    
+    my $UsbConf = "";
+    
+    if($Opt{"FixProbe"}) {
+        $UsbConf = readFile($FixProbe_Logs."/usbconfig");
+    }
+    elsif(enabledLog("usbconfig") and checkCmd("usbconfig"))
+    {
+        listProbe("logs", "usbconfig");
+        
+        $UsbConf = runCmd("usbconfig dump_device_desc show_ifdrv dump_all_config_desc 2>/dev/null");
+        $UsbConf = hideTags($UsbConf, "iSerialNumber");
+        
+        if($Opt{"HWLogs"}) {
+            writeLog($LOG_DIR."/usbconfig", $UsbConf);
+        }
+    }
+    
+    my @UsbConfBlocks = ();
+    
+    if($UsbConf=~/Configuration index/)
+    {
+        $UsbConf=~s/\n(\n\n\n[ ]+Interface \d)/$1/g;
+        @UsbConfBlocks = split(/\n\n\n(\n)+/, $UsbConf);
+    }
+    else
+    { # Support for old probes
+        $UsbConf=~s/(\n\w)/\n$1/g;
+        @UsbConfBlocks = split(/\n\n\n/, $UsbConf);
+    }
+    
+    foreach my $Info (@UsbConfBlocks)
+    {
+        my ($V, $D) = ();
+        my %Device = ();
+        
+        if($Info=~/idVendor\s*=\s*0x([a-f\d]{4})/) {
+            $V = $1;
+        }
+        
+        if($Info=~/idProduct\s*=\s*0x([a-f\d]{4})/) {
+            $D = $1;
+        }
+        
+        if(not $V and not $D) {
+            next;
+        }
+        
+        if($Info=~/iManufacturer\s*=.*<(.+)>/) {
+            $Device{"Vendor"} = $1;
+        }
+        
+        if($Info=~/iProduct\s*=.*<(.+)>/) {
+            $Device{"Device"} = $1;
+        }
+        
+        if($Info=~/:\s+((\w+?)\d+):\s+/)
+        {
+            $Device{"File"} = $1;
+            $Device{"Driver"} = $2;
+        }
+        
+        if($Info=~/bDeviceClass\s*=.*<(.+)>/)
+        {
+            $Device{"BSDType"} = lc($1);
+            if($Device{"BSDType"}=~/probed by (.+) class|vendor specific/) {
+                $Device{"BSDType"} = undef;
+            }
+        }
+        
+        my ($C1, $C2, $C3) = ();
+        
+        if($Info=~/bDeviceClass\s*=\s*0x0*([a-f\d]{2})/) {
+            $C1 = $1;
+        }
+        if($Info=~/bDeviceSubClass\s*=\s*0x0*([a-f\d]{2})/) {
+            $C2 = $1;
+        }
+        if($Info=~/bDeviceProtocol\s*=\s*0x0*([a-f\d]{2})/) {
+            $C3 = $1;
+        }
+        
+        if($Info=~/bInterfaceClass\s*=\s*0x0*([a-f\d]{2})/) {
+            $C1 = $1;
+        }
+        if($Info=~/bInterfaceSubClass\s*=\s*0x0*([a-f\d]{2})/) {
+            $C2 = $1;
+        }
+        if($Info=~/bInterfaceProtocol\s*=\s*0x0*([a-f\d]{2})/) {
+            $C3 = $1;
+        }
+        
+        cleanValues(\%Device);
+        
+        $Device{"Class"} = devID(($C1, $C2, $C3));
+        
+        if($Device{"Class"}=~/\Af[fe]/ and my $ExtName = $UsbInfo{$V}{$D}) {
+            $Device{"Device"} = $ExtName;
+        }
+        elsif(not $Device{"BSDType"})
+        {
+            if(my @Details = $Info=~/iInterface\s*=\s*.*?<(.+)>/g)
+            {
+                @Details = grep {$_!~/no string|Bulk|Interface/} @Details;
+                if(@Details) {
+                    $Device{"Device"} = join(" ", $Device{"Device"}, @Details);
+                }
+            }
+        }
+        
+        $Device{"Type"} = getDefaultType("usb", $D, \%Device);
+        if(not $Device{"Type"} and $Device{"Class"} and $Device{"Class"}!~/\Af[fe]/) {
+            $Device{"Type"} = getClassType("usb", $Device{"Class"});
+        }
+        
+        if(not $Device{"Type"}) {
+            $Device{"Type"} = $Device{"BSDType"};
+        }
+        
+        my $ID = devID(($V, $D));
+        my $BusID = "usb:".$ID;
+        
+        foreach my $Attr (keys(%Device)) {
+            $HW{$BusID}{$Attr} = $Device{$Attr};
+        }
+        
+        countDevice($BusID, $Device{"Type"});
+    }
+    
     my $Usb_devices = "";
     
     if($Opt{"FixProbe"}) {
         $Usb_devices = readFile($FixProbe_Logs."/usb-devices");
     }
-    else
+    elsif(enabledLog("usb-devices"))
     {
         if(checkCmd("usb-devices"))
         {
@@ -5126,7 +6375,7 @@ sub probeHW()
                 }
             }
         }
-        elsif(grep { $DevType eq $_ } ("bluetooth", "camera", "card reader", "chipcard", "communication controller", "dvb card", "fingerprint reader", "firewire controller", "flash memory", "modem", "multimedia controller", "network", "sd host controller", "sound", "storage", "system peripheral", "tv card", "video", "wireless", "unclassified device", "unassigned class") or not $DevType)
+        elsif(grep { $DevType eq $_ } ("bluetooth", "camera", "card reader", "chipcard", "communication controller", "dvb card", "fingerprint reader", "firewire controller", "flash memory", "modem", "multimedia controller", "network", "sd host controller", "sound", "storage", "system peripheral", "tv card", "video", "wireless", "unclassified device", "unassigned class", "vendor specific") or not $DevType)
         {
             if(grep { $DevType eq $_ } ("sd host controller", "system peripheral")
             and $HW{$ID}{"Vendor"}=~/Intel/) {
@@ -5148,6 +6397,26 @@ sub probeHW()
                 {
                     if(not $HW{$ID}{"Driver"}) {
                         $HW{$ID}{"Status"} = "failed";
+                    }
+                    elsif($DevType eq "network")
+                    {
+                        my $File = $HW{$ID}{"File"};
+                        
+                        if(defined $UsedNetworkDev{$File}) {
+                            $HW{$ID}{"Status"} = "works";
+                        }
+                        
+                        if($HW{$ID}{"Class"}=~/\A02-80/
+                        or $HW{$ID}{"Device"}=~/Wireless/
+                        or $File=~/\A(ath|iwn)/)
+                        {
+                            if($File=~s/\A[^\d]+/wlan/)
+                            {
+                                if(defined $UsedNetworkDev{$File}) {
+                                    $HW{$ID}{"Status"} = "works";
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -5214,6 +6483,10 @@ sub probeHW()
             $Dmidecode = encryptSerials($Dmidecode, "UUID");
             $Dmidecode = encryptSerials($Dmidecode, "Serial Number");
             $Dmidecode = encryptSerials($Dmidecode, "Asset Tag");
+            
+            if(not $Dmidecode and isOpenBSD()) {
+                printMsg("WARNING", "failed to run dmidecode");
+            }
         }
         
         if($Opt{"HWLogs"}) {
@@ -5503,7 +6776,7 @@ sub probeHW()
                 }
             }
             
-            $Board_ID = detectBoard(\%Device);
+            $Board_ID = registerBoard(\%Device);
         }
         elsif($Info=~/BIOS Information\n/)
         {
@@ -5519,7 +6792,9 @@ sub probeHW()
                 }
             }
             
-            detectBIOS(\%Device);
+            if(not $Bios_ID) {
+                $Bios_ID = registerBIOS(\%Device);
+            }
         }
         elsif($Info=~/Processor Information\n/)
         {
@@ -5530,13 +6805,7 @@ sub probeHW()
                 if($Key eq "Manufacturer")
                 {
                     $Device{"Vendor"} = fmtVal($Val);
-                    
-                    if($Device{"Vendor"}=~/Intel/) {
-                        $Device{"Vendor"} = "Intel";
-                    }
-                    elsif($Device{"Vendor"}=~/AMD/) {
-                        $Device{"Vendor"} = "AMD";
-                    }
+                    $Device{"Vendor"} = fixCpuVendor($Device{"Vendor"});
                 }
                 elsif($Key eq "Signature")
                 { # Family 6, Model 42, Stepping 7
@@ -5590,6 +6859,8 @@ sub probeHW()
                     $CPU_ID = "cpu:".$ID;
                     $HW{$CPU_ID} = \%Device;
                 }
+                
+                setDevCount($CPU_ID, "cpu", $CPU_Threads);
             }
             else
             { # add info
@@ -5694,6 +6965,35 @@ sub probeHW()
     
     if($Sys{"Model"}) {
         fixFFByModel($Sys{"Vendor"}, $Sys{"Model"});
+    }
+    
+    if($Sysctl and (not $Sys{"Model"} or not $Sys{"Vendor"}))
+    {
+        if($Sysctl=~/hw\.product=(.+)/) {
+            $Sys{"Model"} = $1;
+        }
+        
+        if($Sysctl=~/hw\.vendor=(.+)/) {
+            $Sys{"Vendor"} = $1;
+        }
+        
+        my %Board = ();
+        
+        if($Sysctl=~/hw\.version=(.+)/) {
+            $Board{"Version"} = $1;
+        }
+        
+        registerBoard({"Vendor"=>fmtVal($Sys{"Vendor"}), "Device"=>$Sys{"Model"}, "Version"=>$Board{"Version"}});
+    }
+    
+    if($Sysctl and not $CDROM_ID)
+    {
+        if($Sysctl=~/dev.acd.0.%desc:\s*(.+)/)
+        {
+            my $CdromDescr = $1;
+            $CdromDescr=~s{/.+}{};
+            $CDROM_ID = registerCdrom($CdromDescr, "acd0");
+        }
     }
     
     # Printers
@@ -5994,12 +7294,12 @@ sub probeHW()
                     printMsg("WARNING", "failed to fix EDID");
                 }
                 else {
-                    printMsg("WARNING", "failed to create EDID");
+                    printMsg("WARNING", "failed to detect EDID");
                 }
             }
         }
     }
-    else
+    elsif(enabledLog("edid"))
     { # NOTE: works for KMS video drivers only
         listProbe("logs", "edid");
         
@@ -6066,12 +7366,50 @@ sub probeHW()
     }
     
     # Battery
+    my $Apm = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Apm = readFile($FixProbe_Logs."/apm");
+    }
+    elsif(enabledLog("apm") and checkCmd("apm"))
+    {
+        listProbe("logs", "apm");
+        $Apm = runCmd("apm 2>/dev/null");
+        $Apm = encryptSerials($Apm, "Serial number");
+        
+        if($Opt{"HWLogs"} and $Apm) {
+            writeLog($LOG_DIR."/apm", $Apm);
+        }
+    }
+    
+    my $AcpiConf = "";
+    
+    if($Opt{"FixProbe"}) {
+        $AcpiConf = readFile($FixProbe_Logs."/acpiconf");
+    }
+    elsif($Apm and enabledLog("acpiconf") and checkCmd("acpiconf"))
+    {
+        listProbe("logs", "acpiconf");
+        
+        my @Bats = ($Apm=~/Battery (.+?):/g);
+        foreach my $Bat (@Bats)
+        {
+            $AcpiConf .= "# acpiconf -i $Bat\n";
+            $AcpiConf .= runCmd("acpiconf -i $Bat 2>/dev/null");
+            $AcpiConf .= "\n";
+        }
+        
+        if($Opt{"HWLogs"} and $AcpiConf) {
+            writeLog($LOG_DIR."/acpiconf", $AcpiConf);
+        }
+    }
+    
     my $Upower = "";
     
     if($Opt{"FixProbe"}) {
         $Upower = readFile($FixProbe_Logs."/upower");
     }
-    elsif(checkCmd("upower"))
+    elsif(enabledLog("upower") and checkCmd("upower"))
     {
         listProbe("logs", "upower");
         $Upower = runCmd("upower -d 2>/dev/null");
@@ -6277,7 +7615,7 @@ sub probeHW()
     if($Opt{"FixProbe"}) {
         $Hdparm = readFile($FixProbe_Logs."/hdparm");
     }
-    elsif($Opt{"HWLogs"})
+    elsif($Opt{"HWLogs"} and enabledLog("hdparm"))
     {
         if($Admin and checkCmd("hdparm"))
         {
@@ -6307,6 +7645,7 @@ sub probeHW()
                 $Hdparm .= $Output;
             }
         }
+        
         writeLog($LOG_DIR."/hdparm", $Hdparm);
     }
     
@@ -6362,7 +7701,7 @@ sub probeHW()
             }
         }
     }
-    elsif($Opt{"HWLogs"})
+    elsif($Opt{"HWLogs"} and enabledLog("smartctl"))
     {
         if($Admin and $SmartctlCmd) # $Admin or $Opt{"Snap"} ?
         {
@@ -6399,7 +7738,18 @@ sub probeHW()
                     next;
                 }
                 
-                $Smartctl .= runSmartctl($SmartctlCmd, $Id, $Dev);
+                my $DiskReport = runSmartctl($SmartctlCmd, $Id, $Dev);
+                
+                if(isBSD() and not $DiskReport)
+                {
+                    if(isNetBSD()) {
+                        $DiskReport = runSmartctl($SmartctlCmd, $Id, $Dev."d");
+                    }
+                    elsif(isOpenBSD()) {
+                        $DiskReport = runSmartctl($SmartctlCmd, $Id, $Dev."c");
+                    }
+                }
+                $Smartctl .= $DiskReport;
             }
             
             if($Smartctl) {
@@ -6414,6 +7764,153 @@ sub probeHW()
         { # write empty
             writeLog($LOG_DIR."/smartctl", "");
         }
+    }
+    
+    my $Diskinfo = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Diskinfo = readFile($FixProbe_Logs."/diskinfo");
+    }
+    elsif($Opt{"HWLogs"} and enabledLog("diskinfo") and checkCmd("diskinfo"))
+    {
+        listProbe("logs", "diskinfo");
+        
+        foreach my $Dev (sort keys(%HDD)) {
+            $Diskinfo .= runCmd("diskinfo -v $Dev 2>/dev/null");
+        }
+        
+        $Diskinfo=~s/[^\s]+(\s+# Disk ident.+\n)/...$1/g;
+        
+        writeLog($LOG_DIR."/diskinfo", $Diskinfo);
+    }
+    
+    my $Disklabel = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Disklabel = readFile($FixProbe_Logs."/disklabel");
+    }
+    elsif($Opt{"HWLogs"} and enabledLog("disklabel") and checkCmd("disklabel"))
+    {
+        listProbe("logs", "disklabel");
+        
+        foreach my $Dev (sort keys(%HDD))
+        {
+            $Disklabel .= runCmd("disklabel $Dev 2>/dev/null");
+            $Disklabel .= "\n";
+        }
+        
+        $Disklabel=~s/(label:\s+)(.+?)\n/$1...\n/g;
+        
+        if($Disklabel) {
+            writeLog($LOG_DIR."/disklabel", $Disklabel);
+        }
+    }
+    
+    my $Camcontrol = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Camcontrol = readFile($FixProbe_Logs."/camcontrol");
+    }
+    elsif($Opt{"HWLogs"} and enabledLog("camcontrol") and checkCmd("camcontrol"))
+    {
+        listProbe("logs", "camcontrol");
+        
+        foreach my $Dev (sort keys(%HDD))
+        {
+            if(my $CCRes = runCmd("camcontrol identify $Dev 2>/dev/null"))
+            {
+                $Camcontrol .= "$Dev\n";
+                $Camcontrol .= $CCRes;
+            }
+        }
+        
+        $Camcontrol=~s/(serial number\s+)(.+?)\n/$1...\n/g;
+        
+        writeLog($LOG_DIR."/camcontrol", $Camcontrol);
+    }
+    
+    my $MfiUtil = "";
+    
+    if($Opt{"FixProbe"}) {
+        $MfiUtil = readFile($FixProbe_Logs."/mfiutil");
+    }
+    elsif($Opt{"HWLogs"} and enabledLog("mfiutil") and checkCmd("mfiutil"))
+    {
+        listProbe("logs", "mfiutil");
+        
+        $MfiUtil .= runCmd("mfiutil show config 2>/dev/null");
+        
+        if($MfiUtil) {
+            writeLog($LOG_DIR."/mfiutil", $MfiUtil);
+        }
+    }
+    
+    my $Hwstat = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Hwstat = readFile($FixProbe_Logs."/hwstat");
+    }
+    elsif($Opt{"HWLogs"} and enabledLog("hwstat") and checkCmd("hwstat"))
+    {
+        listProbe("logs", "hwstat");
+        
+        $Hwstat .= runCmd("hwstat 2>/dev/null");
+        $Hwstat = encryptSerials($Hwstat, "Serial number");
+        
+        writeLog($LOG_DIR."/hwstat", $Hwstat);
+    }
+    
+    foreach my $Info (split(/\n\n/, $Hwstat))
+    {
+        if($Info=~/$HID_BATTERY/i) {
+            next;
+        }
+        
+        my %Bat = ();
+        
+        if($Info=~/Model number:\s+(.+)/i) {
+            $Bat{"Device"} = $1;
+        }
+        
+        if($Bat{"Device"}=~/Keyboard|Mouse/i) {
+            next;
+        }
+        
+        if($Info=~/OEM info:\s+(.+)/i) {
+            $Bat{"Vendor"} = $1;
+        }
+        else
+        {
+            if($Bat{"Device"}=~s/\A(DELL)\s+//i) {
+                $Bat{"Vendor"} = $1;
+            }
+        }
+        
+        if($Info=~/Type:\s+(.+)/i) {
+            $Bat{"Technology"} = $1;
+        }
+        
+        if($Info=~/Design capacity:\s+(\d+)/i)
+        {
+            if(my $EFullDesign = $1)
+            {
+                $Bat{"Size"} = ($EFullDesign/1000)." Wh";
+                
+                if($Info=~/Last full capacity:\s+(\d+)/i) {
+                    $Bat{"Capacity"} = $1*100/$EFullDesign;
+                }
+            }
+        }
+        
+        if(not $Bat{"Capacity"}) {
+            next;
+        }
+        
+        if($Info=~/Serial number:\s+(.+)/i) {
+            $Bat{"Serial"} = $1;
+        }
+        
+        registerBattery(\%Bat);
     }
     
     if(not $Opt{"FixProbe"})
@@ -6664,7 +8161,7 @@ sub probeHW()
         if($MegacliCmd)
         {
             listProbe("logs", "megacli");
-            my $Megacli = runCmd($MegacliCmd." -PDList -aAll 2>&1");
+            my $Megacli = runCmd($MegacliCmd." -PDList -aAll 2>/dev/null");
             $Megacli=~s/(Inquiry Data\s*:.+?)\s\w+\n/$1.../g; # Hide serial
             $Megacli = encryptSerials($Megacli, "WWN");
             if($Megacli) {
@@ -6742,38 +8239,12 @@ sub probeHW()
         }
     }
     
-    my $Dmesg = "";
-    
-    if($Opt{"FixProbe"}) {
-        $Dmesg = readFile($FixProbe_Logs."/dmesg");
-    }
-    elsif(checkCmd("dmesg"))
-    {
-        listProbe("logs", "dmesg");
-        $Dmesg = runCmd("dmesg 2>&1");
-        $Dmesg = hideTags($Dmesg, "SerialNumber");
-        $Dmesg = hideHostname($Dmesg);
-        $Dmesg = hideIPs($Dmesg);
-        $Dmesg = hideMACs($Dmesg);
-        $Dmesg = hidePaths($Dmesg);
-        $Dmesg = hideAAC($Dmesg);
-        $Dmesg = encryptUUIDs($Dmesg);
-        $Dmesg = hideAudit($Dmesg);
-        $Dmesg = hideEmail($Dmesg);
-        $Dmesg=~s/(Serial Number\s+)[^\s]+/$1.../g;
-        $Dmesg=~s/(serial\s*=\s*)[^\s]+/$1.../g;
-        
-        if($Opt{"HWLogs"}) {
-            writeLog($LOG_DIR."/dmesg", $Dmesg);
-        }
-    }
-    
-    if(not $Sys{"System"} and $Dmesg)
+    if((not $Sys{"System"} or $Sys{"System"}=~/freedesktop/) and $Dmesg)
     {
         if($Dmesg=~/Linux version (.+)/)
         {
             my $LinVer = $1;
-            foreach my $Lin ("endless", "ubuntu", "debian", "arch", "suse linux", "centos")
+            foreach my $Lin ("endless", "ubuntu", "debian", "arch", "suse linux", "centos", "artix")
             {
                 if($LinVer=~/$Lin/i)
                 {
@@ -6937,25 +8408,44 @@ sub probeHW()
             $CmdLine = $1;
         }
         
-        if(not $Sys{"System"} or $Sys{"System"}=~/freedesktop/)
+        if(not $Sys{"System"} or $Sys{"System"}=~/freedesktop/ or isBSD())
         {
-            foreach my $Prefix ("Current Operating System", "Build Operating System", "Kernel command line")
+            my @OSes = ("deepin", "clearlinux", "debian", "opensuse", "alt linux", "ubuntu", "manjaro", "artix", "arch");
+            if(isBSD()) {
+                @OSes = (@KNOWN_BSD, @OSes);
+            }
+            
+            my $Matched = undef;
+            
+            foreach my $Prefix ("Build Operating System", "Current Operating System", "Kernel command line")
             {
                 if($XLog=~/$Prefix:(.*)/)
                 {
                     my $Linux = lc($1);
-                    foreach my $Lin ("deepin", "clearlinux", "debian", "arch", "opensuse", "alt linux", "ubuntu", "manjaro", "artix")
+                    $Linux=~s{/arch/}{/}g;
+                    
+                    foreach my $Lin (@OSes)
                     {
                         if(index($Linux, $Lin) != -1)
                         {
-                            $Sys{"System"} = lc($Lin);
+                            $Matched = lc($Lin);
                             last;
                         }
                     }
                     
                     if($Linux=~/alt linux (p\d+)/) {
-                        $Sys{"System"} = "alt-$1";
+                        $Matched = "alt-$1";
                     }
+                }
+            }
+            
+            if($Matched)
+            {
+                if(isBSD()) {
+                    $Sys{"System"}=~s/\A(\w+)-/$Matched-/;
+                }
+                else {
+                    $Sys{"System"} = $Matched;
                 }
             }
         }
@@ -7094,6 +8584,19 @@ sub probeHW()
             
             if(keys(%GraphicsCards_InUse)==1 and index($XLog, ") FBDEV(")!=-1) {
                 setCardStatus($D, "failed");
+            }
+        }
+        
+        if(isBSD())
+        {
+            if($XLog=~/ modeset\(.+Intel/ or $XLog=~/ intel\(0\): /) {
+                setCardStatusByVendor("8086", "works");
+            }
+            elsif($XLog=~/ NVIDIA\(0\): / or $XLog=~/ NV\(0\): /) {
+                setCardStatusByVendor("10de", "works");
+            }
+            elsif($XLog=~/ RADEON\(0\): Chipset:/) {
+                setCardStatusByVendor("1002", "works");
             }
         }
     }
@@ -7243,7 +8746,7 @@ sub probeHW()
     {
         $HciConfig = readFile($FixProbe_Logs."/hciconfig");
     }
-    elsif(checkCmd("hciconfig"))
+    elsif(enabledLog("hciconfig") and checkCmd("hciconfig"))
     {
         listProbe("logs", "hciconfig");
         $HciConfig = runCmd("hciconfig -a 2>&1");
@@ -7279,7 +8782,7 @@ sub probeHW()
     if($Opt{"FixProbe"}) {
         $MmCli = readFile($FixProbe_Logs."/mmcli");
     }
-    elsif(checkCmd("mmcli"))
+    elsif(enabledLog("mmcli") and checkCmd("mmcli"))
     {
         listProbe("logs", "mmcli");
         my $Modems = runCmd("mmcli -L 2>&1");
@@ -7329,7 +8832,7 @@ sub probeHW()
     if($Opt{"FixProbe"}) {
         $OpenscTool = readFile($FixProbe_Logs."/opensc-tool");
     }
-    elsif(checkCmd("opensc-tool"))
+    elsif(enabledLog("opensc-tool") and checkCmd("opensc-tool"))
     {
         listProbe("logs", "opensc-tool");
         $OpenscTool = runCmd("opensc-tool --list-readers");
@@ -7375,7 +8878,7 @@ sub probeHW()
     if($Lscpu)
     {
         my ($Sockets, $Cores, $Threads) = ();
-        my ($CPU_Vendor, $CPU_Family, $CPU_ModelNum) = ();
+        my ($CPU_Vendor, $CPU_Name, $CPU_Family, $CPU_ModelNum, $CPU_Stepping) = ();
         
         my @CpuVals = ();
         foreach (split(/\n/, $Lscpu))
@@ -7403,14 +8906,20 @@ sub probeHW()
             elsif($Attr eq "CPU op-mode(s)") {
                 $Sys{"Op_modes"} = $Val;
             }
-            elsif($Attr eq "Vendor ID") {
+            elsif($Attr eq "Vendor ID" or $Attr eq "Vendor") {
                 $CPU_Vendor = $Val;
+            }
+            elsif($Attr eq "Model name") {
+                $CPU_Name = fmtVal($Val);
             }
             elsif($Attr eq "CPU family") {
                 $CPU_Family = $Val;
             }
             elsif($Attr eq "Model") {
                 $CPU_ModelNum = $Val;
+            }
+            elsif($Attr eq "Stepping") {
+                $CPU_Stepping = $Val;
             }
             
             push(@CpuVals, $Val);
@@ -7436,6 +8945,25 @@ sub probeHW()
         
         if(not $Sys{"Microarch"}) {
             $Sys{"Microarch"} = detectMicroarch($CPU_Vendor, $CPU_Family, $CPU_ModelNum);
+        }
+        
+        if(isBSD())
+        {
+            if(not $CPU_ID)
+            {
+                my %CpuDev = ();
+                $CpuDev{"Vendor"} = fixCpuVendor($CPU_Vendor);
+                $CpuDev{"Device"} = $CPU_Name;
+                $CpuDev{"Device"} = duplVendor($CpuDev{"Vendor"}, $CpuDev{"Device"});
+                
+                $CpuDev{"Type"} = "cpu";
+                $CpuDev{"Status"} = "works";
+                
+                $CPU_ID = "cpu:".fmtID(devID(nameID($CpuDev{"Vendor"}), join(".", ($CPU_Family, $CPU_ModelNum, $CPU_Stepping)), devSuffix(\%CpuDev)));
+                $HW{$CPU_ID} = \%CpuDev;
+            }
+            
+            setDevCount($CPU_ID, "cpu", $Sys{"Threads"}*$Sys{"Cores"});
         }
     }
     
@@ -7500,7 +9028,10 @@ sub probeHW()
                     my %CpuDev = ();
                     $CpuDev{"Vendor"} = $1;
                     $CpuDev{"Device"} = $Val;
+                    
                     $CpuDev{"Type"} = "cpu";
+                    $CpuDev{"Status"} = "works";
+                    
                     $CPU_ID = "cpu:".fmtID(devID(nameID($CpuDev{"Vendor"}), $CpuDev{"Device"}));
                     $HW{$CPU_ID} = \%CpuDev;
                 }
@@ -7532,6 +9063,67 @@ sub probeHW()
         }
     }
     
+    my $Cpuid = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Cpuid = readFile($FixProbe_Logs."/cpuid");
+    }
+    elsif(enabledLog("cpuid")
+    and checkCmd("cpuid"))
+    {
+        listProbe("logs", "cpuid");
+        
+        if(isBSD())
+        {
+            $Cpuid = runCmd("cpuid 2>/dev/null");
+            $Cpuid = encryptSerials($Cpuid, "Processor serial");
+            if($Cpuid=~/usage: cpuid code/) {
+                $Cpuid = "";
+            }
+        }
+        else
+        {
+            $Cpuid = runCmd("cpuid -1 2>/dev/null");
+            $Cpuid = encryptSerials($Cpuid, "serial number");
+        }
+        
+        writeLog($LOG_DIR."/cpuid", $Cpuid);
+    }
+    
+    if($Cpuid and not $Lscpu and isBSD() and not $CPU_ID)
+    {
+        my %CpuDev = ();
+        
+        if($Cpuid=~/Vendor ID: "(.+?)"/) {
+            $CpuDev{"Vendor"} = $1;
+        }
+        
+        if($Cpuid=~/Extended brand string: "\s*(.+?)\s*"/) {
+            $CpuDev{"Device"} = $1;
+        }
+        
+        if($Cpuid=~/Family (\d+)/) {
+            $CpuDev{"Family"} = $1;
+        }
+        
+        if($Cpuid=~/Model (\d+)/) {
+            $CpuDev{"ModelNum"} = $1;
+        }
+        
+        if($Cpuid=~/Stepping (\d+)/) {
+            $CpuDev{"Stepping"} = $1;
+        }
+        
+        if($CpuDev{"Device"})
+        {
+            $CPU_ID = registerCPU(\%CpuDev);
+            
+            if($CPU_ID and not getDeviceCount($CPU_ID) and $Cpuid=~/siblings: (\d+)/) {
+                setDevCount($CPU_ID, "cpu", $1);
+            }
+        }
+    }
+    
     my $Meminfo = "";
     
     if($Opt{"FixProbe"}) {
@@ -7541,7 +9133,9 @@ sub probeHW()
     {
         listProbe("logs", "meminfo");
         $Meminfo = readFile("/proc/meminfo");
-        writeLog($LOG_DIR."/meminfo", $Meminfo);
+        if($Meminfo) {
+            writeLog($LOG_DIR."/meminfo", $Meminfo);
+        }
     }
     
     if($Meminfo)
@@ -7566,11 +9160,17 @@ sub probeHW()
     and checkCmd("df"))
     {
         listProbe("logs", "df");
-        $Df = runCmd("df -Th 2>&1");
+        
+        $Df = runCmd("df -Th 2>/dev/null");
+        if(not $Df)
+        { # OpenBSD, NetBSD, FreeBSD < 8.0
+            $Df = runCmd("df -h 2>/dev/null");
+        }
         
         $Df = hidePaths($Df);
         $Df = hideIPs($Df);
         $Df = hideUrls($Df);
+        $Df = encryptUUIDs($Df);
         
         $Df = hideDf($Df);
         
@@ -7660,6 +9260,11 @@ sub probeHW()
                     $Sys{"Filesystem"} = $1;
                 }
             }
+        }
+        
+        if(isBSD())
+        {
+            # TODO: detect fs
         }
     }
     
@@ -7824,14 +9429,10 @@ sub probeHW()
         writeLog($LOG_DIR."/boot.log", $BootLog);
     }
     
-    if(not $Sys{"System"})
+    if(not $Sys{"System"} or $Sys{"System"}=~/freedesktop/)
     {
-        if($BootLog=~/Starting (.+?) (Post-Boot Flatpak Installer|Companion App Enabler)/)
-        {
-            my $FlatSys = $1;
-            if($FlatSys=~/(Endless)/) {
-                $Sys{"System"} = lc($1);
-            }
+        if($BootLog=~/Endless OS/) {
+            $Sys{"System"} = "endless";
         }
     }
     
@@ -7939,11 +9540,30 @@ sub runSmartctl(@)
     }
     
     my $Cmd = $SmartctlCmd." -x \"".$Dev."\"";
+    
+    if(isBSD())
+    {
+        if(not defined $Sys{"Freebsd_release"} or $Sys{"Freebsd_release"} < 7.0) {
+            $Cmd = $SmartctlCmd." -a \"".$Dev."\"";
+        }
+    }
+    
     if($AddOpt) {
         $Cmd .= " ".$AddOpt;
     }
     
-    my $Output = runCmd($Cmd." 2>/dev/null");
+    my $Output = undef;
+    
+    if($Sys{"System"}=~/dragonfly/) {
+        $Output = runCmd($Cmd." -d sat 2>/dev/null");
+    }
+    else {
+        $Output = runCmd($Cmd." 2>/dev/null");
+    }
+    
+    if($Output=~/Unknown USB bridge|Device Identity failed/) {
+        return "";
+    }
     
     if(not $Output or $Output=~/Operation not permitted|Permission denied/)
     {
@@ -7957,13 +9577,17 @@ sub runSmartctl(@)
         return "";
     }
     
+    if(isBSD() and $Output=~/No such file|Device not configured|Operation not supported/) {
+        return "";
+    }
+    
     if($Raid)
     {
         if(index($Output, "failed: cannot open")!=-1
         or index($Output, "INQUIRY failed")!=-1
         or index($Output, "Input/output error")!=-1)
         { # empty N slot
-            next;
+            return "";
         }
     }
     
@@ -8006,6 +9630,55 @@ sub runSmartctl(@)
     }
     
     return $Output;
+}
+
+sub registerCPU($)
+{
+    my $Device = $_[0];
+    
+    $Device->{"Vendor"} = fixCpuVendor($Device->{"Vendor"});
+    $Device->{"Device"} = fmtVal($Device->{"Device"});
+    $Device->{"Device"} = duplVendor($Device->{"Vendor"}, $Device->{"Device"});
+    
+    $Device->{"Type"} = "cpu";
+    $Device->{"Status"} = "works";
+    
+    $CPU_ID = "cpu:".fmtID(devID(nameID($Device->{"Vendor"}), join(".", ($Device->{"Family"}, $Device->{"ModelNum"}, $Device->{"Stepping"})), devSuffix($Device)));
+    $HW{$CPU_ID} = $Device;
+    
+    return $CPU_ID;
+}
+
+sub registerCdrom($$)
+{
+    my ($Descr, $DevFile) = @_;
+    
+    my %CDDev = ();
+    $CDDev{"Device"} = $Descr;
+    $CDDev{"Vendor"} = guessDeviceVendor($CDDev{"Device"});
+    $CDDev{"Device"} = duplVendor($CDDev{"Vendor"}, $CDDev{"Device"});
+    
+    $CDDev{"Type"} = "cdrom";
+    $CDDev{"Status"} = "detected";
+    $CDDev{"File"} = $DevFile;
+    
+    my @Dr = ();
+    if($DevFile=~/\A(cd|acd)\d\Z/) {
+        @Dr = ($1);
+    }
+    
+    if(my $ADr = $DevAttached{$DevFile})
+    {
+        $ADr=~s/\d+\Z//;
+        push(@Dr, $ADr);
+    }
+    
+    if(@Dr) {
+        $CDDev{"Driver"} = join(", ", @Dr);
+    }
+    
+    $CDROM_ID = "scsi:".fmtID(devID(nameID($CDDev{"Vendor"}), $CDDev{"Device"}));
+    $HW{$CDROM_ID} = \%CDDev;
 }
 
 sub registerBattery($)
@@ -8175,6 +9848,27 @@ sub setAttachedStatus(@)
     my $Id = shift(@_);
     my $Status = shift(@_);
     
+    if(isBSD())
+    {
+        my %DevID = ();
+        foreach (keys(%HW))
+        {
+            if(defined $HW{$_} and defined $HW{$_}{"File"}) {
+                $DevID{$HW{$_}{"File"}} = $_;
+            }
+        }
+        if(my $File = $HW{$Id}{"File"})
+        {
+            foreach my $Parent (keys(%{$DevAttachedRecursive{$File}}))
+            {
+                if(defined $DevID{$Parent}) {
+                    $HW{$DevID{$Parent}}{"Status"} = $Status;
+                }
+            }
+        }
+        return;
+    }
+    
     my $Recur = {};
     if(@_) {
         $Recur = shift(@_);
@@ -8236,7 +9930,7 @@ sub shortOS($)
     return $Name;
 }
 
-sub detectBoard($)
+sub registerBoard($)
 {
     my $Device = $_[0];
     
@@ -8305,7 +9999,7 @@ sub detectBoard($)
     return $MID;
 }
 
-sub detectBIOS($)
+sub registerBIOS($)
 {
     my $Device = $_[0];
     
@@ -8339,7 +10033,7 @@ sub detectBIOS($)
     $Device->{"Device"} = join(" ", @Name);
     
     if(not $Device->{"Vendor"} or not $Device->{"Device"}) {
-        return;
+        return undef;
     }
     
     $Device->{"Type"} = "bios";
@@ -8348,11 +10042,17 @@ sub detectBIOS($)
     my $ID = devID(nameID($Device->{"Vendor"}), devSuffix($Device));
     $ID = fmtID($ID);
     
+    my $BusID = "bios:".$ID;
+    
     $Device->{"Device"} = "BIOS ".$Device->{"Device"};
     
-    if($ID) {
+    if($ID)
+    {
         $HW{"bios:".$ID} = $Device;
+        return $BusID;
     }
+    
+    return undef;
 }
 
 sub detectMonitor($)
@@ -8776,6 +10476,28 @@ sub detectDrive(@)
     
     $Device->{"Model"} = $Device->{"Device"};
     
+    if(isBSD())
+    {
+        my @Dr = ();
+        if($Dev=~/\/(\w+?)\d+[cd]?\Z/) {
+            push(@Dr, $1);
+        }
+        my $ShortDev = $Dev;
+        $ShortDev=~s/(\d)[cd]\Z/$1/;
+        
+        if(my $ADr = $DevAttached{basename($ShortDev)})
+        {
+            $ADr=~s/\d+\Z//;
+            push(@Dr, $ADr);
+        }
+        
+        if(@Dr) {
+            $Device->{"Driver"} = join(", ", @Dr);
+        }
+        
+        $Device->{"File"} = basename($ShortDev);
+    }
+    
     my $ID = devID(nameID($Device->{"Vendor"}));
     $ID = devID($ID, devSuffix($Device));
     
@@ -9175,7 +10897,7 @@ sub guessDeviceVendor($)
 {
     my $Device = $_[0];
     
-    if($Device=~s/(\A|\s)($ALL_DRIVE_VENDORS|$ALL_VENDORS)([\s_\-\[]|\Z)//i) {
+    if($Device=~s/(\A|\s)($ALL_DRIVE_VENDORS|$ALL_VENDORS|$ALL_CDROM_VENDORS)([\s_\-\[]|\Z)//i) {
         return $2;
     }
 
@@ -9336,7 +11058,7 @@ sub emptyVal($)
     $Val=~s/\A\s+//;
     $Val=~s/\s+\Z//;
     
-    if($Val=~/\A[\[\(]*(not specified|not available|out of spec|not defined|No Device Manufacturer|No Device Part Number|invalid|error|unkn|unknown|undefined|unknow|uknown|empty|n\/a|none|default string|vendor|device|unknown vendor|default|MB serial number|PCA serial|customer|model|_|unde|null|reserved|Unknown \(0\)|\?|unknown unknown|[\.\}\*\_]+)[\)\]]*\Z/i
+    if($Val=~/\A[\[\(]*(not specified|not available|out of spec|not defined|No Device Manufacturer|No Device Part Number|invalid|error|unkn|unknown|undefined|unknow|uknown|empty|n\/a|none|default string|vendor|device|unknown vendor|default|MB serial number|PCA serial|customer|model|_|unde|null|no string|reserved|Unknown \(0\)|\?|unknown unknown|generic|[\.\}\*\_]+)[\)\]]*\Z/i
     or $Val=~/(\A|\b|\d)(to be filled|unclassified device|not defined|bad index|does not exist|unkn|uknown|default)(\b|\Z)/i) {
         return 1;
     }
@@ -9570,21 +11292,6 @@ sub listDir($)
 
 sub probeSys()
 {
-    my ($Distr, $Rel) = probeDistr();
-    
-    $Sys{"System"} = $Distr;
-    $Sys{"Systemrel"} = $Rel;
-    
-    if(not $Sys{"System"})
-    {
-        printMsg("ERROR", "failed to detect Linux distribution");
-        if($Opt{"Snap"})
-        {
-            warnSnapInterfaces();
-            exitStatus(1);
-        }
-    }
-    
     if(checkCmd("uname"))
     {
         $Sys{"Arch"} = runCmd("uname -m");
@@ -9595,6 +11302,22 @@ sub probeSys()
         require POSIX;
         $Sys{"Arch"} = (POSIX::uname())[4];
         $Sys{"Kernel"} = (POSIX::uname())[2];
+    }
+    
+    my ($Distr, $DistrVersion, $Rel) = probeDistr();
+    
+    $Sys{"System"} = $Distr."-".$DistrVersion;
+    $Sys{"System_version"} = $DistrVersion;
+    $Sys{"Systemrel"} = $Rel;
+    
+    if(not $Sys{"System"})
+    {
+        printMsg("ERROR", "failed to detect Linux/BSD distribution");
+        if($Opt{"Snap"})
+        {
+            warnSnapInterfaces();
+            exitStatus(1);
+        }
     }
     
     if($Sys{"Arch"}=~/unknown/i)
@@ -9716,6 +11439,10 @@ sub fixDisplayManager($)
 
 sub probeDmi()
 {
+    if(not enabledLog("dmi_id")) {
+        return;
+    }
+    
     listProbe("logs", "dmi_id");
     
     my $Dmi = "";
@@ -10087,8 +11814,10 @@ sub fixChassis()
     $Sys{"Vendor"} = fixVendor($Sys{"Vendor"}, $Sys{"Model"});
     $Sys{"Model"} = fixModel($Sys{"Vendor"}, $Sys{"Model"}, $Sys{"Version"});
     
-    detectBIOS(\%Bios);
-    $Board_ID = detectBoard(\%Board);
+    if(not $Bios_ID) {
+        $Bios_ID = registerBIOS(\%Bios);
+    }
+    $Board_ID = registerBoard(\%Board);
     
     if(not $Sys{"Type"}
     or grep {$Sys{"Type"} eq $_} ("soc", "system on chip", "notebook", "hand held"))
@@ -10172,6 +11901,8 @@ sub probeHWaddr()
     }
     else
     {
+        my $ByIPaddr = 0;
+        
         if(checkCmd("ifconfig"))
         {
             listProbe("logs", "ifconfig");
@@ -10179,6 +11910,7 @@ sub probeHWaddr()
             $IFConfig = hideIPs($IFConfig);
             $IFConfig = encryptMACs($IFConfig);
             $IFConfig=~s/(inet6 |inet |netmask |broadcast )[^\s]+/$1\XXX/g;
+            $IFConfig=~s/(ssid )(.+?)( channel)/$1...$3/g;
             
             if($Opt{"HWLogs"}) {
                 writeLog($LOG_DIR."/ifconfig", $IFConfig);
@@ -10193,6 +11925,7 @@ sub probeHWaddr()
                 $IPaddr = encryptMACs($IPaddr);
                 $IPaddr=~s/(inet6 |inet |brd )[^\s]+/$1\XXX/g;
                 $IFConfig = ipAddr2ifConfig($IPaddr);
+                $ByIPaddr = 1;
                 
                 if($Opt{"HWLogs"}) {
                     writeLog($LOG_DIR."/ip_addr", $IPaddr);
@@ -10208,6 +11941,8 @@ sub probeHWaddr()
             my $Socket = IO::Socket::INET->new(Proto => "udp");
             my @Ifs = ();
             my %Addrs = ();
+            my $Macs = "";
+            
             foreach my $If ($Socket->if_list)
             {
                 if(my $Mac = $Socket->if_hwaddr($If))
@@ -10218,7 +11953,12 @@ sub probeHWaddr()
                     
                     push(@Ifs, $If); # save order
                     $Addrs{$If} = $Mac;
+                    $Macs .= "$If:$Mac\n";
                 }
+            }
+            
+            if($Opt{"HWLogs"}) {
+                writeLog($LOG_DIR."/macs", $Macs);
             }
             
             $Sys{"HWaddr"} = selectHWAddr(\@Ifs, \%Addrs);
@@ -10231,9 +11971,13 @@ sub probeHWaddr()
         
         if($IFConfig)
         {
-            $Sys{"HWaddr"} = detectHWaddr($IFConfig);
+            if(isBSD()) {
+                $IFConfig=~s/(\n\w)/\n$1/g;
+            }
             
-            if($Opt{"HWLogs"})
+            $Sys{"HWaddr"} = detectHWaddr($IFConfig, $ByIPaddr);
+            
+            if($Opt{"HWLogs"} and enabledLog("ethtool_p"))
             {
                 my $EthtoolP = "";
                 foreach my $E (sort keys(%PermanentAddr)) {
@@ -10268,6 +12012,13 @@ sub probeHWaddr()
                 if(($I=~/packets\s*:?\s*(\d+)/ and $1) or ($I=~/valid_lft\s+(\d+)/ and $1)) {
                     $UsedNetworkDev{$F} = 1;
                 }
+                
+                if(isBSD())
+                {
+                    if($I=~/status: (associated|active)/) {
+                        $UsedNetworkDev{$F} = 1;
+                    }
+                }
             }
         }
     }
@@ -10276,11 +12027,18 @@ sub probeHWaddr()
 sub fixHWaddr()
 {
     my $IFConfig = readFile($FixProbe_Logs."/ifconfig");
+    my $ByIPaddr = 0;
+    
+    if(isBSD()) {
+        $IFConfig=~s/(\n\w)/\n$1/g;
+    }
     
     if(not $IFConfig)
     {
-        if(my $IPaddr = readFile($FixProbe_Logs."/ip_addr")) {
+        if(my $IPaddr = readFile($FixProbe_Logs."/ip_addr"))
+        {
             $IFConfig = ipAddr2ifConfig($IPaddr);
+            $ByIPaddr = 1;
         }
     }
     
@@ -10303,7 +12061,7 @@ sub fixHWaddr()
         
         if($EthtoolP or $IFConfig=~/\Q$UAddr\E/i)
         {
-            if(my $NewAddr = detectHWaddr($IFConfig)) {
+            if(my $NewAddr = detectHWaddr($IFConfig, $ByIPaddr)) {
                 $Sys{"HWaddr"} = $NewAddr;
             }
         }
@@ -10339,12 +12097,17 @@ sub countStr($$)
     return $Count;
 }
 
-sub detectHWaddr($)
+sub detectHWaddr(@)
 {
-    my $IFConfig = $_[0];
+    my $IFConfig = shift(@_);
+    my $ByIPaddr = 0;
+    if(@_) {
+        $ByIPaddr = shift(@_);
+    }
     
     my @Devs = ();
     my %Addrs = ();
+    my %Blocks = ();
     
     foreach my $Block (split(/[\n]\s*[\n]+/, $IFConfig))
     {
@@ -10355,11 +12118,19 @@ sub detectHWaddr($)
         }
         
         if($Block=~/ether\s+([^\s]+)/)
-        { # Fresh
+        { # new
             $Addr = lc($1);
         }
         elsif($Block=~/HWaddr\s+([^\s]+)/)
-        { # Marathon
+        { # old
+            $Addr = lc($1);
+        }
+        elsif($Block=~/lladdr\s+([^\s]+)/)
+        { # OpenBSD
+            $Addr = lc($1);
+        }
+        elsif($Block=~/address:\s+([^\s]+)/)
+        { # NetBSD
             $Addr = lc($1);
         }
         
@@ -10383,15 +12154,52 @@ sub detectHWaddr($)
         
         push(@Devs, $NetDev); # save order
         $Addrs{$NetDev} = $Addr;
+        $Blocks{$NetDev} = $Block;
     }
     
-    return selectHWAddr(\@Devs, \%Addrs);
+    return selectHWAddr(\@Devs, \%Addrs, $ByIPaddr, \%Blocks);
 }
 
-sub selectHWAddr($$)
+sub getIF($$)
 {
-    my $Devs = $_[0];
-    my $Addrs = $_[1];
+    my ($Name, $Part) = @_;
+    
+    if($Name=~/\A([a-z]+)(\d+)/i)
+    {
+        if($Part eq "name") {
+            return $1;
+        }
+        elsif($Part eq "num") {
+            return int($2);
+        }
+    }
+    
+    return undef;
+}
+
+sub sortNaturally(@) {
+    return sort {getIF($a, "name") cmp getIF($b, "name")} sort {getIF($a, "num") <=> getIF($b, "num")} @_;
+}
+
+sub selectHWAddr(@)
+{
+    my $Devs = shift(@_);
+    my $Addrs = shift(@_);
+    
+    my $ByIPaddr = 0;
+    if(@_) {
+        $ByIPaddr = shift(@_);
+    }
+    
+    my $Blocks = {};
+    if(@_) {
+        $Blocks = shift(@_);
+    }
+    
+    # TODO: sort all i-faces on next re-gen of the DB
+    if($ByIPaddr) {
+        @{$Devs} = sortNaturally(@{$Devs});
+    }
     
     my (@Eth, @Wlan, @Other, @Wrong, @Virtual, @Extra) = ();
     
@@ -10432,7 +12240,16 @@ sub selectHWAddr($$)
           # Support for old probes
             push(@Other, $Addr);
         }
-        elsif($NetDev=~/\Ae/)
+        elsif(isBSD() and $Blocks->{$NetDev}=~/media:.*Wireless/)
+        {
+            $WLanInterface{$NetDev} = 1;
+            push(@Wlan, $Addr);
+        }
+        elsif(isBSD() and $Blocks->{$NetDev}=~/media:.*Ethernet/)
+        {
+            push(@Eth, $Addr);
+        }
+        elsif($NetDev=~/\Ae/ or (isBSD() and $Blocks->{$NetDev}=~/media:.*Ethernet/))
         {
             push(@Eth, $Addr);
         }
@@ -10449,9 +12266,6 @@ sub selectHWAddr($$)
             push(@Other, $Addr);
         }
     }
-    
-    # TODO: sort i-faces on next re-gen of the DB
-    # @Eth = sort @Eth;
     
     my $Sel = undef;
     
@@ -10530,26 +12344,383 @@ sub readLine($)
     return $Line;
 }
 
+sub fixDistr($$$)
+{
+    my ($Distr, $DistrVersion, $Rel) = @_;
+    
+    if(not $Distr)
+    {
+        if(-f "$FixProbe_Logs/issue")
+        {
+            my $Issue = readLine("$FixProbe_Logs/issue");
+            if($Issue=~/ROSA Enterprise Linux Server release ([\d\.]+)/i)
+            {
+                $Distr = "rels";
+                $DistrVersion = $1;
+            }
+        }
+    }
+    
+    if(not $Distr)
+    {
+        if(-f "$FixProbe_Logs/rpms")
+        {
+            my $RpmsLine = readLine("$FixProbe_Logs/rpms");
+            if($RpmsLine=~/\.([a-z]\w+)\.\w+\Z/i)
+            {
+                if(defined $DistSuffix{$1} and $DistSuffix{$1}=~/\A(.+?)\-(\d.*)\Z/)
+                {
+                    $Distr = $1;
+                    $DistrVersion = $2;
+                }
+            }
+            
+            if(not $Distr)
+            {
+                my $Rpms = readFile("$FixProbe_Logs/rpms");
+                
+                foreach my $Pkg (sort keys(%DistPackage))
+                {
+                    if($Rpms=~/\Q$Pkg\E/)
+                    {
+                        if($DistPackage{$Pkg}=~/\A(.+?)\-(\d.*)\Z/)
+                        {
+                            $Distr = $1;
+                            $DistrVersion = $2;
+                        }
+                        last;
+                    }
+                }
+            }
+        }
+        elsif(-f "$FixProbe_Logs/debs")
+        {
+            my $Debs = readFile("$FixProbe_Logs/debs");
+            if(index($Debs, "termux-")!=-1)
+            {
+                $Distr = "android";
+                $DistrVersion = undef;
+                $Rel = undef;
+                
+                $Sys{"Type"} = "smartphone";
+            }
+        }
+    }
+    
+    # Support for MX
+    if($Distr=~/\Adebian/)
+    {
+        my $Debs = readFile("$FixProbe_Logs/debs");
+        if($Debs=~/(mx-system|ddm-mx) (\d+)/)
+        {
+            $Distr = "mx";
+            $DistrVersion = $2;
+            $Rel = undef;
+        }
+    }
+    
+    if($Sys{"Kernel"}=~/\drosa\b/)
+    {
+        if(not $Distr or $Distr=~/freedesktop/)
+        {
+            if($Sys{"Kernel"}=~/\A3\.0\./)
+            {
+                $Distr = "rosa";
+                $DistrVersion = "2012lts";
+            }
+            elsif($Sys{"Kernel"}=~/\A3\.(8|10)\./)
+            {
+                $Distr = "rosa";
+                $DistrVersion = "2012.1";
+            }
+            elsif($Sys{"Kernel"}=~/\A3\.(14|17|18|19)\./)
+            {
+                $Distr = "rosa";
+                $DistrVersion = "2014.1";
+            }
+            elsif($Sys{"Kernel"}=~/\A4\./)
+            {
+                $Distr = "rosa";
+                $DistrVersion = "2014.1";
+            }
+            elsif($Sys{"Kernel"}=~/\A5\./)
+            {
+                $Distr = "rosa";
+                $DistrVersion = "2016.1";
+            }
+            else
+            {
+                printMsg("ERROR", "failed to fix 'system' attribute (kernel is '".$Sys{"Kernel"}."')");
+            }
+        }
+        
+        if(not $Rel)
+        {
+            if($Distr eq "rosa" and $DistrVersion eq "2012.1")
+            {
+                if($Sys{"Kernel"}=~/\A3\.10\.(3\d|4\d)\-/) {
+                    $Rel = "rosafresh-r3";
+                }
+                elsif($Sys{"Kernel"}=~/\A3\.10\.19\-/) {
+                    $Rel = "rosafresh-r2";
+                }
+                elsif($Sys{"Kernel"}=~/\A3\.8\.12\-/) {
+                    $Rel = "rosafresh-r1";
+                }
+            }
+        }
+    }
+    
+    if(not $Distr or $Distr=~/freedesktop/)
+    {
+        if($Sys{"Kernel"}=~/\.fc(\d\d)\./)
+        {
+            $Distr = "fedora";
+            $DistrVersion = $1;
+        }
+        elsif($Sys{"Kernel"}=~/\.el(\d)\./)
+        {
+            $Distr = "centos";
+            $DistrVersion = $1;
+        }
+    }
+    
+    if(isBSD($Distr))
+    {
+        if(my $Pkgs = readFile("$FixProbe_Logs/pkglist"))
+        {
+            if($Pkgs=~/($KNOWN_BSD_ALL) /i) {
+                $Distr = lc($1);
+            }
+            
+            if($Distr=~/ghostbsd/)
+            {
+                if($Pkgs=~/ghostbsd-pkg-conf (\d+\.\d+)/i)
+                {
+                    $Distr = "ghostbsd";
+                    $DistrVersion = $1;
+                }
+            }
+        }
+        
+        if(readFile("$FixProbe_Logs/df")=~/ \/($KNOWN_BSD_ALL)\n/i)
+        {
+            $Distr = lc($1);
+        }
+    }
+    
+    return ($Distr, $DistrVersion, $Rel);
+}
+
 sub probeDistr()
 {
+    my ($Name, $Release, $Descr) = ();
+    
+    my $FreeBSDVer = "";
+    my $OSname = "";
+    
+    if($Opt{"FixProbe"})
+    {
+        $FreeBSDVer = readFile($FixProbe_Logs."/freebsd-version");
+        $OSname = readFile($FixProbe_Logs."/osname");
+    }
+    else
+    {
+        if(isBSD($^O))
+        {
+            $OSname = $^O;
+            
+            if(checkCmd("freebsd-version"))
+            {
+                listProbe("logs", "freebsd-version");
+                $FreeBSDVer = runCmd("freebsd-version");
+                
+                if($Opt{"HWLogs"}) {
+                    writeLog($LOG_DIR."/freebsd-version", $FreeBSDVer);
+                }
+            }
+            
+            writeLog($LOG_DIR."/osname", $OSname);
+        }
+    }
+    
+    if($OSname) {
+        $Name = $OSname;
+    }
+    
+    if($FreeBSDVer)
+    {
+        $Release = $FreeBSDVer;
+        $Sys{"Freebsd_version"} = $FreeBSDVer;
+    }
+    
+    if(isBSD($Name))
+    {
+        if(not $Release) {
+            $Release = $Sys{"Kernel"};
+        }
+        
+        if($Release=~/(.+)-RELEASE-(.+)/) {
+            $Release = $1."-".$2;
+        }
+        elsif($Release=~/(.+)-RELEASE\Z/) {
+            $Release = $1;
+        }
+        
+        if($OSname=~/freebsd/)
+        {
+            if(not $Sys{"Freebsd_version"}) {
+                $Sys{"Freebsd_version"} = $Release;
+            }
+            
+            # FuryBSD
+            my $OptLocal = "";
+            if($Opt{"FixProbe"}) {
+                $OptLocal = readFile($FixProbe_Logs."/opt-local-bin");
+            }
+            else
+            {
+                $OptLocal = join("\n", listDir("/opt/local/bin"));
+                if($OptLocal) {
+                    writeLog($LOG_DIR."/opt-local-bin", $OptLocal);
+                }
+            }
+            if($OptLocal=~/($KNOWN_BSD_ALL)/i) {
+                $Name = lc($1);
+            }
+            
+            # GhostBSD
+            my $GhostBSDConf = "";
+            if($Opt{"FixProbe"}) {
+                $GhostBSDConf = readFile($FixProbe_Logs."/GhostBSD.conf");
+            }
+            else
+            {
+                $GhostBSDConf = readFile("/etc/pkg/GhostBSD.conf");
+                if($GhostBSDConf) {
+                    writeLog($LOG_DIR."/GhostBSD.conf", $GhostBSDConf);
+                }
+            }
+            
+            if($GhostBSDConf) {
+                $Name = "ghostbsd";
+            }
+            
+            # NomadBSD
+            my $RootVersion = "";
+            if($Opt{"FixProbe"}) {
+                $RootVersion = readFile($FixProbe_Logs."/VERSION");
+            }
+            else
+            {
+                $RootVersion = readFile("/VERSION");
+                if($RootVersion) {
+                    writeLog($LOG_DIR."/VERSION", $RootVersion);
+                }
+            }
+            
+            if($RootVersion)
+            {
+                chomp($RootVersion);
+                $Release = $RootVersion;
+            }
+            
+            # ClonOS
+            my $EtcIssue = "";
+            if($Opt{"FixProbe"}) {
+                $EtcIssue = readFile($FixProbe_Logs."/issue");
+            }
+            else
+            {
+                $EtcIssue = readFile("/etc/issue");
+                $EtcIssue = hideIPs($EtcIssue);
+                if($EtcIssue) {
+                    writeLog($LOG_DIR."/issue", $EtcIssue);
+                }
+            }
+            
+            if($EtcIssue=~/(ClonOS) ([^\s]+)/)
+            {
+                $Name = lc($1);
+                $Release = $2;
+            }
+        }
+        
+        if(defined $Sys{"Freebsd_version"})
+        {
+            $Sys{"Freebsd_release"} = $Sys{"Freebsd_version"};
+            $Sys{"Freebsd_release"}=~s/-.+\Z//;
+        }
+        
+        if($OSname=~/netbsd/)
+        {
+            # OS108
+            my $SlimTheme = "";
+            if($Opt{"FixProbe"}) {
+                $SlimTheme = readFile($FixProbe_Logs."/slim.theme");
+            }
+            else
+            {
+                my $SlimFile = "/usr/pkg/share/slim/themes/default/slim.theme";
+                if(-e $SlimFile) {
+                    $SlimTheme = runCmd("cat $SlimFile | head -n 1");
+                }
+                
+                if($SlimTheme) {
+                    writeLog($LOG_DIR."/slim.theme", $SlimTheme);
+                }
+            }
+            if($SlimTheme=~/OS108/) {
+                $Name = "os108";
+            }
+        }
+        
+        # TrueOS and others
+        my $Uname = "";
+        if($Opt{"FixProbe"}) {
+            $Uname = readFile($FixProbe_Logs."/uname");
+        }
+        elsif(checkCmd("uname"))
+        {
+            $Uname = runCmd("uname -v");
+            
+            if($Uname) {
+                writeLog($LOG_DIR."/uname", $Uname);
+            }
+        }
+        
+        if($Uname=~/($KNOWN_BSD_ALL)/i) {
+            $Name = lc($1);
+        }
+        
+        if($Uname=~/RELENG_(\d+)_(\d+)_(\d+)/i) {
+            $Release = $1.".".$2.".".$3;
+        }
+        
+        if($Name!~/dragonfly/)
+        { # There is os-release on DragonFly
+            if($Name and $Release) {
+                return ($Name, $Release, "");
+            }
+            
+            return ($Name, "", "");
+        }
+    }
+
     my $LSB_Rel = "";
     
     if($Opt{"FixProbe"}) {
         $LSB_Rel = readFile($FixProbe_Logs."/lsb_release");
     }
-    else
+    elsif(not isBSD($Name) and not $Opt{"Docker"}
+    and not $Opt{"Snap"} and not $Opt{"Flatpak"}
+    and checkCmd("lsb_release"))
     {
-        if(not $Opt{"Docker"} and not $Opt{"Snap"} and not $Opt{"Flatpak"})
-        {
-            if(checkCmd("lsb_release"))
-            {
-                listProbe("logs", "lsb_release");
-                $LSB_Rel = runCmd("lsb_release -i -d -r -c 2>/dev/null");
-                
-                if($Opt{"HWLogs"}) {
-                    writeLog($LOG_DIR."/lsb_release", $LSB_Rel);
-                }
-            }
+        listProbe("logs", "lsb_release");
+        $LSB_Rel = runCmd("lsb_release -i -d -r -c 2>/dev/null");
+        
+        if($Opt{"HWLogs"}) {
+            writeLog($LOG_DIR."/lsb_release", $LSB_Rel);
         }
     }
     
@@ -10614,8 +12785,6 @@ sub probeDistr()
         }
     }
     
-    my ($Name, $Release, $Descr) = ();
-    
     if($LSB_Rel)
     { # Desktop
         if($LSB_Rel=~/ID:\s*(.*)/) {
@@ -10643,33 +12812,33 @@ sub probeDistr()
         }
         
         if($Name=~/\ARedHatEnterprise/i) {
-            return ("rhel-".$Release, "");
+            return ("rhel", $Release, "");
         }
         elsif($Name=~/\AROSAEnterpriseServer/i) {
-            return ("rels-".$Release, "");
+            return ("rels", $Release, "");
         }
         elsif($Name=~/\AROSAEnterpriseDesktop/i) {
-            return ("red-".$Release, "");
+            return ("red", $Release, "");
         }
         elsif($Name=~/\ARosa\.DX/i)
         {
             if($Descr=~/(Chrome|Nickel|Cobalt)/i) {
-                return ("rosa-dx-".lc($1)."-".$Release, "");
+                return ("rosa-dx-".lc($1), $Release, "");
             }
         }
         elsif($Descr=~/\AROSA SX/i)
         {
             if($Descr=~/(CHROME|NICKEL|COBALT)/i) {
-                return ("rosa-sx-".lc($1)."-".$Release, "");
+                return ("rosa-sx-".lc($1), $Release, "");
             }
         }
         elsif($Descr=~/\AROSA (Chrome|Nickel|Cobalt) ([\d\.]+)/i)
         {
-            return ("rosa-".lc($1)."-".lc($2), "");
+            return ("rosa-".lc($1), lc($2), "");
         }
         elsif($Descr=~/\AROSA (Chrome|Nickel|Cobalt)\Z/i)
         {
-            return ("rosa-".lc($1)."-".$Release, "");
+            return ("rosa-".lc($1), $Release, "");
         }
         elsif($Name=~/\AROSA/i)
         {
@@ -10685,14 +12854,20 @@ sub probeDistr()
                 $Rel = "rosafresh-r".$1;
             }
             
-            return ("rosa-".$Release, $Rel);
+            return ("rosa", $Release, $Rel);
         }
         elsif($Name=~/\AOpenMandriva/i) {
-            return ("openmandriva-".$Release, "");
+            return ("openmandriva", $Release, "");
         }
         elsif($Name=~/\AopenSUSE Tumbleweed/i
         and $Release=~/\A\d\d\d\d\d\d\d\d\Z/) {
-            return ("opensuse-".$Release, "");
+            return ("opensuse", $Release, "");
+        }
+        elsif($Name eq "Pop") {
+            return ("pop!_os", $Release, "");
+        }
+        elsif($Name eq "neon") {
+            return ("kde-neon", $Release, "");
         }
         elsif($Descr=~/\A(Maui|KDE neon|RED OS|Pop\!_OS)/i) {
             $Name = $1;
@@ -10716,8 +12891,10 @@ sub probeDistr()
             $Name=~s/\A"(.+)"\Z/$1/;
         }
         
-        if($LSB_Rel_F=~/DISTRIB_RELEASE[:=]\s*(.*)/) {
+        if($LSB_Rel_F=~/DISTRIB_RELEASE[:=]\s*(.*)/)
+        {
             $Release = lc($1);
+            $Release=~s/\A"(.+)"\Z/$1/;
         }
         
         if($LSB_Rel_F=~/DISTRIB_DESCRIPTION[:=]\s*(.*)/) {
@@ -10788,15 +12965,13 @@ sub probeDistr()
     }
     
     $Name = shortOS($Name);
+    $Name = lc($Name);
     
     if($Name and $Release) {
-        return (lc($Name)."-".$Release, "");
-    }
-    elsif($Name) {
-        return (lc($Name), "");
+        return ($Name, $Release, "");
     }
     
-    return ("", "");
+    return ($Name, "", "");
 }
 
 sub devID(@)
@@ -10969,7 +13144,8 @@ sub readHost($)
     
     if(-s $FixProbe_Logs."/dmi_id"
     or -s $FixProbe_Logs."/dmidecode"
-    or ($Sys{"Arch"}=~/arm|aarch/i and -s $FixProbe_Logs."/dmesg"))
+    or ($Sys{"Arch"}=~/arm|aarch/i and -s $FixProbe_Logs."/dmesg")
+    or -s $FixProbe_Logs."/sysctl")
     {
         foreach ("Vendor", "Model", "Subvendor", "Submodel") {
             delete($Sys{$_});
@@ -11014,20 +13190,21 @@ sub writeLogs()
     }
 
     # level=minimal
-    if(checkCmd("sensors"))
+    if(enabledLog("sensors") and checkCmd("sensors"))
     {
         listProbe("logs", "sensors");
         my $Sensors = runCmd("sensors 2>/dev/null");
         writeLog($LOG_DIR."/sensors", $Sensors);
     }
     
-    if(enabledLog("cpuid")
-    and checkCmd("cpuid"))
+    if(enabledLog("bsdhwmon") and checkCmd("bsdhwmon"))
     {
-        listProbe("logs", "cpuid");
-        my $Cpuid = runCmd("cpuid -1 2>&1");
-        $Cpuid = encryptSerials($Cpuid, "serial number");
-        writeLog($LOG_DIR."/cpuid", $Cpuid);
+        listProbe("logs", "bsdhwmon");
+        my $Bsdhwmon = runCmd("bsdhwmon 2>/dev/null");
+        if($Bsdhwmon=~/Your motherboard does not/) {
+            $Bsdhwmon = "";
+        }
+        writeLog($LOG_DIR."/bsdhwmon", $Bsdhwmon);
     }
     
     if($Admin)
@@ -11101,6 +13278,10 @@ sub writeLogs()
             $XorgConf = readFile("/usr/share/X11/xorg.conf");
         }
         
+        if(not $XorgConf and isBSD()) {
+            $XorgConf = readFile("/usr/local/etc/X11/xorg.conf");
+        }
+        
         if(not $Opt{"Docker"} or $XorgConf) {
             writeLog($LOG_DIR."/xorg.conf", $XorgConf);
         }
@@ -11130,29 +13311,40 @@ sub writeLogs()
     
     if(checkCmd("xrandr"))
     {
-        listProbe("logs", "xrandr");
-        my $XRandr = runCmd("xrandr --verbose 2>&1");
-        writeLog($LOG_DIR."/xrandr", clearLog_X11($XRandr));
+        if(enabledLog("xrandr"))
+        {
+            listProbe("logs", "xrandr");
+            my $XRandr = runCmd("xrandr --verbose 2>&1");
+            $XRandr = clearLog_X11($XRandr);
+            
+            if(not $XRandr and defined $ENV{"XDG_SESSION_TYPE"}) {
+                printMsg("WARNING", "X11-related logs are not collected (try to run 'sudo -E')");
+            }
+            
+            writeLog($LOG_DIR."/xrandr", $XRandr);
+        }
         
-        listProbe("logs", "xrandr_providers");
-        my $XRandrProviders = runCmd("xrandr --listproviders 2>&1");
-        writeLog($LOG_DIR."/xrandr_providers", clearLog_X11($XRandrProviders));
+        if(enabledLog("xrandr_providers"))
+        {
+            listProbe("logs", "xrandr_providers");
+            my $XRandrProviders = runCmd("xrandr --listproviders 2>&1");
+            writeLog($LOG_DIR."/xrandr_providers", clearLog_X11($XRandrProviders));
+        }
     }
     
-    if(checkCmd("glxinfo"))
+    if(enabledLog("glxinfo")
+    and checkCmd("glxinfo"))
     {
         listProbe("logs", "glxinfo");
         my $Glxinfo = runCmd("glxinfo 2>&1");
         $Glxinfo = clearLog_X11($Glxinfo);
-        
-        if(not clearLog_X11($Glxinfo)) {
-            printMsg("WARNING", "X11-related logs are not collected (try to run 'xhost +local:' to enable access or run as root by su)");
-        }
+        $Glxinfo=~s/(GLX Visuals)(.|\n)+?\Z/$1 ...\n/g;
         
         writeLog($LOG_DIR."/glxinfo", $Glxinfo);
     }
     
-    if(checkCmd("biosdecode"))
+    if(enabledLog("biosdecode")
+    and checkCmd("biosdecode"))
     {
         listProbe("logs", "biosdecode");
         my $BiosDecode = "";
@@ -11212,7 +13404,9 @@ sub writeLogs()
     and checkCmd("xdpyinfo"))
     {
         listProbe("logs", "xdpyinfo");
-        if(my $Xdpyinfo = runCmd("xdpyinfo 2>&1")) {
+        if(my $Xdpyinfo = runCmd("xdpyinfo 2>&1"))
+        {
+            $Xdpyinfo=~s/(visual:(.|\n)+?)\Z/...\n/g;
             writeLog($LOG_DIR."/xdpyinfo", clearLog_X11($Xdpyinfo));
         }
     }
@@ -11305,6 +13499,58 @@ sub writeLogs()
                 writeLog($LOG_DIR."/pkglist", $DbPkgs);
             }
         }
+        
+        if(isOpenBSD()
+        and checkCmd("pkg_info"))
+        {
+            listProbe("logs", "pkg_info");
+            my $PkgInfo = runCmd("pkg_info -q");
+            
+            if($PkgInfo) {
+                writeLog($LOG_DIR."/pkglist", $PkgInfo);
+            }
+        }
+        elsif(isNetBSD()
+        and checkCmd("pkgin"))
+        {
+            listProbe("logs", "pkgin");
+            my $PkgList = runCmd("pkgin list | sort");
+            $PkgList=~s/\s+.+?\n/\n/g;
+            
+            if($PkgList) {
+                writeLog($LOG_DIR."/pkglist", $PkgList);
+            }
+        }
+        elsif($Sys{"System"}=~/midnightbsd/
+        and checkCmd("mport"))
+        {
+            listProbe("logs", "mport");
+            my $Pkginfo = runCmd("mport list");
+            $Pkginfo=~s/\s+.+?\n/\n/g;
+            
+            if($Pkginfo) {
+                writeLog($LOG_DIR."/pkglist", $Pkginfo);
+            }
+        }
+        elsif(defined $Sys{"Freebsd_release"} and $Sys{"Freebsd_release"} < 10.0)
+        {
+            listProbe("logs", "pkg_info");
+            my $PkgInfo = runCmd("pkg_info");
+            $PkgInfo=~s/\s+.+?\n/\n/g;
+            
+            if($PkgInfo) {
+                writeLog($LOG_DIR."/pkglist", $PkgInfo);
+            }
+        }
+        elsif(isBSD() and checkCmd("pkg"))
+        { # any modern FreeBSD-based system
+            listProbe("logs", "pkg");
+            my $PkgQuery = runCmd("pkg query --all '\%R \%o \%v' | sort");
+            
+            if($PkgQuery) {
+                writeLog($LOG_DIR."/pkglist", $PkgQuery);
+            }
+        }
     }
     
     if(not $Opt{"Docker"})
@@ -11377,7 +13623,9 @@ sub writeLogs()
         and checkCmd("fdisk"))
         {
             listProbe("logs", "fdisk");
+            
             my $Fdisk = runCmd("fdisk -l 2>&1");
+            
             if($Opt{"Snap"} and $Fdisk=~/Permission denied/) {
                 $Fdisk = "";
             }
@@ -11532,7 +13780,9 @@ sub writeLogs()
     {
         listProbe("logs", "input_devices");
         my $InputDevices = readFile("/proc/bus/input/devices");
-        writeLog($LOG_DIR."/input_devices", $InputDevices);
+        if($InputDevices) {
+            writeLog($LOG_DIR."/input_devices", $InputDevices);
+        }
     }
     
     if(enabledLog("iostat")
@@ -11639,14 +13889,18 @@ sub writeLogs()
     {
         listProbe("logs", "ioports");
         my $IOports = readFile("/proc/ioports");
-        writeLog($LOG_DIR."/ioports", $IOports);
+        if($IOports) {
+            writeLog($LOG_DIR."/ioports", $IOports);
+        }
     }
     
     if(enabledLog("interrupts"))
     {
         listProbe("logs", "interrupts");
         my $Interrupts = readFile("/proc/interrupts");
-        writeLog($LOG_DIR."/interrupts", $Interrupts);
+        if($Interrupts) {
+            writeLog($LOG_DIR."/interrupts", $Interrupts);
+        }
     }
     
     my $Aplay = undef;
@@ -11766,8 +14020,12 @@ sub writeLogs()
     {
         listProbe("logs", "xorg.conf.d");
         my $XConfig = "";
+        my @XDirs = ("/etc/X11/xorg.conf.d", "/usr/share/X11/xorg.conf.d");
+        if(isBSD()) {
+            @XDirs = ("/usr/local/etc/X11/xorg.conf.d/", @XDirs);
+        }
         
-        foreach my $XDir ("/etc/X11/xorg.conf.d", "/usr/share/X11/xorg.conf.d")
+        foreach my $XDir (@XDirs)
         {
             if(not -d $XDir) {
                 next;
@@ -11792,6 +14050,53 @@ sub writeLogs()
         if(not $Opt{"Docker"} or $XConfig) {
             writeLog($LOG_DIR."/xorg.conf.d", $XConfig);
         }
+    }
+    
+    if(enabledLog("rc.conf"))
+    {
+        listProbe("logs", "rc.conf");
+        my $RcConf = readFile("/etc/rc.conf");
+        $RcConf = hidePaths($RcConf);
+        $RcConf = encryptUUIDs($RcConf);
+        $RcConf = hideMACs($RcConf);
+        $RcConf = hideIPs($RcConf);
+        $RcConf=~s/(hostname=).+/$1.../g;
+        writeLog($LOG_DIR."/rc.conf", $RcConf);
+    }
+    
+    if(enabledLog("loader.conf"))
+    {
+        listProbe("logs", "loader.conf");
+        my $BootLoader = readFile("/boot/loader.conf");
+        $BootLoader = hidePaths($BootLoader);
+        writeLog($LOG_DIR."/loader.conf", $BootLoader);
+    }
+    
+    if(enabledLog("gpart")
+    and checkCmd("gpart"))
+    {
+        listProbe("logs", "gpart");
+        my $Gpart = runCmd("gpart show 2>/dev/null");
+        $Gpart = hidePaths($Gpart);
+        writeLog($LOG_DIR."/gpart", $Gpart);
+    }
+    
+    if(enabledLog("vmstat")
+    and checkCmd("vmstat"))
+    {
+        listProbe("logs", "vmstat");
+        my $Vmstat = runCmd("vmstat 2>/dev/null");
+        writeLog($LOG_DIR."/vmstat", $Vmstat);
+    }
+    
+    if(enabledLog("top_head")
+    and checkCmd("top"))
+    {
+        listProbe("logs", "top_head");
+        my $TopHead = runCmd("top -b -d1 | head -n 4 2>/dev/null");
+        $TopHead=~s/(last pid:\s+)\d+/$1.../;
+        $TopHead=~s/\s+[^\s]+\s+\d\d:\d\d:\d\d//;
+        writeLog($LOG_DIR."/top_head", $TopHead);
     }
     
     if($Opt{"Scanners"})
@@ -11822,7 +14127,15 @@ sub writeLogs()
     and -d "/lib/firmware")
     {
         listProbe("logs", "firmware");
-        my $Firmware = runCmd("find /lib/firmware -type f | sort");
+        
+        my $Firmware = undef;
+        if(isBSD()) {
+            $Firmware = runCmd("find /boot/firmware -type f | sort");
+        }
+        else {
+            $Firmware = runCmd("find /lib/firmware -type f | sort");
+        }
+        
         $Firmware=~s{/lib/firmware/}{}g;
         writeLog($LOG_DIR."/firmware", $Firmware);
     }
@@ -12018,6 +14331,10 @@ sub checkCmd(@)
     }
     
     my @Paths = split(/:/, $ENV{"PATH"});
+    
+    if(isNetBSD()) {
+        push(@Paths, "/usr/sbin", "/sbin", "/usr/pkg/sbin");
+    }
     
     if(not $Verify) {
         @Paths = sort {length($a)<=>length($b)} @Paths;
@@ -12248,6 +14565,10 @@ sub showInfo()
     
     my @AllCols = ("Bus", "ID", "Class", "Vendor", "Device", "Type", "Driver", "Status");
     my @ShortCols = ("Bus", "ID", "Vendor", "Device", "Type");
+    
+    if(isBSD($^O)) {
+        @ShortCols = ("Bus", "Vendor", "Device", "Type");
+    }
     
     foreach my $ID (sort {$BusOrder{$Devs->{$a}{"Bus"}} cmp $BusOrder{$Devs->{$b}{"Bus"}}} sort {$TypeOrder{$Devs->{$a}{"Type"}} cmp $TypeOrder{$Devs->{$b}{"Type"}}} sort {$Devs->{$a}{"Bus"} cmp $Devs->{$b}{"Bus"}} sort {$Devs->{$a}{"Type"} cmp $Devs->{$b}{"Type"}} sort keys(%{$Devs}))
     {
@@ -12588,6 +14909,23 @@ sub setCardStatus($$)
     }
 }
 
+sub setCardStatusByVendor($$)
+{
+    my ($V, $Status) = @_;
+    
+    if(defined $GraphicsCards{$V})
+    {
+        foreach my $ID (sort keys(%{$GraphicsCards{$V}}))
+        {
+            $HW{$ID}{"Status"} = $Status;
+            
+            if($Status eq "works") {
+                setAttachedStatus($ID, $Status);
+            }
+        }
+    }
+}
+
 sub checkHW()
 { # TODO: test operability, set status to "works", "malfunc" or "failed"
     if($Opt{"CheckGraphics"} and checkCmd("glxgears"))
@@ -12607,43 +14945,75 @@ sub checkHW()
         print "Ok\n";
     }
     
-    if($Opt{"CheckHdd"} and checkCmd("hdparm"))
+    if($Opt{"CheckHdd"})
     {
-        print "Check HDDs ... ";
-        my $HDD_Read = "";
-        my $HDD_Num = 0;
-        foreach my $Dr (sort keys(%HDD))
+        my $CheckHddCmd = undef;
+        if(isBSD())
         {
-            my $HddInfo = $HW{$HDD{$Dr}};
-            my $Cmd = "hdparm -t $Dr";
-            my $Out = runCmd($Cmd);
-            $Out=~s/\A\n\Q$Dr\E\:\n//;
-            $HDD_Read .= "Drive ".$HddInfo->{"Vendor"}." ".$HddInfo->{"Device"}."\n";
-            $HDD_Read .= "$Cmd\n";
-            $HDD_Read .= $Out."\n";
-            
-            if(defined $Opt{"LimitCheckHdd"}
-            and $HDD_Num++>=$Opt{"LimitCheckHdd"})
-            {
-                last;
+            if(enabledLog("diskinfo")
+            and checkCmd("diskinfo")) {
+                $CheckHddCmd = "diskinfo -c";
             }
         }
-        
-        if($HDD_Read) {
-            writeLog($TEST_DIR."/hdd_read", $HDD_Read);
+        elsif(checkCmd("hdparm")) {
+            $CheckHddCmd = "hdparm -t";
         }
-        print "Ok\n";
+        
+        if($CheckHddCmd)
+        {
+            print "Check HDDs ... ";
+            my $HDD_Read = "";
+            my $HDD_Num = 0;
+            foreach my $Dr (sort keys(%HDD))
+            {
+                my $DrFile = basename($Dr);
+                my $Title = "";
+                
+                if(my $DevId = $HDD{$Dr})
+                {
+                    my $HddInfo = $HW{$DevId};
+                    $Title = $HddInfo->{"Vendor"}." ".$HddInfo->{"Device"};
+                }
+                elsif(defined $HDD_Info{$DrFile}) {
+                    $Title = $HDD_Info{$DrFile}{"Title"};
+                }
+                
+                my $Cmd = $CheckHddCmd." ".$Dr;
+                my $Out = runCmd($Cmd);
+                $Out=~s/\A\n\Q$Dr\E\:?\n//;
+                $Out=~s/.+#.+\n//g;
+                $HDD_Read .= "Drive $Title\n";
+                $HDD_Read .= "$Cmd\n";
+                $HDD_Read .= $Out."\n";
+                
+                if(defined $Opt{"LimitCheckHdd"}
+                and $HDD_Num++>=$Opt{"LimitCheckHdd"})
+                {
+                    last;
+                }
+            }
+            
+            if($HDD_Read) {
+                writeLog($TEST_DIR."/hdd_read", $HDD_Read);
+            }
+            print "Ok\n";
+        }
     }
     
-    if($Opt{"CheckCpu"} and checkCmd("dd") and checkCmd("md5sum"))
+    my $Md5 = "md5sum";
+    if(isBSD()) {
+        $Md5 = "md5";
+    }
+    
+    if($Opt{"CheckCpu"} and checkCmd("dd") and checkCmd($Md5))
     {
         if(my @CPUs = grep { /\Acpu:/ } keys(%HW))
         {
             print "Check CPU ... ";
             my $CPU_Info = $HW{$CPUs[0]};
-            runCmd("dd if=/dev/zero bs=1M count=512 2>$TMP_DIR/cpu_perf | md5sum");
+            runCmd("dd if=/dev/zero bs=1M count=512 2>$TMP_DIR/cpu_perf | $Md5");
             my $CPUPerf = $CPU_Info->{"Vendor"}." ".$CPU_Info->{"Device"}."\n";
-            $CPUPerf .= "dd if=/dev/zero bs=1M count=512 | md5sum\n";
+            $CPUPerf .= "dd if=/dev/zero bs=1M count=512 | $Md5\n";
             $CPUPerf .= readFile("$TMP_DIR/cpu_perf");
             writeLog($TEST_DIR."/cpu_perf", $CPUPerf);
             print "Ok\n";
@@ -12668,15 +15038,50 @@ sub listProbe($$)
 
 my %EnabledLog = (
     "minimal" => [
+        "acpidump",
+        "acpidump_decoded",
         "arcconf",
+        "biosdecode",
         "cpuinfo",
+        "dev",
         "df",
+        "dmesg",
         "dmesg.1",
+        "dmidecode",
+        "dmi_id",
+        "edid",
+        "edid-decode",
+        "ethtool_p",
+        "glxinfo",
         "grub",
+        "hciconfig",
+        "hdparm",
+        "hwinfo",
+        "ifconfig",
+        "ip_addr",
+        "lsb_release",
+        "lsb-release",
+        "lsmod",
+        "lspci",
+        "lspci_all",
+        "lsusb",
         "mcelog",
         "megacli",
         "megactl",
-        "xorg.log.1"
+        "mmcli",
+        "opensc-tool",
+        "os-release",
+        "power_supply",
+        "sensors",
+        "smartctl",
+        "smartctl_megaraid",
+        "system-release",
+        "upower",
+        "usb-devices",
+        "xorg.log",
+        "xorg.log.1",
+        "xrandr",
+        "xrandr_providers"
     ],
     "default" => [
         "acpi",
@@ -12707,6 +15112,7 @@ my %EnabledLog = (
         "iw_list",
         "iwconfig",
         "lsblk",
+        "lscpu",
         "lspnp",
         "modprobe.d",
         "nm-tool",
@@ -12759,15 +15165,97 @@ my %EnabledLog = (
     ]
 );
 
-foreach my $LL ("minimal", "default")
-{
-    foreach my $L (@{$EnabledLog{$LL}}) {
-        push(@{$EnabledLog{"maximal"}}, $L);
-    }
-}
+my %EnabledLog_BSD = (
+    "minimal" => [
+        "acpidump",
+        "acpidump_decoded",
+        "apm",
+        "arcconf",
+        "biosdecode",
+        # "bsdhwmon",
+        "curl",
+        "dev",
+        "devinfo",
+        "df",
+        "dmesg",
+        "dmidecode",
+        "geom",
+        "glxinfo",
+        "hwstat",
+        "ifconfig",
+        "kldstat",
+        "lscpu",
+        "mcelog",
+        "megacli",
+        "mfiutil",
+        "pciconf",
+        "pcictl",
+        "pcictl_n",
+        "pcidump",
+        "pkglist",
+        "shasum",
+        "smartctl",
+        "smartctl_megaraid",
+        "sysctl",
+        "usbconfig",
+        "usbctl",
+        "usbdevs",
+        "xorg.log",
+        "xorg.log.1",
+        "xrandr",
+        "xrandr_providers"
+    ],
+    "default" => [
+        "amixer",
+        "aplay",
+        "arecord",
+        "loader.conf",
+        "camcontrol",
+        "config",
+        "cpuid",
+        "diskinfo",
+        "disklabel",
+        "efibootmgr",
+        "efivar",
+        "gpart",
+        "iostat",
+        "kldstat_v",
+        "lsblk",
+        "lspci",
+        "lspci_all",
+        "lsusb",
+        "rc.conf",
+        "sane-find-scanner",
+        "scanimage",
+        "smart-log",
+        "top_head",
+        "uptime",
+        "vmstat",
+        "xinput",
+        "xorg.conf"
+    ],
+    "maximal" => [
+        "alsactl",
+        "firmware",
+        "fstab",
+        "mount",
+        "sysinfo"
+    ],
+    "optional" => []
+);
 
-foreach my $L (@{$EnabledLog{"minimal"}}) {
-    push(@{$EnabledLog{"default"}}, $L);
+sub completeEnabledLogs()
+{
+    foreach my $LL ("minimal", "default")
+    {
+        foreach my $L (@{$EnabledLog{$LL}}) {
+            push(@{$EnabledLog{"maximal"}}, $L);
+        }
+    }
+
+    foreach my $L (@{$EnabledLog{"minimal"}}) {
+        push(@{$EnabledLog{"default"}}, $L);
+    }
 }
 
 sub enabledLog($)
@@ -12870,12 +15358,11 @@ sub writeFile($$)
     close(FILE);
 }
 
-sub readPciIds($$$)
+sub readPciIds($$)
 {
     my $List = readFile($_[0]);
     
     my $Info = $_[1];
-    my $Info_D = $_[2];
     
     my ($V, $D, $SV, $SD, $C, $SC, $SSC) = ();
     
@@ -12890,7 +15377,7 @@ sub readPciIds($$$)
                 $V = $2;
                 
                 if(/[a-f\d]{4}\s+(.*?)\Z/) {
-                    $PciVendor{$V} = $1;
+                    $Info->{"V"}{$V} = $1;
                 }
             }
             elsif($L==1)
@@ -12898,7 +15385,7 @@ sub readPciIds($$$)
                 $D = $2;
                 
                 if(/\t[a-f\d]{4}\s+(.*?)\Z/) {
-                    $Info->{$V}{$D} = $1;
+                    $Info->{"I"}{$V}{$D} = $1;
                 }
             }
             elsif($L==2)
@@ -12908,15 +15395,15 @@ sub readPciIds($$$)
                     $SV = $1;
                     $SD = $2;
                     
-                    $Info_D->{$V}{$D}{$SV}{$SD} = $3;
+                    $Info->{"D"}{$V}{$D}{$SV}{$SD} = $3;
                 }
             }
         }
         elsif(/\AC ([a-f\d]{2})  (.+)/)
         {
             $C = $1;
-            $PciClass{$C} = $2;
-            $PciClass{$C."00"} = $2;
+            $Info->{"C"}{$C} = $2;
+            $Info->{"C"}{$C."00"} = $2;
         }
         elsif(/\A(\t+)([a-f\d]{2})  (.+)/)
         {
@@ -12924,12 +15411,12 @@ sub readPciIds($$$)
             if($L==1)
             {
                 $SC = $2;
-                $PciClass{$C.$SC} = $3;
+                $Info->{"C"}{$C.$SC} = $3;
             }
             elsif($L==2)
             {
                 $SSC = $2;
-                $PciClass{$C.$SC.$SSC} = $3;
+                $Info->{"C"}{$C.$SC.$SSC} = $3;
             }
         }
     }
@@ -13516,23 +16003,23 @@ sub fixLsPci_All($)
         {
             my ($C, $V, $D) = ($1, $2, $3);
             
-            if(defined $PciVendor{$V})
+            if(defined $PciInfo{"V"}{$V})
             {
-                my $Vendor = $PciVendor{$V};
+                my $Vendor = $PciInfo{"V"}{$V};
                 
-                if(defined $PciInfo{$V}{$D})
+                if(defined $PciInfo{"I"}{$V}{$D})
                 {
-                    my $Product = $PciInfo{$V}{$D};
+                    my $Product = $PciInfo{"I"}{$V}{$D};
                     $Block=~s{(\]:) Device (\[$V:$D\])}{$1 $Vendor $Product $2};
                     
                     if($Block=~/Subsystem: Device \[(\w{4}):(\w{4})\]/)
                     {
                         my ($SV, $SD) = ($1, $2);
-                        if(my $SubVendor = $PciVendor{$SV})
+                        if(my $SubVendor = $PciInfo{"V"}{$SV})
                         {
                             my $Subsystem = "Device";
-                            if(defined $PciInfo_D{$V}{$D}{$SV}{$SD}) {
-                                $Subsystem = $PciInfo_D{$V}{$D}{$SV}{$SD};
+                            if(defined $PciInfo{"D"}{$V}{$D}{$SV}{$SD}) {
+                                $Subsystem = $PciInfo{"D"}{$V}{$D}{$SV}{$SD};
                             }
                             elsif($V eq $SV and $D eq $SD) {
                                 $Subsystem = $Product;
@@ -13544,9 +16031,9 @@ sub fixLsPci_All($)
                 }
             }
             
-            if(defined $PciClass{$C})
+            if(defined $PciInfo{"C"}{$C})
             {
-                my $Class = $PciClass{$C};
+                my $Class = $PciInfo{"C"}{$C};
                 $Block=~s{ Class (\[$C\]:)}{ $Class $1};
             }
         }
@@ -13575,33 +16062,33 @@ sub fixLsPci($)
         
         my $C = $Dev{"Class"};
         
-        if(defined $PciClass{$C})
+        if(defined $PciInfo{"C"}{$C})
         {
-            my $Class = $PciClass{$C};
+            my $Class = $PciInfo{"C"}{$C};
             $Block=~s{(Class:\s+)Class(\s+\[$C\])}{$1$Class$2};
         }
         
         my ($V, $D) = ($Dev{"Vendor"}, $Dev{"Device"});
         
-        if(defined $PciVendor{$V})
+        if(defined $PciInfo{"V"}{$V})
         {
-            my $Vendor = $PciVendor{$V};
+            my $Vendor = $PciInfo{"V"}{$V};
             $Block=~s{(Vendor:\s+)Vendor(\s+\[$V\])}{$1$Vendor$2};
             
-            if(defined $PciInfo{$V}{$D})
+            if(defined $PciInfo{"I"}{$V}{$D})
             {
-                my $Product = $PciInfo{$V}{$D};
+                my $Product = $PciInfo{"I"}{$V}{$D};
                 $Block=~s{(Device:\s+)Device(\s+\[$D\])}{$1$Product$2};
                 
                 my ($SV, $SD) = ($Dev{"SVendor"}, $Dev{"SDevice"});
                 
-                if(my $SubVendor = $PciVendor{$SV})
+                if(my $SubVendor = $PciInfo{"V"}{$SV})
                 {
                     $Block=~s{(SVendor:\s+)Unknown vendor(\s+\[$SV\])}{$1$SubVendor$2};
                     
                     my $Subsystem = undef;
-                    if(defined $PciInfo_D{$V}{$D}{$SV}{$SD}) {
-                        $Subsystem = $PciInfo_D{$V}{$D}{$SV}{$SD};
+                    if(defined $PciInfo{"D"}{$V}{$D}{$SV}{$SD}) {
+                        $Subsystem = $PciInfo{"D"}{$V}{$D}{$SV}{$SD};
                         
                     }
                     elsif($V eq $SV and $D eq $SD) {
@@ -13700,7 +16187,7 @@ sub fixLogs($)
         }
     }
 
-    foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all", "dmidecode", "dmesg")
+    foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all", "dmidecode", "dmesg", "megacli")
     {
         if(-f "$Dir/$L"
         and -s "$Dir/$L" < 2*$EMPTY_LOG_SIZE)
@@ -13964,8 +16451,20 @@ sub fixByPkgs($)
             foreach my $CPkg (@CheckPkgs)
             {
                 my $P = $CPkg->[0];
-                if(index($Pkgs, $P)!=-1 and $Pkgs=~/(\A|\n)\Q$P\E\b/) {
+                
+                if(index($Pkgs, $P)==-1) {
+                    next;
+                }
+                
+                if($Pkgs=~/(\A|\n)\Q$P\E\b/) {
                     return $CPkg->[1];
+                }
+                
+                if(isBSD())
+                {
+                    if($Pkgs=~/ .+\/\Q$P\E\b/) {
+                        return $CPkg->[1];
+                    }
                 }
             }
         }
@@ -13978,6 +16477,45 @@ sub initDataDir($)
 {
     my $Dir = $_[0];
     return ($Dir, $Dir."/logs", $Dir."/tests");
+}
+
+sub isBSD(@_)
+{
+    my $OS = undef;
+    if(@_) {
+        $OS = shift(@_);
+    }
+    elsif(not $Opt{"FixProbe"})
+    {
+        if($^O=~/bsd|dragonfly/) {
+            return 1;
+        }
+    }
+    else {
+        $OS = $Sys{"System"};
+    }
+    
+    return ($OS=~/bsd|dragonfly/ or $OS=~/$KNOWN_BSD_ALL/);
+}
+
+sub isNetBSD(@_)
+{
+    my $OS = $Sys{"System"};
+    if(@_) {
+        $OS = shift(@_);
+    }
+    
+    return $OS=~/netbsd|os108/;
+}
+
+sub isOpenBSD(@_)
+{
+    my $OS = $Sys{"System"};
+    if(@_) {
+        $OS = shift(@_);
+    }
+    
+    return $OS=~/openbsd|fuguita/;
 }
 
 sub scenario()
@@ -14004,6 +16542,26 @@ sub scenario()
     {
         $USE_DIGEST = 1;
         require Digest::SHA;
+    }
+    elsif(not $Opt{"FixProbe"})
+    {
+        if(checkCmd("sha512sum")) {
+            $USE_DIGEST_ALT = "sha512sum";
+        }
+        elsif(checkCmd("sha512")) {
+            $USE_DIGEST_ALT = "sha512";
+        }
+        elsif(checkCmd("openssl") and runCmd("openssl version")!~/0\.9\.[1-7]/) {
+            $USE_DIGEST_ALT = "openssl dgst -sha512";
+        }
+        elsif(checkCmd("shasum") and runCmd("shasum --version 2>/dev/null")) {
+            $USE_DIGEST_ALT = "shasum -a 512";
+        }
+        else
+        {
+            printMsg("ERROR", "can't find any utility to compute SHA512");
+            exitStatus(1);
+        }
     }
     
     if(checkModule("Data/Dumper.pm"))
@@ -14066,6 +16624,32 @@ sub scenario()
     else {
         $Opt{"LogLevel"} = "default";
     }
+    
+    if(isBSD($^O))
+    {
+        %EnabledLog = %EnabledLog_BSD;
+        $URL = $URL_BSD;
+        
+        my @Exclude = ();
+        
+        if($^O=~/openbsd|dragonfly/ or isNetBSD($^O))  {
+            push(@Exclude, "loader", "gpart", "diskinfo", "camcontrol");
+        }
+        
+        if($^O=~/freebsd|dragonfly/) {
+            push(@Exclude, "disklabel");
+        }
+        
+        if(@Exclude)
+        {
+            my $Ex = join("|", @Exclude);
+            foreach my $K (keys(%EnabledLog)) {
+                @{$EnabledLog{$K}} = grep {$_!~/$Ex/} @{$EnabledLog{$K}};
+            }
+        }
+    }
+    
+    completeEnabledLogs();
     
     foreach my $LogStatus ("Enable", "Disable")
     {
@@ -14148,6 +16732,10 @@ sub scenario()
         exitStatus(0);
     }
     
+    if($Opt{"InstallDeps"}) {
+        $Opt{"All"} = 1;
+    }
+    
     if($Opt{"Logs"}) {
         $Opt{"Probe"} = 1;
     }
@@ -14168,6 +16756,16 @@ sub scenario()
         $Opt{"HWLogs"} = 1;
     }
     
+    if($Opt{"Probe"} or $Opt{"GenerateGroup"} or $Opt{"StartMonitoring"} or $Opt{"StopMonitoring"} or $Opt{"ShowLog"})
+    {
+        if(not $Admin
+        and not $SNAP_DESKTOP and not $FLATPAK_DESKTOP)
+        {
+            printMsg("ERROR", "you should run as root (sudo or su)");
+            exitStatus(1);
+        }
+    }
+    
     if($Opt{"Probe"} and not $Opt{"FixProbe"})
     {
         if(-d $DATA_DIR)
@@ -14178,16 +16776,6 @@ sub scenario()
                 exitStatus(1);
             }
             rmtree($DATA_DIR);
-        }
-    }
-    
-    if($Opt{"Probe"} or $Opt{"GenerateGroup"} or $Opt{"StartMonitoring"} or $Opt{"StopMonitoring"} or $Opt{"ShowLog"})
-    {
-        if(not $Admin
-        and not $SNAP_DESKTOP and not $FLATPAK_DESKTOP)
-        {
-            printMsg("ERROR", "you should run as root (sudo or su)");
-            exitStatus(1);
         }
     }
     
@@ -14228,10 +16816,10 @@ sub scenario()
             printMsg("ERROR", "can't access '".$PciIDs."'");
             exitStatus(1);
         }
-        readPciIds($PciIDs, \%PciInfo, \%PciInfo_D);
+        readPciIds($PciIDs, \%PciInfo);
         
         if(-e "$PciIDs.add") {
-            readPciIds("$PciIDs.add", \%AddPciInfo, \%AddPciInfo_D);
+            readPciIds("$PciIDs.add", \%PciInfo);
         }
     }
     
@@ -14245,7 +16833,7 @@ sub scenario()
         readUsbIds($UsbIDs, \%UsbInfo);
 
         if(-e "$UsbIDs.add") {
-            readUsbIds("$UsbIDs.add", \%AddUsbInfo);
+            readUsbIds("$UsbIDs.add", \%UsbInfo);
         }
     }
     
@@ -14356,6 +16944,30 @@ sub scenario()
                 writeFile("$FixProbe_Logs/$RmLog", "");
             }
         }
+        
+        if($Opt{"RmObsolete"})
+        {
+            foreach my $L ("boot.log", "dmesg.1", "fstab", "grub.cfg", "mount", "pstree", "systemctl", "top", "xorg.log.1")
+            {
+                if(-e "$FixProbe_Logs/$L") {
+                    unlink("$FixProbe_Logs/$L");
+                }
+            }
+            
+            if(my $Xdpy = readFile("$FixProbe_Logs/xdpyinfo"))
+            {
+                if($Xdpy=~s/(visual:(.|\n)+?)\Z/...\n/g) {
+                    writeFile("$FixProbe_Logs/xdpyinfo", $Xdpy);
+                }
+            }
+            
+            if(my $Glx = readFile("$FixProbe_Logs/glxinfo"))
+            {
+                if($Glx=~s/(GLX Visuals)(.|\n)+?\Z/$1\n...\n/g) {
+                    writeFile("$FixProbe_Logs/glxinfo", $Glx);
+                }
+            }
+        }
 
         if(my $TrLog = $Opt{"TruncateLog"})
         {
@@ -14403,6 +17015,29 @@ sub scenario()
         readHost($Opt{"FixProbe"}); # instead of probeSys
         fixLogs($FixProbe_Logs);
         
+        my ($Distr, $DistrVersion, $Rel) = probeDistr();
+        
+        ($Distr, $DistrVersion, $Rel) = fixDistr($Distr, $DistrVersion, $Rel);
+        
+        if($DistrVersion) {
+            $Distr = $Distr."-".$DistrVersion;
+        }
+        
+        if($Distr)
+        { # fix system name
+            $Sys{"System"} = $Distr;
+        }
+        
+        if($DistrVersion)
+        { # fix system version
+            $Sys{"System_version"} = $DistrVersion;
+        }
+        
+        if($Rel)
+        { # fix system name
+            $Sys{"Systemrel"} = $Rel;
+        }
+        
         fixProduct();
         fixChassis();
         probeHWaddr();
@@ -14416,68 +17051,6 @@ sub scenario()
         
         if($Opt{"PC_Name"}) {
             $Sys{"Name"} = $Opt{"PC_Name"}; # fix PC name
-        }
-        
-        my ($Distr, $Rel) = probeDistr();
-        
-        if(not $Distr)
-        {
-            if(-f "$FixProbe_Logs/issue")
-            { # Support for old HW Probe
-                my $Issue = readLine("$FixProbe_Logs/issue");
-                if($Issue=~/ROSA Enterprise Linux Server release ([\d\.]+)/i) {
-                    $Distr = "rels-".$1;
-                }
-            }
-        }
-        
-        if(not $Distr)
-        {
-            if(-f "$FixProbe_Logs/rpms")
-            {
-                my $RpmsLine = readLine("$FixProbe_Logs/rpms");
-                if($RpmsLine=~/\.([a-z]\w+)\.\w+\Z/i)
-                {
-                    if(defined $DistSuffix{$1}) {
-                        $Distr = $DistSuffix{$1};
-                    }
-                }
-                
-                if(not $Distr)
-                {
-                    my $Rpms = readFile("$FixProbe_Logs/rpms");
-                    
-                    foreach my $Pkg (sort keys(%DistPackage))
-                    {
-                        if($Rpms=~/\Q$Pkg\E/)
-                        {
-                            $Distr = $DistPackage{$Pkg};
-                            last;
-                        }
-                    }
-                }
-            }
-            elsif(-f "$FixProbe_Logs/debs")
-            {
-                my $Debs = readFile("$FixProbe_Logs/debs");
-                if(index($Debs, "termux-")!=-1)
-                {
-                    $Distr = "android";
-                    $Rel = $Distr;
-                    $Sys{"Type"} = "smartphone";
-                }
-            }
-        }
-        
-        # Support for MX
-        if($Distr=~/\Adebian/)
-        {
-            my $Debs = readFile("$FixProbe_Logs/debs");
-            if($Debs=~/(mx-system|ddm-mx) (\d+)/)
-            {
-                $Distr = "mx-".$2;
-                $Rel = $Distr;
-            }
         }
         
         if(not $Sys{"DE"} or not $Sys{"Current_desktop"} or $Sys{"DE"} eq "KDE")
@@ -14501,74 +17074,6 @@ sub scenario()
         {
             if(my $FixDM = fixByPkgs("DisplayManager")) {
                 $Sys{"Display_manager"} = fixDisplayManager($FixDM);
-            }
-        }
-        
-        if($Sys{"System"} and $Distr=~/freedesktop/)
-        {
-            $Distr = undef;
-            $Rel = undef;
-        }
-        
-        if($Distr)
-        { # fix system name
-            $Sys{"System"} = $Distr;
-        }
-        
-        if($Rel)
-        { # fix system name
-            $Sys{"Systemrel"} = $Rel;
-        }
-        
-        if($Sys{"Kernel"}=~/\drosa\b/)
-        {
-            if(not $Sys{"System"} or $Sys{"System"}=~/freedesktop/)
-            {
-                if($Sys{"Kernel"}=~/\A3\.0\./) {
-                    $Sys{"System"} = "rosa-2012lts";
-                }
-                elsif($Sys{"Kernel"}=~/\A3\.(8|10)\./) {
-                    $Sys{"System"} = "rosa-2012.1";
-                }
-                elsif($Sys{"Kernel"}=~/\A3\.(14|17|18|19)\./) {
-                    $Sys{"System"} = "rosa-2014.1";
-                }
-                elsif($Sys{"Kernel"}=~/\A4\./) {
-                    $Sys{"System"} = "rosa-2014.1";
-                }
-                elsif($Sys{"Kernel"}=~/\A5\./) {
-                    $Sys{"System"} = "rosa-2016.1";
-                }
-                else
-                {
-                    printMsg("ERROR", "failed to fix 'system' attribute (kernel is '".$Sys{"Kernel"}."')");
-                }
-            }
-            
-            if(not $Sys{"Systemrel"})
-            {
-                if($Sys{"System"} eq "rosa-2012.1")
-                {
-                    if($Sys{"Kernel"}=~/\A3\.10\.(3\d|4\d)\-/) {
-                        $Sys{"Systemrel"} = "rosafresh-r3";
-                    }
-                    elsif($Sys{"Kernel"}=~/\A3\.10\.19\-/) {
-                        $Sys{"Systemrel"} = "rosafresh-r2";
-                    }
-                    elsif($Sys{"Kernel"}=~/\A3\.8\.12\-/) {
-                        $Sys{"Systemrel"} = "rosafresh-r1";
-                    }
-                }
-            }
-        }
-        
-        if(not $Sys{"System"} or $Sys{"System"}=~/freedesktop/)
-        {
-            if($Sys{"Kernel"}=~/\.fc(\d\d)\./) {
-                $Sys{"System"} = "fedora-$1";
-            }
-            elsif($Sys{"Kernel"}=~/\.el(\d)\./) {
-                $Sys{"System"} = "centos-$1";
             }
         }
         

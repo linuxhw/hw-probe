@@ -1,11 +1,11 @@
 INSTALL HOWTO
 =============
 
-HW Probe 1.5 (January 15, 2020)
+HW Probe 1.6 BETA (May 20, 2020)
 
 This file explains how to install and setup environment for the tool in your computer.
 
-Just find the name of your Linux distribution on this page.
+Just find the name of your Linux or BSD distribution on this page.
 
 See more info in the [README.md](README.md).
 
@@ -17,6 +17,7 @@ Contents
 * [ Command line to Run     ](#command-line-to-run)
 * [ Install on Ubuntu       ](#install-on-ubuntu)
 * [ Install on Debian       ](#install-on-debian)
+* [ Install on BSD          ](#install-on-bsd)
 * [ Install on openSUSE     ](#install-on-opensuse)
 * [ Install on Manjaro      ](#install-on-manjaro)
 * [ Install on Arch Linux   ](#install-on-arch-linux)
@@ -43,6 +44,7 @@ Contents
 * [ Install on QTS          ](#install-on-qts)
 * [ Install on Chrome OS    ](#install-on-chrome-os)
 * [ Install from Source     ](#install-from-source)
+
 
 Run without Installing
 ----------------------
@@ -120,6 +122,14 @@ Download Deb package [hw-probe_1.5-1_all.deb](https://github.com/linuxhw/hw-prob
     sudo apt-get update
     sudo dpkg -i ./hw-probe_1.5-1_all.deb
     sudo apt-get install -f --no-install-recommends
+
+
+Install on BSD
+--------------
+
+On FreeBSD and derivatives (GhostBSD, NomadBSD, FuryBSD, TrueOS, PC-BSD, FreeNAS, etc.), OpenBSD and derivatives (AdJ, FuguIta, etc.), NetBSD and derivatives (OS108, etc.), DragonFly and MidnightBSD.
+
+See [INSTALL.BSD.md](INSTALL.BSD.md).
 
 
 Install on openSUSE
@@ -255,6 +265,10 @@ Install on ClearOS
 
 Install on Gentoo
 -----------------
+
+    sudo emerge --ask sys-apps/hw-probe
+
+###### Bobwya repository
 
 With [app-eselect/eselect-repository](https://wiki.gentoo.org/wiki/Eselect/Repository) installed:
 
@@ -420,3 +434,4 @@ To uninstall:
 * sane-backends (sane-find-scanner)
 * pnputils (lspnp)
 
+Enjoy!
