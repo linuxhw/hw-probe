@@ -1982,7 +1982,7 @@ sub hideDf($)
             $HideLine = ($L!~/\A(Filesystem|cgroup|cgroup_root|clr_debug_fuse|dev|devtmpfs|\/(dev|home|run)|none|overlay|run|shm|tmpfs|udev|\s+)/);
         }
         
-        if($HideLine)
+        if($HideLine and $L!~/\s\/\Z/)
         {
             $L = hideByRegexp($L, qr/\A([^\s]+)/);
             $L = hideByRegexp($L, qr/([^\s]+)\Z/);
@@ -5713,6 +5713,51 @@ sub probeHW()
         }
         
         countDevice($BusID, $Device{"Type"});
+    }
+    
+    if(not $PciConf and not $PciCtl and not $PciDump and $DevInfo)
+    {
+        foreach my $Line (split(/\n/, $DevInfo))
+        {
+            if($Line=~/\A\s*(\w+\d+)\s+pnpinfo\s+vendor=0x([a-f\d]{4})\s+device=0x([a-f\d]{4})\s+subvendor=0x([a-f\d]{4})\s+subdevice=0x([a-f\d]{4})\s+class=0x([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})/)
+            {
+                my ($DevFile, $V, $D, $SV, $SD, $C1, $C2, $C3) = ($1, $2, $3, $4, $5, $6, $7, $8);
+                
+                my %Device = ();
+                
+                $Device{"File"} = $DevFile;
+                $Device{"Driver"} = $DevFile;
+                $Device{"Driver"}=~s/\d+\Z//;
+                $Device{"Class"} = devID(($C1, $C2, $C3));
+                $Device{"Type"} = getClassType("pci", $Device{"Class"});
+                
+                my $ID = devID(($V, $D, $SV, $SD));
+                my $BusID = "pci:".$ID;
+                
+                $HW{$BusID} = \%Device;
+                
+                countDevice($BusID, $Device{"Type"});
+            }
+            elsif($Line=~/\A\s*(\w+\d+)\s+pnpinfo\s+vendor=0x([a-f\d]{4})\s+product=0x([a-f\d]{4})\s+devclass=0x([a-f\d]{2})\s+devsubclass=0x([a-f\d]{2})\s+devproto=0x([a-f\d]{2})/)
+            {
+                my ($DevFile, $V, $D, $C1, $C2, $C3) = ($1, $2, $3, $4, $5, $6);
+                
+                my %Device = ();
+                
+                $Device{"File"} = $DevFile;
+                $Device{"Driver"} = $DevFile;
+                $Device{"Driver"}=~s/\d+\Z//;
+                $Device{"Class"} = devID(($C1, $C2, $C3));
+                $Device{"Type"} = getClassType("usb", $Device{"Class"});
+                
+                my $ID = devID(($V, $D));
+                my $BusID = "usb:".$ID;
+                
+                $HW{$BusID} = \%Device;
+                
+                countDevice($BusID, $Device{"Type"});
+            }
+        }
     }
     
     # USB
