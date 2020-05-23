@@ -8358,7 +8358,7 @@ sub probeHW()
         {
             listProbe("logs", "megacli");
             my $Megacli = runCmd($MegacliCmd." -PDList -aAll 2>/dev/null");
-            $Megacli=~s/(Inquiry Data\s*:.+?)\s\w+\n/$1.../g; # Hide serial
+            $Megacli=~s/(Inquiry Data\s*:\s*)[^\s]+/$1.../g; # Hide serial
             $Megacli = encryptSerials($Megacli, "WWN");
             if($Megacli) {
                 writeLog($LOG_DIR."/megacli", $Megacli);
