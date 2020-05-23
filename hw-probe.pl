@@ -14222,6 +14222,8 @@ sub writeLogs()
         listProbe("logs", "loader.conf");
         my $BootLoader = readFile("/boot/loader.conf");
         $BootLoader = hidePaths($BootLoader);
+        $BootLoader=~s/[ ]*#.*//g;
+        $BootLoader=~s/[\n]{2,}/\n/g;
         writeLog($LOG_DIR."/loader.conf", $BootLoader);
     }
     
