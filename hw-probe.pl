@@ -14211,7 +14211,9 @@ sub writeLogs()
         $RcConf = encryptUUIDs($RcConf);
         $RcConf = hideMACs($RcConf);
         $RcConf = hideIPs($RcConf);
-        $RcConf=~s/(hostname=).+/$1.../g;
+        $RcConf=~s/((hostname|user)=).+/$1.../g;
+        $RcConf=~s/[ ]*#.*//g;
+        $RcConf=~s/[\n]{2,}/\n/g;
         writeLog($LOG_DIR."/rc.conf", $RcConf);
     }
     
