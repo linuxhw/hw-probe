@@ -509,7 +509,7 @@ my %VendorJedec = (
     "Centon"    => ["7F7F7F1900000000"],
     "CSX"       => ["855D", "7F7F7F7F7F5D0000"],
     "Corsair"   => ["029E", "0215", "9E02", "7F7F9E0000000000"],
-    "Crucial"   => ["059B", "859B", "9B85", "9B05", "0D9B", "09B8", "7F7F7F7F7F9B0000", "7F7F7F7F7F9BFFFF", "0000000000009B85", "859<", "009D36160000"],
+    "Crucial"   => ["1315", "059B", "859B", "9B85", "9B05", "0D9B", "09B8", "7F7F7F7F7F9B0000", "7F7F7F7F7F9BFFFF", "0000000000009B85", "859<", "009D36160000"],
     "Elpida"    => ["00FE", "01FE", "02FE", "FE02", "7F7FFE0000000000", "0000000000FE7F7F"],
     "EUDAR"     => ["847C"],
     "EVGA"      => ["08D9"],
@@ -1606,13 +1606,17 @@ my @ProtectedLogs = (
     
     # *BSD
     "apm",
+    "atactl",
     "camcontrol",
     "devinfo",
     "diskinfo",
     "geom",
+    "gpart",
+    "gpart_list",
     "hwstat",
     "kldstat",
     "mfiutil",
+    "modstat",
     "pciconf",
     "pcictl",
     "pcictl_n",
@@ -1935,6 +1939,9 @@ sub hideIPs($)
     # IPv6
     $Content=~s/[\da-f]+\:\:[\da-f]+\:[\da-f]+\:[\da-f]+\:[\da-f]+/XXXX::XXX:XXX:XXX:XXX/gi;
     $Content=~s/[\da-f]+\:[\da-f]+\:[\da-f]+\:[\da-f]+\:[\da-f]+\:[\da-f]+\:[\da-f]+\:[\da-f]+/XXXX:XXXX:XXXX:XXXX:XXXX:XXXX:XXXX:XXXX/gi;
+    
+    $Content=~s/[\da-f]+\:[\da-f]+\:[\da-f]+\:[\da-f]+::[\da-f]+/XXX:XXX:XXX:XXX::XXX/gi;
+    $Content=~s/[\da-f]+\:[\da-f]+\:[\da-f]+::[\da-f]+/XXX:XXX:XXX::XXX/gi;
     
     return $Content;
 }
@@ -3044,6 +3051,29 @@ sub getClassType($$)
     return "";
 }
 
+sub fixRootHub($$$)
+{
+    my ($V, $D, $Dev) = @_;
+    
+    if(grep {$V eq $_} ("8086", "0000") and $D eq "0000")
+    {
+        $V = "1d6b";
+        $Dev->{"Vendor"} = "BSD";
+        
+        if($Dev->{"Device"}=~/UHCI|OHCI/i) {
+            $D = "0001";
+        }
+        elsif($Dev->{"Device"}=~/EHCI/i) {
+            $D = "0002";
+        }
+        elsif($Dev->{"Device"}=~/XHCI/i) {
+            $D = "0003";
+        }
+    }
+    
+    return ($V, $D);
+}
+
 sub getDefaultType($$$)
 {
     my ($Bus, $DId, $Device) = @_;
@@ -3062,8 +3092,11 @@ sub getDefaultType($$$)
             elsif($Name=~/card reader/i) {
                 return "card reader";
             }
-            elsif($Name=~/fingerprint (reader|scanner|sensor|device)|swipe sensor/i) {
+            elsif($Name=~/fingerprint (reader|scanner|sensor|device|coprocessor)|swipe sensor/i) {
                 return "fingerprint reader";
+            }
+            elsif($Name=~/smartcard/i) {
+                return "smartcard reader";
             }
             elsif($Name=~/USB Scanner|CanoScan|FlatbedScanner|Scanjet|EPSON Scanner/i) {
                 return "scanner";
@@ -3071,7 +3104,7 @@ sub getDefaultType($$$)
             elsif($Name=~/bluetooth/i) {
                 return "bluetooth";
             }
-            elsif($Name=~/(\A| )(WLAN|NIC|11n Adapter)( |\Z)|Wireless.*Adapter|Wireless Network|Wireless LAN|WiMAX|WiFi|802\.11|Mobile Broadband/i) {
+            elsif($Name=~/(\A| )(WLAN|NIC|11n Adapter)( |\Z)|Wireless.*Adapter|Wireless Network|Wireless LAN|WiMAX|WiFi|802\.11|Mobile Broadband|Ethernet/i) {
                 return "network";
             }
             elsif($Name=~/converter/i) {
@@ -3253,7 +3286,7 @@ sub probeHW()
                 }
             }
             elsif(isNetBSD()) {
-                push(@NeedProgs, "usbctl", "curl"); # we have pcictl and usbdevs on NetBSD by default
+                push(@NeedProgs, "usbctl", "curl"); # we have pcictl and usbdevs on NetBSD by default, TODO: cpuid?
             }
             elsif($Sys{"System"}=~/midnightbsd/) {
                 push(@NeedProgs, "cpuid", "curl"); # using cpuid instead of lscpu on MidnightBSD due to huge recursive deps list
@@ -3544,6 +3577,21 @@ sub probeHW()
         
         if($Opt{"HWLogs"} and $Kldstat_v) {
             writeLog($LOG_DIR."/kldstat_v", $Kldstat_v);
+        }
+    }
+    
+    my $Modstat = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Modstat = readFile($FixProbe_Logs."/modstat");
+    }
+    elsif(enabledLog("modstat") and checkCmd("modstat"))
+    {
+        listProbe("logs", "modstat");
+        $Modstat = runCmd("modstat 2>/dev/null");
+        
+        if($Opt{"HWLogs"}) {
+            writeLog($LOG_DIR."/modstat", $Modstat);
         }
     }
     
@@ -4925,6 +4973,16 @@ sub probeHW()
                     $UsbAddrDev{$Parent}{$UsbAddr} = $DevFile;
                 }
             }
+            
+            my @DevUsb = ($Dmesg=~/[ \n](\w+\d+: .+? addr \d+)/g); # others are not configured
+            foreach my $UsbLine (@DevUsb)
+            {
+                if($UsbLine=~/\A(\w+\d+): .+? addr (\d+)\Z/)
+                {
+                    my ($DevFile, $UsbAddr) = ($1, $2);
+                    $UsbAddrDev{$DevFile}{$UsbAddr} = $DevFile;
+                }
+            }
         }
         elsif($FreeBSD7)
         {
@@ -4959,6 +5017,7 @@ sub probeHW()
         listProbe("logs", "geom");
         $Geom = runCmd("geom disk list 2>/dev/null");
         $Geom = encryptSerials($Geom, "ident");
+        $Geom=~s/(lunid:\s*[a-f\d]{7})[a-f\d]{9}\n/$1...\n/g; # WWN
         writeLog($LOG_DIR."/geom", $Geom);
     }
     
@@ -5883,7 +5942,7 @@ sub probeHW()
         }
     }
     
-    $UsbDevs=~s/(addr |Controller )/\n$1/g;
+    $UsbDevs=~s/(addr |Controller |\s+port \d+ addr)/\n$1/g;
     
     my $UsbController = undef;
     my @UsbCtrls = ();
@@ -5901,7 +5960,7 @@ sub probeHW()
             next;
         }
         
-        if($Info=~/addr\s+(\d+):.*?,\s*([^,]+?)\(0x([a-f\d]{4})\),\s*([^,]+?)\(0x([a-f\d]{4})\)/i)
+        if($Info=~/addr\s+(\d+):.*?,\s*([^,]+?)\(0x([a-f\d]{4})\),\s*([^()]+?)\(0x([a-f\d]{4})\)/i)
         { # NetBSD, FreeBSD < 8.0, OpenBSD < 6.3
             ($V, $D) = ($5, $3);
             $Device{"Vendor"} = $4;
@@ -5913,6 +5972,10 @@ sub probeHW()
                 $Device{"BSDType"} = lc($1);
                 $Device{"SubType"} = lc($3);
                 $Device{"Class"} = devID(($2, $4));
+                
+                if($Device{"BSDType"}=~/vendor specific/) {
+                    $Device{"BSDType"} = undef;
+                }
             }
         }
         elsif($Info=~/addr\s+\d+:\s*([a-f\d]{4}):([a-f\d]{4})\s+([^,]+),\s*(.+)/i)
@@ -5934,6 +5997,12 @@ sub probeHW()
             next;
         }
         
+        if($Device{"Vendor"} eq "vendor $V") {
+            $Device{"Vendor"} = undef;
+        }
+        
+        ($V, $D) = fixRootHub($V, $D, \%Device);
+        
         $Device{"Type"} = getDefaultType("usb", $D, \%Device);
         if(not $Device{"Type"} and $Device{"Class"} and $Device{"Class"}!~/\Af[fe]/) {
             $Device{"Type"} = getClassType("usb", $Device{"Class"});
@@ -5953,12 +6022,40 @@ sub probeHW()
             
             if(not $DevFile)
             {
-                foreach (keys(%{$DevAttached_R{$UsbController}}))
+                LOOP: foreach my $SDev (keys(%{$DevAttached_R{$UsbController}}))
                 {
-                    if(defined $UsbAddrDev{$_}{$UsbAddr}) {
-                        $DevFile = $UsbAddrDev{$_}{$UsbAddr};
+                    if(defined $UsbAddrDev{$SDev}{$UsbAddr})
+                    {
+                        $DevFile = $UsbAddrDev{$SDev}{$UsbAddr};
+                        last;
                     }
-                    last;
+                    
+                    foreach my $SSDev (keys(%{$DevAttached_R{$SDev}}))
+                    {
+                        if(defined $UsbAddrDev{$SSDev}{$UsbAddr})
+                        {
+                            $DevFile = $UsbAddrDev{$SSDev}{$UsbAddr};
+                            last LOOP;
+                        }
+                        
+                        foreach my $SSSDev (keys(%{$DevAttached_R{$SSDev}}))
+                        {
+                            if(defined $UsbAddrDev{$SSSDev}{$UsbAddr})
+                            {
+                                $DevFile = $UsbAddrDev{$SSSDev}{$UsbAddr};
+                                last LOOP;
+                            }
+                            
+                            foreach my $SSSSDev (keys(%{$DevAttached_R{$SSSDev}}))
+                            {
+                                if(defined $UsbAddrDev{$SSSSDev}{$UsbAddr})
+                                {
+                                    $DevFile = $UsbAddrDev{$SSSSDev}{$UsbAddr};
+                                    last LOOP;
+                                }
+                            }
+                        }
+                    }
                 }
             }
             
@@ -6021,6 +6118,7 @@ sub probeHW()
         if($Info=~/idVendor=0x([a-f\d]{4})\s+idProduct=0x([a-f\d]{4})/)
         {
             my ($V, $D) = ($1, $2);
+            
             my ($C1, $C2, $C3) = ();
             
             if($Info=~/bDeviceClass=([^\s+]+)\s+bDeviceSubClass=([^\s+]+)/)
@@ -6039,6 +6137,14 @@ sub probeHW()
                 }
             }
             
+            my %Device = ();
+            
+            if($Info=~/iProduct=.*?\(([^()]+?)\)/) {
+                $Device{"Device"} = $1;
+            }
+            
+            ($V, $D) = fixRootHub($V, $D, \%Device);
+            
             my $BusId = "usb:".devID(($V, $D));
             my $Class = devID((fNum(sprintf('%x', $C1)), fNum(sprintf('%x', $C2)), fNum(sprintf('%x', $C3))));
             
@@ -6049,10 +6155,15 @@ sub probeHW()
                 }
             }
             
+            my $OldClass = $HW{$BusId}{"Class"};
             $HW{$BusId}{"Class"} = $Class;
             
-            if(not $HW{$BusId}{"Type"} and $Class!~/\Af[fe]/) {
-                $HW{$BusId}{"Type"} = getClassType("usb", $Class);
+            if((not $HW{$BusId}{"Type"} or $OldClass ne $Class) and $Class!~/\Af[fe]/)
+            {
+                $HW{$BusId}{"Type"} = getDefaultType("usb", $D, $HW{$BusId});
+                if(not $HW{$BusId}{"Type"}) {
+                    $HW{$BusId}{"Type"} = getClassType("usb", $Class);
+                }
             }
         }
     }
@@ -6149,6 +6260,8 @@ sub probeHW()
         }
         
         cleanValues(\%Device);
+        
+        ($V, $D) = fixRootHub($V, $D, \%Device);
         
         $Device{"Class"} = devID(($C1, $C2, $C3));
         
@@ -6375,7 +6488,7 @@ sub probeHW()
                 }
             }
         }
-        elsif(grep { $DevType eq $_ } ("bluetooth", "camera", "card reader", "chipcard", "communication controller", "dvb card", "fingerprint reader", "firewire controller", "flash memory", "modem", "multimedia controller", "network", "sd host controller", "sound", "storage", "system peripheral", "tv card", "video", "wireless", "unclassified device", "unassigned class", "vendor specific") or not $DevType)
+        elsif(grep { $DevType eq $_ } ("bluetooth", "camera", "card reader", "chipcard", "communication controller", "dvb card", "fingerprint reader", "smartcard reader", "firewire controller", "flash memory", "modem", "multimedia controller", "network", "sd host controller", "sound", "storage", "system peripheral", "tv card", "video", "wireless", "unclassified device", "unassigned class", "vendor specific") or not $DevType)
         {
             if(grep { $DevType eq $_ } ("sd host controller", "system peripheral")
             and $HW{$ID}{"Vendor"}=~/Intel/) {
@@ -6631,7 +6744,7 @@ sub probeHW()
                 next;
             }
             
-            if(grep { $Device{"FF"} eq $_ } ("Chip", "TSOP")
+            if(grep { $Device{"FF"} eq $_ } ("TSOP") # Chip
             or $Device{"Kind"} eq "Flash")
             { # TODO: add this kind of devices
                 next;
@@ -7766,6 +7879,38 @@ sub probeHW()
         }
     }
     
+    my $AtaCtl = "";
+    
+    if($Opt{"FixProbe"}) {
+        $AtaCtl = readFile($FixProbe_Logs."/atactl");
+    }
+    elsif($Opt{"HWLogs"} and enabledLog("atactl") and checkCmd("atactl"))
+    {
+        listProbe("logs", "atactl");
+        
+        foreach my $Dev (sort keys(%HDD))
+        {
+            if($Dev=~/[dc]\Z/) {
+                next;
+            }
+            
+            my $AtaDevCtl = runCmd("atactl ".basename($Dev)." identify 2>/dev/null");
+            if($AtaDevCtl)
+            {
+                $AtaDevCtl .= "\n";
+                $AtaDevCtl .= runCmd("atactl ".basename($Dev)." smart status 2>/dev/null");
+                $AtaDevCtl .= "\n";
+                
+                $AtaCtl .= $Dev."\n";
+                $AtaCtl .= $AtaDevCtl;
+            }
+        }
+        
+        $AtaCtl = encryptSerials($AtaCtl, "Serial #");
+        
+        writeLog($LOG_DIR."/atactl", $AtaCtl);
+    }
+    
     my $Diskinfo = "";
     
     if($Opt{"FixProbe"}) {
@@ -7795,11 +7940,16 @@ sub probeHW()
         
         foreach my $Dev (sort keys(%HDD))
         {
-            $Disklabel .= runCmd("disklabel $Dev 2>/dev/null");
-            $Disklabel .= "\n";
+            my $DiskDevLabel = runCmd("disklabel $Dev 2>/dev/null");
+            if($DiskDevLabel)
+            {
+                $Disklabel .= $DiskDevLabel;
+                $Disklabel .= "\n";
+            }
         }
         
         $Disklabel=~s/(label:\s+)(.+?)\n/$1...\n/g;
+        $Disklabel = encryptSerials($Disklabel, "duid");
         
         if($Disklabel) {
             writeLog($LOG_DIR."/disklabel", $Disklabel);
@@ -7825,6 +7975,7 @@ sub probeHW()
         }
         
         $Camcontrol=~s/(serial number\s+)(.+?)\n/$1...\n/g;
+        $Camcontrol=~s/(WWN\s+[a-f\d]{7})[a-f\d]{9}/$1.../g;
         
         writeLog($LOG_DIR."/camcontrol", $Camcontrol);
     }
@@ -9561,7 +9712,7 @@ sub runSmartctl(@)
         $Output = runCmd($Cmd." 2>/dev/null");
     }
     
-    if($Output=~/Unknown USB bridge|Device Identity failed/) {
+    if($Output=~/Unknown USB bridge|Device Identity failed|Unable to detect device type|failed: Device busy/) {
         return "";
     }
     
@@ -14081,6 +14232,18 @@ sub writeLogs()
         writeLog($LOG_DIR."/gpart", $Gpart);
     }
     
+    if(enabledLog("gpart_list")
+    and checkCmd("gpart"))
+    {
+        listProbe("logs", "gpart_list");
+        my $GpartList = runCmd("gpart list -a 2>/dev/null");
+        $GpartList = hidePaths($GpartList);
+        $GpartList = encryptUUIDs($GpartList);
+        if($GpartList) {
+            writeLog($LOG_DIR."/gpart_list", $GpartList);
+        }
+    }
+    
     if(enabledLog("vmstat")
     and checkCmd("vmstat"))
     {
@@ -15171,6 +15334,7 @@ my %EnabledLog_BSD = (
         "acpidump_decoded",
         "apm",
         "arcconf",
+        "atactl",
         "biosdecode",
         # "bsdhwmon",
         "curl",
@@ -15188,6 +15352,7 @@ my %EnabledLog_BSD = (
         "mcelog",
         "megacli",
         "mfiutil",
+        "modstat",
         "pciconf",
         "pcictl",
         "pcictl_n",
@@ -15218,6 +15383,7 @@ my %EnabledLog_BSD = (
         "efibootmgr",
         "efivar",
         "gpart",
+        "gpart_list",
         "iostat",
         "kldstat_v",
         "lsblk",
@@ -16121,8 +16287,8 @@ sub fixLogs($)
             writeFile("$Dir/hwinfo", "");
         }
     }
-
-    foreach my $L ("iostat", "systemd-analyze", "systemctl")
+    
+    foreach my $L ("iostat", "systemd-analyze", "systemctl", "disklabel")
     { # Support for HW Probe 1.3-1.4
       # iostat: command not found
         if(-f "$Dir/$L"
@@ -16633,7 +16799,7 @@ sub scenario()
         my @Exclude = ();
         
         if($^O=~/openbsd|dragonfly/ or isNetBSD($^O))  {
-            push(@Exclude, "loader", "gpart", "diskinfo", "camcontrol");
+            push(@Exclude, "loader", "gpart", "gpart_list", "diskinfo", "camcontrol");
         }
         
         if($^O=~/freebsd|dragonfly/) {
