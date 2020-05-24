@@ -182,7 +182,6 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "rm-log=s" => \$Opt{"RmLog"},
   "truncate-log=s" => \$Opt{"TruncateLog"},
   "install-deps!" => \$Opt{"InstallDeps"},
-  "skip-deps!" => \$Opt{"SkipDeps"},
   "rm-obsolete!" => \$Opt{"RmObsolete"}
 ) or die "\n".$ShortUsage;
 
@@ -1577,6 +1576,7 @@ my @ProtectedLogs = (
     "dmi_id",
     "edid",
     "ethtool_p",
+    "fdisk",
     "glxinfo",
     "hciconfig",
     "hdparm",
@@ -3284,9 +3284,26 @@ sub probeHW()
                 if($Sys{"System_version"} < 6.3) {
                     @NeedProgs = grep {$_!~/lscpu/} @NeedProgs;
                 }
+                
+                if($Sys{"Arch"}!~/i386|amd64/)
+                {
+                    @NeedProgs = grep {$_!~/dmidecode/} @NeedProgs;
+                    if($Sys{"System_version"} eq "6.3") {
+                        @NeedProgs = grep {$_!~/lscpu/} @NeedProgs;
+                    }
+                }
             }
-            elsif(isNetBSD()) {
+            elsif(isNetBSD())
+            {
                 push(@NeedProgs, "usbctl", "curl"); # we have pcictl and usbdevs on NetBSD by default, TODO: cpuid?
+                
+                if($Sys{"Arch"}!~/i386|amd64|aarch64/) {
+                    @NeedProgs = grep {$_!~/dmidecode/} @NeedProgs;
+                }
+                
+                if($Sys{"Arch"}=~/aarch64/ and $Sys{"System_version"} < 9.0) {
+                    @NeedProgs = grep {$_!~/dmidecode/} @NeedProgs;
+                }
             }
             elsif($Sys{"System"}=~/midnightbsd/) {
                 push(@NeedProgs, "cpuid", "curl"); # using cpuid instead of lscpu on MidnightBSD due to huge recursive deps list
@@ -3322,10 +3339,18 @@ sub probeHW()
                 if($Sys{"Freebsd_release"} < 5.2) {
                     @NeedProgs = grep {$_!~/smartctl/} @NeedProgs;
                 }
+                
+                if($Sys{"Arch"}!~/i386|amd64/) {
+                    @NeedProgs = grep {$_!~/dmidecode|lscpu/} @NeedProgs;
+                }
             }
             elsif(isBSD())
             { # Unknown BSD
                 push(@NeedProgs, "cpuid", "curl");
+                
+                if($Sys{"Arch"}!~/i386|amd64/) {
+                    @NeedProgs = grep {$_!~/dmidecode/} @NeedProgs;
+                }
             }
             else
             { # Linux
@@ -3390,10 +3415,6 @@ sub probeHW()
                 }
                 else {
                     printMsg("TIP", "install missed packages by command (execute it by adding `-install-deps` option):\n\n     $NeedCmd\n");
-                }
-                
-                if(not defined $Opt{"SkipDeps"}) {
-                    exitStatus(1);
                 }
             }
             elsif(defined $Opt{"InstallDeps"})
@@ -5716,7 +5737,7 @@ sub probeHW()
     }
     
     if(not $PciConf and not $PciCtl and not $PciDump and $DevInfo)
-    {
+    { # NOTE: securelevel=2
         foreach my $Line (split(/\n/, $DevInfo))
         {
             if($Line=~/\A\s*(\w+\d+)\s+pnpinfo\s+vendor=0x([a-f\d]{4})\s+device=0x([a-f\d]{4})\s+subvendor=0x([a-f\d]{4})\s+subdevice=0x([a-f\d]{4})\s+class=0x([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})/)
@@ -9320,6 +9341,28 @@ sub probeHW()
         }
     }
     
+    if(isNetBSD() and not $CPU_ID)
+    {
+        my @Cpus = $Dmesg=~/(cpu\d+ at \w+\d+: .+), id/g;
+        foreach (@Cpus)
+        {
+            if(/cpu(\d+) at \w+\d+: ([^\s]+) (.+)/)
+            {
+                my ($CpuCount, $CpuVendor, $CpuDevice) = ($1, $2, $3);
+                
+                my %CpuDev = ();
+                $CpuDev{"Vendor"} = $CpuVendor;
+                $CpuDev{"Device"} = $CpuDevice;
+                
+                $CPU_ID = registerCPU(\%CpuDev);
+                
+                if($CPU_ID) {
+                    setDevCount($CPU_ID, "cpu", $CpuCount+1);
+                }
+            }
+        }
+    }
+    
     my $Meminfo = "";
     
     if($Opt{"FixProbe"}) {
@@ -9672,6 +9715,80 @@ sub probeHW()
                 $Sys{"Display_manager"} = fixDisplayManager($DM);
                 last;
             }
+        }
+    }
+    
+    my $Gpart = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Gpart = readFile($FixProbe_Logs."/gpart");
+    }
+    elsif(enabledLog("gpart")
+    and checkCmd("gpart"))
+    {
+        listProbe("logs", "gpart");
+        $Gpart = runCmd("gpart show 2>/dev/null");
+        $Gpart = hidePaths($Gpart);
+        writeLog($LOG_DIR."/gpart", $Gpart);
+    }
+    
+    if(isBSD() and $Gpart)
+    {
+        if($Gpart=~/ efi /) {
+            $Sys{"Boot_mode"} = "EFI";
+        }
+        else {
+            $Sys{"Boot_mode"} = "BIOS";
+        }
+    }
+    
+    if(enabledLog("gpart_list")
+    and checkCmd("gpart"))
+    {
+        listProbe("logs", "gpart_list");
+        my $GpartList = runCmd("gpart list -a 2>/dev/null");
+        $GpartList = hidePaths($GpartList);
+        $GpartList = encryptUUIDs($GpartList);
+        if($GpartList) {
+            writeLog($LOG_DIR."/gpart_list", $GpartList);
+        }
+    }
+    
+    my $Fdisk = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Fdisk = readFile($FixProbe_Logs."/fdisk");
+    }
+    elsif(enabledLog("fdisk")
+    and checkCmd("fdisk") and (isOpenBSD() or isNetBSD()))
+    {
+        listProbe("logs", "fdisk");
+        
+        foreach my $Dev (sort keys(%HDD))
+        {
+            if($Dev=~/[dc]\Z/) {
+                next;
+            }
+            
+            if(my $FdiskDev = runCmd("fdisk -v ".basename($Dev)." 2>/dev/null")) {
+                $Fdisk .= "$Dev\n".$FdiskDev."\n\n";
+            }
+        }
+        
+        if($Fdisk)
+        {
+            $Fdisk = encryptUUIDs($Fdisk);
+            writeLog($LOG_DIR."/fdisk", $Fdisk);
+        }
+    }
+    
+    if(isBSD() and $Fdisk)
+    {
+        if($Fdisk=~/ EFI /) {
+            $Sys{"Boot_mode"} = "EFI";
+        }
+        else {
+            $Sys{"Boot_mode"} = "BIOS";
         }
     }
     
@@ -13813,20 +13930,19 @@ sub writeLogs()
         }
     }
     
-    if($Admin)
+    if($Admin and enabledLog("fdisk")
+    and checkCmd("fdisk") and not isBSD())
     {
-        if(enabledLog("fdisk")
-        and checkCmd("fdisk"))
-        {
-            listProbe("logs", "fdisk");
-            
-            my $Fdisk = runCmd("fdisk -l 2>&1");
-            
-            if($Opt{"Snap"} and $Fdisk=~/Permission denied/) {
-                $Fdisk = "";
-            }
-            $Fdisk = hidePaths($Fdisk);
-            $Fdisk = hideTags($Fdisk, "Disk identifier");
+        listProbe("logs", "fdisk");
+        
+        my $Fdisk = runCmd("fdisk -l 2>&1");
+        if($Opt{"Snap"} and $Fdisk=~/Permission denied/) {
+            $Fdisk = "";
+        }
+        $Fdisk = hidePaths($Fdisk);
+        $Fdisk = hideTags($Fdisk, "Disk identifier");
+        
+        if($Fdisk) {
             writeLog($LOG_DIR."/fdisk", $Fdisk);
         }
     }
@@ -15392,6 +15508,7 @@ my %EnabledLog_BSD = (
         "df",
         "dmesg",
         "dmidecode",
+        "fdisk",
         "geom",
         "glxinfo",
         "hwstat",
