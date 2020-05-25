@@ -74,7 +74,7 @@ Desktop users should enable `sudo` by installing `sudo` package and adding user 
 Install on FreeBSD
 ------------------
 
-On FreeBSD and derivatives (GhostBSD, NomadBSD, FuryBSD, TrueOS, PC-BSD, FreeNAS, pfSense, Junos OS, etc.).
+On FreeBSD and derivatives (GhostBSD, NomadBSD, FuryBSD, TrueOS, PC-BSD, FreeNAS, pfSense, HardenedBSD, Junos OS, etc.).
 
 Get the tool:
 

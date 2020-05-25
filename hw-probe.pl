@@ -3416,6 +3416,8 @@ sub probeHW()
                 else {
                     printMsg("TIP", "install missed packages by command (execute it by adding `-install-deps` option):\n\n     $NeedCmd\n");
                 }
+                
+                exitStatus(1);
             }
             elsif(defined $Opt{"InstallDeps"})
             {
@@ -6179,7 +6181,7 @@ sub probeHW()
     $UsbCtl=~s/(-----\n)(\w)/$1\n$2/g;
     $UsbCtl=~s/(\nDEVICE addr )/\n$1/g;
     
-    foreach my $Info (split(/\n\n\n/, $UsbCtl))
+    foreach my $Info (split(/-----|\n\n\n/, $UsbCtl))
     { # detect USB class on OpenBSD
         if($Info=~/idVendor=0x([a-f\d]{4})\s+idProduct=0x([a-f\d]{4})/)
         {
