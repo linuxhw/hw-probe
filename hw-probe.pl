@@ -4762,6 +4762,10 @@ sub probeHW()
         $Sysctl=~s/ ([^\s]+) (login|syslogd)/ ... $2/g;
         $Sysctl=~s/(Serial Number\s+)(.+)/$1.../g;
         $Sysctl=~s/(sernum=)[^\s]+/$1.../g;
+        foreach my $Hide ("kern.msgbuf", "kern.geom.confxml", "kern.geom.confdot", "kern.geom.conftxt") {
+            $Sysctl=~s/(\Q$Hide\E:).+?(\skern\.)/$1 ...$2/gs;
+        }
+        $Sysctl=~s/(vm\.pmap\.kernel_maps:).+?(\svm\.pmap\.)/$1 ...$2/gs;
         
         $Sysctl = encryptUUIDs($Sysctl);
         $Sysctl = encryptSerials($Sysctl, "kern.hostid");
