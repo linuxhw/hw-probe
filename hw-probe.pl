@@ -844,7 +844,7 @@ foreach my $MicroArch (sort keys(%MicroCode))
 }
 
 my %MicroArchFamily = (
-    "AuthenticAMD" => {
+    "AMD" => { # AuthenticAMD
         "Geode" => { "5" => ["*"] },
         "K6" => { "6" => ["*"] },
         "K7" => { "7" => ["*"] },
@@ -863,7 +863,7 @@ my %MicroArchFamily = (
         "Zen 2" => { "23" => ["49", "113"] },
         "Zen+" => { "23" => ["8", "24"] }
     },
-    "GenuineIntel" => {
+    "Intel" => { # GenuineIntel
         "CometLake" => { "6" => ["166"] },
         "KabyLake" => { "6" => ["142", "158"] },
         "Goldmont plus" => { "6" => ["122"] },
@@ -1624,7 +1624,8 @@ my @ProtectedLogs = (
     "sysinfo",
     "usbconfig",
     "usbctl",
-    "usbdevs"
+    "usbdevs",
+    "x86info"
 );
 
 my @ProtectFromRm = (
@@ -6549,6 +6550,22 @@ sub probeHW()
         my $Dr = $HW{$ID}{"Driver"};
         my $Class = $HW{$ID}{"Class"};
         
+        if(isBSD())
+        {
+            if($DevType eq "network")
+            {
+                if($ID=~/pci:/)
+                {
+                    if($Sys{"NICs"}) {
+                        $Sys{"NICs"} += 1;
+                    }
+                    else {
+                        $Sys{"NICs"} = 1;
+                    }
+                }
+            }
+        }
+        
         if($DevType eq "graphics card")
         {
             if($ID=~/\w+:(.+?)\-/)
@@ -6587,8 +6604,10 @@ sub probeHW()
                     {
                         my $File = $HW{$ID}{"File"};
                         
-                        if(defined $UsedNetworkDev{$File}) {
+                        if(defined $UsedNetworkDev{$File})
+                        {
                             $HW{$ID}{"Status"} = "works";
+                            $HW{$ID}{"Link detected"} = "yes";
                         }
                         
                         if($HW{$ID}{"Class"}=~/\A02-80/
@@ -6597,8 +6616,10 @@ sub probeHW()
                         {
                             if($File=~s/\A[^\d]+/wlan/)
                             {
-                                if(defined $UsedNetworkDev{$File}) {
+                                if(defined $UsedNetworkDev{$File})
+                                {
                                     $HW{$ID}{"Status"} = "works";
+                                    $HW{$ID}{"Link detected"} = "yes";
                                 }
                             }
                         }
@@ -6682,7 +6703,7 @@ sub probeHW()
     my $MemIndex = 0;
     my %MemIDs = ();
     
-    my ($CPU_Sockets, $CPU_Cores, $CPU_Threads) = (0, 0, 0);
+    my ($CPU_Sockets, $CPU_Cores, $CPU_Threads, $CPU_Family, $CPU_ModelNum) = (0, 0, 0, undef, undef);
     
     foreach my $Info (split(/\n\n/, $Dmidecode))
     {
@@ -6996,12 +7017,16 @@ sub probeHW()
                 { # Family 6, Model 42, Stepping 7
                     my @Model = ();
                     
-                    if($Val=~/Family\s+(\w+),/) {
+                    if($Val=~/Family\s+(\w+),/)
+                    {
                         push(@Model, $1);
+                        $CPU_Family = $1;
                     }
                     
-                    if($Val=~/Model\s+(\w+),/) {
+                    if($Val=~/Model\s+(\w+),/)
+                    {
                         push(@Model, $1);
+                        $CPU_ModelNum = $1;
                     }
                     
                     if($Val=~/Stepping\s+(\w+)/) {
@@ -7059,6 +7084,10 @@ sub probeHW()
                         $HW{$CPU_ID}{$_} = $Val2;
                     }
                 }
+            }
+            
+            if(not $Sys{"Microarch"}) {
+                $Sys{"Microarch"} = detectMicroarch($Device{"Vendor"}, $CPU_Family, $CPU_ModelNum);
             }
         }
     }
@@ -9345,6 +9374,10 @@ sub probeHW()
                 setDevCount($CPU_ID, "cpu", $1);
             }
         }
+        
+        if(not $Sys{"Microarch"}) {
+            $Sys{"Microarch"} = detectMicroarch($CpuDev{"Vendor"}, $CpuDev{"Family"}, $CpuDev{"ModelNum"});
+        }
     }
     
     if(isNetBSD() and not $CPU_ID)
@@ -9429,9 +9462,14 @@ sub probeHW()
         $NewDf = "[^\\s]+\\s+";
     }
     
+    my $BsdDf = "";
+    if(isBSD()) {
+        $BsdDf = "|[a-z]\\w+\\d";
+    }
+    
     foreach my $DfL (split(/\n/, $Df))
     {
-        if($DfL=~/\A\/dev\/([sh]d|nvme|mapper|mmcblk|root).*?\s+$NewDf([\w\.\,]+)\s+([\w\.\,]+)/)
+        if($DfL=~/\A\/dev\/([sh]d|nvme|mapper|mmcblk|root$BsdDf).*?\s+$NewDf([\w\.\,]+)\s+([\w\.\,]+)/)
         {
             my ($PSize, $PUsed) = ($2, $3);
             
@@ -9573,14 +9611,30 @@ sub probeHW()
     elsif(enabledLog("locale"))
     {
         listProbe("logs", "locale");
-        $LocaleConf = readFile("/etc/locale.conf");
+        
+        if(isBSD())
+        {
+            if(checkCmd("locale")) {
+                $LocaleConf = runCmd("locale");
+            }
+        }
+        else {
+            $LocaleConf = readFile("/etc/locale.conf");
+        }
+        
         if($LocaleConf) {
-            writeLog($LOG_DIR."/fstab", $LocaleConf);
+            writeLog($LOG_DIR."/locale", $LocaleConf);
         }
     }
     
-    if(not $Sys{"Lang"} and $LocaleConf=~/LANG="(.+)"/) {
-        $Sys{"Lang"} = $1;
+    if(not $Sys{"Lang"})
+    {
+        if($LocaleConf=~/LANG="(.+)"/) {
+            $Sys{"Lang"} = $1;
+        }
+        elsif($LocaleConf=~/LANG=(.+)/) {
+            $Sys{"Lang"} = $1;
+        }
     }
     
     my $Mount = "";
@@ -9798,6 +9852,23 @@ sub probeHW()
         }
     }
     
+    my $X86info = "";
+    
+    if($Opt{"FixProbe"}) {
+        $X86info = readFile($FixProbe_Logs."/x86info");
+    }
+    elsif(enabledLog("x86info")
+    and checkCmd("x86info"))
+    {
+        listProbe("logs", "x86info");
+        
+        $X86info = runCmd("x86info -a 2>/dev/null");
+        
+        if($X86info) {
+            writeLog($LOG_DIR."/x86info", $X86info);
+        }
+    }
+    
     # TODO: add new fixes here
     
     print "Ok\n";
@@ -9810,6 +9881,8 @@ sub getSysUUID(@) {
 sub detectMicroarch($$$)
 {
     my ($V, $F, $M) = @_;
+    
+    $V = fixCpuVendor($V);
     
     if($V and $F)
     {
@@ -14378,7 +14451,7 @@ sub writeLogs()
         $RcConf = encryptUUIDs($RcConf);
         $RcConf = hideMACs($RcConf);
         $RcConf = hideIPs($RcConf);
-        $RcConf=~s/((hostname|user)=).+/$1.../g;
+        $RcConf=~s/((hostname|user|vm_list)\s*=).+/$1.../g;
         $RcConf=~s/[ ]*#.*//g;
         $RcConf=~s/[\n]{2,}/\n/g;
         writeLog($LOG_DIR."/rc.conf", $RcConf);
@@ -15520,6 +15593,7 @@ my %EnabledLog_BSD = (
         "hwstat",
         "ifconfig",
         "kldstat",
+        "locale",
         "lscpu",
         "mcelog",
         "megacli",
@@ -15537,6 +15611,7 @@ my %EnabledLog_BSD = (
         "usbconfig",
         "usbctl",
         "usbdevs",
+        "x86info",
         "xorg.log",
         "xorg.log.1",
         "xrandr",
