@@ -1912,7 +1912,7 @@ sub hideHost($)
 sub hidePaths($)
 {
     my $Content = $_[0];
-    my @Paths = ("mnt", "mount", "home", "media", "data", "shares", "vhosts", "mapper", "pstorage", "snap", "shm", "dev/serno", "serno");
+    my @Paths = ("mnt", "mount", "home", "media", "data", "shares", "vhosts", "mapper", "pstorage", "storage", "snap", "shm", "dev/serno", "serno");
     if(isBSD()) {
         push(@Paths, "diskid", "ufsid");
     }
@@ -1936,6 +1936,7 @@ sub hideIPs($)
     
     # IPv4
     $Content=~s/\d+\.\d+\.\d+\.\d+/XXX.XXX.XXX.XXX/g;
+    $Content=~s/(XXX\.XXX\.XXX\.XXX):\d+/$1:XXX/g;
     
     # IPv6
     $Content=~s/[\da-f]+\:\:[\da-f]+\:[\da-f]+\:[\da-f]+\:[\da-f]+/XXXX::XXX:XXX:XXX:XXX/gi;
@@ -14451,7 +14452,8 @@ sub writeLogs()
         $RcConf = encryptUUIDs($RcConf);
         $RcConf = hideMACs($RcConf);
         $RcConf = hideIPs($RcConf);
-        $RcConf=~s/((hostname|user|vm_list)\s*=).+/$1.../g;
+        $RcConf=~s/((hostname|user|host|vm_list|autossh_rules|syslogd_flags)\s*=).+/$1.../g;
+        $RcConf=~s/(openvpn)\w*\s*=.+/$1.../g;
         $RcConf=~s/[ ]*#.*//g;
         $RcConf=~s/[\n]{2,}/\n/g;
         writeLog($LOG_DIR."/rc.conf", $RcConf);
