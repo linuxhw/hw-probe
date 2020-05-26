@@ -409,6 +409,7 @@ my %DevBySysID;
 my %KernMod;
 my %WorkMod;
 my %WLanInterface;
+my %EthernetInterface;
 my %PermanentAddr;
 my %ExtraConnection;
 
@@ -6611,6 +6612,13 @@ sub probeHW()
                             $HW{$ID}{"Link detected"} = "yes";
                         }
                         
+                        if($EthernetInterface{$File}) {
+                            $HW{$ID}{"Kind"} = "Ethernet";
+                        }
+                        elsif($WLanInterface{$File}) {
+                            $HW{$ID}{"Kind"} = "WiFi";
+                        }
+                        
                         if($HW{$ID}{"Class"}=~/\A02-80/
                         or $HW{$ID}{"Device"}=~/Wireless/
                         or $File=~/\A(ath|iwn)/)
@@ -6621,6 +6629,13 @@ sub probeHW()
                                 {
                                     $HW{$ID}{"Status"} = "works";
                                     $HW{$ID}{"Link detected"} = "yes";
+                                }
+                                
+                                if($EthernetInterface{$File}) {
+                                    $HW{$ID}{"Kind"} = "Ethernet";
+                                }
+                                elsif($WLanInterface{$File}) {
+                                    $HW{$ID}{"Kind"} = "WiFi";
                                 }
                             }
                         }
@@ -7093,9 +7108,12 @@ sub probeHW()
         }
     }
     
+    if($CPU_Sockets) {
+        $Sys{"Sockets"} = $CPU_Sockets;
+    }
+    
     if($CPU_Sockets and $CPU_Cores and $CPU_Threads)
     {
-        $Sys{"Sockets"} = $CPU_Sockets;
         $Sys{"Cores"} = $CPU_Cores;
         
         if($CPU_Threads>=$CPU_Cores) {
@@ -7955,13 +7973,22 @@ sub probeHW()
                 
                 my $DiskReport = runSmartctl($SmartctlCmd, $Id, $Dev);
                 
-                if(isBSD() and not $DiskReport)
+                if(isBSD())
                 {
-                    if(isNetBSD()) {
-                        $DiskReport = runSmartctl($SmartctlCmd, $Id, $Dev."d");
+                    my $TryNvme = $Dev;
+                    
+                    if(not $DiskReport and $TryNvme=~s{nvd(\d+)\Z}{nvme$1}) {
+                        $DiskReport = runSmartctl($SmartctlCmd, $Id, $TryNvme);
                     }
-                    elsif(isOpenBSD()) {
-                        $DiskReport = runSmartctl($SmartctlCmd, $Id, $Dev."c");
+                    
+                    if(not $DiskReport)
+                    {
+                        if(isNetBSD()) {
+                            $DiskReport = runSmartctl($SmartctlCmd, $Id, $Dev."d");
+                        }
+                        elsif(isOpenBSD()) {
+                            $DiskReport = runSmartctl($SmartctlCmd, $Id, $Dev."c");
+                        }
                     }
                 }
                 $Smartctl .= $DiskReport;
@@ -9130,7 +9157,7 @@ sub probeHW()
     
     if($Lscpu)
     {
-        my ($Sockets, $Cores, $Threads) = ();
+        my ($Sockets, $Cores, $Threads, $CPUs) = ();
         my ($CPU_Vendor, $CPU_Name, $CPU_Family, $CPU_ModelNum, $CPU_Stepping) = ();
         
         my @CpuVals = ();
@@ -9174,8 +9201,15 @@ sub probeHW()
             elsif($Attr eq "Stepping") {
                 $CPU_Stepping = $Val;
             }
+            elsif($Attr eq "Total CPU(s)") {
+                $CPUs = $Val;
+            }
             
             push(@CpuVals, $Val);
+        }
+        
+        if($Sockets eq "0") {
+            $Sockets = 1;
         }
         
         if($Sockets and $Cores and $Threads)
@@ -9184,7 +9218,7 @@ sub probeHW()
             $Sys{"Cores"} = $Cores*$Sockets;
             $Sys{"Threads"} = $Threads;
         }
-        elsif($CpuVals[5]=~/\A[12]\Z/ and $CpuVals[7])
+        elsif(not isBSD() and $CpuVals[5]=~/\A[12]\Z/ and $CpuVals[7])
         {
             $Sys{"Sockets"} = $CpuVals[7];
             $Sys{"Cores"} = $CpuVals[6]*$Sys{"Sockets"};
@@ -9202,6 +9236,10 @@ sub probeHW()
         
         if(isBSD())
         {
+            if(not $Cores and $CPUs==1) {
+                $Sys{"Cores"} = $CPUs;
+            }
+            
             if(not $CPU_ID)
             {
                 my %CpuDev = ();
@@ -9473,12 +9511,25 @@ sub probeHW()
         if($DfL=~/\A\/dev\/([sh]d|nvme|mapper|mmcblk|root$BsdDf).*?\s+$NewDf([\w\.\,]+)\s+([\w\.\,]+)/)
         {
             my ($PSize, $PUsed) = ($2, $3);
-            
             if($PSize) {
                 $SpaceTotal += toGb($PSize);
             }
             if($PUsed) {
                 $SpaceUsed += toGb($PUsed);
+            }
+        }
+    }
+    
+    if(isBSD() and $Df=~/ zfs /)
+    {
+        if($Df=~/ zfs\s+([\w\.\,]+)\s+([\w\.\,]+)/)
+        {
+            my ($PSize, $PUsed) = ($1, $2);
+            if($PSize) {
+                $SpaceTotal = toGb($PSize);
+            }
+            if($PUsed) {
+                $SpaceUsed = toGb($PUsed);
             }
         }
     }
@@ -9954,7 +10005,7 @@ sub runSmartctl(@)
         $Output = runCmd($Cmd." 2>/dev/null");
     }
     
-    if($Output=~/Unknown USB bridge|Device Identity failed|Unable to detect device type|failed: Device busy/) {
+    if($Output=~/Unknown USB bridge|Device Identity failed|Unable to detect device type|failed: Device busy|To monitor NVMe disks use/) {
         return "";
     }
     
@@ -12640,10 +12691,12 @@ sub selectHWAddr(@)
         }
         elsif(isBSD() and $Blocks->{$NetDev}=~/media:.*Ethernet/)
         {
+            $EthernetInterface{$NetDev} = 1;
             push(@Eth, $Addr);
         }
-        elsif($NetDev=~/\Ae/ or (isBSD() and $Blocks->{$NetDev}=~/media:.*Ethernet/))
+        elsif($NetDev=~/\Ae/)
         {
+            $EthernetInterface{$NetDev} = 1;
             push(@Eth, $Addr);
         }
         elsif($NetDev=~/\Aw/)
@@ -14453,7 +14506,7 @@ sub writeLogs()
         $RcConf = hideMACs($RcConf);
         $RcConf = hideIPs($RcConf);
         
-        $RcConf=~s/((hostname|user|host|vm_list|autossh_rules|syslogd_flags)\s*=).+/$1.../g;
+        $RcConf=~s/((hostname|user|host|port|vm_list|autossh_rules|syslogd_flags)\s*=).+/$1.../g;
         $RcConf=~s/(openvpn)\w*\s*=.+/$1.../g;
         $RcConf=~s/[ ]*#.*//g;
         $RcConf=~s/[\n]{2,}/\n/g;
