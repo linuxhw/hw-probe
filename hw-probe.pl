@@ -14133,7 +14133,7 @@ sub writeLogs()
             writeLog($LOG_DIR."/efivar", $Efivar);
         }
         
-        if($Admin and $Sys{"Arch"} eq "x86_64")
+        if($Admin and $Sys{"Arch"}=~/x86_64|amd64/)
         {
             if(enabledLog("efibootmgr")
             and checkCmd("efibootmgr"))
@@ -14452,10 +14452,12 @@ sub writeLogs()
         $RcConf = encryptUUIDs($RcConf);
         $RcConf = hideMACs($RcConf);
         $RcConf = hideIPs($RcConf);
+        
         $RcConf=~s/((hostname|user|host|vm_list|autossh_rules|syslogd_flags)\s*=).+/$1.../g;
         $RcConf=~s/(openvpn)\w*\s*=.+/$1.../g;
         $RcConf=~s/[ ]*#.*//g;
         $RcConf=~s/[\n]{2,}/\n/g;
+        
         writeLog($LOG_DIR."/rc.conf", $RcConf);
     }
     
@@ -15576,13 +15578,10 @@ my %EnabledLog = (
 
 my %EnabledLog_BSD = (
     "minimal" => [
-        "acpidump",
-        "acpidump_decoded",
         "apm",
         "arcconf",
         "atactl",
         "biosdecode",
-        # "bsdhwmon",
         "curl",
         "dev",
         "devinfo",
@@ -15592,6 +15591,8 @@ my %EnabledLog_BSD = (
         "fdisk",
         "geom",
         "glxinfo",
+        "gpart",
+        "gpart_list",
         "hwstat",
         "ifconfig",
         "kldstat",
@@ -15613,17 +15614,15 @@ my %EnabledLog_BSD = (
         "usbconfig",
         "usbctl",
         "usbdevs",
-        "x86info",
         "xorg.log",
-        "xorg.log.1",
-        "xrandr",
-        "xrandr_providers"
+        "xrandr"
     ],
     "default" => [
+        "acpidump",
+        "acpidump_decoded",
         "amixer",
         "aplay",
         "arecord",
-        "loader.conf",
         "camcontrol",
         "config",
         "cpuid",
@@ -15631,29 +15630,31 @@ my %EnabledLog_BSD = (
         "disklabel",
         "efibootmgr",
         "efivar",
-        "gpart",
-        "gpart_list",
         "iostat",
         "kldstat_v",
         "lsblk",
         "lspci",
         "lspci_all",
         "lsusb",
-        "rc.conf",
         "sane-find-scanner",
         "scanimage",
         "smart-log",
         "top_head",
         "uptime",
         "vmstat",
+        "x86info",
         "xinput",
-        "xorg.conf"
+        "xorg.conf",
+        "xorg.log.1",
+        "xrandr_providers"
     ],
     "maximal" => [
         "alsactl",
         "firmware",
         "fstab",
+        "loader.conf",
         "mount",
+        "rc.conf",
         "sysinfo"
     ],
     "optional" => []
