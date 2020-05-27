@@ -9503,7 +9503,7 @@ sub probeHW()
     
     my $BsdDf = "";
     if(isBSD()) {
-        $BsdDf = "|[a-z]\\w+\\d";
+        $BsdDf = "|[a-z]\\w+\\d|ufsid|gpt|ufs";
     }
     
     foreach my $DfL (split(/\n/, $Df))
@@ -9522,7 +9522,7 @@ sub probeHW()
     
     if(isBSD() and $Df=~/ zfs /)
     {
-        if($Df=~/ zfs\s+([\w\.\,]+)\s+([\w\.\,]+)/)
+        if($Df=~/ zfs\s+([\w\.\,]+)\s+([\w\.\,]+).+?\/\n/)
         {
             my ($PSize, $PUsed) = ($1, $2);
             if($PSize) {
