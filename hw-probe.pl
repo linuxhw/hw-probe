@@ -6570,13 +6570,15 @@ sub probeHW()
         }
     }
     
+    my $BSD = isBSD();
+    
     foreach my $ID (sort keys(%HW))
     {
         my $DevType = $HW{$ID}{"Type"};
         my $Dr = $HW{$ID}{"Driver"};
         my $Class = $HW{$ID}{"Class"};
         
-        if(isBSD())
+        if($BSD)
         {
             if($DevType eq "network")
             {
@@ -6589,6 +6591,10 @@ sub probeHW()
                         $Sys{"NICs"} = 1;
                     }
                 }
+            }
+            elsif($DevType=~/camera|video/)
+            { # user-space drivers
+                next;
             }
         }
         
@@ -9279,6 +9285,11 @@ sub probeHW()
             if(not $CPU_ID)
             {
                 my %CpuDev = ();
+                
+                if($CPU_Name=~s/\A(ARM) //) {
+                    $CPU_Vendor = $1;
+                }
+                
                 $CpuDev{"Vendor"} = fixCpuVendor($CPU_Vendor);
                 $CpuDev{"Device"} = $CPU_Name;
                 $CpuDev{"Device"} = duplVendor($CpuDev{"Vendor"}, $CpuDev{"Device"});
@@ -9473,6 +9484,25 @@ sub probeHW()
                 if($CPU_ID) {
                     setDevCount($CPU_ID, "cpu", $CpuCount+1);
                 }
+            }
+        }
+    }
+    
+    if(isBSD() and not $CPU_ID)
+    {
+        if($Sysctl=~/hw.model\s*[:=]\s*([^\s]+) (.+)/)
+        {
+            my %CpuDev = ();
+            $CpuDev{"Vendor"} = $1;
+            $CpuDev{"Device"} = $2;
+            
+            $CpuDev{"Vendor"} = fmtVal($CpuDev{"Vendor"});
+            $CpuDev{"Device"} = fmtVal($CpuDev{"Device"});
+            
+            $CPU_ID = registerCPU(\%CpuDev);
+            
+            if($CPU_ID and $Sysctl=~/hw.ncpu\s*[:=]\s*(\d+)/) {
+                setDevCount($CPU_ID, "cpu", $1);
             }
         }
     }
@@ -9766,7 +9796,7 @@ sub probeHW()
     
     if(not $Sys{"Filesystem"})
     {
-        my @Filesystems = ("btrfs", "jfs", "reiserfs", "xfs", "zfs", "aufs", "ext[234]", "overlay", "ufs");
+        my @Filesystems = ("btrfs", "jfs", "reiserfs", "xfs", "zfs", "aufs", "ext[234]", "overlay", "hammer2", "ufs");
         
         LOOP: foreach my $Log ($Df, $Lsblk, $Findmnt)
         {
@@ -9965,6 +9995,24 @@ sub probeHW()
         }
         else {
             $Sys{"Boot_mode"} = "BIOS";
+        }
+        
+        foreach (split(/\n\n/, $Fdisk))
+        {
+            if(/Not Found/) {
+                next;
+            }
+            
+            if(/GPT:/)
+            {
+                $Sys{"Part_scheme"} = "GPT";
+                last;
+            }
+            elsif(/MBR:/)
+            {
+                $Sys{"Part_scheme"} = "MBR";
+                last;
+            }
         }
     }
     
@@ -13120,6 +13168,24 @@ sub probeDistr()
             }
             
             if($GhostBSDConf) {
+                $Name = "ghostbsd";
+            }
+            
+            my $GhostBSDRc = "";
+            if($Opt{"FixProbe"}) {
+                $GhostBSDRc = readFile($FixProbe_Logs."/rc.conf.ghostbsd");
+            }
+            else
+            {
+                if(-e "/etc/rc.conf.ghostbsd") {
+                    $GhostBSDRc = "...";
+                }
+                if($GhostBSDRc) {
+                    writeLog($LOG_DIR."/rc.conf.ghostbsd", $GhostBSDRc);
+                }
+            }
+            
+            if($GhostBSDRc) {
                 $Name = "ghostbsd";
             }
             
