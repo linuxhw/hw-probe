@@ -23,7 +23,7 @@ Contents
 * [ Operability  ](#operability)
 * [ Disable logs ](#disable-logs)
 * [ Privacy      ](#privacy)
-
+* [ License      ](#license)
 
 About
 -----
