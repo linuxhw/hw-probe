@@ -1,0 +1,1 @@
+LGPL-2.1-or-later OR BSD-4-Clause

@@ -306,4 +306,13 @@ Private information (including the username, machine's hostname, IP addresses, M
 The tool uploads 32-byte prefix of salted SHA512 hash of MAC addresses and serial numbers to properly identify unique computers and hard drives. All the data is uploaded securely via HTTPS.
 
 
+License
+-------
+
+This work is dual-licensed under LGPL 2.1 (or any later version) and BSD-4-Clause.
+You can choose between one of them if you use this work.
+
+`SPDX-License-Identifier: LGPL-2.1-or-later OR BSD-4-Clause`
+
+
 Enjoy!

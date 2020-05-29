@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-#########################################################################
+#####################################################################
 # Hardware Probe 1.6 BETA
 # A tool to probe for hardware, check operability and find drivers
 #
@@ -24,7 +24,7 @@
 #  Perl 5
 #  perl-Digest-SHA
 #  perl-Data-Dumper
-#  hwinfo (https://github.com/openSUSE/hwinfo or https://pkgs.org/download/hwinfo)
+#  hwinfo (https://github.com/openSUSE/hwinfo)
 #  curl
 #  dmidecode
 #  smartmontools (smartctl)
@@ -51,9 +51,17 @@
 #  i2c-tools
 #  opensc
 #
-# This library is free software; you can redistribute it and/or
+# LICENSE
+# =======
+# This work is dual-licensed under LGPL 2.1 (or any later version)
+# and BSD-4-Clause. You can choose between one of them if you use
+# this work.
+#
+# LGPL-2.1-or-later
+# =================
+# This library is free software: you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
-# License as published by the Free Software Foundation; either
+# License as published by the Free Software Foundation, either
 # version 2.1 of the License, or (at your option) any later version.
 #
 # This library is distributed in the hope that it will be useful,
@@ -62,10 +70,25 @@
 # Lesser General Public License for more details.
 #
 # You should have received a copy of the GNU Lesser General Public
-# License along with this library; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-# MA  02110-1301 USA
-#########################################################################
+# License along with this library. If not, see:
+#
+#  https://www.gnu.org/licenses/
+#
+# BSD-4-Clause
+# ============
+# This is free software: you can redistribute it and/or modify it
+# under the terms of the BSD 4-Clause License.
+#
+# This software is distributed WITHOUT ANY WARRANTY; without even
+# the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+# PURPOSE.
+#
+# You should have received a copy of the BSD 4-Clause License along
+# with this library. If not, see:
+#
+#  https://spdx.org/licenses/BSD-4-Clause.html
+#
+#####################################################################
 use Getopt::Long;
 Getopt::Long::Configure ("posix_default", "no_ignore_case");
 use File::Path qw(mkpath rmtree);
@@ -109,7 +132,7 @@ if(isBSD($^O))
 
 my $ShortUsage = "Hardware Probe $TOOL_VERSION
 A tool to probe for hardware, check operability and find drivers
-License: GNU LGPL 2.1+
+License: LGPL-2.1-or-later OR BSD-4-Clause
 
 Usage: $CmdExample [options]
 Example: $CmdExample -all -upload\n\n";
@@ -234,9 +257,6 @@ DESCRIPTION:
   
   By creating probes you contribute to the \"HDD/SSD Desktop-Class Reliability
   Test\" study: https://github.com/linuxhw/SMART
-
-  This tool is free software: you can redistribute it and/or modify it
-  under the terms of the GNU LGPL 2.1+.
 
 USAGE:
   $CmdExample [options]
@@ -4783,6 +4803,10 @@ sub probeHW()
                 printMsg("WARNING", "DMI info cannot be collected, need kern.allowkmem=1 to be set");
             }
         }
+        
+        if($Sysctl=~/kern\.securelevel\s*[=:]\s*([2])/) {
+            printMsg("WARNING", "can't list all devices due to securelevel=$1");
+        }
     }
     
     if($Sysctl)
@@ -8593,6 +8617,14 @@ sub probeHW()
     {
         $Sys{"Ram_total"} = $1;
     }
+    elsif(isBSD() and $Dmesg=~/real (mem|memory)\s*=.+?\(([^()]+?)\s*MB\)/)
+    {
+        $Sys{"Ram_total"} = $2*1024.0;
+        if($Dmesg=~/avail (mem|memory)\s*=.+?\(([^()]+?)\s*MB\)/)
+        {
+            $Sys{"Ram_used"} = $Sys{"Ram_total"} - $2*1024.0;
+        }
+    }
     
     if((not $Sys{"Model"} or $Sys{"Model"} eq "rpi") and $Sys{"Arch"}=~/arm|aarch/i)
     {
@@ -8681,6 +8713,10 @@ sub probeHW()
             $Sys{"Video_memory"} = $1/(1024.0*1024.0);
         }
         elsif($XLog=~/Video RAM: (\d+) kByte/) {
+            $Sys{"Video_memory"} = $1/(1024.0*1024.0);
+        }
+        elsif(isBSD() and $XLog=~/VideoRAM: (\d+) KB/)
+        { # SIS
             $Sys{"Video_memory"} = $1/(1024.0*1024.0);
         }
         
@@ -9730,7 +9766,7 @@ sub probeHW()
     
     if(not $Sys{"Filesystem"})
     {
-        my @Filesystems = ("btrfs", "jfs", "reiserfs", "xfs", "zfs", "aufs", "ext[234]", "overlay");
+        my @Filesystems = ("btrfs", "jfs", "reiserfs", "xfs", "zfs", "aufs", "ext[234]", "overlay", "ufs");
         
         LOOP: foreach my $Log ($Df, $Lsblk, $Findmnt)
         {
@@ -9740,6 +9776,27 @@ sub probeHW()
                 {
                     $Sys{"Filesystem"} = $1;
                     last LOOP;
+                }
+            }
+        }
+    }
+    
+    if(isBSD())
+    {
+        if(not $Sys{"Filesystem"})
+        {
+            if($Disklabel=~/ 4\.2BSD /) {
+                $Sys{"Filesystem"} = "ufs";
+            }
+        }
+        
+        if(not $Sys{"Filesystem"})
+        {
+            if($Dmesg=~/(root file system type:|mount root from)\s+(\w+)/)
+            {
+                $Sys{"Filesystem"} = $2;
+                if($Sys{"Filesystem"} eq "ffs") {
+                    $Sys{"Filesystem"} = "ufs";
                 }
             }
         }
@@ -9852,6 +9909,13 @@ sub probeHW()
         else {
             $Sys{"Boot_mode"} = "BIOS";
         }
+        
+        if($Gpart=~/ GPT /) {
+            $Sys{"Part_scheme"} = "GPT";
+        }
+        elsif($Gpart=~/ MBR /) {
+            $Sys{"Part_scheme"} = "MBR";
+        }
     }
     
     if(enabledLog("gpart_list")
@@ -9902,6 +9966,13 @@ sub probeHW()
         else {
             $Sys{"Boot_mode"} = "BIOS";
         }
+    }
+    
+    if($Fdisk=~/Disklabel type: gpt/) {
+        $Sys{"Part_scheme"} = "GPT";
+    }
+    elsif($Fdisk=~/Disklabel type: dos/) {
+        $Sys{"Part_scheme"} = "MBR";
     }
     
     my $X86info = "";
@@ -13241,8 +13312,10 @@ sub probeDistr()
             $Name = "";
         }
         
-        if($LSB_Rel=~/Release:\s*(.*)/) {
+        if($LSB_Rel=~/Release:\s*(.*)/)
+        {
             $Release = lc($1);
+            $Release=~s/\A\Q$Name\E\-//gi;
         }
         
         if($Release eq "n/a") {
@@ -13341,6 +13414,7 @@ sub probeDistr()
         {
             $Release = lc($1);
             $Release=~s/\A"(.+)"\Z/$1/;
+            $Release=~s/\A\Q$Name\E\-//gi;
         }
         
         if($LSB_Rel_F=~/DISTRIB_DESCRIPTION[:=]\s*(.*)/) {
@@ -13380,7 +13454,7 @@ sub probeDistr()
             $Release = lc($1);
         }
         
-        if($Name=~/Acronis/)
+        if($Name=~/Acronis|Ultimate/i)
         {
             if($OS_Rel=~/\bVERSION=\s*[\"\']*([^"'\n]+)/) {
                 $Release = lc($1);
