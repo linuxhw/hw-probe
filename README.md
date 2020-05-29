@@ -293,9 +293,9 @@ Disable logs
 
 You can disable collecting of unwanted logs by the `-disable A,B,C,...` option.
 
-For example, to disable collecting of `lsblk` and `xorg.conf` run:
+For example, to disable collecting of `xdpyinfo` and `xorg.conf` run:
 
-    sudo -E hw-probe -all -upload -disable lsblk,xorg.conf
+    sudo -E hw-probe -all -upload -disable xdpyinfo,xorg.conf
 
 
 Privacy
