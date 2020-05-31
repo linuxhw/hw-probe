@@ -8,7 +8,10 @@
 #
 # Copyright (C) 2014-2020 Andrey Ponomarenko's Linux Hardware Project
 #
-# Written by Andrey Ponomarenko
+# Written by Andrey Ponomarenko (ABI Laboratory, LSB Infrastructure,
+# AZOV Framework testing technology, IEEE certified software test
+# engineer, ROSA Linux distribution)
+#
 # LinkedIn: https://www.linkedin.com/in/andreyponomarenko
 #
 # PLATFORMS
@@ -205,6 +208,7 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "rm-log=s" => \$Opt{"RmLog"},
   "truncate-log=s" => \$Opt{"TruncateLog"},
   "install-deps!" => \$Opt{"InstallDeps"},
+  "nodeps!" => \$Opt{"SkipDeps"},
   "rm-obsolete!" => \$Opt{"RmObsolete"}
 ) or die "\n".$ShortUsage;
 
@@ -3437,10 +3441,12 @@ sub probeHW()
                     system($NeedCmd);
                 }
                 else {
-                    printMsg("TIP", "install missed packages by command (execute it by adding `-install-deps` option):\n\n     $NeedCmd\n");
+                    printMsg("TIP", "install missed packages by command (auto-install by adding `-install-deps` option):\n\n     $NeedCmd\n");
                 }
                 
-                exitStatus(1);
+                if(not $Opt{"SkipDeps"}) {
+                    exitStatus(1);
+                }
             }
             elsif(defined $Opt{"InstallDeps"})
             {
@@ -7028,6 +7034,9 @@ sub probeHW()
                 }
             }
             
+            if($Board_ID) {
+                delete($HW{$Board_ID});
+            }
             $Board_ID = registerBoard(\%Device);
         }
         elsif($Info=~/BIOS Information\n/)
@@ -7230,6 +7239,17 @@ sub probeHW()
         fixFFByModel($Sys{"Vendor"}, $Sys{"Model"});
     }
     
+    if($Sysctl and not $Sys{"Type"})
+    {
+        if($Sysctl=~/\.acpibat\d+\./)
+        {
+            $Sys{"Type"} = "notebook";
+        }
+        else {
+            $Sys{"Type"} = "desktop";
+        }
+    }
+    
     if($Sysctl and (not $Sys{"Model"} or not $Sys{"Vendor"}))
     {
         if($Sysctl=~/hw\.product=(.+)/) {
@@ -7240,13 +7260,15 @@ sub probeHW()
             $Sys{"Vendor"} = $1;
         }
         
-        my %Board = ();
-        
         if($Sysctl=~/hw\.version=(.+)/) {
-            $Board{"Version"} = $1;
+            $Sys{"Version"} = $1;
         }
         
-        registerBoard({"Vendor"=>fmtVal($Sys{"Vendor"}), "Device"=>$Sys{"Model"}, "Version"=>$Board{"Version"}});
+        $Sys{"Model"} = fixModel($Sys{"Vendor"}, $Sys{"Model"}, $Sys{"Version"});
+        
+        if(not $Board_ID) {
+            $Board_ID = registerBoard({"Vendor"=>fmtVal($Sys{"Vendor"}), "Device"=>$Sys{"Model"}});
+        }
     }
     
     if($Sysctl and not $CDROM_ID)
@@ -8920,6 +8942,13 @@ sub probeHW()
             elsif($XLog=~/ RADEON\(0\): Chipset:/) {
                 setCardStatusByVendor("1002", "works");
             }
+            elsif($XLog=~/ modeset\(0\): Output/
+            and keys(%GraphicsCards_InUse)==1)
+            {
+                if((keys(%GraphicsCards_InUse))[0]=~/pci:([a-f\d]{4})/) {
+                    setCardStatusByVendor($1, "works");
+                }
+            }
         }
     }
     else
@@ -9946,6 +9975,9 @@ sub probeHW()
         elsif($Gpart=~/ MBR /) {
             $Sys{"Part_scheme"} = "MBR";
         }
+        elsif($Gpart=~/ BSD /) {
+            $Sys{"Part_scheme"} = "BSD";
+        }
     }
     
     if(enabledLog("gpart_list")
@@ -10003,12 +10035,12 @@ sub probeHW()
                 next;
             }
             
-            if(/GPT:/)
+            if(/GPT:| GPT /)
             {
                 $Sys{"Part_scheme"} = "GPT";
                 last;
             }
-            elsif(/MBR:/)
+            elsif(/MBR:| MBR /)
             {
                 $Sys{"Part_scheme"} = "MBR";
                 last;
@@ -10522,7 +10554,7 @@ sub registerBoard($)
     $Device->{"Status"} = "works";
     
     if(not $Device->{"Vendor"} and not $Device->{"Device"}) {
-        return;
+        return undef;
     }
     
     if($Device->{"Device"})
@@ -12380,7 +12412,10 @@ sub fixChassis()
     if(not $Bios_ID) {
         $Bios_ID = registerBIOS(\%Bios);
     }
-    $Board_ID = registerBoard(\%Board);
+    
+    if(not $Board_ID) {
+        $Board_ID = registerBoard(\%Board);
+    }
     
     if(not $Sys{"Type"}
     or grep {$Sys{"Type"} eq $_} ("soc", "system on chip", "notebook", "hand held"))
@@ -13058,13 +13093,10 @@ sub fixDistr($$$)
                 $Distr = lc($1);
             }
             
-            if($Distr=~/ghostbsd/)
+            if($Pkgs=~/ghostbsd-pkg-conf (\d+\.\d+)/i)
             {
-                if($Pkgs=~/ghostbsd-pkg-conf (\d+\.\d+)/i)
-                {
-                    $Distr = "ghostbsd";
-                    $DistrVersion = $1;
-                }
+                $Distr = "ghostbsd";
+                $DistrVersion = $1;
             }
         }
         
@@ -17342,6 +17374,10 @@ sub scenario()
     }
     
     if($Opt{"InstallDeps"}) {
+        $Opt{"All"} = 1;
+    }
+    
+    if($Opt{"Save"}) {
         $Opt{"All"} = 1;
     }
     
