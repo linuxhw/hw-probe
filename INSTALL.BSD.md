@@ -26,7 +26,7 @@ Contents
 Install on FreeBSD
 ------------------
 
-On FreeBSD and derivatives (GhostBSD, NomadBSD, FuryBSD, TrueOS, PC-BSD, HardenedBSD, FreeNAS, pfSense, XigmaNAS, Junos OS, etc.).
+On FreeBSD and derivatives (GhostBSD, NomadBSD, FuryBSD, TrueOS, PC-BSD, HardenedBSD, FreeNAS, pfSense, OPNsense, XigmaNAS, etc.).
 
 Get the tool:
 

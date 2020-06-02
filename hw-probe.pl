@@ -20,7 +20,8 @@
 #         Gentoo, ROSA, Mandriva, Clear Linux, Alpine ...)
 #
 #  BSD (FreeBSD, OpenBSD, NetBSD, GhostBSD, NomadBSD, DragonFly,
-#       MidnightBSD, FuryBSD, FreeNAS, pfSense, XigmaNAS ...)
+#       MidnightBSD, FuryBSD, FreeNAS, pfSense, OPNsense,
+#       XigmaNAS ...)
 #
 # REQUIRES (Linux)
 # ================
@@ -1690,7 +1691,7 @@ my $ALL_VENDORS = "Brother|Canon|Epson|HP|Hewlett\-Packard|Kyocera|Samsung|Xerox
 
 my $ALL_MON_VENDORS = "Acer|ADI|AGO|ALP|Ancor Communications Inc|AOC|Apple|Arnos Instruments|AU Optronics Corporation|AUS|BBY|BEK|BenQ|BOE Technology Group Co\., Ltd|Chi Mei Optoelectronics corp\.|CHI|CIS|CMN|CNC|COMPAL|COMPAQ|cPATH|CRO|CVTE|DELL|DENON, Ltd\.|Eizo|ELO|EQD|FNI|FUS|Gateway|GRUNDIG|HannStar Display Corp|HII|Hisense|HKC|HP|HPN|IBM|Idek Iiyama|ITR INFOTRONIC|IQT|KOA|Lenovo Group Limited|LGD|LG Electronics|LPL|Maxdata\/Belinea|MEB|Medion|Microstep|MS_ Nvidia|MSH|MST|MStar|NEC|NEX|Nvidia|OEM|ONKYO Corporation|Panasonic|Philips|Pioneer Electronic Corporation|PLN|Princeton Graphics|PRI|PKB|Samsung|Sangyo|Sceptre|SDC|Seiko\/Epson|SEK|SHARP|SONY|STN|TAR|Targa|Tech Concepts|TOSHIBA|Toshiba Matsushita Display Technology Co\., Ltd|UMC|Vestel|ViewSonic|VIZ|Wacom Tech|WDT";
 
-my @KNOWN_BSD = ("clonos", "desktopbsd", "dragonfly", "freenas", "fuguita", "furybsd", "ghostbsd", "hardenedbsd", "midnightbsd", "nomadbsd", "os108", "pcbsd", "pfsense", "trueos", "xigmanas");
+my @KNOWN_BSD = ("clonos", "desktopbsd", "dragonfly", "freenas", "fuguita", "furybsd", "ghostbsd", "hardenedbsd", "midnightbsd", "nomadbsd", "opnsense", "os108", "pcbsd", "pfsense", "trueos", "xigmanas");
 my $KNOWN_BSD_ALL = join("|", @KNOWN_BSD);
 
 my $USE_DIGEST = 0;
@@ -3339,7 +3340,7 @@ sub probeHW()
             elsif($Sys{"System"}=~/dragonfly/) {
                 push(@NeedProgs, "hwstat", "lscpu", "curl");
             }
-            elsif($Sys{"System"}=~/pfsense/)
+            elsif($Sys{"System"}=~/pfsense|opnsense/)
             {
                 push(@NeedProgs, "curl"); # no hwstat and lscpu on pfSense
                 
@@ -13103,9 +13104,14 @@ sub fixDistr($$$)
                 $Distr = lc($1);
             }
             
-            if($Pkgs=~/ghostbsd-pkg-conf (\d+\.\d+)/i)
+            if($Pkgs=~/ghostbsd-pkg-conf (\d[\.\d]+)/i)
             {
                 $Distr = "ghostbsd";
+                $DistrVersion = $1;
+            }
+            elsif($Pkgs=~/\/opnsense (\d[\.\d]+)/i)
+            {
+                $Distr = "opnsense";
                 $DistrVersion = $1;
             }
         }
@@ -13124,19 +13130,20 @@ sub probeDistr()
     my ($Name, $Release, $Descr) = ();
     
     my $FreeBSDVer = "";
+    my $OPNsenseVer = "";
+    
     my $OSname = "";
     
     if($Opt{"FixProbe"})
     {
         $FreeBSDVer = readFile($FixProbe_Logs."/freebsd-version");
+        $OPNsenseVer = readFile($FixProbe_Logs."/opnsense-version");
         $OSname = readFile($FixProbe_Logs."/osname");
     }
     else
     {
         if(isBSD($^O))
         {
-            $OSname = $^O;
-            
             if(checkCmd("freebsd-version"))
             {
                 listProbe("logs", "freebsd-version");
@@ -13147,6 +13154,17 @@ sub probeDistr()
                 }
             }
             
+            if(checkCmd("opnsense-version"))
+            {
+                listProbe("logs", "opnsense-version");
+                $OPNsenseVer = runCmd("opnsense-version");
+                
+                if($Opt{"HWLogs"}) {
+                    writeLog($LOG_DIR."/opnsense-version", $OPNsenseVer);
+                }
+            }
+            
+            $OSname = $^O;
             writeLog($LOG_DIR."/osname", $OSname);
         }
     }
@@ -13203,7 +13221,9 @@ sub probeDistr()
             }
             else
             {
-                $GhostBSDConf = readFile("/etc/pkg/GhostBSD.conf");
+                if(-e "/etc/pkg/GhostBSD.conf") {
+                    $GhostBSDConf = "...";
+                }
                 if($GhostBSDConf) {
                     writeLog($LOG_DIR."/GhostBSD.conf", $GhostBSDConf);
                 }
@@ -13229,6 +13249,31 @@ sub probeDistr()
             
             if($GhostBSDRc) {
                 $Name = "ghostbsd";
+            }
+            
+            # OPNsense
+            my $OPNsenseConf = "";
+            if($Opt{"FixProbe"}) {
+                $OPNsenseConf = readFile($FixProbe_Logs."/OPNsense.conf");
+            }
+            else
+            {
+                if(-e "/usr/local/etc/pkg/repos/OPNsense.conf") {
+                    $OPNsenseConf = "...";
+                }
+                if($OPNsenseConf) {
+                    writeLog($LOG_DIR."/OPNsense.conf", $OPNsenseConf);
+                }
+            }
+            
+            if($OPNsenseConf) {
+                $Name = "opnsense";
+            }
+            
+            if($OPNsenseVer=~/opnsense\s+(\d[\d\.]+)/i)
+            {
+                $Name = "opnsense";
+                $Release = $1;
             }
             
             # NomadBSD
