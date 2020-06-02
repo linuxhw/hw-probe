@@ -20,7 +20,7 @@
 #         Gentoo, ROSA, Mandriva, Clear Linux, Alpine ...)
 #
 #  BSD (FreeBSD, OpenBSD, NetBSD, GhostBSD, NomadBSD, DragonFly,
-#       MidnightBSD, FuryBSD, FreeNAS, pfSense, Junos OS ...)
+#       MidnightBSD, FuryBSD, FreeNAS, pfSense, XigmaNAS ...)
 #
 # REQUIRES (Linux)
 # ================
@@ -710,6 +710,7 @@ my %DiskVendor = (
     "EK60H"     => "Kingston",
     "FASTDISK"  => "FASTDISK",
     "FB0"       => "HP",
+    "FCCT128"   => "Crucial",
     "FLD"       => "Foxline",
     "FLSSD"     => "Foxline",
     "Force MP"  => "Corsair",
@@ -1689,7 +1690,7 @@ my $ALL_VENDORS = "Brother|Canon|Epson|HP|Hewlett\-Packard|Kyocera|Samsung|Xerox
 
 my $ALL_MON_VENDORS = "Acer|ADI|AGO|ALP|Ancor Communications Inc|AOC|Apple|Arnos Instruments|AU Optronics Corporation|AUS|BBY|BEK|BenQ|BOE Technology Group Co\., Ltd|Chi Mei Optoelectronics corp\.|CHI|CIS|CMN|CNC|COMPAL|COMPAQ|cPATH|CRO|CVTE|DELL|DENON, Ltd\.|Eizo|ELO|EQD|FNI|FUS|Gateway|GRUNDIG|HannStar Display Corp|HII|Hisense|HKC|HP|HPN|IBM|Idek Iiyama|ITR INFOTRONIC|IQT|KOA|Lenovo Group Limited|LGD|LG Electronics|LPL|Maxdata\/Belinea|MEB|Medion|Microstep|MS_ Nvidia|MSH|MST|MStar|NEC|NEX|Nvidia|OEM|ONKYO Corporation|Panasonic|Philips|Pioneer Electronic Corporation|PLN|Princeton Graphics|PRI|PKB|Samsung|Sangyo|Sceptre|SDC|Seiko\/Epson|SEK|SHARP|SONY|STN|TAR|Targa|Tech Concepts|TOSHIBA|Toshiba Matsushita Display Technology Co\., Ltd|UMC|Vestel|ViewSonic|VIZ|Wacom Tech|WDT";
 
-my @KNOWN_BSD = ("clonos", "desktopbsd", "dragonfly", "freenas", "fuguita", "furybsd", "ghostbsd", "hardenedbsd", "midnightbsd", "nomadbsd", "os108", "pcbsd", "pfsense", "trueos");
+my @KNOWN_BSD = ("clonos", "desktopbsd", "dragonfly", "freenas", "fuguita", "furybsd", "ghostbsd", "hardenedbsd", "midnightbsd", "nomadbsd", "os108", "pcbsd", "pfsense", "trueos", "xigmanas");
 my $KNOWN_BSD_ALL = join("|", @KNOWN_BSD);
 
 my $USE_DIGEST = 0;
@@ -3338,8 +3339,13 @@ sub probeHW()
             elsif($Sys{"System"}=~/dragonfly/) {
                 push(@NeedProgs, "hwstat", "lscpu", "curl");
             }
-            elsif($Sys{"System"}=~/pfsense/) {
+            elsif($Sys{"System"}=~/pfsense/)
+            {
                 push(@NeedProgs, "curl"); # no hwstat and lscpu on pfSense
+                
+                if($Sys{"Arch"}!~/i386|amd64/) {
+                    @NeedProgs = grep {$_!~/dmidecode/} @NeedProgs;
+                }
             }
             elsif(defined $Sys{"Freebsd_release"})
             {
@@ -6638,21 +6644,25 @@ sub probeHW()
                     if(not $HW{$ID}{"Driver"}) {
                         $HW{$ID}{"Status"} = "failed";
                     }
-                    elsif($DevType eq "network")
+                    
+                    if($DevType eq "network")
                     {
                         my $File = $HW{$ID}{"File"};
                         
-                        if(defined $UsedNetworkDev{$File})
+                        if(defined $UsedNetworkDev{$File} and $HW{$ID}{"Driver"})
                         {
                             $HW{$ID}{"Status"} = "works";
                             $HW{$ID}{"Link detected"} = "yes";
                         }
                         
-                        if($EthernetInterface{$File}) {
+                        if($EthernetInterface{$File} or $HW{$ID}{"Device"}=~/Ethernet/i) {
                             $HW{$ID}{"Kind"} = "Ethernet";
                         }
-                        elsif($WLanInterface{$File}) {
+                        elsif($WLanInterface{$File} or $HW{$ID}{"Device"}=~/802\.11|Wireless|Wi-?Fi/i) {
                             $HW{$ID}{"Kind"} = "WiFi";
+                        }
+                        elsif($HW{$ID}{"Device"}=~/broadband/i) {
+                            $HW{$ID}{"Kind"} = "Modem";
                         }
                         
                         if($HW{$ID}{"Class"}=~/\A02-80/
@@ -6661,7 +6671,7 @@ sub probeHW()
                         {
                             if($File=~s/\A[^\d]+/wlan/)
                             {
-                                if(defined $UsedNetworkDev{$File})
+                                if(defined $UsedNetworkDev{$File} and $HW{$ID}{"Driver"})
                                 {
                                     $HW{$ID}{"Status"} = "works";
                                     $HW{$ID}{"Link detected"} = "yes";
@@ -12838,7 +12848,7 @@ sub selectHWAddr(@)
           # Support for old probes
             push(@Other, $Addr);
         }
-        elsif(isBSD() and $Blocks->{$NetDev}=~/media:.*Wireless/)
+        elsif(isBSD() and $Blocks->{$NetDev}=~/media:.*Wireless|NetWiFi/)
         {
             $WLanInterface{$NetDev} = 1;
             push(@Wlan, $Addr);
