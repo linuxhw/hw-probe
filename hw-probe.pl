@@ -3377,10 +3377,15 @@ sub probeHW()
                 if($Sys{"Arch"}!~/i386|amd64/) {
                     @NeedProgs = grep {$_!~/dmidecode|lscpu/} @NeedProgs;
                 }
+                
+                if($Sys{"System"}!~/$KNOWN_BSD_ALL/)
+                { # Unknown FreeBSD-based
+                    @NeedProgs = grep {$_!~/hwstat|lscpu/} @NeedProgs;
+                }
             }
             elsif(isBSD())
             { # Unknown BSD
-                push(@NeedProgs, "cpuid", "curl");
+                push(@NeedProgs, "curl");
                 
                 if($Sys{"Arch"}!~/i386|amd64/) {
                     @NeedProgs = grep {$_!~/dmidecode/} @NeedProgs;
