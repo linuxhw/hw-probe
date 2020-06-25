@@ -10150,7 +10150,7 @@ sub runSmartctl(@)
         $RNum = shift(@_);
     }
     
-    my $Cmd = $SmartctlCmd." -x \"".$Dev."\"";
+    my $Cmd = $SmartctlCmd." --json -x \"".$Dev."\"";
     
     if(isBSD())
     {
