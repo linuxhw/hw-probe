@@ -26,7 +26,7 @@ Contents
 Install on FreeBSD
 ------------------
 
-On FreeBSD and derivatives (GhostBSD, NomadBSD, FuryBSD, TrueOS, PC-BSD, HardenedBSD, FreeNAS, pfSense, OPNsense, XigmaNAS, etc.).
+On FreeBSD and derivatives (GhostBSD, NomadBSD, FuryBSD, TrueOS, PC-BSD, HardenedBSD, FreeNAS, pfSense, OPNsense, XigmaNAS, DesktopBSD, etc.).
 
 Get the tool:
 
@@ -196,7 +196,7 @@ Just do:
 * Power on the computer, enter the Boot Menu and select the USB stick
 * At first start NomadBSD will run the setup wizard to prepare the USB stick
 * Connect to WiFi by right-click on the desktop or just plug the Ethernet cable
-* Follow the [FreeBSD instructions](#install-on-freebsd) to install hw-probe
+* Follow the [FreeBSD instructions](#install-on-freebsd) to install and run hw-probe
 
 Now you can probe all your computers around by booting from this USB stick!
 
