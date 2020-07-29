@@ -716,13 +716,14 @@ my %DiskVendor = (
     "DB40"      => "SanDisk",
     "DEN"       => "OCZ",
     "EK60H"     => "Kingston",
+    "ESA3"      => "China",
     "FASTDISK"  => "FASTDISK",
     "FB0"       => "HP",
-    "FCCT128"   => "Crucial",
+    "FCCT"      => "Crucial",
     "FLD"       => "Foxline",
     "FLSSD"     => "Foxline",
     "Force MP"  => "Corsair",
-    "FTM50"     => "Super Talent",
+    "FTM"       => "Super Talent",
     "G2242"     => "BIWIN",
     "G2 series" => "Micro Center",
     "G3 Series" => "Myung",
@@ -735,6 +736,7 @@ my %DiskVendor = (
     "HBS3A"     => "WDC",
     "HDS"       => "Hitachi",
     "HDT"       => "Hitachi",
+    "HKVSN"     => "Hikvision",
     "HUA"       => "Hitachi",
     "HUS"       => "HGST",
     "HFS"       => "SK hynix",
@@ -746,7 +748,9 @@ my %DiskVendor = (
     "InM2"      => "Indilinx",
     "IR_SSDPR"  => "GOODRAM",
     "IR-SSDPR"  => "GOODRAM",
+    "IRP-SSDPR" => "GOODRAM",
     "JAJS"      => "Leven",
+    "KSQ120"    => "KingSpec",
     "LK04"      => "HPE",
     "LK16"      => "HPE",
     "M2SCF-6M"  => "ACPI",
@@ -763,9 +767,12 @@ my %DiskVendor = (
     "MM1000"    => "HPE",
     "MM2000"    => "HPE",
     "MR00024"   => "HPE",
+    "MSATA"     => "China",
+    "MSS4FV"    => "acpi",
     "MTF"       => "Micron",
     "MZM"       => "Samsung",
     "MZ7"       => "Samsung",
+    "Neptune"   => "OWC",
     "OCZ"       => "OCZ",
     "OOS500G"   => "Seagate",
     "OOS1000G"  => "Seagate",
@@ -773,12 +780,15 @@ my %DiskVendor = (
     "PH2"       => "LITEON",
     "PH6-CE"    => "Plextor",
     "Q200 EX"   => "Toshiba",
+    "Q-90"      => "KingSpec",
     "Q-180"     => "KingSpec",
     "Q-360"     => "KingSpec",
     "R3S"       => "AMD",
     "R5S"       => "AMD",
+    "RD-S"      => "RECADATA",
     "RDM"       => "Ramaxel",
     "RTMMB"     => "China",
+    "RTOTJ"     => "Union Memory",
     "sandisk"   => "SanDisk",
     "S10T"      => "Chiprex",
     "S8M"       => "Chiprex",
@@ -786,6 +796,7 @@ my %DiskVendor = (
     "SC2 M2"    => "MyDigitalSSD",
     "SB M2"     => "MyDigitalSSD",
     "SB2"       => "MyDigitalSSD",
+    "SDM"       => "BLueRay",
     "SG9"       => "Samsung",
     "SH00"      => "China",
     "SPCC"      => "SPCC",
@@ -800,6 +811,7 @@ my %DiskVendor = (
     "ST"        => "Seagate",
     "SU04G"     => "SanDisk",
     "SU08G"     => "SanDisk",
+    "T480"      => "China",
     "T650-120"  => "Goldenfir",
     "TE2"       => "SanDisk",
     "TEAML5"    => "Team",
@@ -809,7 +821,9 @@ my %DiskVendor = (
     "TRO-SSD7"  => "Eluktro",
     "TS"        => "Transcend",
     "USDU1"     => "Transcend",
+    "V-GEN"     => "V-GeN",
     "VB0"       => "HP",
+    "Vi550"     => "Verbatim",
     "VK0"       => "HP",
     "WD"        => "WDC",
     "WDC WD10"  => "WDC",
@@ -863,7 +877,8 @@ my %FirmwareVendor = (
     "MZ4O"     => "Toshiba",
     "S0222A0"  => "Patriot",
     "SFDM104B" => "Apacer",
-    "SFPS881A" => "China"
+    "SFPS881A" => "China",
+    "S0918A0"  => "China"
 );
 
 my %MicroCode = (
@@ -1729,7 +1744,7 @@ my %TypeOrder = (
     "graphics card"=>"A"
 );
 
-my $ALL_DRIVE_VENDORS = "ADATA|A\-DATA|Advantech|AEGO|AMD|Anobit|Apacer|Apple|ASUS|BHT|BIWIN|Chiprex|CLOVER|Colorful|Corsair|Crucial|Dell|DOGFISH|DREVO|Emtec|Espada|ExcelStor Technology|e2e4|faspeed|FASTDISK|Fordisk|FORESEE|Foxline|FUJITSU|Geil|GelL|GIGABYTE|Gigastone|GLOWAY|Goldendisk|Goldenfir|Goldkey|GOODRAM|Gost|HECTRON|HGST|Hitachi|Hoodisk|HP|HYPERDISK|i-FlashDisk|IBM-Hitachi|IBM|Indilinx|INTEL|INTENSO|Kingchuxing|KingDian|KingFast|KINGMAX|KingPower|KINGRICH|KINGSHARE|KingSpec|Kingston|KLEVV|LDLC|LDNDISK|Lenovo|LEXAR|Lite-On|LITEON|LITEONIT|LONDISK|Magnetic Data|MARSHAL|MARVELL|Maxtor|MediaMax|MicroData|Micron|Mushkin|Myung|Netac|OCZ|OEM|OWC|oyunkey|PALIT|Patriot|PHISON|Platinet|PLEXTOR|PNY|PRETEC|QUANTUM|QUMO|Radeon|Ramaxel|Reeinno|RunCore|Samsung Electronics|SAMSUNG|SandForce|SanDisk|SATADOM|Seagate|SenDisk|Shinedisk|SILICONMOTION|Silicon Motion|SK hynix|Smartbuy|SMI|SPCC|SuperMicro|TAISU|TEAM|Teclast|TCSUNBOW|TEKET|TopSunligt|TOSHIBA|Transcend|Vaseky|Verbatim|VBOX|WDC|Western Digital|Wolf Aure|XPG|XUNZHE|Zheino|ZOTAC";
+my $ALL_DRIVE_VENDORS = "ADATA|A\-DATA|addlink|Advantech|AEGO|AMD|Anobit|Apacer|Apple|ASUS|Avant|BHT|BIOSTAR|BIWIN|Chiprex|CLOVER|Colorful|Corsair|Crucial|Dell|DOGFISH|DREVO|Emtec|Espada|ExcelStor Technology|e2e4|faspeed|FASTDISK|Fordisk|FORESEE|Foxline|FUJITSU|GALAX|Geil|GelL|GIGABYTE|Gigastone|GLOWAY|Goldendisk|Goldenfir|Goldkey|GOODRAM|Gost|Hajaan|HECTRON|HGST|Hitachi|Hoodisk|HP|HYPERDISK|i-FlashDisk|IBM-Hitachi|IBM|Indilinx|INDMEM|innodisk|INTEL|INTENSO|Kingchuxing|KingDian|KingFast|KINGMAX|KingPower|KINGRICH|KINGSHARE|KingSpec|Kingston|KLEVV|LDLC|LDNDISK|Lenovo|LEXAR|Lite-On|LITEON|LITEONIT|LONDISK|Magnetic Data|MARSHAL|MARVELL|Maximus|Maxtor|MediaMax|MicroData|Micron|Mushkin|Myung|Netac|OCZ|OEM|ORTIAL|OWC|oyunkey|PALIT|Patriot|PHINOCOM|PHISON|Platinet|PLEXTOR|PNY|PRETEC|QUANTUM|QUMO|Radeon|Ramaxel|Ramsta|Reeinno|RunCore|Samsung Electronics|SAMSUNG|SandForce|SanDisk|SATADOM|Seagate|SenDisk|Shinedisk|SILICONMOTION|Silicon Motion|SK hynix|Smartbuy|SMI|Solidata|SPCC|SuperMicro|SuperTalent|T\-FORCE|TAISU|TAMMUZ|TEAM|Teclast|TEUTONS|TCSUNBOW|TEKET|tigo|TopSunligt|TOSHIBA|Transcend|Vaseky|Verbatim|VBOX|WDC|Western Digital|Wolf Aure|XPG|XUNZHE|Zheino|ZOTAC";
 
 my $ALL_CDROM_VENDORS = "AOPEN|ASUS|ASUSTek Computer|ATAPI|BENQ|CDEmu|COMBO|Compaq|Hewlett-Packard|Hitachi|HL-DT-ST|HP|JLMS|LG|Lite-On|LITEON|MAD DOG|MATSHITA|Memorex|MITSUMI|NEC Computers|Optiarc|PBDS|PHILIPS|PIONEER|PLDS|PLEXTOR|QSI|Samsung Electronics|Slimtype|Sony|TEAC|Toshiba|TSSTcorp|ZTE";
 
@@ -12220,7 +12235,7 @@ sub emptyProduct($)
 {
     my $Val = $_[0];
     
-    if(not $Val or $Val=~/\b(System manufacturer|System Manufacter|stem manufacturer|Name|Version|to be filled|empty|Not Specified|Default[ _]string|board version|Unknow|n\/a|Not)\b/i or $Val=~/\A([_0O\-\.\s]+|[X]+|NA|N\/A|\-O|1234567890|0123456789)\Z/i or emptyVal($Val)) {
+    if(not $Val or $Val=~/\b(System manufacturer|Board Vendor|System Manufacter|stem manufacturer|Name|Version|to be filled|empty|Not Specified|Default[ _]string|board version|Unknow|n\/a|Not)\b/i or $Val=~/\A([_0O\-\.\s]+|[X]+|NA|N\/A|\-O|1234567890|0123456789)\Z/i or emptyVal($Val)) {
         return 1;
     }
     
@@ -12258,7 +12273,7 @@ sub fixFFByCPU($)
     my $CPU = $_[0];
     if($Sys{"Type"}!~/$DESKTOP_TYPE|$SERVER_TYPE/)
     {
-        if($CPU=~/Celeron CPU E\d+|Pentium (CPU G\d+|D CPU|Dual-Core CPU E\d+) |Core 2 CPU \d+ |Core 2 Duo CPU E\d+|Core 2 Quad CPU Q\d+|Core i\d CPU \d+ |Core i\d-\d+ CPU|CPU Q(9400|8200)|Athlon 64 X2 Dual Core Processor \d+|Athlon X4 \d+|Athlon 64 Processor \d+\+|Phenom II X[24] B?\d+|FX-\d+ Six-Core|A10\-\d+K|Xeon CPU (\d+|[EXW]\d{4}|(E5|D)-\d{4}) |Core i7-\d+ CPU|FX-\d+ Eight-Core|Atom CPU C3508|Ryzen 5 1600/ and $CPU!~/Mobile/) {
+        if($CPU=~/Celeron CPU E\d+|Pentium (CPU G\d+|D CPU|Dual-Core CPU E\d+) |Core 2 CPU \d+ |Core 2 Duo CPU E\d+|Core 2 Quad CPU Q\d+|Core i\d CPU \d+ |Core i\d-\d+ CPU|CPU Q(9400|8200)|Athlon 64 X2 Dual Core Processor \d+|Athlon X4 \d+|Athlon 64 Processor \d+\+|Phenom II X[24] B?\d+|FX-\d+ Six-Core|A10\-\d+K|Xeon CPU (\d+|[EXW]\d{4}|(E5|D)-\d{4}) |Core i7-\d+ CPU|FX-\d+ Eight-Core|Atom CPU C3508|Ryzen 5 1600|PPC970FX/ and $CPU!~/Mobile/) {
             $Sys{"Type"} = "desktop";
         }
     }
@@ -12301,7 +12316,7 @@ sub fixFFByBoard($)
     my $Board = $_[0];
     if($Sys{"Type"}!~/$DESKTOP_TYPE|$SERVER_TYPE/)
     {
-        if($Board=~/\b(D510MO|GA-K8NMF-9|DG965RY|DG33BU|D946GZIS|N3150ND3V|D865GSA|DP55WG|H61MXT1|D875PBZ|F2A55|Z68XP-UD3|Z77A-GD65|M4A79T|775Dual-880Pro|P4Dual-915GL|P4i65GV|D5400XS|D201GLY|MicroServer|IPPSB-DB|MS-AA53|C2016-BSWI-D2|N3160TN|D915PBL|EIRD-SAM|D865PERL|D410PT|D525MW|D945GCNL|BSWI-D2|B202|D865GBF|G1-CPU-IMP|Aptio CRB|A1SRi|D865GVHZ|IC17X|N3050ND3H|Bettong CRB|E3C246D2I)\b/) {
+        if($Board=~/\b(D510MO|GA-K8NMF-9|DG965RY|DG33BU|D946GZIS|N3150ND3V|D865GSA|DP55WG|H61MXT1|D875PBZ|F2A55|Z68XP-UD3|Z77A-GD65|M4A79T|775Dual-880Pro|P4Dual-915GL|P4i65GV|D5400XS|D201GLY|MicroServer|IPPSB-DB|MS-AA53|C2016-BSWI-D2|N3160TN|D915PBL|EIRD-SAM|D865PERL|D410PT|D525MW|D945GCNL|BSWI-D2|B202|D865GBF|G1-CPU-IMP|Aptio CRB|A1SRi|D865GVHZ|IC17X|N3050ND3H|Bettong CRB|E3C246D2I|Pine Trail - M CRB)\b/) {
             $Sys{"Type"} = "desktop";
         }
     }
@@ -12335,7 +12350,7 @@ sub fixFFByModel($$)
     if($Sys{"Type"}!~/$MOBILE_TYPE/)
     { # can't distinguish all-in-ones vs notebooks (very similar hardware: same cdroms, mobile graphics cards, etc.)
       # so need to check by exact model name
-        if($M=~/(Aspire (7720|5670|\d+Z)|EasyNote|Extensa \d+|MacBook|RoverBook|Pine Trail - M CRB|A410-K\.BE47P1|0PJTXT|R490-KR6WK)/
+        if($M=~/(Aspire (7720|5670|\d+Z)|EasyNote|Extensa \d+|MacBook|RoverBook|A410-K\.BE47P1|0PJTXT|R490-KR6WK)/
         or ($V=~/Samsung/i and $M=~/R50\/R51/)
         or ($V=~/Clevo/i and $M=~/M740TU|D40EV|M720R/)
         or ($V=~/Toshiba/i and $M=~/Satellite/)
@@ -12400,7 +12415,7 @@ sub fixFFByModel($$)
     
     if($Sys{"Type"} ne "all in one")
     {
-        if($M=~/( AiO PC)/
+        if($M=~/( AiO PC|AFLMB-9652)/
         or $M=~/\A(MS-6657|EZ1601)\Z/
         or $V eq "AIO"
         or ($V=~/Apple/i and $M=~/\AiMac/)
@@ -12439,6 +12454,13 @@ sub fixFFByMonitor($)
     {
         if($Mon=~/LGD02E9|SEC3445|LPLA500|CMO1680|LGD018B|APP9C20/) {
             $Sys{"Type"} = "notebook";
+        }
+    }
+    
+    if($Sys{"Type"}!~/$DESKTOP_TYPE/)
+    {
+        if($Mon=~/VA1913w-2/) {
+            $Sys{"Type"} = "desktop";
         }
     }
 }
@@ -13724,7 +13746,7 @@ sub probeDistr()
         if($OS_Rel=~/\bPRETTY_NAME=\s*[\"\']*([^"'\n]+)/)
         {
             my $PrettyName = $1;
-            if($PrettyName=~/(OpenVZ|Docker Desktop|Pop\!_OS)/) {
+            if($PrettyName=~/(OpenVZ|Docker Desktop|Pop\!_OS|Devuan)/) {
                 $Name = $1;
             }
         }
