@@ -5024,12 +5024,21 @@ sub probeHW()
         listProbe("logs", "dmesg");
         
         my $DmesgBoot = "/var/run/dmesg.boot";
-        
         if(isBSD() and -e $DmesgBoot) {
             $Dmesg = readFile($DmesgBoot);
         }
         else {
             $Dmesg = runCmd("dmesg 2>&1");
+        }
+        
+        my $Messages = "/var/log/messages";
+        if(not isBSD() and -e $Messages)
+        {
+            if(index($Dmesg, "] Command line:") == -1)
+            {
+                $Dmesg = runCmd("cat $Messages | grep ' kernel: \\['");
+                $Dmesg=~s/.*?\s+kernel: \[/[/g;
+            }
         }
         
         $Dmesg = hideDmesg($Dmesg);
