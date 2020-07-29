@@ -416,6 +416,7 @@ To uninstall:
 * hdparm
 * systemd-tools (systemd-analyze)
 * acpica-tools
+* drm_info
 * mesa-demos
 * memtester
 * sysstat (iostat)

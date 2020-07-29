@@ -43,6 +43,7 @@
 #  hdparm
 #  systemd-tools (systemd-analyze)
 #  acpica-tools
+#  drm_info
 #  mesa-demos
 #  vulkan-utils
 #  memtester
@@ -1662,6 +1663,7 @@ my @ProtectedLogs = (
     "dev",
     "dmidecode",
     "dmi_id",
+    "drm_info",
     "edid",
     "ethtool_p",
     "fdisk",
@@ -5020,7 +5022,15 @@ sub probeHW()
     elsif(checkCmd("dmesg"))
     {
         listProbe("logs", "dmesg");
-        $Dmesg = runCmd("dmesg 2>&1");
+        
+        my $DmesgBoot = "/var/run/dmesg.boot";
+        
+        if(isBSD() and -e $DmesgBoot) {
+            $Dmesg = readFile($DmesgBoot);
+        }
+        else {
+            $Dmesg = runCmd("dmesg 2>&1");
+        }
         
         $Dmesg = hideDmesg($Dmesg);
         
@@ -14957,6 +14967,14 @@ sub writeLogs()
         }
     }
     
+    if(enabledLog("drm_info")
+    and checkCmd("drm_info"))
+    {
+        listProbe("logs", "drm_info");
+        my $DrmInfo = runCmd("drm_info 2>/dev/null");
+        writeLog($LOG_DIR."/drm_info", $DrmInfo);
+    }
+    
     # level=maximal
     
     if(enabledLog("firmware")
@@ -15932,6 +15950,7 @@ my %EnabledLog = (
         "cpupower",
         "dkms_status",
         "dpkg",
+        "drm_info",
         "efibootmgr",
         "efivar",
         "fdisk",
@@ -16053,6 +16072,7 @@ my %EnabledLog_BSD = (
         "cpuid",
         "diskinfo",
         "disklabel",
+        "drm_info",
         "efibootmgr",
         "efivar",
         "iostat",
