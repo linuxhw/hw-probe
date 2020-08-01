@@ -13275,6 +13275,11 @@ sub fixDistr($$$)
                 $Distr = "ghostbsd";
                 $DistrVersion = $1;
             }
+            elsif($Pkgs=~/GhostBSD_PKG os\/kernel (\d[\.\d]+)/i)
+            {
+                $Distr = "ghostbsd";
+                $DistrVersion = $1;
+            }
             elsif($Pkgs=~/\/opnsense (\d[\.\d]+)/i)
             {
                 $Distr = "opnsense";
@@ -15924,6 +15929,8 @@ my %EnabledLog = (
         "ip_addr",
         "lsb_release",
         "lsb-release",
+        "lsblk",
+        "lscpu",
         "lsmod",
         "lspci",
         "lspci_all",
@@ -15975,8 +15982,6 @@ my %EnabledLog = (
         "iostat",
         "iw_list",
         "iwconfig",
-        "lsblk",
-        "lscpu",
         "lspnp",
         "modprobe.d",
         "nm-tool",
@@ -17491,8 +17496,15 @@ sub scenario()
         $Opt{"LogLevel"} = lc($Opt{"LogLevel"});
         $Opt{"Logs"} = 1;
     }
-    else {
+    else
+    {
         $Opt{"LogLevel"} = "default";
+        
+        if(not $Opt{"All"} and not $Opt{"Logs"} and not $Opt{"FixProbe"})
+        {
+            $Opt{"Logs"} = 1;
+            $Opt{"LogLevel"} = "minimal";
+        }
     }
     
     if(isBSD($^O))
