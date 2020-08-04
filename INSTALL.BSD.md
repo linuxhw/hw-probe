@@ -28,7 +28,24 @@ Install on FreeBSD
 
 On FreeBSD and derivatives (GhostBSD, NomadBSD, FuryBSD, TrueOS, PC-BSD, HardenedBSD, FreeNAS, pfSense, OPNsense, XigmaNAS, DesktopBSD, etc.).
 
-Get the tool:
+###### Latest systems
+
+For FreeBSD 11.x, 12.x and newer and derivatives install this port: https://www.freshports.org/sysutils/hw-probe/
+
+    pkg install hw-probe
+
+or manually:
+
+    cd /usr/ports/sysutils/hw-probe
+    make install
+
+Probe your computer:
+
+    hw-probe -all -upload
+
+###### From upstream
+
+Get latest version of the tool:
 
     fetch http://bsd-hardware.info/hw-probe
 
@@ -44,18 +61,9 @@ Probe your computer:
 
     perl hw-probe -all -upload
 
-###### Latest systems
-
-For FreeBSD 11, 12 and newer and derivatives install this port: https://www.freshports.org/sysutils/hw-probe/
-
-    cd /usr/ports/sysutils/hw-probe
-    make install
-
-Probe your computer:
-
-    hw-probe -all -upload
-
 ###### Old systems
+
+Get the tool from upstream (see above) and install deps in the following way:
 
 For old FreeBSD releases < 9.3:
 
@@ -70,6 +78,10 @@ For older FreeBSD releases < 7.0:
     pkg_add -r p5-Digest-SHA
 
 Oldest supported FreeBSD version is currently 6.4.
+
+Probe your computer:
+
+    perl hw-probe -all -upload
 
 ###### Graphical desktops
 
@@ -131,7 +143,19 @@ Probe your computer:
 Install on DragonFly
 --------------------
 
-Get the tool:
+###### Latest systems
+
+For latest system versions install this dport: https://github.com/DragonFlyBSD/DPorts/tree/master/sysutils/hw-probe
+
+    pkg install hw-probe
+
+Probe your computer:
+
+    hw-probe -all -upload
+
+###### From upstream
+
+Get latest version of the tool:
 
     fetch http://bsd-hardware.info/hw-probe
 
@@ -151,7 +175,19 @@ Probe your computer:
 Install on MidnightBSD
 ----------------------
 
-Get the tool:
+###### Latest systems
+
+For latest system versions install this mport: https://github.com/MidnightBSD/mports/tree/master/sysutils/hw-probe
+
+    mport install hw-probe
+
+Probe your computer:
+
+    hw-probe -all -upload
+
+###### From upstream
+
+Get latest version of the tool:
 
     fetch http://bsd-hardware.info/hw-probe
 
