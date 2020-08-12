@@ -468,6 +468,7 @@ my %DevAttachedRecursive_R;
 
 my %DevAttached;
 my %DevAttached_R;
+my %DrmAttached;
 
 my $SnapNoBlockDevices = 0;
 
@@ -5070,6 +5071,39 @@ sub probeHW()
             }
         }
         
+        if(not isOpenBSD() and not isNetBSD())
+        {
+            my @DrmMap = ($Dmesg=~/(\w+\d+: .+ on vgapci\d+)/g);
+            foreach my $Dr (@DrmMap)
+            {
+                if($Dr=~/\A(\w+\d+): .+ on (vgapci\d+)\Z/)
+                {
+                    $DrmAttached{$2}{$1} = 1;
+                }
+            }
+            
+            my @DrmMap2 = ($Dmesg=~/(Initialized .+ for drmn\d+)/g);
+            foreach my $Dr (@DrmMap2)
+            {
+                if($Dr=~/\AInitialized (\w+) .+ for (drmn\d+)\Z/)
+                {
+                    $DrmAttached{$2}{$1} = 1;
+                }
+            }
+            
+            my @DrmMap3 = ($Dmesg=~/(drmn\d+: .+)/g);
+            foreach my $Dr (@DrmMap3)
+            {
+                if($Dr=~/\A(drmn\d+): (.+)\Z/)
+                {
+                    my ($DrmFile, $DrmDesc) = ($1, $2);
+                    if($DrmDesc=~/amdgpu/) {
+                        $DrmAttached{$DrmFile}{"amdgpu"} = 1;
+                    }
+                }
+            }
+        }
+        
         my @DriversMap = ($Dmesg=~/(\w+\d+ at \w+\d+)/g);
         foreach my $Dr (@DriversMap)
         {
@@ -5846,6 +5880,46 @@ sub probeHW()
             $Device{"Driver"}=~s/\d+\Z//;
             if($Device{"Driver"} eq "none") {
                 $Device{"Driver"} = undef;
+            }
+            if($Device{"File"}=~/vgapci/
+            and defined $DrmAttached{$Device{"File"}})
+            {
+                my %VgaDr = ();
+                $VgaDr{$Device{"Driver"}} = 1;
+                foreach my $DrmFile (sort keys(%{$DrmAttached{$Device{"File"}}}))
+                {
+                    if($DrmFile=~/drm/)
+                    {
+                        foreach my $DrmDrv (sort keys(%{$DrmAttached{$DrmFile}}))
+                        {
+                            $VgaDr{$DrmDrv} = 1;
+                        }
+                    }
+                    else
+                    {
+                        $DrmFile=~s/\d+\Z//;
+                        $VgaDr{$DrmFile} = 1;
+                    }
+                }
+                
+                if(defined $VgaDr{"i915"}) {
+                    $Device{"Driver"} = "i915";
+                }
+                elsif(defined $VgaDr{"radeon"}) {
+                    $Device{"Driver"} = "radeon";
+                }
+                elsif(defined $VgaDr{"amdgpu"}) {
+                    $Device{"Driver"} = "amdgpu";
+                }
+                elsif(defined $VgaDr{"nvidia"}) {
+                    $Device{"Driver"} = "nvidia";
+                }
+                elsif(defined $VgaDr{"agp"}) {
+                    $Device{"Driver"} = "agp";
+                }
+                else {
+                    $Device{"Driver"} = join(", ", keys(%VgaDr));
+                }
             }
         }
         
@@ -13710,10 +13784,10 @@ sub probeDistr()
         elsif($Name eq "Pop") {
             return ("pop!_os", $Release, "");
         }
-        elsif($Name eq "neon") {
+        elsif(lc($Name) eq "neon") {
             return ("kde-neon", $Release, "");
         }
-        elsif($Descr=~/\A(Maui|KDE neon|RED OS|Pop\!_OS)/i) {
+        elsif($Descr=~/\A(Maui|KDE neon|RED OS|Pop\!_OS|LMDE)/i) {
             $Name = $1;
         }
         elsif($Descr=~/\A(antiX)-(\d+)/i)
@@ -13749,6 +13823,10 @@ sub probeDistr()
         if($Descr=~/Easy Buster/) {
             $Name = "EasyOS";
         }
+        
+        if($Descr=~/(LMDE|CryptoDATA)/) {
+            $Name = $1;
+        }
     }
     
     if((not $Name or not $Release) and $OS_Rel)
@@ -13770,7 +13848,7 @@ sub probeDistr()
         if($OS_Rel=~/\bPRETTY_NAME=\s*[\"\']*([^"'\n]+)/)
         {
             my $PrettyName = $1;
-            if($PrettyName=~/(OpenVZ|Docker Desktop|Pop\!_OS|Devuan)/) {
+            if($PrettyName=~/(OpenVZ|Docker Desktop|Pop\!_OS|Devuan|LMDE|CryptoDATA)/) {
                 $Name = $1;
             }
         }
