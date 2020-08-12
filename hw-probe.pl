@@ -12757,6 +12757,12 @@ sub probeHWaddr()
             $IFConfig=~s/(inet6 |inet |netmask |broadcast )[^\s]+/$1\XXX/g;
             $IFConfig=~s/(ssid )(.+?)( channel)/$1...$3/g;
             
+            if(isBSD())
+            {
+                $IFConfig=~s/(nwid|join|authname|wgpubkey|wgpeer) .+/$1 .../g;
+                $IFConfig=~s/(groups|description|groups): .+/$1: .../g;
+            }
+            
             if($Opt{"HWLogs"}) {
                 writeLog($LOG_DIR."/ifconfig", $IFConfig);
             }
