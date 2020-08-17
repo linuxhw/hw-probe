@@ -913,11 +913,12 @@ my %MicroArchFamily = (
         "Jaguar" => { "22" => ["0"] },
         "Puma" => { "22" => ["48"] },
         "Zen" => { "23" => ["1", "17"] },
-        "Zen 2" => { "23" => ["49", "113"] },
+        "Zen 2" => { "23" => ["49", "96", "113"] },
         "Zen+" => { "23" => ["8", "24"] }
     },
     "Intel" => { # GenuineIntel
-        "CometLake" => { "6" => ["166"] },
+        "IceLake" => { "6" => ["126"] },
+        "CometLake" => { "6" => ["165", "166"] },
         "KabyLake" => { "6" => ["142", "158"] },
         "Goldmont plus" => { "6" => ["122"] },
         "CannonLake" => { "6" => ["102"] },
@@ -5881,45 +5882,9 @@ sub probeHW()
             if($Device{"Driver"} eq "none") {
                 $Device{"Driver"} = undef;
             }
-            if($Device{"File"}=~/vgapci/
-            and defined $DrmAttached{$Device{"File"}})
-            {
-                my %VgaDr = ();
-                $VgaDr{$Device{"Driver"}} = 1;
-                foreach my $DrmFile (sort keys(%{$DrmAttached{$Device{"File"}}}))
-                {
-                    if($DrmFile=~/drm/)
-                    {
-                        foreach my $DrmDrv (sort keys(%{$DrmAttached{$DrmFile}}))
-                        {
-                            $VgaDr{$DrmDrv} = 1;
-                        }
-                    }
-                    else
-                    {
-                        $DrmFile=~s/\d+\Z//;
-                        $VgaDr{$DrmFile} = 1;
-                    }
-                }
-                
-                if(defined $VgaDr{"i915"}) {
-                    $Device{"Driver"} = "i915";
-                }
-                elsif(defined $VgaDr{"radeon"}) {
-                    $Device{"Driver"} = "radeon";
-                }
-                elsif(defined $VgaDr{"amdgpu"}) {
-                    $Device{"Driver"} = "amdgpu";
-                }
-                elsif(defined $VgaDr{"nvidia"}) {
-                    $Device{"Driver"} = "nvidia";
-                }
-                elsif(defined $VgaDr{"agp"}) {
-                    $Device{"Driver"} = "agp";
-                }
-                else {
-                    $Device{"Driver"} = join(", ", keys(%VgaDr));
-                }
+            
+            if($Device{"File"}=~/vgapci/) {
+                $Device{"Driver"} = identifyVideoDriver_BSD($Device{"Driver"}, $Device{"File"});
             }
         }
         
@@ -9154,19 +9119,22 @@ sub probeHW()
         if(isBSD())
         {
             if($XLog=~/ modeset\(.+Intel/ or $XLog=~/ intel\(0\): /) {
-                setCardStatusByVendor("8086", "works");
+                setCardStatusByVendor("8086", "works", "i915");
             }
-            elsif($XLog=~/ NVIDIA\(0\): / or $XLog=~/ NV\(0\): /) {
-                setCardStatusByVendor("10de", "works");
+            elsif($XLog=~/ NVIDIA\(0\): /) {
+                setCardStatusByVendor("10de", "works", "nvidia");
+            }
+            elsif($XLog=~/ NV\(0\): /) {
+                setCardStatusByVendor("10de", "works", "nv");
             }
             elsif($XLog=~/ RADEON\(0\): Chipset:/) {
-                setCardStatusByVendor("1002", "works");
+                setCardStatusByVendor("1002", "works", "radeon");
             }
             elsif($XLog=~/ modeset\(0\): Output/
             and keys(%GraphicsCards_InUse)==1)
             {
                 if((keys(%GraphicsCards_InUse))[0]=~/pci:([a-f\d]{4})/) {
-                    setCardStatusByVendor($1, "works");
+                    setCardStatusByVendor($1, "works", undef);
                 }
             }
         }
@@ -10296,6 +10264,56 @@ sub probeHW()
     # TODO: add new fixes here
     
     print "Ok\n";
+}
+
+sub identifyVideoDriver_BSD($$)
+{
+    my ($Driver, $File) = @_;
+    
+    if($File!~/vgapci/
+    or not defined $DrmAttached{$File})
+    {
+        return $Driver;
+    }
+    
+    my %VgaDr = ();
+    $VgaDr{$Driver} = 1;
+    foreach my $DrmFile (sort keys(%{$DrmAttached{$File}}))
+    {
+        if($DrmFile=~/drm/)
+        {
+            foreach my $DrmDrv (sort keys(%{$DrmAttached{$DrmFile}}))
+            {
+                $VgaDr{$DrmDrv} = 1;
+            }
+        }
+        else
+        {
+            $DrmFile=~s/\d+\Z//;
+            $VgaDr{$DrmFile} = 1;
+        }
+    }
+    
+    if(defined $VgaDr{"i915"}) {
+        $Driver = "i915";
+    }
+    elsif(defined $VgaDr{"radeon"}) {
+        $Driver = "radeon";
+    }
+    elsif(defined $VgaDr{"amdgpu"}) {
+        $Driver = "amdgpu";
+    }
+    elsif(defined $VgaDr{"nvidia"}) {
+        $Driver = "nvidia";
+    }
+    elsif(defined $VgaDr{"agp"}) {
+        $Driver = "agp";
+    }
+    else {
+        $Driver = join(", ", keys(%VgaDr));
+    }
+    
+    return $Driver;
 }
 
 sub getSysUUID(@) {
@@ -13793,7 +13811,7 @@ sub probeDistr()
         elsif(lc($Name) eq "neon") {
             return ("kde-neon", $Release, "");
         }
-        elsif($Descr=~/\A(Maui|KDE neon|RED OS|Pop\!_OS|LMDE)/i) {
+        elsif($Descr=~/\A(Maui|KDE neon|RED OS|Pop\!_OS|LMDE|Devuan)/i) {
             $Name = $1;
         }
         elsif($Descr=~/\A(antiX)-(\d+)/i)
@@ -15861,9 +15879,9 @@ sub setCardStatus($$)
     }
 }
 
-sub setCardStatusByVendor($$)
+sub setCardStatusByVendor($$$)
 {
-    my ($V, $Status) = @_;
+    my ($V, $Status, $Driver) = @_;
     
     if(defined $GraphicsCards{$V})
     {
@@ -15873,6 +15891,10 @@ sub setCardStatusByVendor($$)
             
             if($Status eq "works") {
                 setAttachedStatus($ID, $Status);
+            }
+            
+            if($Driver and $HW{$ID}{"Driver"}=~/vgapci/) {
+                $HW{$ID}{"Driver"} = $Driver;
             }
         }
     }
