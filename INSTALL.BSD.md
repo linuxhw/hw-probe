@@ -95,6 +95,22 @@ Install on OpenBSD
 
 On OpenBSD and derivatives (AdJ, FuguIta, etc.).
 
+###### Latest systems
+
+For OpenBSD 6.8 and newer and derivatives install this port: https://openports.se/sysutils/hw-probe
+
+    pkg_add hw-probe
+
+or manually add path to latest repository:
+
+    PKG_PATH=https://ftp.eu.openbsd.org/pub/OpenBSD/snapshots/packages/amd64/ pkg_add hw-probe
+
+Probe your computer:
+
+    hw-probe -all -upload
+
+###### From upstream
+
 Get the tool:
 
     ftp http://bsd-hardware.info/hw-probe
@@ -177,7 +193,7 @@ Install on MidnightBSD
 
 ###### Latest systems
 
-For latest system versions install this mport: https://github.com/MidnightBSD/mports/tree/master/sysutils/hw-probe
+For MidnightBSD 1.2.7 and newer install this mport: https://www.midnightbsd.org/mports/sysutils/hw-probe/
 
     mport install hw-probe
 
