@@ -161,7 +161,7 @@ Install on DragonFly
 
 ###### Latest systems
 
-For latest system versions install this dport: https://github.com/DragonFlyBSD/DPorts/tree/master/sysutils/hw-probe
+For DragonFlyBSD 5.8 and newer install this dport: https://github.com/DragonFlyBSD/DPorts/tree/master/sysutils/hw-probe
 
     pkg install hw-probe
 
