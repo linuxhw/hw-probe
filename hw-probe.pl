@@ -217,9 +217,14 @@ GetOptions("h|help!" => \$Opt{"Help"},
 
 if($#ARGV_COPY==-1)
 { # Run from STDIN
-    print "Executing hw-probe -all -upload\n\n";
-    $Opt{"All"} = 1;
-    $Opt{"Upload"} = 1;
+    if (-t STDIN) {
+        print "Executing hw-probe -help\n\n";
+        $Opt{"Help"} = 1;
+    } else {
+        print "Executing hw-probe -all -upload\n\n";
+        $Opt{"All"} = 1;
+        $Opt{"Upload"} = 1;
+    }
 }
 elsif($#ARGV_COPY==0 and grep { $ARGV_COPY[0] eq $_ } ("-snap", "-flatpak"))
 { # Run by desktop file
