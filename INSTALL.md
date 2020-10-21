@@ -18,10 +18,10 @@ Contents
 * [ Install on Ubuntu       ](#install-on-ubuntu)
 * [ Install on Debian       ](#install-on-debian)
 * [ Install on BSD          ](#install-on-bsd)
-* [ Install on openSUSE     ](#install-on-opensuse)
 * [ Install on Manjaro      ](#install-on-manjaro)
 * [ Install on Arch Linux   ](#install-on-arch-linux)
 * [ Install on Fedora       ](#install-on-fedora)
+* [ Install on openSUSE     ](#install-on-opensuse)
 * [ Install on CentOS 8     ](#install-on-centos-8)
 * [ Install on CentOS 7     ](#install-on-centos-7)
 * [ Install on CentOS 6     ](#install-on-centos-6)
@@ -132,22 +132,6 @@ On FreeBSD and derivatives (GhostBSD, NomadBSD, FuryBSD, TrueOS, PC-BSD, Hardene
 See [INSTALL.BSD.md](INSTALL.BSD.md).
 
 
-Install on openSUSE
--------------------
-
-Select and install an RPM package for your openSUSE distribution: https://software.opensuse.org/package/hw-probe
-
-openSUSE Leap 15.1:
-
-    sudo zypper addrepo https://download.opensuse.org/repositories/hardware/openSUSE_Leap_15.1/ hardware
-    sudo zypper install hw-probe
-
-openSUSE Tumbleweed:
-
-    sudo zypper addrepo https://download.opensuse.org/repositories/hardware/openSUSE_Tumbleweed/ hardware
-    sudo zypper install hw-probe
-
-
 Install on Manjaro
 ------------------
 
@@ -189,6 +173,22 @@ Install on Fedora
 For Fedora 28 and later:
 
     sudo dnf install hw-probe
+
+
+Install on openSUSE
+-------------------
+
+Select and install an RPM package for your openSUSE distribution: https://software.opensuse.org/package/hw-probe
+
+openSUSE Leap 15.1:
+
+    sudo zypper addrepo https://download.opensuse.org/repositories/hardware/openSUSE_Leap_15.1/ hardware
+    sudo zypper install hw-probe
+
+openSUSE Tumbleweed:
+
+    sudo zypper addrepo https://download.opensuse.org/repositories/hardware/openSUSE_Tumbleweed/ hardware
+    sudo zypper install hw-probe
 
 
 Install on CentOS 8

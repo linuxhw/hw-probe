@@ -4,7 +4,7 @@
 # A tool to probe for hardware, check operability and find drivers
 #
 # WWW (Linux): https://linux-hardware.org
-# WWW (BSD): https://bsd-hardware.info
+# WWW (BSD):   https://bsd-hardware.info
 #
 # Copyright (C) 2014-2020 Andrey Ponomarenko's Linux Hardware Project
 #
@@ -217,10 +217,12 @@ GetOptions("h|help!" => \$Opt{"Help"},
 
 if($#ARGV_COPY==-1)
 { # Run from STDIN
-    if (-t STDIN) {
-        print "Executing hw-probe -help\n\n";
-        $Opt{"Help"} = 1;
-    } else {
+    if (-t STDIN)
+    {
+        $Opt{"ShowVersion"} = 1;
+    }
+    else
+    {
         print "Executing hw-probe -all -upload\n\n";
         $Opt{"All"} = 1;
         $Opt{"Upload"} = 1;
@@ -738,6 +740,7 @@ my %DiskVendor = (
     "GB1000EA"  => "HP",
     "GJ0"       => "HP",
     "Gen2A400"  => "Anobit",
+    "GH-SSD"    => "Green House",
     "GKH84"     => "Goldkey",
     "GOODRAM"   => "GOODRAM",
     "HBS3A"     => "WDC",
@@ -765,6 +768,7 @@ my %DiskVendor = (
     "MB00"      => "HPE",
     "MB1000"    => "HP",
     "MB2000"    => "HP",
+    "MB4000"    => "HPE",
     "MBG4"      => "Samsung",
     "MD0"       => "Magnetic Data",
     "MD"        => "MicroData",
@@ -780,6 +784,7 @@ my %DiskVendor = (
     "MZM"       => "Samsung",
     "MZ7"       => "Samsung",
     "Neptune"   => "OWC",
+    "NFS"       => "Neo Forza",
     "OCZ"       => "OCZ",
     "OOS500G"   => "Seagate",
     "OOS1000G"  => "Seagate",
@@ -803,7 +808,7 @@ my %DiskVendor = (
     "SC2 M2"    => "MyDigitalSSD",
     "SB M2"     => "MyDigitalSSD",
     "SB2"       => "MyDigitalSSD",
-    "SDM"       => "BLueRay",
+    "SDM"       => "BlueRay",
     "SG9"       => "Samsung",
     "SH00"      => "China",
     "SPCC"      => "SPCC",
@@ -816,6 +821,7 @@ my %DiskVendor = (
     "SSDSA2S"   => "Intel",
     "SSDSC2"    => "Intel",
     "ST"        => "Seagate",
+    "ST_"       => "Seagate",
     "SU04G"     => "SanDisk",
     "SU08G"     => "SanDisk",
     "T480"      => "China",
@@ -983,6 +989,7 @@ my @DE_Package = (
     [ "cinnamon-session", "Cinnamon" ],
     
     [ "deepin-manjaro", "Deepin" ],
+    [ "ubuntudde-dde", "Deepin" ],
     [ "deepin-desktop-base", "Deepin" ],
     
     [ "manjaro-mate-settings", "MATE" ],
@@ -1035,7 +1042,27 @@ my @DE_Package = (
     
     [ "enlightenment", "Enlightenment" ],
     
-    [ "lxde", "LXDE" ]
+    [ "lxde", "LXDE" ],
+    
+    # BSD
+    [ "x11/lumina", "Lumina" ],
+    [ "x11/plasma5-plasma-desktop", "KDE5" ],
+    [ "x11/cde", "CDE" ],
+    
+    [ "x11-wm/openbox", "Openbox" ],
+    [ "x11-wm/awesome", "AwesomeWM" ],
+    [ "x11-wm/i3", "i3" ],
+    [ "x11-wm/i3-gaps", "i3" ],
+    [ "x11-wm/fluxbox", "Fluxbox" ],
+    [ "x11-wm/twm", "TWM" ],
+    [ "x11-wm/marco", "Marco" ],
+    [ "x11-wm/stumpwm", "StumpWM" ],
+    [ "x11-wm/windowmaker", "Window Maker" ],
+    [ "x11-wm/compton", "Compton" ],
+    [ "x11-wm/picom", "Picom" ],
+    
+    [ "dwm", "DWM" ],
+    [ "2bwm", "2bwm" ],
 );
 
 my @DisplayServer_Package = (
@@ -1722,7 +1749,10 @@ my @ProtectedLogs = (
     "usbconfig",
     "usbctl",
     "usbdevs",
-    "x86info"
+    "x86info",
+    
+    # Android
+    "getprop"
 );
 
 my @ProtectFromRm = (
@@ -1982,6 +2012,7 @@ sub hideAudit($)
 {
     my $Content = $_[0];
     $Content=~s/(acct\=)"[^"]*"/$1=XXX/g;
+    $Content=~s/(hostname\=)[^\s]+ /$1... /g;
     return $Content;
 }
 
@@ -2030,7 +2061,7 @@ sub hideHost($)
 sub hidePaths($)
 {
     my $Content = $_[0];
-    my @Paths = ("mnt", "mount", "home", "media", "data", "shares", "vhosts", "mapper", "pstorage", "storage", "snap", "shm", "dev/serno", "serno");
+    my @Paths = ("mnt", "mount", "home", "media", "data", "shares", "vhosts", "mapper", "pstorage", "storage", "snap", "shm", "dev/serno", "serno", "exports");
     if(isBSD()) {
         push(@Paths, "diskid", "ufsid");
     }
@@ -2166,7 +2197,7 @@ sub hideByRegexp(@)
     
     my @Skip = ("cdrom", "live", "livecd", "live-rw", "tmpfs", "control", "system");
     
-    foreach my $Match (@Matches)
+    foreach my $Match (sort {length($b)<=>length($a)} @Matches)
     {
         if(grep {$Match eq $_} @Skip) {
             next;
@@ -3860,6 +3891,8 @@ sub probeHW()
                     next;
                 }
                 
+                $HDD_Size=~s/\.X/\.0/;
+                
                 if($HDD_Size=~/\A([\d\.]+)([A-Z]+)\Z/)
                 {
                     my ($N, $S) = ($1, $2);
@@ -4600,6 +4633,11 @@ sub probeHW()
             }
         }
         
+        if($Device{"Type"} eq "disk"
+        and $Device{"Device"}=~/DVD|\ACD(-|RW)/) {
+            $Device{"Type"} = "cdrom";
+        }
+        
         if($Device{"Type"} eq "disk" and $Bus ne "usb")
         {
             my $FsId = $Device{"FsId"};
@@ -4941,6 +4979,10 @@ sub probeHW()
                     {
                         # TODO: detect CDROM
                     }
+                    elsif($Dr=~/\Afd\d+/)
+                    {
+                        # TODO: detect floppy
+                    }
                     else {
                         $HDD{"/dev/".$Dr} = 0;
                     }
@@ -4955,7 +4997,7 @@ sub probeHW()
                 my @Drs = split(/\s+/, $1);
                 foreach my $Dr (@Drs)
                 {
-                    if($Dr!~/\A(md|vn|cd)\d+/) {
+                    if($Dr!~/\A(md|vn|cd|fd)\d+/) {
                         $HDD{"/dev/".$Dr} = 0;
                     }
                 }
@@ -4968,7 +5010,7 @@ sub probeHW()
                 my @Drs = split(/\s+/, $1);
                 foreach my $Dr (@Drs)
                 {
-                    if($Dr!~/\Acd\d+/) {
+                    if($Dr!~/\A(cd|fd)\d+/) {
                         $HDD{"/dev/".$Dr} = 0;
                     }
                 }
@@ -5236,6 +5278,10 @@ sub probeHW()
                 if(not $CDROM_ID and $DriveInfo=~/descr:\s+(.+)/) {
                     $CDROM_ID = registerCdrom($1, $DevFile);
                 }
+            }
+            elsif($DevFile=~/\Afd\d\Z/)
+            {
+                # TODO: detect floppy
             }
             else {
                 $HDD{"/dev/".$DevFile} = 0;
@@ -8497,14 +8543,18 @@ sub probeHW()
                 }
                 
                 $Drv{"Device"} .= addCapacity($Drv{"Device"}, $Drv{"Capacity"});
+                $Drv{"Kind"} = "NVMe";
                 
-                my $DiskId = $PCI_DISK_BUS.":";
+                my $DiskId = undef;
                 if($Drv{"Vendor"}) {
-                    $DiskId .= devID(nameID($Drv{"Vendor"}), "solid-state-drive", $Drv{"Capacity"});
+                    $DiskId = devID(nameID($Drv{"Vendor"}), "solid-state-drive", $Drv{"Capacity"});
                 }
                 else {
-                    $DiskId .= devID("solid-state-drive", $Drv{"Capacity"});
+                    $DiskId = devID("solid-state-drive", $Drv{"Capacity"});
                 }
+                
+                $DiskId = $PCI_DISK_BUS.":".fmtID($DiskId);
+                
                 $HW{$DiskId} = \%Drv;
                 countDevice($DiskId, $Drv{"Type"});
             }
@@ -8765,7 +8815,7 @@ sub probeHW()
         if($Dmesg=~/Linux version (.+)/)
         {
             my $LinVer = $1;
-            foreach my $Lin ("endless", "ubuntu", "debian", "arch", "suse linux", "centos", "artix")
+            foreach my $Lin ("endless", "ubuntu", "debian", "arch", "suse linux", "centos", "artix", "nixos")
             {
                 if($LinVer=~/$Lin/i)
                 {
@@ -9295,6 +9345,7 @@ sub probeHW()
         listProbe("logs", "hciconfig");
         $HciConfig = runCmd("hciconfig -a 2>&1");
         $HciConfig = hideMACs($HciConfig);
+        $HciConfig = hideTags($HciConfig, "Name");
         if($HciConfig) {
             writeLog($LOG_DIR."/hciconfig", $HciConfig);
         }
@@ -10264,6 +10315,18 @@ sub probeHW()
         if($X86info) {
             writeLog($LOG_DIR."/x86info", $X86info);
         }
+    }
+    
+    my $Getprop = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Getprop = readFile($FixProbe_Logs."/getprop");
+    }
+    elsif(enabledLog("getprop")
+    and checkCmd("getprop"))
+    { # Android (Termux)
+        listProbe("logs", "getprop");
+        $Getprop = runCmd("getprop");
     }
     
     # TODO: add new fixes here
@@ -12176,6 +12239,13 @@ sub probeSys()
         $Sys{"Arch"}=~s/\-linux.*//;
     }
     
+    if(isBSD())
+    {
+        if($Sys{"Arch"} eq "x86_64") {
+            $Sys{"Arch"} = "amd64";
+        }
+    }
+    
     if($Opt{"PC_Name"}) {
         $Sys{"Name"} = $Opt{"PC_Name"};
     }
@@ -12716,6 +12786,10 @@ sub fixChassis()
             $Sys{"Model"} = "YOGA";
             $Sys{"System"} = "android";
         }
+        elsif($Sys{"Kernel"}=~/PhoenixOS/i)
+        {
+            $Sys{"System"} = "phoenixos";
+        }
         elsif($Sys{"Kernel"}=~/-Microsoft\Z/i)
         {
             $Sys{"Type"} = "desktop";
@@ -12733,9 +12807,9 @@ sub fixChassis()
             $Sys{"Model"} = "Nexus 7";
             $Sys{"System"} = "android";
         }
-        elsif($Sys{"Kernel"}=~/\-(LuisKERNEL|Dark-Ages)\-|\-perf\+|SM-N9500|lineageos|FKernel-v|lineage/i)
+        elsif($Sys{"Kernel"}=~/\-(LuisKERNEL|Dark-Ages)\-|\-perf\+|SM-N9500|lineageos|FKernel-v|lineage|g8ca5a01/i)
         {
-            $Sys{"Type"} = "phone";
+            $Sys{"Type"} = "smartphone";
             $Sys{"System"} = "android";
         }
     }
@@ -12987,7 +13061,7 @@ sub detectHWaddr(@)
     {
         my $Addr = undef;
         
-        if($Block=~/\Adocker/) {
+        if($Block=~/\A(docker|vboxnet|vmnet)/) {
             next;
         }
         
@@ -13363,6 +13437,14 @@ sub fixDistr($$$)
         {
             $Distr = "ubuntu";
         }
+        elsif($Sys{"Kernel"}=~/-arch1-/)
+        {
+            $Distr = "arch";
+        }
+    }
+    elsif($Sys{"Kernel"}=~/-siduction-/)
+    {
+        $Distr = "siduction";
     }
     
     if(isBSD($Distr))
@@ -13832,20 +13914,21 @@ sub probeDistr()
     
     if($LSB_Rel_F)
     {
-        if($LSB_Rel_F=~/DISTRIB_ID[:=]\s*(.*)/)
+        if($LSB_Rel_F=~/DISTRIB_ID[:=][ \t]*(.*)/)
         {
             $Name = $1;
             $Name=~s/\A"(.+)"\Z/$1/;
+            $Name=~s/\s+\Z/$1/g;
         }
         
-        if($LSB_Rel_F=~/DISTRIB_RELEASE[:=]\s*(.*)/)
+        if($LSB_Rel_F=~/DISTRIB_RELEASE[:=][ \t]*(.*)/)
         {
             $Release = lc($1);
             $Release=~s/\A"(.+)"\Z/$1/;
             $Release=~s/\A\Q$Name\E\-//gi;
         }
         
-        if($LSB_Rel_F=~/DISTRIB_DESCRIPTION[:=]\s*(.*)/) {
+        if($LSB_Rel_F=~/DISTRIB_DESCRIPTION[:=][ \t]*(.*)/) {
             $Descr = $1;
         }
         
@@ -13860,13 +13943,18 @@ sub probeDistr()
     
     if((not $Name or not $Release) and $OS_Rel)
     {
-        if($OS_Rel=~/\bID=\s*[\"\']*([^"'\n]+)/)
+        if($OS_Rel=~/\bID=[ \t]*[\"\']*([^"'\n]+)/)
+        {
+            $Name = $1;
+            $Name=~s/\s+\Z//;
+        }
+        elsif($OS_Rel=~/\bID_LIKE=[ \t]*[\"\']*([^"'\n]+)/)
         {
             $Name = $1;
             $Name=~s/\s+\Z//;
         }
         
-        if($OS_Rel=~/\bNAME=\s*[\"\']*([^"'\n]+)/)
+        if($OS_Rel=~/\bNAME=[ \t]*[\"\']*([^"'\n]+)/)
         {
             my $RealName = $1;
             if($RealName=~/(Peppermint|Pop\!_OS|KDE neon|Acronis Cyber Infrastructure)/) {
@@ -13874,21 +13962,21 @@ sub probeDistr()
             }
         }
         
-        if($OS_Rel=~/\bPRETTY_NAME=\s*[\"\']*([^"'\n]+)/)
+        if($OS_Rel=~/\bPRETTY_NAME=[ \t]*[\"\']*([^"'\n]+)/)
         {
             my $PrettyName = $1;
-            if($PrettyName=~/(OpenVZ|Docker Desktop|Pop\!_OS|Devuan|LMDE|CryptoDATA)/) {
+            if($PrettyName=~/(OpenVZ|Docker Desktop|Pop\!_OS|Devuan|LMDE|CryptoDATA|SkiffOS|GNOME OS|Debian)/) {
                 $Name = $1;
             }
         }
         
-        if($OS_Rel=~/\bVERSION_ID=\s*[\"\']*([^"'\n]+)/) {
+        if($OS_Rel=~/\bVERSION_ID=[ \t]*[\"\']*([^"'\n]+)/) {
             $Release = lc($1);
         }
         
         if($Name=~/Acronis|Ultimate/i)
         {
-            if($OS_Rel=~/\bVERSION=\s*[\"\']*([^"'\n]+)/) {
+            if($OS_Rel=~/\bVERSION=[ \t]*[\"\']*([^"'\n]+)/) {
                 $Release = lc($1);
             }
         }
@@ -14254,6 +14342,7 @@ sub writeLogs()
             my $GrubCfg = readFile("/boot/grub2/grub.cfg");
             $GrubCfg = hidePaths($GrubCfg);
             $GrubCfg = encryptUUIDs($GrubCfg);
+            $GrubCfg=~s/.*password.+/###/g;
             writeLog($LOG_DIR."/grub.cfg", $GrubCfg);
         }
     }
@@ -14591,7 +14680,7 @@ sub writeLogs()
         
         if(readLine($InxiCmd)=~/perl/)
         { # The new Perl inxi
-            $Inxi = runCmd("inxi -Fxxxz --no-host 2>&1");
+            $Inxi = runCmd("inxi -Fxxxzm --no-host 2>&1");
         }
         else
         { # Old inxi
@@ -15267,24 +15356,36 @@ sub writeLogs()
     if($Opt{"DumpACPI"})
     {
         listProbe("logs", "acpidump");
-        my $AcpiDump = "";
-        
-        # To decode acpidump:
-        #  1. acpixtract -a acpidump
-        #  2. iasl -d ECDT.dat
-        
-        if($Admin)
+        if(isBSD())
         {
-            if(checkCmd("acpidump")) {
-                $AcpiDump = runCmd("acpidump 2>/dev/null");
+            my $AcpiDump_Decoded = "";
+            if($Admin and checkCmd("acpidump"))
+            {
+                $AcpiDump_Decoded = runCmd("acpidump -dt 2>/dev/null");
             }
+            writeLog($LOG_DIR."/acpidump_decoded", $AcpiDump_Decoded);
         }
-        writeLog($LOG_DIR."/acpidump", $AcpiDump);
-        
-        if($Opt{"DecodeACPI"})
+        else
         {
-            if(-s "$LOG_DIR/acpidump") {
-                decodeACPI("$LOG_DIR/acpidump", "$LOG_DIR/acpidump_decoded");
+            my $AcpiDump = "";
+            
+            # To decode acpidump:
+            #  1. acpixtract -a acpidump
+            #  2. iasl -d ECDT.dat
+            
+            if($Admin)
+            {
+                if(checkCmd("acpidump")) {
+                    $AcpiDump = runCmd("acpidump 2>/dev/null");
+                }
+            }
+            writeLog($LOG_DIR."/acpidump", $AcpiDump);
+            
+            if($Opt{"DecodeACPI"})
+            {
+                if(-s "$LOG_DIR/acpidump") {
+                    decodeACPI("$LOG_DIR/acpidump", "$LOG_DIR/acpidump_decoded");
+                }
             }
         }
     }
@@ -16082,6 +16183,7 @@ my %EnabledLog = (
         "efivar",
         "fdisk",
         "fglrxinfo",
+        "getprop",
         "gpu-manager.log",
         "grub.cfg",
         "hp-probe",
@@ -17442,7 +17544,7 @@ sub fixByPkgs($)
                     next;
                 }
                 
-                if($Pkgs=~/(\A|\n)\Q$P\E\b/) {
+                if($Pkgs=~/(\A|\s)\Q$P\E\b/) {
                     return $CPkg->[1];
                 }
                 
@@ -17611,7 +17713,7 @@ sub scenario()
     {
         $Opt{"LogLevel"} = "default";
         
-        if(not $Opt{"All"} and not $Opt{"Logs"} and not $Opt{"FixProbe"})
+        if(not $Opt{"All"} and not $Opt{"Logs"} and $Opt{"Probe"})
         {
             $Opt{"Logs"} = 1;
             $Opt{"LogLevel"} = "minimal";
@@ -18048,10 +18150,21 @@ sub scenario()
             $Sys{"Systemrel"} = $Rel;
         }
         
+        if(isBSD())
+        {
+            if($Sys{"Arch"} eq "x86_64") {
+                $Sys{"Arch"} = "amd64";
+            }
+        }
+        
         fixProduct();
         fixChassis();
         probeHWaddr();
         probeHW();
+        
+        if(not $Sys{"System"}) {
+            $Sys{"System"} = "lfs";
+        }
         
         if(keys(%ExtraConnection)) {
             fixHWaddr();
@@ -18063,7 +18176,9 @@ sub scenario()
             $Sys{"Name"} = $Opt{"PC_Name"}; # fix PC name
         }
         
-        if(not $Sys{"DE"} or not $Sys{"Current_desktop"} or $Sys{"DE"} eq "KDE")
+        # 1.6: added Current_desktop to identify probe of XDG_*
+        # We identify early 1.6 pre-releases (version is not bumped yet) by presence of Uuid property in Sys
+        if(not $Sys{"DE"} or (not $Sys{"Current_desktop"} and $Sys{"Uuid"}) or $Sys{"DE"} eq "KDE")
         {
             if(my $FixDE = fixByPkgs("DE"))
             {
@@ -18086,6 +18201,14 @@ sub scenario()
                 $Sys{"Display_manager"} = fixDisplayManager($FixDM);
             }
         }
+        
+        # NOTE: OK to have X11 running w/o a DE
+        #if(isBSD() and not $Sys{"DE"})
+        #{
+        #    if(-s $FixProbe_Logs."/xorg.log") {
+        #        $Sys{"DE"} = "Unknown";
+        #    }
+        #}
         
         if($Opt{"DecodeACPI"})
         {
