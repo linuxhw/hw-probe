@@ -59,7 +59,7 @@ parts:
     prime:
       - usr/bin/edid-decode
   dmidecode:
-    source: https://download-mirror.savannah.gnu.org/releases/dmidecode/dmidecode-3.2.tar.xz
+    source: https://download-mirror.savannah.gnu.org/releases/dmidecode/dmidecode-3.3.tar.xz
     source-type: tar
     plugin: make
     override-build: |
@@ -150,7 +150,7 @@ parts:
       - usr/sbin/lspci
       - usr/share/pci.ids
   acpica-unix:
-    source: https://acpica.org/sites/acpica/files/acpica-unix-20200110.tar.gz
+    source: https://acpica.org/sites/acpica/files/acpica-unix-20200925.tar.gz
     source-type: tar
     plugin: make
     build-attributes: [no-patchelf]
@@ -212,7 +212,7 @@ parts:
     prime:
       - usr/lib/libusb*.so*
   util-linux:
-    source: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.34/util-linux-2.34.tar.xz
+    source: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.36/util-linux-2.36.tar.xz
     source-type: tar
     plugin: make
     override-build: |
@@ -244,11 +244,11 @@ parts:
       - make
   hwinfo:
     after: [libx86emu]
-    source: https://github.com/openSUSE/hwinfo/archive/21.68.tar.gz
+    source: https://github.com/openSUSE/hwinfo/archive/21.70.tar.gz
     source-type: tar
     plugin: make
     override-build: |
-      echo '21.68' > VERSION
+      echo '21.70' > VERSION
       rm -f git2log
       sed -i -e 's/ -g / -s /' Makefile.common
       CFLAGS='-I'$SNAPCRAFT_STAGE'/usr/include' LDFLAGS='-L'$SNAPCRAFT_STAGE'/usr/lib64 -L'$SNAPCRAFT_STAGE'/usr/lib -lx86emu' make
