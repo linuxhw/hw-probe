@@ -2,8 +2,8 @@ name: hw-probe
 version: 1.5-8
 summary: Check operability of computer hardware and find drivers
 description: >
- A tool to check operability of computer hardware and upload result
- to the Linux hardware database.
+ A tool to probe for hardware, check operability and find drivers
+ with the help of Linux Hardware Database.
      
  Probe — is a snapshot of your computer hardware state and logs.
  The tool checks operability of devices by analysis of logs and
@@ -15,7 +15,7 @@ description: >
  
      sudo -E hw-probe -all -upload
  
- If some of your computer devices does not work due to a missed driver
+ If some of your computer devices do not work due to a missed driver
  then the tool will suggest a proper Linux kernel version according
  to the LKDDb or third-party drivers.
      
