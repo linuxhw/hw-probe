@@ -5,7 +5,7 @@ HW Probe 1.6 BETA (May 20, 2020)
 
 This file explains how to install and setup environment for the tool in your computer.
 
-Just find the name of your BSD distribution on this page.
+Just find the name of your BSD variant on this page.
 
 See more info in the [README.md](README.md).
 
