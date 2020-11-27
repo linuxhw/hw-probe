@@ -61,7 +61,7 @@ Command line to Run
 Install on Ubuntu
 -----------------
 
-On Ubuntu and Ubuntu based Linux distributions (Linux Mint, Zorin, Pop!_OS, elementary OS, KDE neon, Peppermint, etc.).
+On Ubuntu and Ubuntu based Linux distributions (Linux Mint, Zorin, Pop!_OS, elementary OS, KDE neon, Peppermint, Linuxfx, Linux Lite, etc.).
 
 ###### Ubuntu package
 
@@ -96,7 +96,7 @@ The [Snap package](README.md#snap) is also available to install and run easily o
 Install on Debian
 -----------------
 
-On Debian and Debian based Linux distributions (Kali, MX Linux, Antix, Devuan, PureOS, Parrot, deepin, SolydXK, SparkyLinux, etc.).
+On Debian and Debian based Linux distributions (Kali, MX Linux, antiX, Devuan, PureOS, Parrot, deepin, BunsenLabs, SolydXK, SparkyLinux, etc.).
 
 Enable sudo by https://wiki.debian.org/sudo
 
@@ -141,10 +141,17 @@ For Manjaro 18 and later:
 
 Try `sudo pacman -Sy` if pacman can't find the package.
 
+
+Install on ArcoLinux
+---------------------
+
+Pre-installed on latest ISO images since v20.11.9.
+
+
 Install on Arch Linux
 ---------------------
 
-On Arch Linux and derivatives (ArcoLinux, EndeavourOS, KaOS, etc.):
+On Arch Linux and derivatives (EndeavourOS, Garuda, KaOS, etc.):
 
 ###### From AUR
 
