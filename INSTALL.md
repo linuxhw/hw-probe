@@ -19,6 +19,7 @@ Contents
 * [ Install on Debian       ](#install-on-debian)
 * [ Install on BSD          ](#install-on-bsd)
 * [ Install on Manjaro      ](#install-on-manjaro)
+* [ Install on ArcoLinux    ](#install-on-arcolinux)
 * [ Install on Arch Linux   ](#install-on-arch-linux)
 * [ Install on Fedora       ](#install-on-fedora)
 * [ Install on openSUSE     ](#install-on-opensuse)
@@ -61,7 +62,7 @@ Command line to Run
 Install on Ubuntu
 -----------------
 
-On Ubuntu and Ubuntu based Linux distributions (Linux Mint, Zorin, Pop!_OS, elementary OS, KDE neon, Peppermint, Linuxfx, Linux Lite, etc.).
+On Ubuntu and Ubuntu based Linux distributions (Kubuntu, Lubuntu, Linux Mint, Zorin, Pop!_OS, elementary OS, KDE neon, Peppermint, Linuxfx, Linux Lite, etc.).
 
 ###### Ubuntu package
 
