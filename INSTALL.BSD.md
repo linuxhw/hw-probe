@@ -16,6 +16,7 @@ Contents
 * [ Install on FreeBSD     ](#install-on-freebsd)
 * [ Install on OpenBSD     ](#install-on-openbsd)
 * [ Install on NetBSD      ](#install-on-netbsd)
+* [ Install on OPNsense    ](#install-on-opnsense)
 * [ Install on DragonFly   ](#install-on-dragonfly)
 * [ Install on MidnightBSD ](#install-on-midnightbsd)
 * [ Install on other BSD   ](#install-on-other-bsd)
@@ -154,6 +155,12 @@ or automatically:
 Probe your computer:
 
     perl hw-probe -all -upload
+
+
+Install on OPNsense
+-------------------
+
+Install hw-probe plugin under Menu->Firmware->Plugins.
 
 
 Install on DragonFly
