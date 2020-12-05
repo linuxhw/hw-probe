@@ -33,6 +33,7 @@ Contents
 * [ Install on ClearOS      ](#install-on-clearos)
 * [ Install on Gentoo       ](#install-on-gentoo)
 * [ Install on Mageia       ](#install-on-mageia)
+* [ Install on OpenMandriva ](#install-on-openmandriva)
 * [ Install on Alpine       ](#install-on-alpine)
 * [ Install on Puppy        ](#install-on-puppy)
 * [ Install on EasyOS       ](#install-on-easyos)
@@ -296,13 +297,18 @@ With [app-eselect/eselect-repository](https://wiki.gentoo.org/wiki/Eselect/Repos
 Install on Mageia
 -----------------
 
-Install sudo by https://wiki.mageia.org/en/Configuring_sudo
-
 ###### Upstream package
 
-Download package [hw-probe-1.5-Mageia5.noarch.rpm](https://github.com/linuxhw/hw-probe/releases/download/1.5/hw-probe-1.5-Mageia5.noarch.rpm) and install:
+For Mageia 5 and newer:
 
-    sudo urpmi ./hw-probe-1.5-Mageia5.noarch.rpm edid-decode
+    su
+    urpmi https://github.com/linuxhw/hw-probe/releases/download/1.5/hw-probe-1.5-Mageia5.noarch.rpm edid-decode
+
+
+Install on OpenMandriva
+-----------------------
+
+Pre-installed since OpenMandriva Lx 4.0.
 
 
 Install on Alpine
