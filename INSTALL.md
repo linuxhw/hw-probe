@@ -23,15 +23,12 @@ Contents
 * [ Install on Arch Linux   ](#install-on-arch-linux)
 * [ Install on Fedora       ](#install-on-fedora)
 * [ Install on openSUSE     ](#install-on-opensuse)
-* [ Install on CentOS 8     ](#install-on-centos-8)
-* [ Install on CentOS 7     ](#install-on-centos-7)
-* [ Install on CentOS 6     ](#install-on-centos-6)
-* [ Install on OpenVZ 7     ](#install-on-openvz-7)
-* [ Install on RHEL 8       ](#install-on-rhel-8)
-* [ Install on RHEL 7       ](#install-on-rhel-7)
-* [ Install on RHEL 6       ](#install-on-rhel-6)
+* [ Install on CentOS       ](#install-on-centos)
+* [ Install on OpenVZ       ](#install-on-openvz)
+* [ Install on RHEL         ](#install-on-rhel)
 * [ Install on ClearOS      ](#install-on-clearos)
 * [ Install on Gentoo       ](#install-on-gentoo)
+* [ Install on ROSA         ](#install-on-rosa)
 * [ Install on Mageia       ](#install-on-mageia)
 * [ Install on OpenMandriva ](#install-on-openmandriva)
 * [ Install on Alpine       ](#install-on-alpine)
@@ -98,7 +95,7 @@ The [Snap package](README.md#snap) is also available to install and run easily o
 Install on Debian
 -----------------
 
-On Debian and Debian based Linux distributions (Kali, MX Linux, antiX, Devuan, PureOS, Parrot, deepin, BunsenLabs, SolydXK, SparkyLinux, etc.).
+On Debian and Debian based Linux distributions (Kali, LMDE, MX Linux, antiX, Devuan, PureOS, Parrot, deepin, BunsenLabs, SolydXK, SparkyLinux, Raspbian, etc.).
 
 Enable sudo by https://wiki.debian.org/sudo
 
@@ -147,7 +144,7 @@ Try `sudo pacman -Sy` if pacman can't find the package.
 Install on ArcoLinux
 ---------------------
 
-Pre-installed on latest ISO images since v20.11.9.
+Pre-installed on ArcoLinux v20.11.9 and newer.
 
 
 Install on Arch Linux
@@ -200,20 +197,19 @@ openSUSE Tumbleweed:
     sudo zypper install hw-probe
 
 
-Install on CentOS 8
--------------------
+Install on CentOS
+-----------------
 
-    sudo yum install epel-release
-    sudo yum install hw-probe
-
-
-Install on CentOS 7
--------------------
+For CentOS 8, CentOS 7 and CentOS 6:
 
     sudo yum install epel-release
     sudo yum install hw-probe
 
 ###### Old systems
+
+If installation from EPEL is not possible.
+
+For early CentOS 7 installations:
 
     curl https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | sudo dd of=/usr/bin/hw-probe
     sudo chmod +x /usr/bin/hw-probe
@@ -221,14 +217,7 @@ Install on CentOS 7
     sudo yum install -y http://li.nux.ro/download/nux/dextop/el7/x86_64/hwinfo-20.2-5.3.x86_64.rpm
     sudo yum install -y curl dmidecode smartmontools hdparm lm_sensors usbutils pciutils mcelog
 
-
-Install on CentOS 6
--------------------
-
-    sudo yum install epel-release
-    sudo yum install hw-probe
-
-###### Old systems
+For early CentOS 6 installations:
 
     curl https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | sudo dd of=/usr/bin/hw-probe
     sudo chmod +x /usr/bin/hw-probe
@@ -237,29 +226,19 @@ Install on CentOS 6
     sudo yum install -y curl dmidecode smartmontools hdparm lm_sensors usbutils pciutils mcelog
 
 
-Install on OpenVZ 7
--------------------
+Install on OpenVZ
+-----------------
+
+For OpenVZ 7:
 
     sudo yum install epel-release
     sudo yum install hw-probe
 
 
-Install on RHEL 8
------------------
+Install on RHEL
+---------------
 
-    sudo yum install epel-release
-    sudo yum install hw-probe
-
-
-Install on RHEL 7
------------------
-
-    sudo yum install epel-release
-    sudo yum install hw-probe
-
-
-Install on RHEL 6
------------------
+For RHEL 8, RHEL 7 and RHEL 6:
 
     sudo yum install epel-release
     sudo yum install hw-probe
@@ -294,6 +273,12 @@ With [app-eselect/eselect-repository](https://wiki.gentoo.org/wiki/Eselect/Repos
     sudo chmod +x /usr/bin/hw-probe
 
 
+Install on ROSA
+---------------
+
+Pre-installed on ROSA Fresh R4 and newer.
+
+
 Install on Mageia
 -----------------
 
@@ -308,7 +293,7 @@ For Mageia 5 and newer:
 Install on OpenMandriva
 -----------------------
 
-Pre-installed since OpenMandriva Lx 4.0.
+Pre-installed on OpenMandriva Lx 4.0 and newer.
 
 
 Install on Alpine
@@ -364,7 +349,7 @@ See https://clearlinux.org/software/flathub/hardware-probe
 Install on Endless
 ------------------
 
-Search for Hardware Probe program in the App Center.
+Search for "Hardware Probe" program in the App Center.
 
 See https://flathub.org/apps/details/org.linux_hardware.hw-probe
 
