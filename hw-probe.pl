@@ -223,16 +223,14 @@ if($#ARGV_COPY==-1)
     }
     else
     {
-        print "Executing hw-probe -all -upload\n\n";
+        print "Executing hw-probe -all\n\n";
         $Opt{"All"} = 1;
-        $Opt{"Upload"} = 1;
     }
 }
 elsif($#ARGV_COPY==0 and grep { $ARGV_COPY[0] eq $_ } ("-snap", "-flatpak"))
 { # Run by desktop file
-    print "Executing hw-probe -all -upload\n\n";
+    print "Executing hw-probe -all\n\n";
     $Opt{"All"} = 1;
-    $Opt{"Upload"} = 1;
     
     if($SNAP_DESKTOP or $FLATPAK_DESKTOP)
     { # Desktop
