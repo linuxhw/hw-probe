@@ -16,9 +16,11 @@ Contents
 * [ Install on FreeBSD     ](#install-on-freebsd)
 * [ Install on OpenBSD     ](#install-on-openbsd)
 * [ Install on NetBSD      ](#install-on-netbsd)
-* [ Install on OPNsense    ](#install-on-opnsense)
 * [ Install on DragonFly   ](#install-on-dragonfly)
 * [ Install on MidnightBSD ](#install-on-midnightbsd)
+* [ Install on pfSense     ](#install-on-pfsense)
+* [ Install on OPNsense    ](#install-on-opnsense)
+* [ Install on XigmaNAS    ](#install-on-xigmanas)
 * [ Install on other BSD   ](#install-on-other-bsd)
 * [ Easy way to contribute ](#easy-way-to-contribute)
 * [ Run without Installing ](#run-without-installing)
@@ -27,7 +29,7 @@ Contents
 Install on FreeBSD
 ------------------
 
-On FreeBSD and derivatives (GhostBSD, NomadBSD, FuryBSD, TrueOS, PC-BSD, HardenedBSD, FreeNAS, pfSense, OPNsense, XigmaNAS, DesktopBSD, etc.).
+On FreeBSD and derivatives (GhostBSD, NomadBSD, FuryBSD, TrueOS, PC-BSD, HardenedBSD, FreeNAS, TrueNAS, DesktopBSD, ArisbluBSD, etc.).
 
 ###### Latest systems
 
@@ -157,12 +159,6 @@ Probe your computer:
     perl hw-probe -all -upload
 
 
-Install on OPNsense
--------------------
-
-Install hw-probe plugin under Menu->Firmware->Plugins.
-
-
 Install on DragonFly
 --------------------
 
@@ -225,6 +221,40 @@ or automatically:
 Probe your computer:
 
     perl hw-probe -all -upload
+
+
+Install on pfSense
+------------------
+
+For pfSense 2.5.x:
+
+    pkg add https://pkg.freebsd.org/FreeBSD:12:amd64/latest/All/lscpu-1.2.0.txz https://pkg.freebsd.org/FreeBSD:12:amd64/latest/All/hwstat-0.5.1.txz https://pkg.freebsd.org/FreeBSD:12:amd64/latest/All/hw-probe-1.6.b2.txz
+
+For pfSense 2.4.x:
+
+    pkg add https://pkg.freebsd.org/FreeBSD:11:amd64/latest/All/lscpu-1.2.0.txz https://pkg.freebsd.org/FreeBSD:11:amd64/latest/All/hwstat-0.5.1.txz https://pkg.freebsd.org/FreeBSD:11:amd64/latest/All/hw-probe-1.6.b2.txz
+
+Probe your computer:
+
+    /usr/local/bin/hw-probe -all -upload
+
+
+Install on OPNsense
+-------------------
+
+Install hw-probe plugin under Menu->Firmware->Plugins.
+
+
+Install on XigmaNAS
+-------------------
+
+Install package:
+
+    pkg install hw-probe
+
+Probe your computer:
+
+    /usr/local/bin/hw-probe -all -upload
 
 
 Install on other BSD
