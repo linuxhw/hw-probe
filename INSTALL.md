@@ -20,6 +20,7 @@ Contents
 * [ Install on BSD          ](#install-on-bsd)
 * [ Install on Manjaro      ](#install-on-manjaro)
 * [ Install on ArcoLinux    ](#install-on-arcolinux)
+* [ Install on Hefftor      ](#install-on-hefftor)
 * [ Install on Arch Linux   ](#install-on-arch-linux)
 * [ Install on Fedora       ](#install-on-fedora)
 * [ Install on openSUSE     ](#install-on-opensuse)
@@ -134,7 +135,7 @@ See [INSTALL.BSD.md](INSTALL.BSD.md).
 Install on Manjaro
 ------------------
 
-For Manjaro 18 and later:
+For Manjaro 18 and newer:
 
     sudo pacman -S hw-probe
 
@@ -145,6 +146,14 @@ Install on ArcoLinux
 ---------------------
 
 Pre-installed on ArcoLinux v20.11.9 and newer.
+
+
+Install on Hefftor
+------------------
+
+For Hefftor 2021-01 and newer:
+
+    sudo pacman -Sy hw-probe
 
 
 Install on Arch Linux
@@ -176,7 +185,7 @@ Download package [hw-probe-1.5-ArchLinux-any.pkg.tar.xz](https://github.com/linu
 Install on Fedora
 -----------------
 
-For Fedora 28 and later:
+For Fedora 28 and newer:
 
     sudo dnf install hw-probe
 
@@ -305,7 +314,7 @@ Install on Alpine
 Install on Puppy
 ----------------
 
-For Puppy 7 and later (XenialPup64, BionicPup64, etc.):
+For Puppy 7 and newer (XenialPup64, BionicPup64, etc.):
 
 Update local database by Menu > Setup > Puppy Package Manager > Configure > Update database > Update now.
 Install `perl-base`, `hwinfo`, `util-linux` and `smartmontools` by Menu > Setup > Puppy Package Manager.
@@ -329,7 +338,7 @@ Open the console:
 Install on blackPanther
 -----------------------
 
-For blackPanther OS 16.2 and later:
+For blackPanther OS 16.2 and newer:
 
     installing hw-probe
 
