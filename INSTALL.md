@@ -27,6 +27,7 @@ Contents
 * [ Install on CentOS       ](#install-on-centos)
 * [ Install on OpenVZ       ](#install-on-openvz)
 * [ Install on RHEL         ](#install-on-rhel)
+* [ Install on Oracle Linux ](#install-on-oracle-linux)
 * [ Install on ClearOS      ](#install-on-clearos)
 * [ Install on Gentoo       ](#install-on-gentoo)
 * [ Install on ROSA         ](#install-on-rosa)
@@ -96,7 +97,7 @@ The [Snap package](README.md#snap) is also available to install and run easily o
 Install on Debian
 -----------------
 
-On Debian and Debian based Linux distributions (Kali, LMDE, MX Linux, antiX, Devuan, PureOS, Parrot, Pardus, deepin, BunsenLabs, SolydXK, SparkyLinux, Raspbian, etc.).
+On Debian and Debian based Linux distributions (Kali, LMDE, MX Linux, antiX, Devuan, PureOS, Parrot, Pardus, deepin, BunsenLabs, SolydXK, SparkyLinux, Q4OS, Tails, Raspbian, etc.).
 
 Enable sudo by https://wiki.debian.org/sudo
 
@@ -185,7 +186,7 @@ Download package [hw-probe-1.5-ArchLinux-any.pkg.tar.xz](https://github.com/linu
 Install on Fedora
 -----------------
 
-For Fedora 28 and newer:
+On Fedora 28 and newer:
 
     sudo dnf install hw-probe
 
@@ -209,7 +210,7 @@ openSUSE Tumbleweed:
 Install on CentOS
 -----------------
 
-For CentOS 8, CentOS 7 and CentOS 6:
+On CentOS 8, CentOS 7 and CentOS 6:
 
     sudo yum install epel-release
     sudo yum install hw-probe
@@ -218,7 +219,7 @@ For CentOS 8, CentOS 7 and CentOS 6:
 
 If installation from EPEL is not possible.
 
-For early CentOS 7 installations:
+On early CentOS 7 installations:
 
     curl https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | sudo dd of=/usr/bin/hw-probe
     sudo chmod +x /usr/bin/hw-probe
@@ -226,7 +227,7 @@ For early CentOS 7 installations:
     sudo yum install -y http://li.nux.ro/download/nux/dextop/el7/x86_64/hwinfo-20.2-5.3.x86_64.rpm
     sudo yum install -y curl dmidecode smartmontools hdparm lm_sensors usbutils pciutils mcelog
 
-For early CentOS 6 installations:
+On early CentOS 6 installations:
 
     curl https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | sudo dd of=/usr/bin/hw-probe
     sudo chmod +x /usr/bin/hw-probe
@@ -238,7 +239,7 @@ For early CentOS 6 installations:
 Install on OpenVZ
 -----------------
 
-For OpenVZ 7:
+On OpenVZ 7:
 
     sudo yum install epel-release
     sudo yum install hw-probe
@@ -247,8 +248,24 @@ For OpenVZ 7:
 Install on RHEL
 ---------------
 
-For RHEL 8, RHEL 7 and RHEL 6:
+On RHEL 6-8 and RHEL based Linux distributions (CentOS, Scientific Linux, etc.):
 
+    sudo yum install epel-release
+    sudo yum install hw-probe
+
+
+Install on Oracle Linux
+-----------------------
+
+On Oracle Linux 7:
+
+    sudo yum-config-manager --add-repo=http://download.fedoraproject.org/pub/epel/7/x86_64/
+    sudo yum install epel-release
+    sudo yum install hw-probe
+
+On Oracle Linux 8:
+
+    sudo yum-config-manager --add-repo=http://download.fedoraproject.org/pub/epel/8/Everything/x86_64/
     sudo yum install epel-release
     sudo yum install hw-probe
 
@@ -260,8 +277,11 @@ Install on ClearOS
     sudo yum-config-manager --enable clearos-epel
     sudo yum install hw-probe
 
+
 Install on Gentoo
 -----------------
+
+On Gentoo and Gentoo based Linux distributions (CloudReady, Calculate, Funtoo, Redcore, etc.):
 
     sudo emerge --ask sys-apps/hw-probe
 
@@ -314,7 +334,7 @@ Install on Alpine
 Install on Puppy
 ----------------
 
-For Puppy 7 and newer (XenialPup64, BionicPup64, etc.):
+On Puppy 7 and newer (XenialPup64, BionicPup64, etc.):
 
 Update local database by Menu > Setup > Puppy Package Manager > Configure > Update database > Update now.
 Install `perl-base`, `hwinfo`, `util-linux` and `smartmontools` by Menu > Setup > Puppy Package Manager.
@@ -338,7 +358,7 @@ Open the console:
 Install on blackPanther
 -----------------------
 
-For blackPanther OS 16.2 and newer:
+On blackPanther OS 16.2 and newer:
 
     installing hw-probe
 
