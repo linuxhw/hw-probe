@@ -420,13 +420,13 @@ Use [AppImage](README.md#appimage) or [Docker](README.md#docker).
 Install on Solus
 ----------------
 
-Use [AppImage](README.md#appimage).
+Use [AppImage](README.md#appimage) or [Flatpak](README.md#flatpak).
 
 
 Install on Void Linux
 ---------------------
 
-Use [AppImage](README.md#appimage).
+Use [AppImage](README.md#appimage) or [Flatpak](README.md#flatpak).
 
 
 Install from Source
