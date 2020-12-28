@@ -18,32 +18,34 @@ Contents
 * [ Install on Ubuntu       ](#install-on-ubuntu)
 * [ Install on Debian       ](#install-on-debian)
 * [ Install on BSD          ](#install-on-bsd)
-* [ Install on Manjaro      ](#install-on-manjaro)
-* [ Install on ArcoLinux    ](#install-on-arcolinux)
-* [ Install on Hefftor      ](#install-on-hefftor)
-* [ Install on Arch Linux   ](#install-on-arch-linux)
 * [ Install on Fedora       ](#install-on-fedora)
-* [ Install on openSUSE     ](#install-on-opensuse)
+* [ Install on Manjaro      ](#install-on-manjaro)
+* [ Install on Arch Linux   ](#install-on-arch-linux)
 * [ Install on CentOS       ](#install-on-centos)
-* [ Install on OpenVZ       ](#install-on-openvz)
-* [ Install on RHEL         ](#install-on-rhel)
-* [ Install on Oracle Linux ](#install-on-oracle-linux)
-* [ Install on ClearOS      ](#install-on-clearos)
-* [ Install on Gentoo       ](#install-on-gentoo)
-* [ Install on ROSA         ](#install-on-rosa)
-* [ Install on Mageia       ](#install-on-mageia)
-* [ Install on OpenMandriva ](#install-on-openmandriva)
 * [ Install on Alpine       ](#install-on-alpine)
-* [ Install on Puppy        ](#install-on-puppy)
-* [ Install on EasyOS       ](#install-on-easyos)
+* [ Install on ArcoLinux    ](#install-on-arcolinux)
 * [ Install on blackPanther ](#install-on-blackpanther)
-* [ Install on Clear Linux  ](#install-on-clear-linux)
-* [ Install on Endless      ](#install-on-endless)
-* [ Install on Void Linux   ](#install-on-void-linux)
-* [ Install on PCLinuxOS    ](#install-on-pclinuxos)
-* [ Install on Solus        ](#install-on-solus)
-* [ Install on QTS          ](#install-on-qts)
 * [ Install on Chrome OS    ](#install-on-chrome-os)
+* [ Install on Clear Linux  ](#install-on-clear-linux)
+* [ Install on ClearOS      ](#install-on-clearos)
+* [ Install on EasyOS       ](#install-on-easyos)
+* [ Install on Endless      ](#install-on-endless)
+* [ Install on Gentoo       ](#install-on-gentoo)
+* [ Install on Hefftor      ](#install-on-hefftor)
+* [ Install on Mageia       ](#install-on-mageia)
+* [ Install on NixOS        ](#install-on-nixos)
+* [ Install on OpenMandriva ](#install-on-openmandriva)
+* [ Install on openSUSE     ](#install-on-opensuse)
+* [ Install on OpenVZ       ](#install-on-openvz)
+* [ Install on Oracle Linux ](#install-on-oracle-linux)
+* [ Install on PCLinuxOS    ](#install-on-pclinuxos)
+* [ Install on Puppy        ](#install-on-puppy)
+* [ Install on QTS          ](#install-on-qts)
+* [ Install on RHEL         ](#install-on-rhel)
+* [ Install on ROSA         ](#install-on-rosa)
+* [ Install on Slackware    ](#install-on-slackware)
+* [ Install on Solus        ](#install-on-solus)
+* [ Install on Void Linux   ](#install-on-void-linux)
 * [ Install from Source     ](#install-from-source)
 
 
@@ -62,7 +64,7 @@ Command line to Run
 Install on Ubuntu
 -----------------
 
-On Ubuntu and Ubuntu based Linux distributions (Kubuntu, Lubuntu, Linux Mint, Zorin, Pop!_OS, elementary OS, KDE neon, Peppermint, Linuxfx, Linux Lite, etc.).
+On Ubuntu and Ubuntu based Linux distributions (Kubuntu, Lubuntu, Linux Mint, Zorin, Pop!_OS, elementary OS, KDE neon, Peppermint, Linuxfx, Linux Lite, HamoniKR, WindowsFX, Trisquel, etc.).
 
 ###### Ubuntu package
 
@@ -128,9 +130,17 @@ Download Deb package [hw-probe_1.5-1_all.deb](https://github.com/linuxhw/hw-prob
 Install on BSD
 --------------
 
-On FreeBSD and derivatives (GhostBSD, NomadBSD, FuryBSD, TrueOS, PC-BSD, HardenedBSD, FreeNAS, pfSense, OPNsense, XigmaNAS, DesktopBSD, etc.), OpenBSD and derivatives (AdJ, FuguIta, etc.), NetBSD and derivatives (OS108, etc.), DragonFly and MidnightBSD.
+On FreeBSD and derivatives (GhostBSD, NomadBSD, FuryBSD, TrueOS, PC-BSD, HardenedBSD, FreeNAS, TrueNAS, pfSense, OPNsense, XigmaNAS, DesktopBSD, etc.), OpenBSD and derivatives (AdJ, FuguIta, etc.), NetBSD and derivatives (OS108, etc.), DragonFly and MidnightBSD.
 
 See [INSTALL.BSD.md](INSTALL.BSD.md).
+
+
+Install on Fedora
+-----------------
+
+On Fedora 28 and newer:
+
+    sudo dnf install hw-probe
 
 
 Install on Manjaro
@@ -141,20 +151,6 @@ For Manjaro 18 and newer:
     sudo pacman -S hw-probe
 
 Try `sudo pacman -Sy` if pacman can't find the package.
-
-
-Install on ArcoLinux
----------------------
-
-Pre-installed on ArcoLinux v20.11.9 and newer.
-
-
-Install on Hefftor
-------------------
-
-For Hefftor 2021-01 and newer:
-
-    sudo pacman -Sy hw-probe
 
 
 Install on Arch Linux
@@ -181,30 +177,6 @@ Install hardware probe:
 Download package [hw-probe-1.5-ArchLinux-any.pkg.tar.xz](https://github.com/linuxhw/hw-probe/releases/download/1.5/hw-probe-1.5-ArchLinux-any.pkg.tar.xz) and install by pacman:
 
     sudo pacman -U ./hw-probe-1.5-ArchLinux-any.pkg.tar.xz
-
-
-Install on Fedora
------------------
-
-On Fedora 28 and newer:
-
-    sudo dnf install hw-probe
-
-
-Install on openSUSE
--------------------
-
-Select and install an RPM package for your openSUSE distribution: https://software.opensuse.org/package/hw-probe
-
-openSUSE Leap 15.1:
-
-    sudo zypper addrepo https://download.opensuse.org/repositories/hardware/openSUSE_Leap_15.1/ hardware
-    sudo zypper install hw-probe
-
-openSUSE Tumbleweed:
-
-    sudo zypper addrepo https://download.opensuse.org/repositories/hardware/openSUSE_Tumbleweed/ hardware
-    sudo zypper install hw-probe
 
 
 Install on CentOS
@@ -236,38 +208,42 @@ On early CentOS 6 installations:
     sudo yum install -y curl dmidecode smartmontools hdparm lm_sensors usbutils pciutils mcelog
 
 
-Install on OpenVZ
+Install on Alpine
 -----------------
 
-On OpenVZ 7:
-
-    sudo yum install epel-release
-    sudo yum install hw-probe
+    sudo apk add --no-cache -X http://dl-cdn.alpinelinux.org/alpine/edge/testing hw-probe
 
 
-Install on RHEL
----------------
+Install on ArcoLinux
+---------------------
 
-On RHEL 6-8 and RHEL based Linux distributions (CentOS, Scientific Linux, etc.):
-
-    sudo yum install epel-release
-    sudo yum install hw-probe
+Pre-installed on ArcoLinux v20.11.9 and newer.
 
 
-Install on Oracle Linux
+Install on blackPanther
 -----------------------
 
-On Oracle Linux 7:
+On blackPanther OS 16.2 and newer:
 
-    sudo yum-config-manager --add-repo=http://download.fedoraproject.org/pub/epel/7/x86_64/
-    sudo yum install epel-release
-    sudo yum install hw-probe
+    installing hw-probe
 
-On Oracle Linux 8:
+This command will install all the dependencies as well.
 
-    sudo yum-config-manager --add-repo=http://download.fedoraproject.org/pub/epel/8/Everything/x86_64/
-    sudo yum install epel-release
-    sudo yum install hw-probe
+
+Install on Chrome OS
+--------------------
+
+Open settings, turn on support for Linux and open the Linux Terminal. Now use [AppImage](README.md#appimage) or install the [Flatpak](README.md#flatpak).
+
+
+Install on Clear Linux
+----------------------
+
+See https://clearlinux.org/software/flathub/hardware-probe
+
+    sudo swupd bundle-add desktop
+    flatpak install flathub org.linux_hardware.hw-probe
+    sudo flatpak run org.linux_hardware.hw-probe -all -upload
 
 
 Install on ClearOS
@@ -276,6 +252,26 @@ Install on ClearOS
     sudo yum-config-manager --enable clearos-centos
     sudo yum-config-manager --enable clearos-epel
     sudo yum install hw-probe
+
+
+Install on EasyOS
+-----------------
+
+Update local database by Menu > Setup > PETget Package Manager > Configure package manager > Update now.
+Install `perl-base`, `libhd`, `hwinfo`, `util-linux` and `smartmontools` by Menu > Setup > PETget Package Manager.
+
+Open the console:
+
+    curl https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | dd of=/usr/bin/hw-probe
+    chmod +x /usr/bin/hw-probe
+
+
+Install on Endless
+------------------
+
+Search for "Hardware Probe" program in the App Center.
+
+See https://flathub.org/apps/details/org.linux_hardware.hw-probe
 
 
 Install on Gentoo
@@ -302,10 +298,12 @@ With [app-eselect/eselect-repository](https://wiki.gentoo.org/wiki/Eselect/Repos
     sudo chmod +x /usr/bin/hw-probe
 
 
-Install on ROSA
----------------
+Install on Hefftor
+------------------
 
-Pre-installed on ROSA Fresh R4 and newer.
+For Hefftor 2021-01 and newer:
+
+    sudo pacman -Sy hw-probe
 
 
 Install on Mageia
@@ -319,16 +317,63 @@ For Mageia 5 and newer:
     urpmi https://github.com/linuxhw/hw-probe/releases/download/1.5/hw-probe-1.5-Mageia5.noarch.rpm edid-decode
 
 
+Install on NixOS
+----------------
+
+Use [Docker](README.md#docker) or [Flatpak](README.md#flatpak).
+
+
 Install on OpenMandriva
 -----------------------
 
 Pre-installed on OpenMandriva Lx 4.0 and newer.
 
 
-Install on Alpine
+Install on openSUSE
+-------------------
+
+Select and install an RPM package for your openSUSE distribution: https://software.opensuse.org/package/hw-probe
+
+openSUSE Leap 15.1:
+
+    sudo zypper addrepo https://download.opensuse.org/repositories/hardware/openSUSE_Leap_15.1/ hardware
+    sudo zypper install hw-probe
+
+openSUSE Tumbleweed:
+
+    sudo zypper addrepo https://download.opensuse.org/repositories/hardware/openSUSE_Tumbleweed/ hardware
+    sudo zypper install hw-probe
+
+
+Install on OpenVZ
 -----------------
 
-    sudo apk add --no-cache -X http://dl-cdn.alpinelinux.org/alpine/edge/testing hw-probe
+On OpenVZ 7:
+
+    sudo yum install epel-release
+    sudo yum install hw-probe
+
+
+Install on Oracle Linux
+-----------------------
+
+On Oracle Linux 7:
+
+    sudo yum-config-manager --add-repo=http://download.fedoraproject.org/pub/epel/7/x86_64/
+    sudo yum install epel-release
+    sudo yum install hw-probe
+
+On Oracle Linux 8:
+
+    sudo yum-config-manager --add-repo=http://download.fedoraproject.org/pub/epel/8/Everything/x86_64/
+    sudo yum install epel-release
+    sudo yum install hw-probe
+
+
+Install on PCLinuxOS
+--------------------
+
+Use [AppImage](README.md#appimage).
 
 
 Install on Puppy
@@ -343,56 +388,33 @@ Install `perl-base`, `hwinfo`, `util-linux` and `smartmontools` by Menu > Setup 
     sudo chmod +x /usr/bin/hw-probe
 
 
-Install on EasyOS
------------------
+Install on QTS
+--------------
 
-Update local database by Menu > Setup > PETget Package Manager > Configure package manager > Update now.
-Install `perl-base`, `libhd`, `hwinfo`, `util-linux` and `smartmontools` by Menu > Setup > PETget Package Manager.
-
-Open the console:
-
-    curl https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | dd of=/usr/bin/hw-probe
-    chmod +x /usr/bin/hw-probe
+Use [Docker](README.md#docker).
 
 
-Install on blackPanther
------------------------
+Install on RHEL
+---------------
 
-On blackPanther OS 16.2 and newer:
+On RHEL 6-8 and RHEL based Linux distributions (CentOS, Scientific Linux, etc.):
 
-    installing hw-probe
-
-This command will install all the dependencies as well.
-
-
-Install on Clear Linux
-----------------------
-
-See https://clearlinux.org/software/flathub/hardware-probe
-
-    sudo swupd bundle-add desktop
-    flatpak install flathub org.linux_hardware.hw-probe
-    sudo flatpak run org.linux_hardware.hw-probe -all -upload
+    sudo yum install epel-release
+    sudo yum install hw-probe
 
 
-Install on Endless
-------------------
+Install on ROSA
+---------------
 
-Search for "Hardware Probe" program in the App Center.
-
-See https://flathub.org/apps/details/org.linux_hardware.hw-probe
+Pre-installed on ROSA Fresh R4 and newer.
 
 
-Install on Void Linux
----------------------
-
-Use [AppImage](README.md#appimage).
-
-
-Install on PCLinuxOS
+Install on Slackware
 --------------------
 
-Use [AppImage](README.md#appimage).
+On Slackware and Slackware based Linux distributions (Porteus, etc.).
+
+Use [AppImage](README.md#appimage) or [Docker](README.md#docker).
 
 
 Install on Solus
@@ -401,16 +423,10 @@ Install on Solus
 Use [AppImage](README.md#appimage).
 
 
-Install on QTS
---------------
+Install on Void Linux
+---------------------
 
-Use [Docker](README.md#docker).
-
-
-Install on Chrome OS
---------------------
-
-Open settings, turn on support for Linux and open the Linux Terminal. Now use [AppImage](README.md#appimage) or install the [Flatpak](README.md#flatpak).
+Use [AppImage](README.md#appimage).
 
 
 Install from Source

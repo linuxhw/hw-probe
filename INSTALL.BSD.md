@@ -29,7 +29,7 @@ Contents
 Install on FreeBSD
 ------------------
 
-On FreeBSD and derivatives (GhostBSD, NomadBSD, FuryBSD, TrueOS, PC-BSD, HardenedBSD, FreeNAS, TrueNAS, DesktopBSD, ArisbluBSD, etc.).
+On FreeBSD and derivatives (GhostBSD, NomadBSD, FuryBSD, TrueOS, PC-BSD, HardenedBSD, FreeNAS, TrueNAS, DesktopBSD, ArisbluBSD, helloSystem, etc.).
 
 ###### Latest systems
 
