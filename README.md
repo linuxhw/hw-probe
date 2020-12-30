@@ -12,6 +12,7 @@ Contents
 * [ About        ](#about)
 * [ Install      ](#install)
 * [ Usage        ](#usage)
+* [ Review       ](#review)
 * [ AppImage     ](#appimage)
 * [ Docker       ](#docker)
 * [ Live CD      ](#live-cd)
@@ -57,6 +58,12 @@ Usage
 Make a probe:
 
     sudo -E hw-probe -all -upload
+
+
+Review
+------
+
+You can adjust device statuses in your probe and leave comments. Look for big green REVIEW button on the probe page.
 
 
 AppImage
@@ -304,7 +311,7 @@ Privacy
 
 Private information (including the username, machine's hostname, IP addresses, MAC addresses, UUIDs and serial numbers) is NOT uploaded to the database.
 
-The tool uploads 32-byte prefix of salted SHA512 hash of MAC addresses/UUIDs and serial numbers to properly identify unique computers and hard drives. All the data is uploaded securely via HTTPS.
+The tool uploads 32-byte prefix of salted SHA512 hash of MAC addresses and serial numbers to properly identify unique computers and hard drives. UUIDs are decorated in the same way, but formatted like regular UUIDs in order to save readability of logs. All the data is uploaded securely via HTTPS.
 
 
 License
