@@ -280,7 +280,7 @@ The tool checks operability of devices on board by analysis of collected log fil
 | limited  | Works, but with limited functionality |
 | detected | Device is detected, driver is found, but not tested yet |
 | failed   | Driver is not found or device is broken |
-| malfunc  | Error operation of the device |
+| malfunc  | Error operation of the device or driver |
 
 You can perform additional operability sanity tests by the following command:
 
