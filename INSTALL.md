@@ -363,11 +363,7 @@ On Oracle Linux 7:
     sudo yum install epel-release
     sudo yum install hw-probe
 
-On Oracle Linux 8:
-
-    sudo yum-config-manager --add-repo=http://download.fedoraproject.org/pub/epel/8/Everything/x86_64/
-    sudo yum install epel-release
-    sudo yum install hw-probe
+On Oracle Linux 8 use [AppImage](README.md#appimage).
 
 
 Install on PCLinuxOS
