@@ -6,7 +6,7 @@
 # WWW (Linux): https://linux-hardware.org
 # WWW (BSD):   https://bsd-hardware.info
 #
-# Copyright (C) 2014-2020 Andrey Ponomarenko's Linux Hardware Project
+# Copyright (C) 2014-2021 Andrey Ponomarenko's Linux Hardware Project
 #
 # Written by Andrey Ponomarenko (ABI Laboratory, LSB Infrastructure,
 # AZOV Framework testing technology, IEEE certified software test
@@ -1761,7 +1761,7 @@ my $ALL_MON_VENDORS = "Acer|ADI|AGO|ALP|Ancor Communications Inc|AOC|Apple|Arnos
 
 my $ALL_MEM_VENDORS = "Atermiter|Axiom|BiNFUL|DeTech|DigiBoard|HEXON|KETECH|Kimtigo|Kllisre|LEADMAX|MARKVISION|MLLSE|PLEXHD|Princeton|Reboto|RZX|Saikano|SHARETRONIC|STARKORTIS|SUPER KINGSTEK|Team|Tigo|TOP MEDIA";
 
-my @KNOWN_BSD = ("clonos", "desktopbsd", "dragonfly", "freenas", "fuguita", "furybsd", "ghostbsd", "hardenedbsd", "libertybsd", "midnightbsd", "nomadbsd", "opnsense", "os108", "pcbsd", "pfsense", "truenas", "trueos", "xigmanas", "arisblu");
+my @KNOWN_BSD = ("clonos", "desktopbsd", "dragonfly", "freenas", "fuguita", "furybsd", "ghostbsd", "hardenedbsd", "hellosystem", "libertybsd", "midnightbsd", "nomadbsd", "opnsense", "os108", "pcbsd", "pfsense", "truenas", "trueos", "xigmanas", "arisblu");
 my $KNOWN_BSD_ALL = join("|", @KNOWN_BSD);
 
 my $USE_DIGEST = 0;
@@ -6824,7 +6824,7 @@ sub probeHW()
                 }
             }
         }
-        elsif(grep { $DevType eq $_ } ("bluetooth", "camera", "card reader", "chipcard", "communication controller", "dvb card", "fingerprint reader", "smartcard reader", "firewire controller", "flash memory", "modem", "multimedia controller", "network", "sd host controller", "sound", "storage", "system peripheral", "tv card", "video", "wireless", "unclassified device", "unassigned class", "vendor specific") or not $DevType)
+        elsif(grep { $DevType eq $_ } ("bluetooth", "camera", "card reader", "chipcard", "communication controller", "dvb card", "fingerprint reader", "smartcard reader", "firewire controller", "flash memory", "modem", "multimedia controller", "network", "sd host controller", "sound", "storage", "system peripheral", "tv card", "video", "wireless", "unclassified device", "unassigned class", "vendor specific", "wireless controller") or not $DevType)
         {
             if(grep { $DevType eq $_ } ("sd host controller", "system peripheral")
             and $HW{$ID}{"Vendor"}=~/Intel/) {
@@ -12417,6 +12417,12 @@ sub probeSys()
         if($WMs=~/\s(\w+wm)/) {
             $Sys{"Current_wm"} = $1;
         }
+        
+        if(runCmd("ps x | grep start-hello"))
+        {
+            $Sys{"DE"} = "helloDesktop";
+            $Sys{"Current_desktop"} = $Sys{"DE"};
+        }
     }
     
     $Sys{"Display_server"} = ucfirst($ENV{"XDG_SESSION_TYPE"});
@@ -12598,7 +12604,7 @@ sub fixFFByBoard($)
     }
     if($Sys{"Type"}!~/$MOBILE_TYPE/)
     {
-        if($Board=~/\b(W7430|Poyang|PSMBOU|Lhotse-II|Nettiling|EI Capitan|JV11-ML|M7x0S Bottom|M720SR)\b/) {
+        if($Board=~/\b(W7430|Poyang|PSMBOU|Lhotse-II|Nettiling|EI Capitan|JV11-ML|M7x0S Bottom|M720SR|26446AG|S5610|SANTA ROSA CRB)\b/) {
             $Sys{"Type"} = "notebook";
         }
         if($Board=~/\b(SurfTab)\b/) {
@@ -12607,7 +12613,7 @@ sub fixFFByBoard($)
     }
     if($Sys{"Type"} ne "all in one")
     {
-        if($Board=~/(AFLMB4-945GSE)/) {
+        if($Board=~/(AFLMB4-945GSE|EZ1600)/) {
             $Sys{"Type"} = "all in one";
         }
     }
@@ -13576,6 +13582,11 @@ sub fixDistr($$$)
                 $Distr = "opnsense";
                 $DistrVersion = $1;
             }
+            elsif($Pkgs=~/helloSystem\s+(\d[\d\.]*)/i)
+            {
+                $Distr = "hellosystem";
+                $DistrVersion = $1;
+            }
         }
         
         if(readFile("$FixProbe_Logs/df")=~/ \/($KNOWN_BSD_ALL)\n/i)
@@ -13776,6 +13787,23 @@ sub probeDistr()
             {
                 $Name = lc($1);
                 $Release = $2;
+            }
+            
+            # helloSystem
+            my $StartHello = "";
+            if($Opt{"FixProbe"}) {
+                $StartHello = readFile($FixProbe_Logs."/start-hello");
+            }
+            else
+            {
+                $StartHello = checkCmd("start-hello");
+                if($StartHello) {
+                    writeLog($LOG_DIR."/start-hello", $StartHello);
+                }
+            }
+            
+            if($StartHello) {
+                $Name = "hellosystem";
             }
         }
         
@@ -14024,10 +14052,6 @@ sub probeDistr()
         }
     }
     
-    if(grep { $Release eq $_ } ("amd64", "x86_64")) {
-        $Release = undef;
-    }
-    
     if($LSB_Rel_F)
     {
         if($LSB_Rel_F=~/DISTRIB_ID[:=][ \t]*(.*)/)
@@ -14056,7 +14080,11 @@ sub probeDistr()
         }
     }
     
-    if((not $Name or not $Release) and $OS_Rel)
+    if(grep { $Release eq $_ } ("amd64", "x86_64")) {
+        $Release = undef;
+    }
+    
+    if((not $Name or not $Release or $Name=~/arcolinux/i) and $OS_Rel)
     {
         if($OS_Rel=~/\bID=[ \t]*[\"\']*([^"'\n]+)/)
         {
@@ -14080,7 +14108,7 @@ sub probeDistr()
         if($OS_Rel=~/\bPRETTY_NAME=[ \t]*[\"\']*([^"'\n]+)/)
         {
             my $PrettyName = $1;
-            if($PrettyName=~/(OpenVZ|Docker Desktop|Pop\!_OS|Devuan|LMDE|CryptoDATA|SkiffOS|GNOME OS|Debian|Sn3rpOs)/) {
+            if($PrettyName=~/(OpenVZ|Docker Desktop|Pop\!_OS|Devuan|LMDE|CryptoDATA|SkiffOS|GNOME OS|Debian|Sn3rpOs|Porteus)/) {
                 $Name = $1;
             }
         }
@@ -14089,6 +14117,9 @@ sub probeDistr()
         {
             $Release = lc($1);
             $Release=~s/\A\Q$Name\E[_-]//i;
+            if($Release eq "i") {
+                $Release = undef;
+            }
         }
         
         if($Name=~/Acronis|Ultimate/i)
@@ -14498,7 +14529,7 @@ sub writeLogs()
         listProbe("logs", "glxinfo");
         my $Glxinfo = runCmd("glxinfo 2>&1");
         $Glxinfo = clearLog_X11($Glxinfo);
-        $Glxinfo=~s/(GLX Visuals)(.|\n)+?\Z/$1 ...\n/g;
+        $Glxinfo=~s/(GLX Visuals)(.|\n)+?\Z/$1\n...\n/g;
         
         writeLog($LOG_DIR."/glxinfo", $Glxinfo);
     }
@@ -18204,7 +18235,7 @@ sub scenario()
         
         if($Opt{"RmObsolete"})
         {
-            foreach my $L ("boot.log", "dmesg.1", "fstab", "grub.cfg", "mount", "pstree", "systemctl", "top", "xorg.log.1")
+            foreach my $L ("boot.log", "dmesg.1", "fstab", "grub.cfg", "mount", "pstree", "systemctl", "top", "xorg.log.1", "modprobe.d", "interrupts")
             {
                 if(-e "$FixProbe_Logs/$L") {
                     unlink("$FixProbe_Logs/$L");
@@ -18349,7 +18380,11 @@ sub scenario()
         
         if(isBSD())
         {
-            if($Sys{"Current_wm"}) {
+            if($Sys{"System"}=~/hellosystem/i
+            and (not $Sys{"DE"} or $Sys{"DE"}=~/openbox/i)) {
+                $Sys{"DE"} = "helloDesktop";
+            }
+            elsif($Sys{"Current_wm"}) {
                 $Sys{"DE"} = $Sys{"Current_wm"};
             }
             elsif($Sys{"Wm"}) {
