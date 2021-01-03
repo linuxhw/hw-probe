@@ -16,6 +16,7 @@ Contents
 * [ Install on FreeBSD     ](#install-on-freebsd)
 * [ Install on OpenBSD     ](#install-on-openbsd)
 * [ Install on NetBSD      ](#install-on-netbsd)
+* [ Install on helloSystem ](#install-on-hellosystem)
 * [ Install on DragonFly   ](#install-on-dragonfly)
 * [ Install on MidnightBSD ](#install-on-midnightbsd)
 * [ Install on pfSense     ](#install-on-pfsense)
@@ -159,6 +160,14 @@ Probe your computer:
     perl hw-probe -all -upload
 
 
+Install on helloSystem
+----------------------
+
+Pre-installed on helloSystem 0.3.0 and newer. From the menu, launch the __Hardware Probe__ utility and follow the on-screen instructions:
+
+![image](https://user-images.githubusercontent.com/2480569/103484839-12564480-4df2-11eb-8c57-d6ee6ef48e2b.png)
+
+
 Install on DragonFly
 --------------------
 
@@ -277,8 +286,6 @@ Easy way to Contribute
 ----------------------
 
 Everyone can contribute to the database even without having BSD installed on their computers by writing [helloSystem Live image](https://github.com/helloSystem/ISO/releases) to a USB stick once and then probing all the computers around w/o the need to install or modify anything!
-
-![image](https://user-images.githubusercontent.com/2480569/103484839-12564480-4df2-11eb-8c57-d6ee6ef48e2b.png)
 
 Just do:
 
