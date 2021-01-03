@@ -289,7 +289,7 @@ Everyone can contribute to the database even without having BSD installed on the
 
 Just do:
 
-* Download and write the [helloSystem Live image](https://github.com/helloSystem/ISO/releases) or [NomadBSD](https://www.nomadbsd.org/download.html) to any USB stick
+* Download and write the [helloSystem Live image](https://github.com/helloSystem/ISO/releases) to any USB stick
 * Plug it to any computer
 * Power on the computer, enter the Boot Menu and select the USB stick
 * Connect to WiFi or just plug the Ethernet cable
