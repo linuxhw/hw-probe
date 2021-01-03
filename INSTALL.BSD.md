@@ -276,18 +276,21 @@ Probe your computer:
 Easy way to Contribute
 ----------------------
 
-Everyone can contribute to the database even without having BSD installed on their computers by installing [this NomadBSD Live USB image](https://www.nomadbsd.org/download.html) to a USB stick once and then probing all the computers around w/o the need to install or modify anything!
+Everyone can contribute to the database even without having BSD installed on their computers by writing [helloSystem Live image](https://github.com/helloSystem/ISO/releases) to a USB stick once and then probing all the computers around w/o the need to install or modify anything!
+
+![image](https://user-images.githubusercontent.com/2480569/103484839-12564480-4df2-11eb-8c57-d6ee6ef48e2b.png)
 
 Just do:
 
-* Download and install [NomadBSD](https://www.nomadbsd.org/download.html) to any USB stick
+* Download and write the [helloSystem Live image](https://github.com/helloSystem/ISO/releases) or [NomadBSD](https://www.nomadbsd.org/download.html) to any USB stick
 * Plug it to any computer
 * Power on the computer, enter the Boot Menu and select the USB stick
-* At first start NomadBSD will run the setup wizard to prepare the USB stick
-* Connect to WiFi by right-click on the desktop or just plug the Ethernet cable
-* Follow the [FreeBSD instructions](#install-on-freebsd) to install and run hw-probe
+* Connect to WiFi or just plug the Ethernet cable
+* From the menu, launch the __Hardware Probe__ utility and follow the on-screen instructions
 
 Now you can probe all your computers around by booting from this USB stick!
+
+The same can be done with the help of [NomadBSD Live USB image](https://www.nomadbsd.org/download.html). In this case follow the [FreeBSD instructions](#install-on-freebsd) on it to install and run hw-probe. Note that at first start NomadBSD will run the setup wizard to prepare the USB stick.
 
 
 Run without Installing
