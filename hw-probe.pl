@@ -13396,9 +13396,9 @@ sub readLine($)
     return $Line;
 }
 
-sub fixDistr($$$)
+sub fixDistr($$$$)
 {
-    my ($Distr, $DistrVersion, $Rel) = @_;
+    my ($Distr, $DistrVersion, $Rel, $Build) = @_;
     
     if(not $Distr)
     {
@@ -13582,11 +13582,21 @@ sub fixDistr($$$)
                 $Distr = "opnsense";
                 $DistrVersion = $1;
             }
-            elsif($Pkgs=~/helloSystem\s+(\d[\d\.]*)/i)
+            elsif($Pkgs=~/helloSystem\s+(.+)/i)
             {
                 $Distr = "hellosystem";
-                $DistrVersion = $1;
+                
+                my $ReleaseString = $1;
+                if($ReleaseString=~/(\d[\d\.]*)_(.+)/)
+                {
+                    $DistrVersion = $1;
+                    $Build = $2;
+                }
+                else {
+                    $DistrVersion = $ReleaseString;
+                }
             }
+            
         }
         
         if(readFile("$FixProbe_Logs/df")=~/ \/($KNOWN_BSD_ALL)\n/i)
@@ -13595,7 +13605,7 @@ sub fixDistr($$$)
         }
     }
     
-    return ($Distr, $DistrVersion, $Rel);
+    return ($Distr, $DistrVersion, $Rel, $Build);
 }
 
 sub probeDistr()
@@ -13863,10 +13873,10 @@ sub probeDistr()
         if($Name!~/dragonfly/)
         { # There is os-release on DragonFly
             if($Name and $Release) {
-                return ($Name, $Release, "");
+                return ($Name, $Release, "", "");
             }
             
-            return ($Name, "", "");
+            return ($Name, "", "", "");
         }
     }
 
@@ -13977,33 +13987,33 @@ sub probeDistr()
         }
         
         if($Name=~/\ARedHatEnterprise/i) {
-            return ("rhel", $Release, "");
+            return ("rhel", $Release, "", "");
         }
         elsif($Name=~/\AROSAEnterpriseServer/i) {
-            return ("rels", $Release, "");
+            return ("rels", $Release, "", "");
         }
         elsif($Name=~/\AROSAEnterpriseDesktop/i) {
-            return ("red", $Release, "");
+            return ("red", $Release, "", "");
         }
         elsif($Name=~/\ARosa\.DX/i)
         {
             if($Descr=~/(Chrome|Nickel|Cobalt)/i) {
-                return ("rosa-dx-".lc($1), $Release, "");
+                return ("rosa-dx-".lc($1), $Release, "", "");
             }
         }
         elsif($Descr=~/\AROSA SX/i)
         {
             if($Descr=~/(CHROME|NICKEL|COBALT)/i) {
-                return ("rosa-sx-".lc($1), $Release, "");
+                return ("rosa-sx-".lc($1), $Release, "", "");
             }
         }
         elsif($Descr=~/\AROSA (Chrome|Nickel|Cobalt) ([\d\.]+)/i)
         {
-            return ("rosa-".lc($1), lc($2), "");
+            return ("rosa-".lc($1), lc($2), "", "");
         }
         elsif($Descr=~/\AROSA (Chrome|Nickel|Cobalt)\Z/i)
         {
-            return ("rosa-".lc($1), $Release, "");
+            return ("rosa-".lc($1), $Release, "", "");
         }
         elsif($Name=~/\AROSA/i)
         {
@@ -14019,20 +14029,20 @@ sub probeDistr()
                 $Rel = "rosafresh-r".$1;
             }
             
-            return ("rosa", $Release, $Rel);
+            return ("rosa", $Release, $Rel, "");
         }
         elsif($Name=~/\AOpenMandriva/i) {
-            return ("openmandriva", $Release, "");
+            return ("openmandriva", $Release, "", "");
         }
         elsif($Name=~/\AopenSUSE Tumbleweed/i
         and $Release=~/\A\d\d\d\d\d\d\d\d\Z/) {
-            return ("opensuse", $Release, "");
+            return ("opensuse", $Release, "", "");
         }
         elsif($Name eq "Pop") {
-            return ("pop!_os", $Release, "");
+            return ("pop!_os", $Release, "", "");
         }
         elsif(lc($Name) eq "neon") {
-            return ("kde-neon", $Release, "");
+            return ("kde-neon", $Release, "", "");
         }
         elsif($Descr=~/\A(Maui|KDE neon|RED OS|Pop\!_OS|LMDE|Devuan|openSUSE Leap)/i) {
             $Name = $1;
@@ -14162,10 +14172,10 @@ sub probeDistr()
     $Name = lc($Name);
     
     if($Name and $Release) {
-        return ($Name, $Release, "");
+        return ($Name, $Release, "", "");
     }
     
-    return ($Name, "", "");
+    return ($Name, "", "", "");
 }
 
 sub devID(@)
@@ -14944,6 +14954,7 @@ sub writeLogs()
                 $Efibootmgr = encryptUUIDs($Efibootmgr);
                 $Efibootmgr = hideByRegexp($Efibootmgr, qr/MAC\((.+?)\)/);
                 $Efibootmgr = hideByRegexp($Efibootmgr, qr/0x([a-f\d]{8})/);
+                $Efibootmgr = hideByRegexp($Efibootmgr, qr/U\.U\.I\.D\.=([a-fA-F\d\.]{17}-[a-fA-F\d\.]{9}-[a-fA-F\d\.]{9}-[a-fA-F\d\.]{9}-[a-fA-F\d\.]{25})/);
                 writeLog($LOG_DIR."/efibootmgr", $Efibootmgr);
             }
         }
@@ -18303,9 +18314,9 @@ sub scenario()
         readHost($Opt{"FixProbe"}); # instead of probeSys
         fixLogs($FixProbe_Logs);
         
-        my ($Distr, $DistrVersion, $Rel) = probeDistr();
+        my ($Distr, $DistrVersion, $Rel, $Build) = probeDistr();
         
-        ($Distr, $DistrVersion, $Rel) = fixDistr($Distr, $DistrVersion, $Rel);
+        ($Distr, $DistrVersion, $Rel, $Build) = fixDistr($Distr, $DistrVersion, $Rel, $Build);
         
         if($DistrVersion) {
             $Distr = $Distr."-".$DistrVersion;
@@ -18316,7 +18327,7 @@ sub scenario()
             $Sys{"System"} = $Distr;
         }
         
-        if($DistrVersion)
+        if($DistrVersion or $DistrVersion eq "0")
         { # fix system version
             $Sys{"System_version"} = $DistrVersion;
         }
@@ -18324,6 +18335,11 @@ sub scenario()
         if($Rel)
         { # fix system name
             $Sys{"Systemrel"} = $Rel;
+        }
+        
+        if($Build)
+        { # fix system name
+            $Sys{"Systembuild"} = $Build;
         }
         
         if(isBSD())
