@@ -243,7 +243,7 @@ See https://clearlinux.org/software/flathub/hardware-probe
 
     sudo swupd bundle-add desktop
     flatpak install flathub org.linux_hardware.hw-probe
-    sudo flatpak run org.linux_hardware.hw-probe -all -upload
+    flatpak run org.linux_hardware.hw-probe -all -upload
 
 
 Install on ClearOS

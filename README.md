@@ -196,7 +196,9 @@ Install universal package:
 
 Now you can create computer probes:
 
-    sudo -E flatpak run org.linux_hardware.hw-probe -all -upload
+    flatpak run org.linux_hardware.hw-probe -all -upload
+
+Run it as root if you want to check your hard drives health.
 
 ###### App Center
 
