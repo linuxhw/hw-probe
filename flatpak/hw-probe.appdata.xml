@@ -24,7 +24,10 @@
       to check hardware and collect all the system logs at once:
     </p>
     <p>
-      sudo -E flatpak run org.linux_hardware.hw-probe -all -upload
+      flatpak run org.linux_hardware.hw-probe -all -upload
+    </p>
+    <p>
+      Run it as root if you want to check your hard drives health.
     </p>
     <p>
       If some of hardware devices don't work due to a missed driver

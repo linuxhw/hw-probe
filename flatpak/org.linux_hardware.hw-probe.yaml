@@ -1,6 +1,6 @@
 app-id: org.linux_hardware.hw-probe
 runtime: org.freedesktop.Platform
-runtime-version: "18.08"
+runtime-version: "20.08"
 sdk: org.freedesktop.Sdk
 command: hw-probe
 finish-args:
@@ -113,8 +113,8 @@ modules:
       - make install prefix=/ DESTDIR=$FLATPAK_DEST
     sources:
       - type: archive
-        url: https://download-mirror.savannah.gnu.org/releases/dmidecode/dmidecode-3.2.tar.xz
-        sha256: 077006fa2da0d06d6383728112f2edef9684e9c8da56752e97cd45a11f838edd
+        url: https://download-mirror.savannah.gnu.org/releases/dmidecode/dmidecode-3.3.tar.xz
+        sha256: 82c737a780614c38a783e8055340d295e332fb12c7f418b5d21a0797d3fb1455
   - name: iproute2
     buildsystem: simple
     build-commands:
@@ -124,8 +124,8 @@ modules:
       - install -D ./ip/ip $FLATPAK_DEST/sbin/ip
     sources:
       - type: archive
-        url: https://mirrors.edge.kernel.org/pub/linux/utils/net/iproute2/iproute2-4.18.0.tar.xz
-        sha256: a9e6c70c95f513871c5e1f4e452c04fcb3c4d8a05be651bd794cd994a52daa45
+        url: https://mirrors.edge.kernel.org/pub/linux/utils/net/iproute2/iproute2-5.9.0.tar.xz
+        sha256: a25dac94bcdcf2f73316c7f812115ea7a5710580bad892b08a83d00c6b33dacf
   - name: lm-sensors
     buildsystem: simple
     build-commands:
@@ -192,8 +192,8 @@ modules:
       - make install DESTDIR=$FLATPAK_DEST PREFIX=/
     sources:
       - type: archive
-        url: https://acpica.org/sites/acpica/files/acpica-unix-20200110.tar.gz
-        sha256: 9d3f60fbe801cf1049f854de23da5c9a569a34267b27b97fab3d66a68c5266b1
+        url: https://acpica.org/sites/acpica/files/acpica-unix-20201113.tar.gz
+        sha256: 48c4e0c07b42581d017487cc9264470e6420605ddd24cbb5d16410d02a771461
   - name: hdparm
     buildsystem: simple
     build-commands:
@@ -202,8 +202,8 @@ modules:
       - install -D INST/sbin/hdparm $FLATPAK_DEST/sbin/hdparm
     sources:
       - type: archive
-        url: https://github.com/linuxhw/build-stuff/releases/download/1.4/hdparm-9.58.tar.gz
-        sha256: 9ae78e883f3ce071d32ee0f1b9a2845a634fc4dd94a434e653fdbef551c5e10f
+        url: https://github.com/linuxhw/build-stuff/releases/download/1.5/hdparm-9.60.tar.gz
+        sha256: 8397739c73e44d5ab96c4aef28fa9c0147276d53a1b5657ce04c4565cf6635cc
   - name: smartmontools
     buildsystem: simple
     build-commands:
@@ -215,8 +215,8 @@ modules:
       - make install DESTDIR=$FLATPAK_DEST
     sources:
       - type: archive
-        url: https://github.com/linuxhw/build-stuff/releases/download/1.4/smartmontools-7.1.tar.gz
-        sha256: 3f734d2c99deb1e4af62b25d944c6252de70ca64d766c4c7294545a2e659b846
+        url: https://github.com/linuxhw/build-stuff/releases/download/1.5/smartmontools-7.2.tar.gz
+        sha256: 5cd98a27e6393168bc6aaea070d9e1cd551b0f898c52f66b2ff2e5d274118cd6
   - name: util-linux
     buildsystem: simple
     build-commands:
@@ -229,12 +229,12 @@ modules:
       - install -D ./lscpu $FLATPAK_DEST/bin/lscpu
     sources:
       - type: archive
-        url: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.34/util-linux-2.34.tar.xz
-        sha256: 743f9d0c7252b6db246b659c1e1ce0bd45d8d4508b4dfa427bbb4a3e9b9f62b5
+        url: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.36/util-linux-2.36.tar.xz
+        sha256: 9e4b1c67eb13b9b67feb32ae1dc0d50e08ce9e5d82e1cccd0ee771ad2fa9e0b1
   - name: libx86emu
     buildsystem: simple
     build-commands:
-      - echo '2.1' > VERSION
+      - echo '3.1' > VERSION
       - rm -f git2log
       - sed -i -e 's/ -g / -s /' Makefile
       - make -j $FLATPAK_BUILDER_N_JOBS
@@ -243,8 +243,8 @@ modules:
       - cp -fr INST/usr/* $FLATPAK_DEST/
     sources:
       - type: archive
-        url: https://github.com/wfeldt/libx86emu/archive/2.1.tar.gz
-        sha256: 89fd46760a02e2337506e77e152469baae4ff1d59413277b0954b3fe0f39cbfb
+        url: https://github.com/wfeldt/libx86emu/archive/3.1.tar.gz
+        sha256: 70b574ed84dcba2dc4f54a9a1c14539e84ddbe628842c638a2f98d987d879dac
   - name: lex
     buildsystem: simple
     build-commands:
@@ -259,9 +259,10 @@ modules:
   - name: hwinfo
     skip-arches:
       - aarch64
+      - arm
     buildsystem: simple
     build-commands:
-      - echo '21.68' > VERSION
+      - echo '21.71' > VERSION
       - rm -f git2log
       - sed -i -e 's/ -g / -s /' Makefile.common
       - CFLAGS='-I'$FLATPAK_DEST'/include' LDFLAGS='-L'$FLATPAK_DEST'/lib64 -L'$FLATPAK_DEST'/lib -lx86emu' LD_LIBRARY_PATH=$FLATPAK_DEST'/lib64:'$FLATPAK_DEST'/lib' make
@@ -269,14 +270,15 @@ modules:
       - cp -fr INST/usr/* $FLATPAK_DEST/
     sources:
       - type: archive
-        url: https://github.com/openSUSE/hwinfo/archive/21.68.tar.gz
-        sha256: 066c3cd8802d81b5a55a3a6ba55095eba613e817c60ebae8be3465e7e702c216
+        url: https://github.com/openSUSE/hwinfo/archive/21.71.tar.gz
+        sha256: c4c573eb15cbc10103f5044b485d7e4ff941500ed559743a1c98e6a6deb0ebda
   - name: hwinfo
     only-arches:
       - aarch64
+      - arm
     buildsystem: simple
     build-commands:
-      - echo '21.68' > VERSION
+      - echo '21.71' > VERSION
       - rm -f git2log
       - sed -i -e 's/ -g / -s /' Makefile.common
       - make
@@ -284,8 +286,8 @@ modules:
       - cp -fr INST/usr/* $FLATPAK_DEST/
     sources:
       - type: archive
-        url: https://github.com/openSUSE/hwinfo/archive/21.68.tar.gz
-        sha256: 066c3cd8802d81b5a55a3a6ba55095eba613e817c60ebae8be3465e7e702c216
+        url: https://github.com/openSUSE/hwinfo/archive/21.71.tar.gz
+        sha256: c4c573eb15cbc10103f5044b485d7e4ff941500ed559743a1c98e6a6deb0ebda
   - name: perl-uri
     buildsystem: simple
     build-commands:
@@ -306,8 +308,8 @@ modules:
       - cp -fr ./INST/SITELIB/* $FLATPAK_DEST/share/perl5/
     sources:
       - type: archive
-        url: https://cpan.metacpan.org/authors/id/O/OA/OALDERS/HTTP-Message-6.18.tar.gz
-        sha256: d060d170d388b694c58c14f4d13ed908a2807f0e581146cef45726641d809112
+        url: https://cpan.metacpan.org/authors/id/O/OA/OALDERS/HTTP-Message-6.26.tar.gz
+        sha256: 6ce6c359de75c3bb86696a390189b485ec93e3ffc55326b6d044fa900f1725e1
   - name: perl-net-http
     buildsystem: simple
     build-commands:
@@ -317,8 +319,8 @@ modules:
       - cp -fr ./INST/SITELIB/* $FLATPAK_DEST/share/perl5/
     sources:
       - type: archive
-        url: https://cpan.metacpan.org/authors/id/O/OA/OALDERS/Net-HTTP-6.18.tar.gz
-        sha256: 7e42df2db7adce3e0eb4f78b88c450f453f5380f120fd5411232e03374ba951c
+        url: https://cpan.metacpan.org/authors/id/O/OA/OALDERS/Net-HTTP-6.19.tar.gz
+        sha256: 52b76ec13959522cae64d965f15da3d99dcb445eddd85d2ce4e4f4df385b2fc4
   - name: perl-try-tiny
     buildsystem: simple
     build-commands:
@@ -372,8 +374,8 @@ modules:
       - cp -fr ./INST/SITELIB/* $FLATPAK_DEST/share/perl5/
     sources:
       - type: archive
-        url: https://cpan.metacpan.org/authors/id/E/ET/ETHER/libwww-perl-6.35.tar.gz
-        sha256: dda2578d7b32152c4afce834761a61d117de286c705a9f7972c7ac6032ca5953
+        url: https://cpan.metacpan.org/authors/id/E/ET/ETHER/libwww-perl-6.36.tar.gz
+        sha256: 75c034ab4b37f4b9506dc644300697505582cf9545bcf2e2079e7263f675290a
   - name: perl-parent
     buildsystem: simple
     build-commands:
@@ -383,8 +385,8 @@ modules:
       - cp -fr ./INST/SITELIB/* $FLATPAK_DEST/share/perl5/
     sources:
       - type: archive
-        url: https://cpan.metacpan.org/authors/id/C/CO/CORION/parent-0.237.tar.gz
-        sha256: 1089d9648565c1d1e655fa4cb603272d3126747b7b5f836ffee685e27e53caae
+        url: https://cpan.metacpan.org/authors/id/C/CO/CORION/parent-0.238.tar.gz
+        sha256: 38f58fdef3e28a194c9c8d0dc5d02672faf93c069f40c5bcb1fabeadbbc4d2d1
   - name: perl-time-local
     buildsystem: simple
     build-commands:
@@ -394,8 +396,8 @@ modules:
       - cp -fr ./INST/SITELIB/* $FLATPAK_DEST/share/perl5/
     sources:
       - type: archive
-        url: https://cpan.metacpan.org/authors/id/D/DR/DROLSKY/Time-Local-1.28.tar.gz
-        sha256: 9278b9e5cc99dcbb0fd27a43e914828b59685601edae082889b5ee7266afe10e
+        url: https://cpan.metacpan.org/authors/id/D/DR/DROLSKY/Time-Local-1.30.tar.gz
+        sha256: c7744f6b2986b946d3e2cf034df371bee16cdbafe53e945abb1a542c4f8920cb
   - name: perl-data-dumper
     buildsystem: simple
     build-commands:
@@ -426,7 +428,7 @@ modules:
     sources:
       - type: archive
         url: https://github.com/linuxhw/build-stuff/releases/download/1.5/hw-probe-1.5-AI.tar.gz
-        sha256: f968f99741067c6f682d00df16c18d337b570e37da62c002e82c05eb0cd2eaa1
+        sha256: 7b927ab22b07aa8fcf3c9f2b947903c787bef77d11c3fc9edcb8f8cad4cb3b6d
   - name: perl-base
     buildsystem: simple
     build-commands:
@@ -437,5 +439,5 @@ modules:
       - cd lib && cat $FLATPAK_DEST/share/PERL5_BASE | while read i; do mkdir -p $FLATPAK_DEST/share/perl5/`dirname $i`; cp -fr $i $FLATPAK_DEST/share/perl5/$i; done
     sources:
       - type: archive
-        url: https://www.cpan.org/src/5.0/perl-5.28.2.tar.xz
-        sha256: 0b0189bfa4b2da20e899b4bdd746ac402e8f746a58e4fcf5516484157f2aab07
+        url: https://www.cpan.org/src/5.0/perl-5.32.0.tar.xz
+        sha256: 6f436b447cf56d22464f980fac1916e707a040e96d52172984c5d184c09b859b
