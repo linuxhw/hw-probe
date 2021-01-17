@@ -130,7 +130,7 @@ Download Deb package [hw-probe_1.5-1_all.deb](https://github.com/linuxhw/hw-prob
 Install on BSD
 --------------
 
-On FreeBSD and derivatives (GhostBSD, NomadBSD, FuryBSD, TrueOS, PC-BSD, HardenedBSD, FreeNAS, TrueNAS, pfSense, OPNsense, XigmaNAS, DesktopBSD, etc.), OpenBSD and derivatives (AdJ, FuguIta, etc.), NetBSD and derivatives (OS108, etc.), DragonFly and MidnightBSD.
+On FreeBSD and derivatives (GhostBSD, NomadBSD, FuryBSD, TrueOS, PC-BSD, HardenedBSD, FreeNAS, TrueNAS, pfSense, OPNsense, XigmaNAS, DesktopBSD, ArisbluBSD, helloSystem, etc.), OpenBSD and derivatives (AdJ, FuguIta, etc.), NetBSD and derivatives (OS108, etc.), DragonFly and MidnightBSD.
 
 See [INSTALL.BSD.md](INSTALL.BSD.md).
 
