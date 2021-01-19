@@ -150,7 +150,7 @@ parts:
       - usr/sbin/lspci
       - usr/share/pci.ids
   acpica-unix:
-    source: https://acpica.org/sites/acpica/files/acpica-unix-20201113.tar.gz
+    source: https://acpica.org/sites/acpica/files/acpica-unix-20210105.tar.gz
     source-type: tar
     plugin: make
     build-attributes: [no-patchelf]
@@ -212,7 +212,7 @@ parts:
     prime:
       - usr/lib/libusb*.so*
   util-linux:
-    source: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.36/util-linux-2.36.tar.xz
+    source: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.36/util-linux-2.36.1.tar.xz
     source-type: tar
     plugin: make
     override-build: |
