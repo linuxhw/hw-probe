@@ -64,7 +64,7 @@ Command line to Run
 Install on Ubuntu
 -----------------
 
-On Ubuntu and Ubuntu based Linux distributions (Kubuntu, Lubuntu, Linux Mint, Zorin, Pop!_OS, elementary OS, KDE neon, Peppermint, Linuxfx, Linux Lite, HamoniKR, WindowsFX, Trisquel, etc.).
+On Ubuntu and Ubuntu based Linux distributions (Kubuntu, Lubuntu, Xubuntu, Linux Mint, Zorin, Pop!_OS, elementary OS, KDE neon, Peppermint, Linuxfx, Linux Lite, HamoniKR, WindowsFX, Trisquel, etc.).
 
 ###### Ubuntu package
 
@@ -99,7 +99,7 @@ The [Snap package](README.md#snap) is also available to install and run easily o
 Install on Debian
 -----------------
 
-On Debian and Debian based Linux distributions (Kali, LMDE, MX Linux, antiX, Devuan, PureOS, Parrot, Pardus, deepin, BunsenLabs, SolydXK, SparkyLinux, Q4OS, Tails, Raspbian, etc.).
+On Debian and Debian based Linux distributions (Kali, LMDE, MX Linux, antiX, Devuan, PureOS, Parrot, Pardus, deepin, BunsenLabs, SolydXK, SparkyLinux, Q4OS, Tails, Raspbian, BigLinux, siduction, etc.).
 
 Enable sudo by https://wiki.debian.org/sudo
 
@@ -156,12 +156,15 @@ Try `sudo pacman -Sy` if pacman can't find the package.
 Install on Arch Linux
 ---------------------
 
-On Arch Linux and derivatives (EndeavourOS, Garuda, KaOS, etc.):
+On Arch Linux and derivatives (Artix, EndeavourOS, RebornOS, Garuda, KaOS, Archman, Bluestar, LaxerOS, etc.):
 
 ###### From AUR
 
+When using LiveCD you need to add `cow_spacesize=512M` boot option to have enough space.
+
 Install edid-decode dependency:
 
+    pacman -Sy git binutils fakeroot make gcc
     git clone https://aur.archlinux.org/edid-decode-git.git
     cd edid-decode-git
     makepkg -sri
@@ -277,7 +280,7 @@ See https://flathub.org/apps/details/org.linux_hardware.hw-probe
 Install on Gentoo
 -----------------
 
-On Gentoo and Gentoo based Linux distributions (CloudReady, Calculate, Funtoo, Redcore, etc.):
+On Gentoo and Gentoo based Linux distributions (CloudReady, Calculate, Funtoo, Redcore, LiGurOS, etc.):
 
     sudo emerge --ask sys-apps/hw-probe
 
@@ -332,7 +335,7 @@ Pre-installed on OpenMandriva Lx 4.0 and newer.
 Install on openSUSE
 -------------------
 
-Select and install an RPM package for your openSUSE distribution: https://software.opensuse.org/package/hw-probe
+Select and install an RPM package for your openSUSE distribution and derivatives (GeckoLinux, etc.): https://software.opensuse.org/package/hw-probe
 
 openSUSE Leap 15.1:
 
