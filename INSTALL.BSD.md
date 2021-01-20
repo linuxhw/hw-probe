@@ -251,7 +251,9 @@ Probe your computer:
 Install on OPNsense
 -------------------
 
-Install hw-probe plugin under Menu->Firmware->Plugins.
+For OPNsense 20.7.8 and newer.
+
+Install os-hw-probe plugin under Menu->Firmware->Plugins.
 
 
 Install on XigmaNAS
