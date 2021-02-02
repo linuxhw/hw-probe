@@ -1,0 +1,14 @@
+[Unit]
+Description=Probe hardware and upload result to Linux hardware database
+ConditionVirtualization=false
+After=local-fs.target
+
+[Service]
+Type=idle
+ExecStart=/usr/bin/hw-probe -all -upload
+IOSchedulingClass=idle
+Nice=19
+IOSchedulingClass=2
+IOSchedulingPriority=7
+ProtectSystem=full
+StandardOutput=null

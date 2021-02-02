@@ -18,6 +18,7 @@ Contents
 * [ Live CD      ](#live-cd)
 * [ Snap         ](#snap)
 * [ Flatpak      ](#flatpak)
+* [ Periodic     ](#periodic)
 * [ Inventory    ](#inventory)
 * [ Offline view ](#offline-view)
 * [ ACPI dump    ](#acpi-dump)
@@ -102,6 +103,7 @@ The app runs on all 64-bit Linux distributions with `Glibc >= 2.14` including:
 * Gentoo 12 and newer
 * Sabayon 13 and newer
 * Slackware 14.2 and newer
+* OpenMandriva 3.0 and newer
 
 
 Docker
@@ -232,6 +234,28 @@ Need to setup Flatpak (https://flatpak.org/setup/):
 * Arch Linux
 * Chrome OS
 
+
+Periodic
+-------
+If your distribuition is running under systemd and you want to generate and upload
+hw-probe report automatically, please install as root:
+
+    cp -a periodic/*.{service,timer} $(systemdsystemunitdir)/
+
+Normally systemd units dir is located at `/usr/lib/systemd/system`
+You may want to get systemd unit dir by running
+`pkg-config --variable=systemdsystemunitdir systemd`
+
+Enable hw-probe.timer by running as root:
+
+    systemctl enable --now hw-probe.timer
+
+This timer will execute one time per month a hw-probe.service that will generate and 
+upload report to https://linux-hardware.org
+
+User may edit hw-probe.timer and change OnCalendar value to execute
+hw-probe report on different time period.
+Values lower than month are STRONGLY not recommended.
 
 Inventory
 ---------
