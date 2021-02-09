@@ -173,8 +173,8 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "email=s" => \$Opt{"Email"},
 # Monitoring
   "monitoring!" => \$Opt{"Monitoring"},
-  "start!" => \$Opt{"StartMonitoring"},
-  "stop!" => \$Opt{"StopMonitoring"},
+  "start|start-monitoring!" => \$Opt{"StartMonitoring"},
+  "stop|stop-monitoring!" => \$Opt{"StopMonitoring"},
   "remind-inventory!" => \$Opt{"RemindGroup"},
 # Other
   "src|source=s" => \$Opt{"Source"},
@@ -280,11 +280,12 @@ EXAMPLE:
 
 PRIVACY:
   Private information (including the username, machine's hostname, IP addresses,
-  MAC addresses and serial numbers) is NOT uploaded to the database.
+  MAC addresses, UUIDs and serial numbers) is NOT uploaded to the database.
   
   The tool uploads 32-byte prefix of salted SHA512 hash of MAC addresses and serial
-  numbers to properly identify unique computers and hard drives. All the data is
-  uploaded securely via HTTPS.
+  numbers to properly identify unique computers and hard drives. UUIDs are decorated
+  in the same way, but formatted like regular UUIDs in order to save readability of
+  logs. All the data is uploaded securely via HTTPS.
 
 INFORMATION OPTIONS:
   -h|-help
@@ -946,13 +947,11 @@ my @DE_Package = (
     [ "deepin-desktop-base", "Deepin" ],
     
     [ "manjaro-mate-settings", "MATE" ],
-    [ "mate-session-manager", "MATE" ],
     
     [ "manjaro-lxde-settings", "LXDE" ],
     [ "task-lxde", "LXDE" ],
     
     [ "manjaro-lxqt-extra-settings", "LXQt" ],
-    [ "lxqt-session", "LXQt" ],
     [ "task-lxqt", "LXQt" ],
     
     [ "manjaro-xfce", "XFCE" ],
@@ -963,6 +962,10 @@ my @DE_Package = (
     [ "plasma-desktop 5", "KDE5" ],
     [ "task-plasma5", "KDE5" ],
     [ "plasma-workspace 4:5", "KDE5" ],
+    [ "plasma5-plasma-workspace", "KDE5" ],
+    
+    [ "mate-session-manager", "MATE" ],
+    [ "lxqt-session", "LXQt" ],
     
     [ "plasma-desktop 4:4", "KDE4" ],
     [ "kde-settings-plasma", "KDE4" ],
@@ -1597,6 +1600,9 @@ my @WrongAddr = (
     # MAC/clientHash(MAC)
     "00-00-00-00-00-00", "9B615E889BC3EDDF63600C8DAA6D56CC",
     "FF-FF-FF-FF-FF-FF", "2F847FFB96ED2B0B7C2AB39815DC6545",
+    "00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00",
+    "47D6D280AB9F429EB219C6991590CEBE",
+    "DEFAULT", "ACA66517F781B3D0DC573F9992EC6E44",
     # Huawei modem
     "0C-5B-8F-27-9A-64", "F8AFE52EC893B5F610764246CE0EC5DD",
     # Qualcomm Atheros AR8151
@@ -1639,6 +1645,7 @@ my @WrongAddr = (
     "00BFE151A76E569ADB46E0DD338B8656",
     "8AFE7BDBD8B60C9645EDA141A9757E0A",
     "2DDCA0957AD7C256C77DFC231D80491B",
+    "BBF288DD430B105563756C4194B5142B",
     # Others
     "00-DD-00-00-00-00", "631A71585F7CE74AE0C6E575DD1F4B31",
     "88-88-88-88-87-88", "FD0368E31788DE08AEC3C0F414D65552",
@@ -1991,6 +1998,7 @@ sub hideEmail($)
     my $Content = $_[0];
     $Content=~s/([<\(])[^()<>\s]+\@[^()<>\s]+([\)>])/$1\XXX\@\XXX$2/g;
     $Content=~s/([\s\(\<])[\w\.\-]+\@[\w\.\-]+\.[a-zA-Z]{2,}([\:\s\)\>])/$1\XXX\@\XXX$2/g;
+    $Content=~s/ [\w\.\-]+\@[\w\-]+:/ \XXX\@\XXX:/g;
     return $Content;
 }
 
@@ -3291,7 +3299,11 @@ sub getDefaultType($$$)
             return "fingerprint reader";
         }
         
-        if($Device->{"Vendor"}=~/Synaptics/ and $DId=~/0081|009a|009b|00a2|00a8|00bb|00bd|00be|00c7|00c9|00df|00e7/) {
+        if($Device->{"Vendor"}=~/Synaptics/ and $DId=~/0081|009a|009b|00a2|00a8|00bb|00bd|00be|00c7|00c9|00df|00e7|00e9/) {
+            return "fingerprint reader";
+        }
+        
+        if($Device->{"Vendor"}=~/Goodix/ and $DId=~/533c/) {
             return "fingerprint reader";
         }
     }
@@ -3753,6 +3765,21 @@ sub probeHW()
         
         if($Opt{"HWLogs"}) {
             writeLog($LOG_DIR."/modstat", $Modstat);
+        }
+    }
+    
+    my $Sndstat = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Sndstat = readFile($FixProbe_Logs."/sndstat");
+    }
+    elsif(enabledLog("sndstat"))
+    {
+        listProbe("logs", "sndstat");
+        $Sndstat = readFile("/dev/sndstat");
+        
+        if($Opt{"HWLogs"}) {
+            writeLog($LOG_DIR."/sndstat", $Sndstat);
         }
     }
     
@@ -4961,15 +4988,6 @@ sub probeHW()
     
     if($Sysctl)
     {
-        if($Sysctl=~/hw\.physmem: (.+)/)
-        {
-            $Sys{"Ram_total"} = $1/1024;
-            
-            if($Sysctl=~/Free Memory:\s+(.+)/) {
-                $Sys{"Ram_used"} = $Sys{"Ram_total"} - $1;
-            }
-        }
-        
         if(isOpenBSD())
         {
             if($Sysctl=~/hw\.disknames=(.+)/)
@@ -6792,6 +6810,10 @@ sub probeHW()
         my $DevType = $HW{$ID}{"Type"};
         my $Dr = $HW{$ID}{"Driver"};
         my $Class = $HW{$ID}{"Class"};
+        my $Count = getDeviceCount($ID);
+        if(not $Count) {
+            $Count = 1;
+        }
         
         if($BSD)
         {
@@ -6800,10 +6822,10 @@ sub probeHW()
                 if($ID=~/pci:/)
                 {
                     if($Sys{"NICs"}) {
-                        $Sys{"NICs"} += 1;
+                        $Sys{"NICs"} += $Count;
                     }
                     else {
-                        $Sys{"NICs"} = 1;
+                        $Sys{"NICs"} = $Count;
                     }
                 }
             }
@@ -7435,7 +7457,7 @@ sub probeHW()
         fixFFByMonitor($HW{$_}{"Device"});
     }
     
-    if($Sys{"Model"}) {
+    if($Sys{"Vendor"} or $Sys{"Model"}) {
         fixFFByModel($Sys{"Vendor"}, $Sys{"Model"});
     }
     
@@ -7482,7 +7504,7 @@ sub probeHW()
         }
     }
     
-    if($Sys{"Model"}) {
+    if($Sys{"Vendor"} or $Sys{"Model"}) {
         fixFFByModel($Sys{"Vendor"}, $Sys{"Model"});
     }
     
@@ -7524,7 +7546,7 @@ sub probeHW()
             $Board_ID = registerBoard({"Vendor"=>fmtVal($Sys{"Vendor"}), "Device"=>$Sys{"Model"}});
         }
         
-        if($Sys{"Model"}) {
+        if($Sys{"Vendor"} or $Sys{"Model"}) {
             fixFFByModel($Sys{"Vendor"}, $Sys{"Model"});
         }
     }
@@ -7537,6 +7559,17 @@ sub probeHW()
             $CdromDescr=~s{/.+}{};
             $CDROM_ID = registerCdrom($CdromDescr, "acd0");
         }
+    }
+    
+    if($Sysctl=~/hw\.physmem[:=]\s*([^\s]+)/)
+    {
+        $Sys{"Ram_total"} = $1/1024;
+        
+        if($Sysctl=~/Free Memory:\s+(.+)/) {
+            $Sys{"Ram_used"} = $Sys{"Ram_total"} - $1;
+        }
+        
+        registerRAM($Sys{"Ram_total"});
     }
     
     # Printers
@@ -8958,7 +8991,7 @@ sub probeHW()
             
             $Sys{"Model"}=~s/\s+Board\Z//i;
             
-            if($Sys{"Model"}) {
+            if($Sys{"Vendor"} or $Sys{"Model"}) {
                 fixFFByModel($Sys{"Vendor"}, $Sys{"Model"});
             }
         }
@@ -9855,6 +9888,8 @@ sub probeHW()
             if($Meminfo=~/MemAvailable:\s+(\d+) kB/) {
                 $Sys{"Ram_used"} = $Sys{"Ram_total"} - $1;
             }
+            
+            registerRAM($Sys{"Ram_total"});
         }
     }
     
@@ -10177,7 +10212,7 @@ sub probeHW()
         writeLog($LOG_DIR."/xinput", clearLog_X11($XInput));
     }
     
-    if(not $Sys{"Display_server"} and $XInput=~/xwayland/i) {
+    if($XInput=~/xwayland/i) {
         $Sys{"Display_server"} = "Wayland";
     }
     
@@ -10611,6 +10646,33 @@ sub registerCPU($)
     return $CPU_ID;
 }
 
+sub registerRAM($)
+{
+    my $TotalKb = $_[0];
+    
+    if(grep {$_=~/\Amem:/} keys(%HW)) {
+        return undef;
+    }
+    
+    my %Device = ();
+    $Device{"FF"} = "DIMM";
+    if($Sys{"Type"}=~/$MOBILE_TYPE/) {
+        $Device{"FF"} = "SODIMM";
+    }
+    
+    $Device{"Type"} = "memory";
+    $Device{"Status"} = "works";
+    $Device{"Size"} = sprintf("%.0f", $TotalKb/1048576)."GB";
+    
+    $Device{"Device"} = "RAM Module(s) ".$Device{"Size"}." ".$Device{"FF"};
+    
+    my $RAM_ID = "mem:ram-modules-".lc($Device{"Size"})."-".lc($Device{"FF"});
+    
+    $HW{$RAM_ID} = \%Device;
+    
+    return $RAM_ID;
+}
+
 sub registerCdrom($$)
 {
     my ($Descr, $DevFile) = @_;
@@ -10652,7 +10714,7 @@ sub registerBattery($)
     if(not $Sys{"Type"}
     or $Sys{"Type"}=~/$DESKTOP_TYPE|$SERVER_TYPE|other/)
     {
-        if(not grep {$Sys{"Type"} eq $_} ("mini pc", "all in one")) {
+        if(not grep {$Sys{"Type"} eq $_} ("mini pc", "all in one") and $Device->{"Device"}!~/CRB/) {
             $Sys{"Type"} = "notebook";
         }
     }
@@ -12640,8 +12702,15 @@ sub fixFFByModel($$)
     
     if($Sys{"Type"}!~/$DESKTOP_TYPE|$SERVER_TYPE/)
     {
-        if($M=~/MacPro|ESPRIMO P|Aspire easyStore|X11SSL-F|TERRA_PC/) {
+        if($M=~/MacPro|ESPRIMO P|Aspire easyStore|X11SSL-F|TERRA_PC|VXC Class/) {
             $Sys{"Type"} = "desktop";
+        }
+    }
+    
+    if($Sys{"Type"}!~/firewall/)
+    { # expansion
+        if($M=~/Firewall/ or $V=~/Silver Peak Systems/) {
+            $Sys{"Type"} = "firewall";
         }
     }
     
@@ -13102,7 +13171,7 @@ sub fixHWaddr()
         my $UAddr = $Sys{"HWaddr"};
         $UAddr=~s/\-/:/g;
         
-        if($EthtoolP or $IFConfig=~/\Q$UAddr\E/i)
+        if($EthtoolP or $IFConfig=~/\Q$UAddr\E/i or grep { uc($Sys{"HWaddr"}) eq $_ } @WrongAddr)
         {
             if(my $NewAddr = detectHWaddr($IFConfig, $ByIPaddr)) {
                 $Sys{"HWaddr"} = $NewAddr;
@@ -13156,7 +13225,7 @@ sub detectHWaddr(@)
     {
         my $Addr = undef;
         
-        if($Block=~/\A(docker|vboxnet|vmnet)/) {
+        if($Block=~/\A(docker|vboxnet|vmnet|tun\d)/) {
             next;
         }
         
@@ -13338,6 +13407,10 @@ sub selectHWAddr(@)
     }
     elsif(@Virtual) {
         $Sel = $Virtual[0];
+    }
+    
+    if(not $Sel) {
+        return clientHash("DEFAULT");
     }
     
     return $Sel;
@@ -13539,7 +13612,7 @@ sub fixDistr($$$$)
         {
             $Distr = "ubuntu";
         }
-        elsif($Sys{"Kernel"}=~/-arch1-/)
+        elsif($Sys{"Kernel"}=~/-arch[12]-/)
         {
             $Distr = "arch";
         }
@@ -13577,10 +13650,14 @@ sub fixDistr($$$$)
                 $Distr = "ghostbsd";
                 $DistrVersion = $1;
             }
-            elsif($Pkgs=~/\/opnsense (\d[\.\d]+)/i)
+            elsif($Pkgs=~/TING opnsense/i)
+            {
+                $Distr = "ting";
+            }
+            elsif($Pkgs=~/\/opnsense(|\-devel) (\d[\.\d]*\d)/i)
             {
                 $Distr = "opnsense";
-                $DistrVersion = $1;
+                $DistrVersion = $2;
             }
             elsif($Pkgs=~/helloSystem\s+(.+)/i)
             {
@@ -13864,6 +13941,12 @@ sub probeDistr()
         
         if($Uname=~/($KNOWN_BSD_ALL)/i) {
             $Name = lc($1);
+        }
+        
+        if($Uname=~/\b(ting)-(\d[\d\.]*\d)/i)
+        {
+            $Name = lc($1);
+            $Release = lc($2);
         }
         
         if($Uname=~/RELENG_(\d+)_(\d+)_(\d+)/i) {
@@ -16446,6 +16529,7 @@ my %EnabledLog_BSD = (
         "shasum",
         "smartctl",
         "smartctl_megaraid",
+        "sndstat",
         "sysctl",
         "usbconfig",
         "usbctl",
@@ -17168,7 +17252,7 @@ sub getDateStamp($)
 sub getTimeStamp($)
 {
     my $Date = localtime($_[0]);
-    if($Date=~/\w+ \w+ \d+ (\d+:\d+):\d+ \d+/) {
+    if($Date=~/\w+\s+\w+\s+\d+\s+(\d+:\d+):\d+\s+\d+/) {
         return $1;
     }
     return $Date;
@@ -17770,7 +17854,7 @@ sub isBSD(@_)
         $OS = $Sys{"System"};
     }
     
-    return ($OS=~/bsd|dragonfly/ or $OS=~/$KNOWN_BSD_ALL/);
+    return ($OS=~/bsd|dragonfly|\bting\b/ or $OS=~/$KNOWN_BSD_ALL/);
 }
 
 sub isNetBSD(@_)
@@ -18535,6 +18619,11 @@ sub scenario()
         {
             printMsg("ERROR", "please specify -i option (inventory id)");
             exitStatus(1);
+        }
+        
+        if(not $Admin and ($Opt{"Flatpak"} or $Opt{"Snap"}))
+        {
+            printMsg("WARNING", "not all hardware monitoring features are available when using Flatpak or Snap as a non-root user");
         }
         
         if($Opt{"StartMonitoring"})
