@@ -37,7 +37,7 @@ If some of your computer devices doesn't work due to a missed driver then the to
 
 Sample probe: https://linux-hardware.org/?probe=b394035f90
 
-You can make a probe of your computer with the help of [AppImage](#appimage), [Docker](#docker), [Snap](#snap), [Flatpak](#flatpak), [Live CD](#live-cd) or RPM/Deb package.
+You can create a probe of your computer with the help of [AppImage](#appimage), [Docker](#docker), [Snap](#snap), [Flatpak](#flatpak), [Live CD](#live-cd) or RPM/Deb package.
 
 By creating probes you contribute to the "HDD/SSD Desktop-Class Reliability Test" study: https://github.com/linuxhw/SMART
 
@@ -55,7 +55,7 @@ See install instructions for BSD in the [INSTALL.BSD.md](INSTALL.BSD.md) file.
 Usage
 -----
 
-Make a probe:
+Create a probe:
 
     sudo -E hw-probe -all -upload
 
@@ -107,7 +107,7 @@ The app runs on all 64-bit Linux distributions with `Glibc >= 2.14` including:
 Docker
 ------
 
-You can easily make a probe on any Linux distribution without installing the tool with the help of the Docker image:
+You can easily create a probe on any Linux distribution without installing the tool with the help of the Docker image:
 
     sudo -E docker run -it \
     -v /dev:/dev:ro \
@@ -127,7 +127,7 @@ Live CD
 
 If the tool is not pre-installed in your system or you have troubles with installing the tool or its dependencies (e.g. hwinfo is not available in the repository) then try this Linux CD with hw-probe installed: https://mirror.yandex.ru/rosa/rosa2016.1/iso/ROSA.Fresh.R10/
 
-Boot this Linux CD on your computer and make a probe (see [Usage](#usage)).
+Boot this Linux CD on your computer and create a probe (see [Usage](#usage)).
 
 
 Snap
@@ -157,30 +157,17 @@ The app is available in the Snap Store: https://snapcraft.io/hw-probe
 
 This is a strict snap that runs in a sandbox with limited functionality. Please enable `Access to disk block devices` in `Permissions` in order to check SMART attributes of your drives.
 
-###### Classic Snap
-
-It's better to use [classic snap](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe_1.4-2_amd64.snap) to collect more info about the computer:
-
-    sudo snap install hw-probe_1.4-2_amd64.snap --classic --dangerous
-
-Connect system interfaces:
-
-    for i in hardware-observe system-observe block-devices log-observe upower-observe physical-memory-observe \
-    network-observe raw-usb mount-observe opengl;do sudo snap connect hw-probe:$i :$i; done
-
-Create computer probes:
-
-    sudo -E hw-probe -all -upload
-
 ###### Supported systems
+
+See list of supported Linux distributions and installation instructions here: https://snapcraft.io/docs/installing-snapd
+
+The list of supported Linux distributions includes:
 
 * Ubuntu 14.04 and newer
 * Debian 9 and newer
 * Fedora 26 and newer
 * Solus 3 and newer
 * Zorin 12.3 and newer
-
-For other Linux distributions see install manual here: https://docs.snapcraft.io/installing-snapd/6735
 
 
 Flatpak
@@ -202,7 +189,7 @@ Run it as root if you want to check your hard drives health.
 
 ###### App Center
 
-Find the `Hardware Probe` application in your App Center, install it and click on the desktop icon to make a probe. Enable Flatpak plugin if needed (`gnome-software-plugin-flatpak` package for Debian/Ubuntu).
+Find the `Hardware Probe` application in your App Center, install it and click on the desktop icon to create a probe. Enable Flatpak plugin if needed (`gnome-software-plugin-flatpak` package for Debian/Ubuntu).
 
 Note: The 'Launch' button doesn't display the probe window currently due to [bug 552](https://gitlab.gnome.org/GNOME/gnome-software/issues/552) in GNOME Software, but the probe is still created silently in the background process. Use desktop icon instead to launch the hardware probe properly or see probe log in `$HOME/.var/app/org.linux_hardware.hw-probe/data/HW_PROBE/LOG`.
 
