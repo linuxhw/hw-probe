@@ -189,7 +189,7 @@ Run it as root if you want to check your hard drives health.
 
 ###### App Center
 
-Find the `Hardware Probe` application in your App Center, install it and click on the desktop icon to create a probe. Enable Flatpak plugin if needed (`gnome-software-plugin-flatpak` package for Debian/Ubuntu).
+Find the `Hardware Probe` application in your App Center (GNOME Software), install it and click on the desktop icon to create a probe. Enable Flatpak plugin (`gnome-software-plugin-flatpak` package for Debian/Ubuntu) and install https://dl.flathub.org/repo/flathub.flatpakrepo if needed.
 
 Note: The 'Launch' button doesn't display the probe window currently due to [bug 552](https://gitlab.gnome.org/GNOME/gnome-software/issues/552) in GNOME Software, but the probe is still created silently in the background process. Use desktop icon instead to launch the hardware probe properly or see probe log in `$HOME/.var/app/org.linux_hardware.hw-probe/data/HW_PROBE/LOG`.
 
