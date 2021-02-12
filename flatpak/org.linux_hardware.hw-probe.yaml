@@ -192,8 +192,8 @@ modules:
       - make install DESTDIR=$FLATPAK_DEST PREFIX=/
     sources:
       - type: archive
-        url: https://acpica.org/sites/acpica/files/acpica-unix-20201113.tar.gz
-        sha256: 48c4e0c07b42581d017487cc9264470e6420605ddd24cbb5d16410d02a771461
+        url: https://acpica.org/sites/acpica/files/acpica-unix-20210105.tar.gz
+        sha256: a9be7b749025e60f93fde2fe531bfe0d84a33641d3e0c9b0f6049f996dbb1ff8
   - name: hdparm
     buildsystem: simple
     build-commands:
@@ -229,8 +229,8 @@ modules:
       - install -D ./lscpu $FLATPAK_DEST/bin/lscpu
     sources:
       - type: archive
-        url: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.36/util-linux-2.36.tar.xz
-        sha256: 9e4b1c67eb13b9b67feb32ae1dc0d50e08ce9e5d82e1cccd0ee771ad2fa9e0b1
+        url: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.36/util-linux-2.36.1.tar.xz
+        sha256: 09fac242172cd8ec27f0739d8d192402c69417617091d8c6e974841568f37eed
   - name: libx86emu
     buildsystem: simple
     build-commands:
@@ -428,7 +428,7 @@ modules:
     sources:
       - type: archive
         url: https://github.com/linuxhw/build-stuff/releases/download/1.5/hw-probe-1.5-AI.tar.gz
-        sha256: 7b927ab22b07aa8fcf3c9f2b947903c787bef77d11c3fc9edcb8f8cad4cb3b6d
+        sha256: 248477e281e8b4f51f31d8581492d21fd0bfb64f7a29eca700f0cbf77434bd4d
   - name: perl-base
     buildsystem: simple
     build-commands:

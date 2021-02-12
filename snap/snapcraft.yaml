@@ -5,27 +5,18 @@ description: >
  A tool to probe for hardware, check operability and find drivers
  with the help of Linux Hardware Database.
      
- Probe — is a snapshot of your computer hardware state and logs.
+ Probe — is a snapshot of your computer hardware state.
  The tool checks operability of devices by analysis of logs and
- returns a permanent url to view the probe of the computer.
-     
- The probes are intended to simplify collecting of logs necessary for
- investigating hardware related problems. Just run one simple command
- to check hardware and collect all the system logs at once:
+ returns a permanent url to view the probe of the computer:
  
-     sudo -E hw-probe -all -upload
+     hw-probe -all -upload
  
- If some of your computer devices do not work due to a missed driver
+ If some of your hardware devices does not work due to a missed driver
  then the tool will suggest a proper Linux kernel version according
  to the LKDDb or third-party drivers.
      
- Enable all interfaces in Permissions in order to collect more info.
- Private info is not collected.
-     
- By creating probes you contribute to the HDD/SSD Desktop-Class
- Reliability Test study: https://github.com/linuxhw/SMART
-     
- The tool is released under the GNU LGPL 2.1+ license.
+ Enable all interfaces in Permissions and run as root if you want to
+ check health of all your hard drives.
      
 type: app
 confinement: strict

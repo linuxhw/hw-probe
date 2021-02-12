@@ -16,33 +16,21 @@
     <p>
       Probe — is a snapshot of your computer hardware state.
       The tool checks operability of devices by analysis of logs and
-      returns a permanent url to view the probe of the computer.
-    </p>
-    <p>
-      The probes are intended to simplify collecting of logs necessary for
-      investigating hardware related problems. Just run one simple command
-      to check hardware and collect all the system logs at once:
+      returns a permanent url to view the probe of the computer:
     </p>
     <p>
       flatpak run org.linux_hardware.hw-probe -all -upload
     </p>
     <p>
-      Run it as root if you want to check your hard drives health.
+      Run as root if you want to check health of all your hard drives.
     </p>
     <p>
-      If some of hardware devices don't work due to a missed driver
+      If some of hardware devices doesn't work due to a missed driver
       then the tool will suggest a proper Linux kernel version according
       to the LKDDb or third-party drivers.
     </p>
     <p>
-      By creating a probe, you contribute to the HDD/SSD desktop-class
-      reliability study: https://github.com/linuxhw/SMART
-    </p>
-    <p>
-      Private info is not collected.
-    </p>
-    <p>
-      Note: The 'Launch' button doesn't work properly due to a bug 552
+      ATTENTION: The 'Launch' button doesn't work properly due to a bug 552
       in GNOME Software. Use desktop icon instead to create the probe.
     </p>
   </description>
