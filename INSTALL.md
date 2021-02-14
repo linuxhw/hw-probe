@@ -150,7 +150,7 @@ For Manjaro 18 and newer:
 
     sudo pacman -S hw-probe
 
-Try `sudo pacman -Sy` if pacman can't find the package.
+Try `sudo pacman -Syu` if pacman can't find the package.
 
 
 Install on Arch Linux
@@ -164,7 +164,7 @@ When using LiveCD you need to add `cow_spacesize=512M` boot option to have enoug
 
 Install edid-decode dependency:
 
-    pacman -Sy git binutils fakeroot make gcc
+    pacman -Syu git binutils fakeroot make gcc
     git clone https://aur.archlinux.org/edid-decode-git.git
     cd edid-decode-git
     makepkg -sri
@@ -306,7 +306,7 @@ Install on Hefftor
 
 For Hefftor 2021-01 and newer:
 
-    sudo pacman -Sy hw-probe
+    sudo pacman -Syu hw-probe
 
 
 Install on Mageia
