@@ -235,11 +235,11 @@ parts:
       - make
   hwinfo:
     after: [libx86emu]
-    source: https://github.com/openSUSE/hwinfo/archive/21.71.tar.gz
+    source: https://github.com/openSUSE/hwinfo/archive/21.72.tar.gz
     source-type: tar
     plugin: make
     override-build: |
-      echo '21.71' > VERSION
+      echo '21.72' > VERSION
       rm -f git2log
       sed -i -e 's/ -g / -s /' Makefile.common
       CFLAGS='-I'$SNAPCRAFT_STAGE'/usr/include' LDFLAGS='-L'$SNAPCRAFT_STAGE'/usr/lib64 -L'$SNAPCRAFT_STAGE'/usr/lib -lx86emu' make
