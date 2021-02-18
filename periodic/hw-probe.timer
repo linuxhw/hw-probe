@@ -1,0 +1,11 @@
+[Unit]
+Description=Monthly hw-probe report
+
+[Timer]
+OnCalendar=monthly
+AccuracySec=12h
+Persistent=true
+OnBootSec=7min
+
+[Install]
+WantedBy=timers.target
