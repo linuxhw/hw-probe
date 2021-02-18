@@ -18,7 +18,7 @@ Contents
 * [ Live CD      ](#live-cd)
 * [ Snap         ](#snap)
 * [ Flatpak      ](#flatpak)
-* [ Periodic     ](#periodic)
+* [ Periodic run ](#periodic-run)
 * [ Inventory    ](#inventory)
 * [ Offline view ](#offline-view)
 * [ ACPI dump    ](#acpi-dump)
@@ -222,27 +222,22 @@ Need to setup Flatpak (https://flatpak.org/setup/):
 * Chrome OS
 
 
-Periodic
--------
-If your distribuition is running under systemd and you want to generate and upload
-hw-probe report automatically, please install as root:
+Periodic run
+------------
 
-    cp -a periodic/*.{service,timer} $(systemdsystemunitdir)/
+If your distribuition is running under systemd and you want to generate and upload hw-probe report periodically, please install:
 
-Normally systemd units dir is located at `/usr/lib/systemd/system`
-You may want to get systemd unit dir by running
-`pkg-config --variable=systemdsystemunitdir systemd`
+    cp -a periodic/hw-probe.{service,timer} $(systemdsystemunitdir)/
 
-Enable hw-probe.timer by running as root:
+Normally systemd units dir is located at `/usr/lib/systemd/system`. You may want to get systemd unit dir by running `pkg-config --variable=systemdsystemunitdir systemd`
+
+Enable hw-probe.timer by running:
 
     systemctl enable --now hw-probe.timer
 
-This timer will execute one time per month a hw-probe.service that will generate and 
-upload report to https://linux-hardware.org
+This timer will execute one time per month a hw-probe.service that will generate and upload report to the database.
 
-User may edit hw-probe.timer and change OnCalendar value to execute
-hw-probe report on different time period.
-Values lower than month are STRONGLY not recommended.
+User may edit hw-probe.timer and change OnCalendar value to execute hw-probe report on different time period (yearly, semiannually, quarterly, etc.). Values lower than month are STRONGLY not recommended.
 
 Inventory
 ---------
