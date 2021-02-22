@@ -127,7 +127,7 @@ Docker hub repository: https://hub.docker.com/r/linuxhw/hw-probe/
 Live CD
 -------
 
-If the tool is not pre-installed in your system or you have troubles with installing the tool or its dependencies (e.g. hwinfo is not available in the repository) then try this Linux CD with hw-probe installed: https://mirror.yandex.ru/rosa/rosa2016.1/iso/ROSA.Fresh.R10/
+If the tool is not pre-installed in your system or you have troubles with installing the tool or its dependencies (e.g. hwinfo is not available in the repository) then try this [Linux CD1](https://sourceforge.net/projects/openmandriva/files/release/4.2/Final/) or [Linux CD2](https://sourceforge.net/projects/arcolinux-community-editions/files/) with hw-probe pre-installed.
 
 Boot this Linux CD on your computer and create a probe (see [Usage](#usage)).
 
