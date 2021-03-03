@@ -3753,6 +3753,18 @@ sub probeHW()
         }
     }
     
+    if(not $Sys{"Type"} and not $Sys{"Model"})
+    {
+        for my $str ($Kldstat_v) {
+          my $RPIMatch = index($str, "bcm2835_")!=-1;
+          if($RPIMatch)
+          {
+            $Sys{"Type"} = "system on chip";
+            $Sys{"Model"} = "Raspberry Pi";
+          }
+       }
+    }
+    
     my $Modstat = "";
     
     if($Opt{"FixProbe"}) {
