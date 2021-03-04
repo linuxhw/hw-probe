@@ -4,7 +4,7 @@ ConditionVirtualization=false
 After=local-fs.target
 
 [Service]
-Type=idle
+Type=simple
 ExecStart=/usr/bin/hw-probe -all -upload
 IOSchedulingClass=idle
 Nice=19
