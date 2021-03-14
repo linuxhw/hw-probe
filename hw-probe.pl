@@ -878,7 +878,8 @@ my %MicroArchFamily = (
         "Puma" => { "22" => ["48"] },
         "Zen" => { "23" => ["1", "17", "32"] },
         "Zen 2" => { "23" => ["49", "96", "113"] },
-        "Zen+" => { "23" => ["8", "24"] }
+        "Zen+" => { "23" => ["8", "24"] },
+        "Zen 3" => { "25" => ["33", "80"] }
     },
     "Intel" => { # GenuineIntel
         "TigerLake" => { "6" => ["140"] },
@@ -888,7 +889,7 @@ my %MicroArchFamily = (
         "Goldmont plus" => { "6" => ["122"] },
         "CannonLake" => { "6" => ["102"] },
         "Skylake" => { "6" => ["78", "85", "94"] },
-        "Goldmont" => { "6" => ["92"] },
+        "Goldmont" => { "6" => ["92", "95"] },
         "Broadwell" => { "6" => ["61", "71", "79", "86"] },
         "Silvermont" => { "6" => ["55", "76", "77"] },
         "Haswell" => { "6" => ["60", "63", "69", "70"] },
@@ -899,8 +900,20 @@ my %MicroArchFamily = (
         "Nehalem" => { "6" => ["26", "30", "46"] },
         "Penryn" => { "6" => ["23", "29"] },
         "Core" => { "6" => ["15", "22"] },
-        "P6" => { "6" => ["8", "9", "11", "13", "14"] },
+        "P6" => { "6" => ["7", "8", "9", "11", "13", "14"] },
         "NetBurst" => { "15" => ["1", "2", "3", "4", "6"] }
+    }
+);
+
+my %MicroArchModel = (
+    "AMD" => {
+        "Zen"   => [ "Ryzen 5 PRO 2500U w/ Radeon Vega Mobile Gfx", "Ryzen 7 1700 Eight-Core Processor" ],
+        "Zen+"  => [ "Ryzen 7 2700 Eight-Core Processor", "Ryzen 7 2700X Eight-Core Processor" ],
+        "Zen 2" => [ "Ryzen 5 3600 6-Core Processor" ],
+    },
+    "Intel" => {
+        "Haswell" => [ "Core i3-4150 CPU @ 3.50GHz" ],
+        "SandyBridge" => [ "Core i5-2430M CPU @ 2.40GHz" ]
     }
 );
 
@@ -915,6 +928,18 @@ foreach my $MVendor (sort keys(%MicroArchFamily))
             {
                 $FamilyMicroArch{$MVendor}{$Family}{$_} = $MicroArch;
             }
+        }
+    }
+}
+
+my %ModelMicroArch;
+foreach my $MVendor (sort keys(%MicroArchModel))
+{
+    foreach my $MicroArch (sort keys(%{$MicroArchModel{$MVendor}}))
+    {
+        foreach my $Model (sort @{$MicroArchModel{$MVendor}{$MicroArch}})
+        {
+            $ModelMicroArch{$MVendor}{$Model} = $MicroArch;
         }
     }
 }
@@ -1716,6 +1741,7 @@ my @ProtectedLogs = (
     "mfiutil",
     "modstat",
     "neofetch",
+    "ofwdump",
     "pciconf",
     "pcictl",
     "pcictl_n",
@@ -5102,12 +5128,12 @@ sub probeHW()
         }
         
         my $Messages = "/var/log/messages";
-        if(not isBSD() and -e $Messages)
+        if(not isBSD() and -e $Messages and -r $Messages)
         {
             if(index($Dmesg, "] Command line:") == -1)
             {
-                $Dmesg = runCmd("cat $Messages | grep ' kernel: \\['");
-                $Dmesg=~s/.*?\s+kernel: \[/[/g;
+                $Dmesg = runCmd("grep -I ' kernel: \\[' $Messages | sed 's/.* kernel: \\[/\\[/g'");
+                $Dmesg=~s/(.|\n)+(\[    0.000000\] Linux version)/$2/g; # last boot only
             }
         }
         
@@ -7410,7 +7436,7 @@ sub probeHW()
                 }
             }
             
-            if(my $Microarch = detectMicroarch($Device{"Vendor"}, $CPU_Family, $CPU_ModelNum)) {
+            if(my $Microarch = detectMicroarch($Device{"Vendor"}, $CPU_Family, $CPU_ModelNum, $Device{"Device"})) {
                 $Sys{"Microarch"} = $Microarch;
             }
         }
@@ -7508,20 +7534,19 @@ sub probeHW()
         fixFFByModel($Sys{"Vendor"}, $Sys{"Model"});
     }
     
-    if(not $Sys{"Type"})
+    if($Sysctl and (not $Sys{"Type"} or $Sys{"Type"} eq "desktop"))
     {
-        if(not keys(%WLanInterface)) {
+        if($Sysctl=~/\.acpibat\d+\./) {
+            $Sys{"Type"} = "notebook";
+        }
+        else {
             $Sys{"Type"} = "desktop";
         }
     }
     
-    if($Sysctl and not $Sys{"Type"})
+    if(not $Sys{"Type"})
     {
-        if($Sysctl=~/\.acpibat\d+\./)
-        {
-            $Sys{"Type"} = "notebook";
-        }
-        else {
+        if(not keys(%WLanInterface)) {
             $Sys{"Type"} = "desktop";
         }
     }
@@ -7542,8 +7567,12 @@ sub probeHW()
         
         $Sys{"Model"} = fixModel($Sys{"Vendor"}, $Sys{"Model"}, $Sys{"Version"});
         
-        if(not $Board_ID) {
+        if(not $Board_ID)
+        {
             $Board_ID = registerBoard({"Vendor"=>fmtVal($Sys{"Vendor"}), "Device"=>$Sys{"Model"}});
+            if($Board_ID) {
+                fixFFByBoard($HW{$Board_ID}{"Device"});
+            }
         }
         
         if($Sys{"Vendor"} or $Sys{"Model"}) {
@@ -8968,7 +8997,7 @@ sub probeHW()
                 $Sys{"Vendor"} = "Rockchip";
                 $Sys{"System"} = "android";
             }
-            elsif($Sys{"Model"}=~s/\A(FriendlyElec|Hardkernel|NextThing|NVIDIA|Radxa|TI|Xunlong) //)
+            elsif($Sys{"Model"}=~s/\A(FriendlyElec|Hardkernel|NextThing|NVIDIA|Olimex|Radxa|TI|Xunlong) //)
             {
                 $Sys{"Vendor"} = $1;
                 $Sys{"Type"} = "system on chip";
@@ -9610,19 +9639,14 @@ sub probeHW()
             $Sys{"Cores"} = $Cores*$Sockets;
             $Sys{"Threads"} = $Threads;
         }
-        elsif(not isBSD() and $CpuVals[5]=~/\A[12]\Z/ and $CpuVals[7])
+        elsif(not isBSD())
         {
-            $Sys{"Sockets"} = $CpuVals[7];
-            $Sys{"Cores"} = $CpuVals[6]*$Sys{"Sockets"};
-            $Sys{"Threads"} = $CpuVals[5];
-            $Sys{"Op_modes"} = $CpuVals[1];
-            
-            $CPU_Vendor = $CpuVals[8];
-            $CPU_Family = $CpuVals[10];
-            $CPU_ModelNum = $CpuVals[11];
+            if($Lscpu=~/\s((32|64)-bit.*?)\n/) {
+                $Sys{"Op_modes"} = $1;
+            }
         }
         
-        if(my $Microarch = detectMicroarch($CPU_Vendor, $CPU_Family, $CPU_ModelNum)) {
+        if(my $Microarch = detectMicroarch($CPU_Vendor, $CPU_Family, $CPU_ModelNum, $CPU_Name)) {
             $Sys{"Microarch"} = $Microarch;
         }
         
@@ -9814,7 +9838,7 @@ sub probeHW()
             }
         }
         
-        if(my $Microarch = detectMicroarch($CpuDev{"Vendor"}, $CpuDev{"Family"}, $CpuDev{"ModelNum"})) {
+        if(my $Microarch = detectMicroarch($CpuDev{"Vendor"}, $CpuDev{"Family"}, $CpuDev{"ModelNum"}, $CpuDev{"Device"})) {
             $Sys{"Microarch"} = $Microarch;
         }
     }
@@ -9860,6 +9884,10 @@ sub probeHW()
                 
                 if($CPU_ID and $Sysctl=~/hw.ncpu\s*[:=]\s*(\d+)/) {
                     setDevCount($CPU_ID, "cpu", $1);
+                }
+                
+                if(my $Microarch = detectMicroarch($CpuDev{"Vendor"}, undef, undef, $CpuDev{"Device"})) {
+                    $Sys{"Microarch"} = $Microarch;
                 }
             }
         }
@@ -10421,6 +10449,22 @@ sub probeHW()
     { # Android (Termux)
         listProbe("logs", "getprop");
         $Getprop = runCmd("getprop");
+        if($Getprop) {
+            writeLog($LOG_DIR."/getprop", $Getprop);
+        }
+    }
+    
+    my $Ofwdump = "";
+    
+    if($Opt{"FixProbe"}) {
+        $Ofwdump = readFile($FixProbe_Logs."/ofwdump");
+    }
+    elsif(defined $Sys{"Freebsd_release"}
+    and enabledLog("ofwdump") and checkCmd("ofwdump"))
+    {
+        listProbe("logs", "ofwdump");
+        $Ofwdump = runCmd("ofwdump -a");
+        writeLog($LOG_DIR."/ofwdump", $Ofwdump);
     }
     
     # TODO: add new fixes here
@@ -10482,9 +10526,16 @@ sub getSysUUID(@) {
     return strToUUID(clientHash("_".join("_", sort @_)));
 }
 
-sub detectMicroarch($$$)
+sub detectMicroarch(@)
 {
-    my ($V, $F, $M) = @_;
+    my $V = shift(@_);
+    my $F = shift(@_);
+    my $M = shift(@_);
+    
+    my $N = undef;
+    if(@_) {
+        $N = shift(@_);
+    }
     
     $V = fixCpuVendor($V);
     
@@ -10495,6 +10546,13 @@ sub detectMicroarch($$$)
         }
         elsif(defined $FamilyMicroArch{$V}{$F}{"*"}) {
             return $FamilyMicroArch{$V}{$F}{"*"};
+        }
+    }
+    
+    if($V and $N)
+    {
+        if(defined $ModelMicroArch{$V}{$N}) {
+            return $ModelMicroArch{$V}{$N};
         }
     }
     
@@ -10663,6 +10721,9 @@ sub registerRAM($)
     $Device{"Type"} = "memory";
     $Device{"Status"} = "works";
     $Device{"Size"} = sprintf("%.0f", $TotalKb/1048576)."GB";
+    if($Device{"Size"} eq "0GB") {
+        $Device{"Size"} = sprintf("%.2f", $TotalKb/1048576)."GB";
+    }
     
     $Device{"Device"} = "RAM Module(s) ".$Device{"Size"}." ".$Device{"FF"};
     
@@ -12643,7 +12704,7 @@ sub fixFFByCDRom($)
     my $CDRom = $_[0];
     if($Sys{"Type"}!~/$DESKTOP_TYPE|$SERVER_TYPE/)
     {
-        if($CDRom=~/(DVR-118L|DDU1615|SH-222AB|DVR-111D|GSA-H10N|CRX230EE|iHAS122|DVR-112D|GH22LP20|AD-7200A|TS-H553A|AD-7173A|DVDRAM_GSA-H60N|GH24NSB0|SH-222BB|SOHR-5238S)/) {
+        if($CDRom=~/(DVR-118L|DDU1615|SH-222AB|DVR-111D|GSA-H10N|CRX230EE|iHAS122|DVR-112D|GH22LP20|AD-7200A|TS-H553A|AD-7173A|DVDRAM_GSA-H60N|GH24NSB0|SH-222BB|SOHR-5238S|ND-3540A)/) {
             $Sys{"Type"} = "desktop";
         }
     }
@@ -12654,7 +12715,7 @@ sub fixFFByBoard($)
     my $Board = $_[0];
     if($Sys{"Type"}!~/$DESKTOP_TYPE|$SERVER_TYPE/)
     {
-        if($Board=~/\b(D510MO|GA-K8NMF-9|DG965RY|DG33BU|D946GZIS|N3150ND3V|D865GSA|DP55WG|H61MXT1|D875PBZ|F2A55|Z68XP-UD3|Z77A-GD65|M4A79T|775Dual-880Pro|P4Dual-915GL|P4i65GV|D5400XS|D201GLY|MicroServer|IPPSB-DB|MS-AA53|C2016-BSWI-D2|N3160TN|D915PBL|EIRD-SAM|D865PERL|D410PT|D525MW|D945GCNL|BSWI-D2|B202|D865GBF|G1-CPU-IMP|Aptio CRB|A1SRi|D865GVHZ|IC17X|N3050ND3H|Bettong CRB|E3C246D2I|Pine Trail - M CRB)\b/) {
+        if($Board=~/\b(D510MO|GA-K8NMF-9|DG965RY|DG33BU|D946GZIS|N3150ND3V|D865GSA|DP55WG|H61MXT1|D875PBZ|F2A55|Z68XP-UD3|Z77A-GD65|M4A79T|775Dual-880Pro|P4Dual-915GL|P4i65GV|D5400XS|D201GLY|MicroServer|IPPSB-DB|MS-AA53|C2016-BSWI-D2|N3160TN|D915PBL|EIRD-SAM|D865PERL|D410PT|D525MW|D945GCNL|BSWI-D2|B202|D865GBF|G1-CPU-IMP|Aptio CRB|A1SRi|D865GVHZ|IC17X|N3050ND3H|Bettong CRB|E3C246D2I|Pine Trail - M CRB|Ultra 24)\b/) {
             $Sys{"Type"} = "desktop";
         }
     }
@@ -12666,7 +12727,7 @@ sub fixFFByBoard($)
     }
     if($Sys{"Type"}!~/$MOBILE_TYPE/)
     {
-        if($Board=~/\b(W7430|Poyang|PSMBOU|Lhotse-II|Nettiling|EI Capitan|JV11-ML|M7x0S Bottom|M720SR|26446AG|S5610|SANTA ROSA CRB)\b/) {
+        if($Board=~/\b(W7430|Poyang|PSMBOU|Lhotse-II|Nettiling|EI Capitan|JV11-ML|M7x0S Bottom|M720SR|26446AG|S5610|SANTA ROSA CRB|PowerBook\d+|VivoBook|VPCF12C5E)\b/) {
             $Sys{"Type"} = "notebook";
         }
         if($Board=~/\b(SurfTab)\b/) {
@@ -12709,7 +12770,8 @@ sub fixFFByModel($$)
     
     if($Sys{"Type"}!~/firewall/)
     { # expansion
-        if($M=~/Firewall/ or $V=~/Silver Peak Systems/) {
+        if($M=~/Firewall/
+        or $V=~/Silver Peak Systems|Sophos/) {
             $Sys{"Type"} = "firewall";
         }
     }
@@ -12754,7 +12816,7 @@ sub fixFFByModel($$)
         or ($V=~/Kontron/i and $M=~/SMX945/)
         or ($V=~/Orbsmart/i and $M=~/\AAW/)
         or ($V=~/Radiant/i and $M=~/P845/)
-        or ($V=~/Supermicro/i and $M=~/X11SSE-F/)
+        or ($V=~/Supermicro/i and $M=~/X11SSE-F|A1SAi/)
         or ($V=~/ZOTAC/i and $M=~/\AZBOX/)
         or $M=~/TV Box/
         or $M=~/\AZBOX\-/
@@ -13911,7 +13973,7 @@ sub probeDistr()
             {
                 my $SlimFile = "/usr/pkg/share/slim/themes/default/slim.theme";
                 if(-e $SlimFile) {
-                    $SlimTheme = runCmd("cat $SlimFile | head -n 1");
+                    $SlimTheme = runCmd("head $SlimFile -n 1");
                 }
                 
                 if($SlimTheme) {
@@ -14201,7 +14263,7 @@ sub probeDistr()
         if($OS_Rel=~/\bPRETTY_NAME=[ \t]*[\"\']*([^"'\n]+)/)
         {
             my $PrettyName = $1;
-            if($PrettyName=~/(OpenVZ|Docker Desktop|Pop\!_OS|Devuan|LMDE|CryptoDATA|SkiffOS|GNOME OS|Debian|Sn3rpOs|Porteus)/) {
+            if($PrettyName=~/(OpenVZ|Docker Desktop|Pop\!_OS|Devuan|LMDE|CryptoDATA|SkiffOS|GNOME OS|Debian|Sn3rpOs|Porteus|MakuluLinux)/) {
                 $Name = $1;
             }
         }
@@ -14209,7 +14271,7 @@ sub probeDistr()
         if($OS_Rel=~/\bVERSION_ID=[ \t]*[\"\']*([^"'\n]+)/)
         {
             $Release = lc($1);
-            $Release=~s/\A\Q$Name\E[_-]//i;
+            $Release=~s/\A\Q$Name\E[_\- ]//i;
             if($Release eq "i") {
                 $Release = undef;
             }
@@ -14454,6 +14516,8 @@ sub readHost($)
     
     $Sys{"System"} = undef;
     $Sys{"Systemrel"} = undef;
+    
+    $Sys{"Microarch"} = undef;
 }
 
 sub getUser()
@@ -14845,7 +14909,7 @@ sub writeLogs()
             listProbe("logs", "rfkill");
             my $Rfkill = runCmd("rfkill list 2>&1");
             
-            if($Opt{"Snap"} and $Rfkill=~/Permission denied/) {
+            if($Opt{"Snap"} and $Rfkill=~/Permission denied|Bad file descriptor/) {
                 $Rfkill = "";
             }
             
@@ -16558,6 +16622,7 @@ my %EnabledLog_BSD = (
         "lspci_all",
         "lsusb",
         "neofetch",
+        "ofwdump",
         "sane-find-scanner",
         "scanimage",
         "smart-log",
@@ -17243,7 +17308,7 @@ sub getShortHWid($)
 sub getDateStamp($)
 {
     my $Date = localtime($_[0]);
-    if($Date=~/\w+ (\w+ \d+) \d+:\d+:\d+ (\d+)/) {
+    if($Date=~/\w+\s+(\w+\s+\d+)\s+\d+:\d+:\d+\s+(\d+)/) {
         return "$1, $2";
     }
     return $Date;
@@ -17506,10 +17571,10 @@ sub fixLogs($)
     }
 
     if(-f "$Dir/rfkill"
-    and -s "$Dir/rfkill" < 70)
+    and -s "$Dir/rfkill")
     { # Support for HW Probe 1.4
       # Can't open RFKILL control device: No such file or directory
-        if(readFile("$Dir/rfkill")=~/No such file or directory/) {
+        if(readFile("$Dir/rfkill")=~/No such file or directory|Bad file descriptor/) {
             writeFile("$Dir/rfkill", "");
         }
     }
@@ -17563,91 +17628,91 @@ sub fixLogs($)
     
     foreach my $L ("lsusb", "usb-devices", "lspci", "lspci_all", "dmidecode", "hwinfo")
     { # Support for old probes
-        if(-e "$Dir/$L")
+        if(not -e "$Dir/$L") {
+            next;
+        }
+        
+        my $Content = readFile("$Dir/$L");
+        
+        if($L eq "lsusb")
         {
-            my $Content = readFile("$Dir/$L");
-            
-            if($L eq "lsusb")
+            if(index($Content, "Resource temporarily unavailable")!=-1)
             {
-                if(index($Content, "Resource temporarily unavailable")!=-1)
-                {
-                    $Content=~s/can't get device qualifier: Resource temporarily unavailable\n//g;
-                    $Content=~s/cannot read device status, Resource temporarily unavailable \(11\)\n//g;
-                    $Content=~s/can't get debug descriptor: Resource temporarily unavailable\n//g;
-                    $Content=~s/can't get hub descriptor, LIBUSB_ERROR_(IO|PIPE) \(Resource temporarily unavailable\)\n//g;
-                    writeFile("$Dir/$L", $Content);
-                }
-                
-                if(index($Content, "some information will be missing")!=-1)
-                {
-                    $Content=~s/Couldn't open device, some information will be missing\n//g;
-                    $Content=~s/Couldn't get configuration descriptor 0, some information will be missing\n//g;
-                    writeFile("$Dir/$L", $Content);
-                }
-                
-                if($Opt{"UsbIDs"})
-                {
-                    if(index($Content, "HW_PROBE_USB_")!=-1 or $Content=~/: ID [a-f\d]{4}:[a-f\d]{4}  \n/)
-                    {
-                        $Content=~s{lsusb: cannot open "/tmp/HW_PROBE_USB_", Permission denied\n\n}{}g;
-                        if($Opt{"UsbIDs"}) {
-                            $Content = fixLsUsb($Content);
-                        }
-                        writeFile("$Dir/$L", $Content);
-                    }
-                }
-            }
-            elsif($L eq "lspci" or $L eq "lspci_all")
-            {
-                if(index($Content, "lspci: Unable to load libkmod resources: error -12")!=-1)
-                {
-                    $Content=~s/lspci: Unable to load libkmod resources: error -12\n//g;
-                    writeFile("$Dir/$L", $Content);
-                }
-                
-                if($Opt{"PciIDs"})
-                {
-                    if($L eq "lspci" and index($Content, "Class:\tClass [")!=-1) {
-                        writeFile("$Dir/$L", fixLsPci($Content));
-                    }
-                    
-                    if($L eq "lspci_all" and index($Content, "]: Device [")!=-1) {
-                        writeFile("$Dir/$L", fixLsPci_All($Content));
-                    }
-                }
-            }
-            elsif($L eq "dmidecode")
-            {
-                if(index($Content, "Table is unreachable, sorry")!=-1)
-                {
-                    $Content=~s{/dev/mem: Bad address\nTable is unreachable, sorry.\n}{}g;
-                    $Content=~s{/dev/mem: lseek: Value too large for defined data type\nTable is unreachable, sorry.\n}{}g;
-                    writeFile("$Dir/$L", $Content);
-                }
-            }
-            elsif($L eq "hwinfo")
-            {
-                if(index($Content, "sh: /dev/null: Permission denied")!=-1)
-                {
-                    $Content=~s{sh: /dev/null: Permission denied\n}{}g;
-                    writeFile("$Dir/$L", $Content);
-                }
+                $Content=~s/can't get device qualifier: Resource temporarily unavailable\n//g;
+                $Content=~s/cannot read device status, Resource temporarily unavailable \(11\)\n//g;
+                $Content=~s/can't get debug descriptor: Resource temporarily unavailable\n//g;
+                $Content=~s/can't get hub descriptor, LIBUSB_ERROR_(IO|PIPE) \(Resource temporarily unavailable\)\n//g;
+                writeFile("$Dir/$L", $Content);
             }
             
-            if(index($Content, "ERROR: ld.so:")!=-1)
-            { # ERROR: ld.so: object '/usr/lib/arm-linux-gnueabihf/libarmmem.so' from /etc/ld.so.preload cannot be preloaded (cannot open shared object file): ignored.
-              # ERROR: ld.so: object 'libesets_pac.so' from /etc/ld.so.preload cannot be preloaded (cannot open shared object file): ignored.
-                $Content=~s/ERROR: ld\.so:.+?: ignored\.\n//g;
+            if(index($Content, "some information will be missing")!=-1)
+            {
+                $Content=~s/Couldn't open device, some information will be missing\n//g;
+                $Content=~s/Couldn't get configuration descriptor 0, some information will be missing\n//g;
+                writeFile("$Dir/$L", $Content);
+            }
+            
+            if($Opt{"UsbIDs"})
+            {
+                if(index($Content, "HW_PROBE_USB_")!=-1 or $Content=~/: ID [a-f\d]{4}:[a-f\d]{4}  \n/)
+                {
+                    $Content=~s{lsusb: cannot open "/tmp/HW_PROBE_USB_", Permission denied\n\n}{}g;
+                    if($Opt{"UsbIDs"}) {
+                        $Content = fixLsUsb($Content);
+                    }
+                    writeFile("$Dir/$L", $Content);
+                }
+            }
+        }
+        elsif($L eq "lspci" or $L eq "lspci_all")
+        {
+            if(index($Content, "lspci: Unable to load libkmod resources: error -12")!=-1)
+            {
+                $Content=~s/lspci: Unable to load libkmod resources: error -12\n//g;
+                writeFile("$Dir/$L", $Content);
+            }
+            
+            if($Opt{"PciIDs"})
+            {
+                if($L eq "lspci" and index($Content, "Class:\tClass [")!=-1) {
+                    writeFile("$Dir/$L", fixLsPci($Content));
+                }
+                
+                if($L eq "lspci_all" and index($Content, "]: Device [")!=-1) {
+                    writeFile("$Dir/$L", fixLsPci_All($Content));
+                }
+            }
+        }
+        elsif($L eq "dmidecode")
+        {
+            if(index($Content, "Table is unreachable, sorry")!=-1)
+            {
+                $Content=~s{/dev/mem: Bad address\nTable is unreachable, sorry.\n}{}g;
+                $Content=~s{/dev/mem: lseek: Value too large for defined data type\nTable is unreachable, sorry.\n}{}g;
                 writeFile("$Dir/$L", $Content);
             }
         }
+        elsif($L eq "hwinfo")
+        {
+            if(index($Content, "sh: /dev/null: Permission denied")!=-1)
+            {
+                $Content=~s{sh: /dev/null: Permission denied\n}{}g;
+                writeFile("$Dir/$L", $Content);
+            }
+        }
+        
+        if(index($Content, "ERROR: ld.so:")!=-1)
+        { # ERROR: ld.so: object '/usr/lib/arm-linux-gnueabihf/libarmmem.so' from /etc/ld.so.preload cannot be preloaded (cannot open shared object file): ignored.
+          # ERROR: ld.so: object 'libesets_pac.so' from /etc/ld.so.preload cannot be preloaded (cannot open shared object file): ignored.
+            $Content=~s/ERROR: ld\.so:.+?: ignored\.\n//g;
+            writeFile("$Dir/$L", $Content);
+        }
     }
 
-    if(-e "$Dir/inxi"
-    and -s "$Dir/inxi" < $EMPTY_LOG_SIZE)
+    if(-e "$Dir/inxi")
     { # Support for HW Probe 1.4
-        if(readFile("$Dir/inxi")=~/Unsupported option/) {
-            writeFile("$Dir/inxi", "");
+        if(readFile("$Dir/inxi")=~/Unsupported option|Use of uninitialized value/) {
+            unlink("$Dir/inxi");
         }
     }
     
@@ -17923,11 +17988,22 @@ sub scenario()
         }
     }
     
-    if(checkModule("Data/Dumper.pm"))
+    if($Opt{"ImportProbes"} or $Opt{"IdentifyDrive"} or $Opt{"IdentifyMonitor"})
     {
-        $USE_DUMPER = 1;
-        require Data::Dumper;
-        $Data::Dumper::Sortkeys = 1;
+        if($Opt{"AppImage"})
+        {
+            printMsg("ERROR", "this function is not supported by AppImage");
+            exitStatus(1);
+        }
+        else
+        {
+            if(checkModule("Data/Dumper.pm"))
+            {
+                $USE_DUMPER = 1;
+                require Data::Dumper;
+                $Data::Dumper::Sortkeys = 1;
+            }
+        }
     }
     
     if(checkModule("JSON/XS.pm"))
@@ -18141,11 +18217,19 @@ sub scenario()
     
     if($Opt{"Probe"} or $Opt{"GenerateGroup"} or $Opt{"StartMonitoring"} or $Opt{"StopMonitoring"} or $Opt{"ShowLog"})
     {
-        if(not $Admin
-        and not $SNAP_DESKTOP and not $FLATPAK_DESKTOP)
+        if(not $Admin)
         {
-            printMsg("ERROR", "you should run as root (sudo or su)");
-            exitStatus(1);
+            if($SNAP_DESKTOP) {
+                printMsg("WARNING", "run as root for better results ('sudo -E' or 'su')");
+            }
+            elsif($FLATPAK_DESKTOP) {
+                printMsg("WARNING", "run as root for better results");
+            }
+            else
+            {
+                printMsg("ERROR", "you should run as root ('sudo -E' or 'su')");
+                exitStatus(1);
+            }
         }
     }
     
@@ -18330,7 +18414,7 @@ sub scenario()
         
         if($Opt{"RmObsolete"})
         {
-            foreach my $L ("boot.log", "dmesg.1", "fstab", "grub.cfg", "mount", "pstree", "systemctl", "top", "xorg.log.1", "modprobe.d", "interrupts")
+            foreach my $L ("boot.log", "dmesg.1", "findmnt", "fstab", "grub.cfg", "mount", "pstree", "systemctl", "top", "xorg.log.1", "modprobe.d", "interrupts")
             {
                 if(-e "$FixProbe_Logs/$L") {
                     unlink("$FixProbe_Logs/$L");
