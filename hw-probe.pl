@@ -3779,6 +3779,12 @@ sub probeHW()
         }
     }
     
+    if($Kldstat_v=~/bcm2835_/)
+    {
+        $Sys{"Type"} = "system on chip";
+        $Sys{"Model"} = "Raspberry Pi";
+    }
+    
     my $Modstat = "";
     
     if($Opt{"FixProbe"}) {
