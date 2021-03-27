@@ -101,7 +101,7 @@ Install on Debian
 
 On Debian and Debian based Linux distributions (Kali, LMDE, MX Linux, antiX, Devuan, PureOS, Parrot, Pardus, deepin, BunsenLabs, SolydXK, SparkyLinux, Q4OS, Tails, Raspbian, BigLinux, siduction, etc.).
 
-Enable sudo by https://wiki.debian.org/sudo
+Enable sudo by https://wiki.debian.org/sudo if not enabled.
 
 ###### Debian package
 
