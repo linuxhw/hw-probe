@@ -10373,10 +10373,12 @@ sub probeHW()
             $Sctl = hideByRegexp($Sctl, qr/home-([^\s]+)/);
             $Sctl = hideByRegexp($Sctl, qr/media-([^\s]+)/);
             
-            $Sctl=~s/(User Slice of|Session \d+ of user).+/$1 XXXXX/g;
+            $Sctl=~s/(User Slice of|Session \d+ of user|Synchronization for).+/$1 XXXXX/g;
             
-            if(my $SessUser = getUser()) {
+            if(my $SessUser = getUser())
+            {
                 $Sctl=~s/( of user)\s+\Q$SessUser\E/$1 USER/g;
+                $Sctl=~s/\@$SessUser\./\@USER\./g;
             }
             
             $Sctl = decorateSystemd($Sctl);
