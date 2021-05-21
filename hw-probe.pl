@@ -13823,12 +13823,16 @@ sub fixDistr($$$$)
             if($Pkgs=~/ghostbsd-pkg-conf (\d[\.\d]+)/i)
             {
                 $Distr = "ghostbsd";
-                $DistrVersion = $1;
+                if(not $DistrVersion or $DistrVersion eq $Sys{"Freebsd_version"}) {
+                    $DistrVersion = $1;
+                }
             }
             elsif($Pkgs=~/GhostBSD_PKG os\/kernel (\d[\.\d]+)/i)
             {
                 $Distr = "ghostbsd";
-                $DistrVersion = $1;
+                if(not $DistrVersion or $DistrVersion eq $Sys{"Freebsd_version"}) {
+                    $DistrVersion = $1;
+                }
             }
             elsif($Pkgs=~/TING opnsense/i)
             {
@@ -13989,6 +13993,24 @@ sub probeDistr()
             
             if($GhostBSDRc) {
                 $Name = "ghostbsd";
+            }
+            
+            my $GhostBSDPortsVer = "";
+            if($Opt{"FixProbe"}) {
+                $GhostBSDPortsVer = readFile($FixProbe_Logs."/ports_ver");
+            }
+            else
+            {
+                if(checkCmd("pkg"))
+                {
+                    $GhostBSDPortsVer = runCmd("pkg rquery \'\%v\' ports");
+                    chomp($GhostBSDPortsVer);
+                    writeLog($LOG_DIR."/ports_ver", $GhostBSDPortsVer);
+                }
+            }
+            
+            if($GhostBSDPortsVer) {
+                $Release = $GhostBSDPortsVer;
             }
             
             # OPNsense
