@@ -540,6 +540,7 @@ my %VendorJedec = (
     "Aeneon"    => ["7F7F7F7F7F570000"],
     "AMD"       => ["80010000830B"],
     "Apacer"    => ["017A", "7F7A", "7A01"],
+    "Apogee"    => ["05D6", "7F7F7F7F7FD60000"],
     "ASint"     => ["06C1", "c106", "7F7F7F7F7F7FC100"],
     "ATP"       => ["86E3"],
     "Avant"     => ["7F7F7F7F7FF70000", "85F7"],
@@ -547,8 +548,8 @@ my %VendorJedec = (
     "Centon"    => ["7F7F7F1900000000"],
     "CSX"       => ["855D", "7F7F7F7F7F5D0000"],
     "Corsair"   => ["029E", "0215", "9E02", "7F7F9E0000000000", "009C36160000"],
-    "Crucial"   => ["1315", "059B", "859B", "9B85", "9B05", "0D9B", "09B8", "7F7F7F7F7F9B0000", "7F7F7F7F7F9BFFFF", "0000000000009B85", "859<", "009D36160000", "009C2B0C0000", "9B000D1000000000", "F7F7F7F7F7B90000"],
-    "Elpida"    => ["00FE", "01FE", "02FE", "FE02", "7F7FFE0000000000", "0000000000FE7F7F"],
+    "Crucial"   => ["1315", "059B", "859B", "9B85", "9B05", "0D9B", "09B8", "7F7F7F7F7F9B0000", "7F7F7F7F7F9BFFFF", "0000000000009B85", "859<", "009D36160000", "009C2B0C0000", "9B000D1000000000", "F7F7F7F7F7B90000", "9B"],
+    "Elpida"    => ["00FE", "01FE", "02FE", "FE02", "7F7FFE0000000000", "0000000000FE7F7F", "000000000000FE02"],
     "EUDAR"     => ["847C"],
     "EVGA"      => ["08D9"],
     "Foxline"   => ["88F2", "8ABA"],
@@ -563,14 +564,16 @@ my %VendorJedec = (
     "Itaucom"   => ["7F7F310000000000"],
     "Hexon"     => ["7F7F7F7F7FDC0000"],
     "High Bridge" => ["07E9"],
+    "Hikvision" => ["0B2C"],
     "Kingmax"   => ["7F7F7F2500000000", "7F7F7F2500000000"],
-    "Kingston"  => ["0198", "7F98", "9804", "F789", "9806", "9805"],
+    "Kingston"  => ["0198", "7F98", "9804", "F789", "9806", "9805", "00000B160000", "009C23240000"],
     "KingTiger" => ["7F7F7F7F7F7F7F10"],
     "Kllisre"   => ["89C2"],
     "Kreton"    => ["85E3", "7F7F7F7F7FE30000"],
+    "Lexar"     => ["8A76"],
     "MAXSUN"    => ["89A2"],
     "MCI Computer" => ["7F7F640000000000"],
-    "Micron"    => ["002C", "802C", "857F", "878A", "2C00", "C200", "2CFF", "2C80", "2C0", "C20", "2C", "08D0", "009C162C0000", "FFFFFFFFFFFFFF2C", "0000000000002C80", "2C1600000000", "00002C0F0000"],
+    "Micron"    => ["002C", "00C2", "802C", "857F", "878A", "2C00", "C200", "2CFF", "2C80", "2C0", "C20", "2C", "08D0", "009C162C0000", "FFFFFFFFFFFFFF2C", "0000000000002C80", "2C1600000000", "00002C0F0000"],
     "Mougol"    => ["4B0", "4B00000000000000"],
     "Multilaser"=> ["08B6"],
     "Nanya"     => ["830B", "030B", "0B83", "0B0D", "7F7F7F0B00000000", "F7F7F7B000000000", "0000000000000B83"],
@@ -582,27 +585,32 @@ my %VendorJedec = (
     "pqi"       => ["853E", "7F7F7F7F7F3E0000"],
     "PUSKILL"   => ["8AAD"],
     "Qimonda"   => ["7F7F7F7F7F510000", "5145", "F7F7F7F7F7150000", "80C1", "85517FB38551"],
+    "Qumo"      => ["02B5"],
     "Ramaxel"   => ["7F7F7F7F43000000", "0443", "04430000802C", "7F7F7F7F7F000000", "000000437F7F7F7F"],
     "Reboto"    => ["0080000080CE"],
-    "Samsung"   => ["EC00", "00CE", "80CE", "00EC", "CE00", "CE80", "0CE", "EC0", "CE0", "000000000000CE80", "CE80", "CE30", "00000000000000CE", "CE01", "009C360B0000", "0000CE020000", "009C0B160000", "09B0"],
+    "Samsung"   => ["EC00", "00CE", "80CE", "00EC", "CE00", "CE80", "0CE", "EC0", "CE0", "000000000000CE80", "CE80", "CE30", "00000000000000CE", "CE01", "009C360B0000", "0000CE020000", "009C0B160000", "09B0", "090D", "000000000CE80"],
     "SanMax"    => ["86E9"],
+    "SemsoTai"  => ["09C8"],
     "Sesame"    => ["0B13"],
     "Silicon Power" => ["86D3", "7F7F7F7F7F7FD300"],
     "SiS"       => ["7F7F7F7F7F7FA800"],
     "SK hynix"  => ["00AD", "00DA", "DA00", "6F2B", "80AD", "AD00", "ADFF", "AD01", "AD80", "000000000000AD80", "00000000000000AD", "AD0", "DA0", "0AD8", "009C35230000", "009C2B160000", "0000AD010000", "0000000080AD", "08CD"],
-    "Smart"     => ["7F94"],
+    "Smart"     => ["7F94", "000000000000947F"],
     "Smart Modular" => ["019400000A00"],
     "Super Talent" => ["004D415500000000", "8634000082B5", "7F7F7F7F7F7F3400"],
     "Swissbit"  => ["7F7F7FDA00000000"],
     "TakeMS"    => ["7F7F7F5800000000", "7F7F7F58FFFFFFFF"],
     "Team"      => ["04EF", "EF04", "7F7F7F7FEF000000"],
     "Teikon"    => ["079E", "9E07"],
+    "Textorm"    => ["8C97"],
+    "TIMETEC"   => ["8C26"],
     "Transcend" => ["014F", "7F4F"],
     "TwinMOS"   => ["866B", "066B"],
     "Unifosa"   => ["0707000002FE"],
     "Unigen"    => ["7FCE"],
+    "Uroad"     => ["07DC"],
     "V-Color"   => ["066D"],
-    "V-GEN"     => ["8A94"]
+    "V-GeN"     => ["0A94", "8A94"]
 );
 
 my %JedecVendor;
@@ -614,91 +622,103 @@ foreach my $V (sort keys(%VendorJedec))
 }
 
 my %VendorRam = (
-    "A Force"  => ["1GX64V", "256X64M", "25664Y", "51264V"],
+    "A Force"  => ["1GX64V", "128X64K", "256X64M", "25664Y", "51264V"],
     "ADATA"    => ["AD7", "AM1U", "EL7YG", "HYOPE"],
     "Aeneon"   => ["AET"],
-    "AMD"      => ["AE32G", "AE34G", "AP34G", "AE38G", "AP38G", "AV34G", "R33", "R53", "R5S", "R73", "R74", "R93", "R94", "R9S"],
+    "AMD"      => ["AE32G", "AE34G", "AP34G", "AE38G", "AP38G", "AV34G", "R33", "R53", "R5S", "R7S", "R9S", "R73", "R74", "R93", "R94"],
     "Atermiter"=> ["Atermite"],
     "ATP"      => ["AQ12M", "AQ28M", "AQ56M", "AW12P"],
     "Axiom"    => ["51264Y"],
     "Apacer"   => ["76.", "78.", "D12."],
-    "Apotop"   => ["U3A"],
+    "Apogee"   => ["AS2G", "AU2G"],
+    "Apotop"   => ["S3A", "U3A"],
     "ASint"    => ["B1YJ", "B2YJ", "B3KJ", "C1RE", "C2RE", "SSA", "SSY", "SSZ", "SLA", "SLB", "SLZ"],
+    "ATLA"     => ["AD3SHT"],
     "Avant"    => ["F64", "H64", "J64", "W64"],
-    "Corsair"  => ["CMD", "CMK", "CML", "CMR", "CMS", "CMT", "CMU", "CMV", "CMW", "CMX", "CMZ", "CM2X", "CM4X", "VS2G"],
-    "Crucial"  => ["BLS", "BLT", "BLE", "BL8G", "BL16G", "BL32G", "BL256", "CB4G", "CB8G", "CB16G", "CT256", "CT512", "CT1024", "CT2048", "CT4G", "CT8G", "CT16G", "CT12864", "RM256", "RM512", "ST256", "ST512", "ST1024", "ZC256", "RM1024"],
+    "Corsair"  => ["CMD", "CMK", "CML", "CMR", "CMS", "CMT", "CMU", "CMV", "CMW", "CMX", "CMZ", "CM2X", "CM3X", "CM4X", "VS2G"],
+    "Crucial"  => ["BLS", "BLT", "BLE", "BL4G", "BL8G", "BL16G", "BL32G", "BL256", "BLM16G", "CB4G", "CB8G", "CB16G", "CT256", "CT512", "CT1024", "CT2048", "CT4G", "CT8G", "CT16G", "CT32G", "CT12864", "RM256", "RM512", "ST256", "ST512", "ST1024", "ZC256", "RM1024"],
     "CSX"      => ["V01L", "V01D"],
     "Dexcom"   => ["L23 06/11 DEXCOM"],
     "Dynet"    => ["DNHMAU"],
-    "Elpida"   => ["EBJ41"],
+    "Elpida"   => ["EBJ"],
     "Eluktro"  => ["MEM-12800-8GB-PRO"],
-    "Exceleram"=> ["E301", "E302", "E408", "E404", "EPH4"],
-    "EVGA"     => ["08G-D3"],
+    "Exceleram"=> ["E301", "E302", "E408", "E404", "E470", "EPH4"],
+    "EVGA"     => ["08G-D3", "16G-D4-2400-MR"],
     "Foxline"  => ["FL1", "FL2"],
     "G-Alantic"=> ["D3SS"],
     "G.Skill"  => ["F3-", "F4-"],
     "GeIL"     => ["CL9-9", "CL9-10", "CL10-10", "CL10-11", "CL11-11", "CL11-12"], # Golden Empire
-    "GIGABYTE" => ["AR36"],
+    "GIGABYTE" => ["AR36", "GP-GR"],
     "Gloway"   => ["TYA"],
-    "Goldkey"  => ["GKE", "GKH", "BKH"],
+    "Goldkey"  => ["BKH", "GKE", "GKH"],
     "Goldenmars" => ["GMT"],
-    "GOODRAM"  => ["GR400", "GR667", "GR800", "GR1", "GR2", "GY1", "IRX", "IR2"],
-    "HBS"      => ["HB2"],
+    "GOODRAM"  => ["GL213", "GR32", "GR400", "GR667", "GR800", "GR1", "GR2", "GY1", "IRX", "IR1", "IR2"],
+    "HBS"      => ["HB2", "HB3"],
     "High Bridge" => ["HB3SU"],
+    "Hikvision" => ["HKED"],
+    "HMD"      => ["HMD"],
+    "Huananzhi" => ["HNM"],
     "ISD Technology Limited" => ["IMT41"],
+    "Juhor"    => ["JHD"],
     "Kembona"  => ["KBN"],
     "Kimtigo"  => ["KT4G"],
-    "Kingmax"  => ["FLF", "FLG", "FSG"],
-    "Kingston" => ["KHX", "ACR", "ASU", "D3L16", "KN2M", "SNY", "TSB", "CL4-", "CL7-", "CL9-", "CL11-", "CL15-", "CL16-", "CL-17-", "1024636"],
+    "Kingmax"  => ["FLF", "FLG", "FSF", "FSG", "GSLG4"],
+    "Kingston" => ["KHX", "ACR", "ASU", "D3L16", "HP53", "KN2M", "SNY", "TSB", "CL4-", "CL7-", "CL9-", "CL11-", "CL15-", "CL16-", "CL-17-", "1024636"],
     "KingTiger"=> ["KingTiger000000000", "KingTige"],
     "Klevv"    => ["KD4"],
     "Kllisre"  => ["KRE-"],
     "KomputerBay" => ["KB_8G", "KB8G"],
     "Kreton"   => ["51634x"],
+    "Lexar"    => ["LD4"],
     "Magnum Tech" => ["MAGNUMTECH"],
     "MAXSUN"   => ["MSD"],
     "MDT"      => ["MDT"],
     "Memox"    => ["LN-SD"],
     "MemoWise" => ["MW0"],
-    "Micron"   => ["16JSF", "16JTF", "4ATF", "8ATF", "8JSF", "8JTF", "4KTF", "8KTF", "MT5"],
-    "Mushkin"  => ["991769", "992017", "991529", "991558", "991713", "992070", "991705"],
-    "Multilaser" => ["MS301", "MS351"],
+    "Micron"   => ["16JSF", "16HTF", "16JTF", "16KTF", "4ATF", "864AY", "8ATF", "8JSF", "8JTF", "4KTF", "8KTF", "MT5"],
+    "Mushkin"  => ["991769", "992017", "991529", "991558", "991713", "992070", "991705", "MB[A/B]"],
+    "Multilaser" => ["MD451", "MS301", "MS351"],
     "Nanya"    => ["NT1", "NT2", "NT4", "NT8", "M2F", "M2N", "M2S"],
-    "Neo Forza"=> ["NMUD"],
+    "Neo Forza"=> ["NMGD", "NMS", "NMUD"],
     "Netlist"  => ["NL8"],
     "Novatech" => ["N3S"],
     "OCZ"      => ["OCZ"],
     "Panasonic"=> ["CFW5W"],
     "Panram"   => ["PUD"],
-    "Patriot"  => ["PSD", "1600EL", "1600LL", "1866EL", "186C0", "2000EL", "2133 CL11 Series", "2666 C15 Series", "2666 C16 Series", "2800 C16 Series", "3200 C16 Series"],
-    "PNY"      => ["64C0M", "4GBH", "8GBF1X", "8GBH2X", "8GBU1X", "64D0J"],
+    "Patriot"  => ["PSA", "PSD", "1600EL", "1600LL", "1866EL", "186C0", "2000EL", "2133 CL11 Series", "2666 C15 Series", "2666 C16 Series", "2800 C16 Series", "3200 C16 Series"],
+    "PNY"      => ["64C0M", "4GBH", "8GBF1X", "8GBH2X", "8GBU1X", "64D0J", "16GF2X", "16GU1X"],
+    "PQI"      => ["BN109062"],
     "PSC"      => ["AS8F8G73D-DJ2"],
+    "Puskill"  => ["PJ16"],
     "Qimonda"  => ["64T1280", "64T64", "64T12"],
     "Qumo"     => ["QUM"],
     "Ramaxel"  => ["RMT", "RMN", "RMR", "RMS", "RMU"],
     "Ramos"    => ["EMB", "EWB", "RMB"],
-    "Samsung"  => ["M378", "M393B", "M4 70T", "M471", "K4E", "K4F", "K4U"],
+    "Samsung"  => ["M04", "M378", "M393B", "M4 70T", "M471", "K4E", "K4F", "K4U"],
     "Sesame"   => ["S939", "S949"],
     "SGS/Thomson" => ["SD-D2", "SD-D3"],
-    "Silicon Power" => ["DBLT", "DBST", "DCLT", "DCST", "SP00", "ESRD"],
-    "SK hynix" => ["HMA", "HMT", "4GBPC1333512", "4GBPC", "HMP", "HYMP", "H9CC", "H9HC", "MMXIV", "MPP"],
-    "Smart"    => ["SH564", "SF464", "SF564", "SMS4"],
+    "Silicon Power" => ["DBLT", "DBST", "DCLT", "DCST", "SP0", "ESRD"],
+    "SK hynix" => ["HCN", "HMA", "HMT", "HMP", "HYMP", "H9CC", "H9HC", "DMT3", "MMXIV", "MPP", "4GBPC1333512", "4GBPC"],
+    "Smart"    => ["SF464", "SF564", "SG56", "SH564", "SMS4"],
     "Strontium" => ["SRT"],
     "Super Talent" => ["SUPERTALENT02", "SUPERTALENT"],
-    "Swissbit" => ["SEU"],
+    "Swissbit" => ["MEN02", "SEU"],
+    "T-FORCE"  => ["ZEUS"],
     "TakeMS"   => ["TMS"],
     "Team"     => ["Team-Eli", "Team--El", "Dark", "Vulcan"],
     "Teikon"   => ["TMA", "TML", "TMT"],
-    "Thermaltake" => ["R009"],
+    "Textorm"  => ["TXS"],
+    "Thermaltake" => ["R009", "R019"],
     "Transcend"=> ["JM1", "JM2", "JM320", "JM367", "JM667", "JM800", "TS1", "TS64", "TS128", "TS256"],
     "TwinMOS"  => ["9DEEB", "9DHTB", "9DETB", "8DP25KK", "8DE25KK", "7D-23KK", "M2GAO"],
     "Unifosa"  => ["GU3", "GU5", "GU6", "HU5", "HU6"],
+    "Unigen"   => ["UG"],
     "Unknown"  => ["GRPFD"],
     "Uroad"    => ["WJD"],
-    "V-Color"  => ["VCOLOR"],
-    "V-GEN"    => ["D4H4"],
+    "V-Color"  => ["TD4", "VCOLOR"],
+    "V-GeN"    => ["D4H4", "D4R8", "D4S16"],
     "Veineda"  => ["M08GD16P"],
-    "Visipro"  => ["T4G86U1"],
+    "Visipro"  => ["T2G", "T4G86"],
     "Walton Chaintech" => ["AU4G"],
     "Wilk Elektronik" => ["IRP"]
 );
@@ -717,16 +737,17 @@ my %DiskVendor = (
     "AS25 1"    => "ASENNO",
     "BT58"      => "BAITITON",
     "C3-60G"    => "SenDisk",
+    "CSSD-MG4VT" => "CFD",
     "FASTDISK"  => "FASTDISK",
     "FTM"       => "Super Talent",
-    "G2242"     => "BIWIN",
     "G2 series" => "Micro Center",
     "G3 Series" => "Myung",
     "Gen2A400"  => "Anobit",
     "GH-SSD"    => "Green House",
     "GKH84"     => "Goldkey",
-    "InM2"      => "Indilinx",
+    "HX240GSSD" => "XUM",
     "JAJS"      => "Leven",
+    "LIREN"     => "Liren",
     "M2SCF-6M"  => "ACPI",
     "MD0"       => "Magnetic Data",
     "MD"        => "MaxDigital",
@@ -737,63 +758,101 @@ my %DiskVendor = (
     "PH6-CE"    => "Plextor",
     "RD-S"      => "RECADATA",
     "RTOTJ"     => "Union Memory",
-    "SDM"       => "BlueRay",
     "SPCC"      => "SPCC",
     "SQF-S2"    => "Advantech",
     "SSD2S240"  => "Hypertec",
-    "SSD2SC"    => "PNY",
     "T650-120"  => "Goldenfir",
     "TEAML5"    => "Team",
     "Thinklife" => "Lenovo",
     "TRO-SSD7"  => "Eluktro",
     "V-GEN"     => "V-GeN",
+    "V7 SSD"    => "VSEVEN",
     "Vi550"     => "Verbatim",
     "WL"        => "WD MediaMax",
     "XUNZHE"    => "XUNZHE",
     "Y6-"       => "Yunhaitian",
     "ZALMAN"    => "ZALMAN",
     "ZF18-64"   => "Espada",
-    "ZTC-SM"    => "ZTC",
     "ZTSSD"     => "ZOTAC"
 );
 
 my %VendorDisk = (
     "ADATA"    => ["AXM", "AXN", "IM2S"],
     "AMD"      => ["R3S", "R5S"],
+    "Apacer"   => ["APSDM"],
+    "Apple"    => ["A45ACXBA9TA"],
+    "ATP"      => ["ATP SATA"],
+    "BIWIN"    => ["G2242", "M6305"],
+    "BlueRay"  => ["SDM", "Ultra M8V"],
+    "BR"       => ["BR 60G"],
+    "Cactus"   => ["CactusFlashCard"],
     "China"    => ["CS2246", "DEPOSM", "EHSA", "ESA3", "Mit-SSD512A", "MSATA", "OSSD", "RTMMB", "S41CF", "SH00", "SSD128GBS800", "T480", "TP00"],
     "Chiprex"  => ["S10T", "S8M", "S9M"],
     "Corsair"  => ["CSSD-F", "CSSD-V", "Force MP"],
     "Crucial"  => ["CT", "FCCT", "M4-CT"],
     "Foxline"  => ["FLD", "FLSSD"],
-    "GOODRAM"  => ["GOODRAM", "IR_SSDPR", "IR-SSDPR", "IRIDIUM", "IRP-SSDPR", "SSDPR"],
+    "GK"       => ["SM2244LT"],
+    "GOODRAM"  => ["GOODRAM", "IR_SSDPR", "IR-SSDPR", "IRIDIUM", "IRP-SSDPR", "IRP_SSDPR", "SSDPR"],
+    "HCiPC"    => ["P2MSM"],
     "HGST"     => ["HUP", "HUS"],
     "Hikvision"=> ["HKVSN", "HS-SSD"],
     "Hitachi"  => ["HDS", "HDT", "HUA", "HT"],
-    "HP"       => ["FB0", "GB0", "GB1000EA", "GJ0", "MB1000", "MB2000", "VB0", "VK0"],
-    "HPE"      => ["LK04", "LK16", "MB0", "MB8", "MB4000", "MK0", "MM1000", "MM2000", "MR00024", "VR00024"],
+    "HP"       => ["FB0", "FB1", "GB0", "GB1000EA", "GJ0", "MB1000", "MB2000", "VB0", "VK0"],
+    "HP Phison" => ["PSSBN"],
+    "HPE"      => ["LK04", "LK16", "MB0", "MB8", "MB4000", "MK0", "MM1000", "MM2000", "MR00024", "VR00024", "VR00048"],
     "IBM/Hitachi" => ["IC25", "IC35"],
+    "Indilinx" => ["IND-S", "InM2"],
     "Innodisk" => ["DES25"],
-    "Intel"    => ["SSDPAMM", "SSDSA2S", "SSDSC2"],
+    "Intel"    => ["N18A", "SSDPAMM", "SSDSA2S", "SSDSC2"],
+    "Intenso"  => ["JAJ", "lntenso"],
+    "Iod"      => ["MST1001"],
+    "IPLEX"    => ["TITAN256"],
+    "KingDian" => ["SSD-S400"],
     "KingSpec" => ["ACJ", "ACS", "CHA", "KSQ120", "SPK", "Q-90", "Q-180", "Q-360"],
     "Kingston" => ["EK60H", "HyperX", "RBU-SN"],
-    "Lite-On"  => ["PH2", "PH3"],
+    "Kross Elegance" => ["KE-SSD"],
+    "Lite-On"  => ["PH2", "PH3", "PH4"],
     "MARSHAL"  => ["MAL"],
+    "Mcpoint"  => ["MC240"],
+    "MEMXPRO"  => ["mSATA M3B"],
     "MyDigitalSSD" => ["BP5", "SC2 M2", "SB M2", "SB2"],
-    "OCZ"      => ["D2C", "D2R", "DEN", "OCZ"],
+    "NTC"      => ["NTC "],
+    "OCZ"      => ["D2C", "D2R", "DEN", "OCZ", "VTX3"],
+    "OSCOO"    => ["OSC"],
     "OWC"      => ["Mercury Electra", "Neptune"],
+    "Pacific Sun" => ["PSM-"],
+    "Pasoul"   => ["OASDX"],
+    "PNY"      => ["69D03", "SSD2SC"],
     "Ramaxel"  => ["RDM", "RTITF"],
     "S3+"      => ["S3SSD"],
     "Samsung"  => ["MBG4", "MZM", "MZ7", "SG9"],
-    "SanDisk"  => ["CF Card", "DB40", "sandisk", "SU04G", "SU08G", "TE2"],
+    "SanDisk"  => ["CF Card", "DB40", "sandisk", "SDCFHS", "SU04G", "SU08G", "TE2"],
     "Seagate"  => ["2E256-TU2", "OOS500G", "OOS1000G", "OOS2000G", "ST", "ST_", "XA1920", "XF1230", "ZA1"],
     "SK hynix" => ["HFS", "SHGS"],
+    "SNR"      => ["SNR-ML"],
     "Solid"    => ["SSD0256S01"],
+    "Timetec"  => ["35TT"],
     "Toshiba"  => ["MG0", "Q200 EX", "THNSF"],
     "Transcend"=> ["TS", "USDU1"],
     "TREKSTOR" => ["TREKSTOR"],
+    "Varro"    => ["BULLDOZER"],
     "Wicgtyp"  => ["M900-128"],
     "WDC"      => ["HBS3A", "WD", "WDC WD10"],
-    "Zheino"   => ["CHN", "CHN "]
+    "Yeyian"   => ["VALK"],
+    "Zheino"   => ["CHN", "CHN "],
+    "ZTC"      => ["ZTC-MS", "ZTC-SM"]
+);
+
+my %DiskModelVendor = (
+    "SSD PLUS 480GB"   => "SanDisk",
+    "ULTIMATE CF CARD" => "Silicon Power"
+);
+
+my %VendorDiskModel = (
+    "Apacer" => ["8GB SATA Flash Drive", "16GB SATA Flash Drive", "32GB SATA Flash Drive", "256GB SATA Flash Drive", "480GB SATA Flash Drive", "SATA Flash Drive"],
+    "China" => ["240G SATA III SSD", "256GB PCS 2.5-inch SSD", "256GB SATA SSD", "CF", "CIE M8 M350 128GB W", "CNCTION", "DHMSR64GD81BC1QC", "EK V100", "Generic S050 Hard drive", "GM128", "JWX 16GB MSATA", "Kston128GB", "M.2 2280-1TB SSD", "M10C", "MLC", "mSATA-64GB SSD", "Msata", "NGFF 2280 256GB SSD", "NGFF 2280 1TB SSD", "OOS250G", "PATA SSD", "QST8-512", "R580", "REVOLUTIONS500_256", "S3 SSD", "Solid", "W2EM120GDTA-S71AAB-2Q4-SP", "XJH"],
+    "Integral" => ["V Series SATA SSD"],
+    "Phison" => ["SSDS30256XQC800134237", "S11-256G-PHISON-SSD-B3"]
 );
 
 foreach my $V (sort keys(%VendorDisk))
@@ -803,16 +862,12 @@ foreach my $V (sort keys(%VendorDisk))
     }
 }
 
-my %DiskModelVendor = (
-    "16GB SATA Flash Drive"   => "Apacer",
-    "32GB SATA Flash Drive"   => "Apacer",
-    "256GB SATA Flash Drive"  => "Apacer",
-    "SATA Flash Drive"        => "Apacer",
-    "Solid"                   => "Patriot",
-    "SSD PLUS 480GB"          => "SanDisk",
-    "SSDS30256XQC800134237"   => "Phison",
-    "V Series SATA SSD 240GB" => "Integral"
-);
+foreach my $V (sort keys(%VendorDiskModel))
+{
+    foreach (sort @{$VendorDiskModel{$V}}) {
+        $DiskModelVendor{$_} = $V;
+    }
+}
 
 # http://standards-oui.ieee.org/oui.txt
 my %IeeeOui = (
@@ -830,7 +885,8 @@ my %IeeeOui = (
     "5cd2e4" => "Intel",
     "002303" => "Lite-On",
     "6479a7" => "Phison",
-    "ace42e" => "SK hynix"
+    "ace42e" => "SK hynix",
+    "dc663a" => "Apacer"
 );
 
 my %SerialVendor = (
@@ -844,7 +900,9 @@ my %FirmwareVendor = (
     "S0222A0"  => "Patriot",
     "SFDM104B" => "Apacer",
     "SFPS881A" => "China",
-    "S0918A0"  => "China"
+    "S0918A0"  => "China",
+    "S5FAM017" => "Phison",
+    "T0722A0"  => "Netac"
 );
 
 my %MicroCode = (
@@ -1143,33 +1201,31 @@ my %SdioType = (
 
 # Fix monitor vendor
 my %MonVendor = (
-    "ABO" => "Acer",
-    "ACB" => "Achieva Shimian",
-    "ACH" => "Achieva Shimian", # QHD270
     "ACI" => "Ancor Communications", # ASUS
-    "ACR" => "Acer",
     "ADI" => "ADI",
     "AGN" => "AG Neovo",
     "AIC" => "Arnos Instruments", # AG Neovo
+    "ALB" => "Alba",
     "AMH" => "AMH",
     "AMR" => "JVC",
     "AMT" => "AMT International", # AMTRAN?
     "AMW" => "AMW",
     "AOC" => "AOC",
     "AOP" => "AOpen",
-    "API" => "Acer",
     "APP" => "Apple Computer",
+    "ARG" => "Alba",
     "ARM" => "Armaggeddon",
     "ASB" => "Prestigio", # ASBIS
-    "ASU" => "ASUS",
+    "ASM" => "Aosiman",
     "ATE" => "Megavision",
     "ATV" => "Ativa",
-    "AUS" => "ASUS",
     "BAL" => "Balance",
     "BBK" => "BBK",
     "BBY" => "Insignia",
     "BEK" => "Beko",
     "BKM" => "Beike",
+    "BLS" => "BUBALUS",
+    "BMM" => "Proview",
     "BNQ" => "BenQ",
     "BOE" => "BOE",
     "BRA" => "Braview",
@@ -1185,27 +1241,29 @@ my %MonVendor = (
     "CMN" => "Chimei Innolux",
     "CMO" => "Chi Mei Optoelectronics",
     "CND" => "CND",
+    "COB" => "COBY",
     "COR" => "CPT", # Chunghwa Picture Tubes
+    "COS" => "NVISION",
     "CPT" => "CPT",
     "CPQ" => "Compaq Computer",
     "CTL" => "CTL",
     "CTX" => "CTX",
     "CYS" => "Aosiman",
-    "DEL" => "Dell",
     "DIC" => "Dinner",
     "DNS" => "DNS",
     "DON" => "DENON",
+    "DOS" => "Dostyle",
     "DSG" => "DSGR",
+    "DSL" => "DisplayLink",
     "DTB" => "DTEN Board",
     "DUS" => "VOXICON",
     "DVM" => "RoverScan",
     "DWE" => "Daewoo",
     "EGA" => "Elgato",
     "EHJ" => "Epson",
-    "ELA" => "ELSA",
     "ELE" => "Element",
     "ELO" => "Elo Touch",
-    "EMA" => "eMachines",
+    "ENM" => "ENMAR",
     "ENV" => "Envision Peripherals",
     "EPI" => "Envision",
     "EST" => "Estecom",
@@ -1223,30 +1281,32 @@ my %MonVendor = (
     "GMI" => "XGIMI",
     "GRU" => "Grundig",
     "GSM" => "Goldstar",
+    "GSV" => "G-Story",
     "GWD" => "GreenWood",
     "HAI" => "Haier",
     "HAN" => "Cbox",
     "HAR" => "Haier",
     "HAT" => "Huion",
     "HCM" => "HCL",
-    "HEC" => "Hitachi",
     "HED" => "Hedy",
     "HEI" => "Hyundai",
     "HII" => "Higer",
     "HIS" => "Hisense",
-    "HIT" => "Hitachi",
     "HKC" => "HKC",
     "HRE" => "Haier",
     "HSG" => "Hannspree",
     "HSL" => "Hansol",
-    "HTC" => "Hitachi",
     "HVR" => "HVR", # VR Headsets
     "HWP" => "HP",
     "HPN" => "HP",
+    "HRT" => "Hercules",
     "HSE" => "Hisense",
     "HUG" => "Hugon",
     "HUN" => "Huion",
     "HUY" => "HUYINIUDA",
+    "HWV" => "HUAWEI",
+    "HXV" => "iQual",
+    "HYC" => "Pixio",
     "IBM" => "IBM",
     "ICB" => "Pixio",
     "ICP" => "IC Power",
@@ -1260,18 +1320,18 @@ my %MonVendor = (
     "ITR" => "INFOTRONIC",
     "IVM" => "Iiyama",
     "IVO" => "InfoVision",
-    "IZI" => "Vizio",
     "JDI" => "JDI", # Japan Display Inc.
     "JEN" => "Jean",
     "JVC" => "JVC",
     "JXC" => "JXC", # Shenzhen JingXingCheng
     "KDM" => "Korea Data Systems",
+    "KIV" => "Kivi",,
     "KMR" => "Kramer",
     "KGN" => "Kogan",
     "KOA" => "Konka",
     "KOS" => "KOIOS",
     "KTC" => "KTC",
-    "LCA" => "Lacie",
+    "LDL" => "LDLC",
     "LGD" => "LG Display",
     "LGP" => "LG Philips",
     "LHC" => "Denver",
@@ -1280,16 +1340,13 @@ my %MonVendor = (
     "LTN" => "Lite-On",
     "LRN" => "Doffler",
     "MAX" => "Belinea",
+    "MBB" => "MAIBENBEN",
     "MCE" => "Metz",
-    "MEA" => "Medion",
-    "MEB" => "Medion",
     "MEC" => "Medion Akoya",
-    "MED" => "Medion",
     "MEI" => "Panasonic",
     "MEK" => "MEK",
     "MEL" => "Mitsubishi",
     "MJI" => "Marantz",
-    "MKN" => "Polaroid",
     "MP_" => "Monoprice",
     "MPC" => "Monoprice",
     "MSC" => "Syscom",
@@ -1299,33 +1356,35 @@ my %MonVendor = (
     "MST" => "MStar",
     "MTC" => "Mitac",
     "MTX" => "Matrox",
+    "MUL" => "Multilaser",
     "MUS" => "Mecer",
     "MZI" => "Digital Vision",
     "NCI" => "NECCI",
     "NCP" => "PANDA", # Nanjing CEC Panda
     "NEC" => "NEC",
+    "NFC" => "NFREN",
     "NIK" => "Niko",
-    "NIX" => "Nixeus",
+    "NOA" => "NOA VISION",
     "NRC" => "AOC",
+    "NSO" => "Neso",
     "NVD" => "Nvidia",
+    "NVI" => "NVISION",
     "NVT" => "Novatek",
     "OCM" => "oCOSMO",
     "ONK" => "Onkyo",
     "ONN" => "ONN",
+    "OPT" => "Optoma",
     "ORN" => "Orion",
     "OTM" => "Optoma",
     "OTS" => "AOC",
     "OTT" => "Ottagono",
+    "OWC" => "OWC",
     "PCK" => "SENSY",
     "PEA" => "Pegatron",
     "PEB" => "Proview",
     "PEG" => "PEGA",
     "PGE" => "GNR",
     "PGS" => "Princeton",
-    "PHI" => "Philips",
-    "PHL" => "Philips",
-    "PHP" => "Philips",
-    "PHT" => "Philips",
     "PIO" => "Pioneer",
     "PKB" => "Packard Bell",
     "PKR" => "Parker",
@@ -1335,17 +1394,25 @@ my %MonVendor = (
     "PNS" => "Pixio",
     "PRE" => "Prestigio",
     "PRT" => "Princeton",
+    "PTH" => "TVS",
     "PTS" => "Plain Tree Systems",
     "QBL" => "QBell",
     "QDS" => "Quanta Display",
     "QMX" => "Gericom",
+    "QUN" => "Lenovo",
+    "REC" => "Reconnect",
     "RJT" => "Ruijiang",
+    "RKU" => "Roku",
     "ROL" => "Rolsen",
     "RUB" => "Rubin",
+    "RZR" => "Razer",
     "SAN" => "Sanyo",
     "SCE" => "Sun",
     "SCN" => "Scanport",
+    "SEE" => "SEEYOO",
     "SHP" => "Sharp",
+    "SII" => "Skyworth",
+    "SNN" => "SUNNY",
     "SNY" => "Sony",
     "SPT" => "Sceptre Tech",
     "SPV" => "Sunplus",
@@ -1354,6 +1421,7 @@ my %MonVendor = (
     "STI" => "Semp Toshiba",
     "STK" => "S2-Tek",
     "SUN" => "Sun",
+    "SVA" => "SVA",
     "SVR" => "Sensics",
     "SYL" => "Sylvania",
     "SYN" => "Olevia",
@@ -1374,41 +1442,53 @@ my %MonVendor = (
     "VBX" => "VirtualBox",
     "VES" => "Vestel Elektronik",
     "VIT" => "Vita",
-    "VIZ" => "Vizio",
+    "VJK" => "HannStar",
     "VLV" => "Valve",
     "VSC" => "ViewSonic",
     "VSN" => "Videoseven",
     "VTK" => "Viotek",
-    "VZO" => "Vizio",
     "WAC" => "Wacom",
     "WAM" => "Pixio",
-    "WDE" => "Westinghouse",
-    "WDT" => "Westinghouse",
-    "WET" => "Westinghouse",
     "WIM" => "Wimaxit",
-    "WWW" => "ASUS",
     "XER" => "Xerox",
     "XMD" => "Xiaomi",
     "XMI" => "Mi",
     "XSC" => "Immer",
+    "XVS" => "XVision",
+    "XYE" => "Xiangye",
     "YAK" => "Yakumo",
     "YMH" => "Yamaha",
     "ZRN" => "Zoran"
 );
 
 my %VendorMon = (
+    "Acer" => ["ABO", "ACR", "API"],
+    "Achieva Shimian" => ["ACB", "ACH"],
+    "ASUS" => ["ASU", "AUS", "WWW"],
     "AU Optronics"=> ["AUO", "DMO"],
     "COMPAL"  => ["CPL", "WOR"],
+    "Dell"    => ["DEL", "LNK"],
     "Eizo"    => ["EIZ", "ENC"],
+    "ELSA"    => ["ELA", "ELS"],
+    "eMachines" => ["EMA", "EMI"],
     "Gateway" => ["GTW", "GWY"],
-    "HannStar"=> ["HSD", "HSP"],
+    "HannStar" => ["HSD", "HSP"],
+    "Hitachi" => ["HEC", "HIT", "HTC"],
     "Hyundai ImageQuest" => ["HIQ", "IQT"],
+    "KAZUK" => ["KAZ"],
+    "Lacie" => ["LAC", "LCA"],
     "Lenovo"  => ["LCS", "LEN", "LEO", "QUA", "QWA"],
-    "Positivo"=> ["NON", "POS"],
+    "Medion"  => ["MEA", "MEB", "MED"],
+    "Nixeus"  => ["NIX", "NTI"],
+    "Philips" => ["PFL", "PFT", "PHI", "PHL", "PHP", "PHT"],
+    "Polaroid" => ["MKN", "POL"],
+    "Positivo" => ["NON", "POS"],
     "Samsung" => ["SAM", "SDC", "SEC", "SEM", "STN", "_YM"],
     "Seiki"   => ["KDD", "SEK"],
     "Thomson" => ["PKV", "TMN", "TTE"],
-    "Toshiba" => ["LCD", "TOS", "TSB"]
+    "Toshiba" => ["LCD", "TOS", "TSB"],
+    "Vizio"   => ["IZI", "VIZ", "VZO"],
+    "Westinghouse" => ["WDE", "WDT", "WEH", "WET"]
 );
 
 foreach my $V (sort keys(%VendorMon))
@@ -1419,30 +1499,30 @@ foreach my $V (sort keys(%VendorMon))
 }
 
 my @UnknownMonVendor = (
-    "AAA", "ABC", "ACA", "ADA", "ADE", "ADP", "ADV", "AGO", "ALP", "AML", "APD", "ARS", "ASA", "ATS", "AVO", "AVX", "AQU", # Prestigio (ARS)?
-    "BBY", "BGT",
-    "CAP", "CDD", "CDR", "CEA", "CGC", "CHD", "CHE", "CHI", "CHO", "CHR", "CLT", "CNA", "CNC", "CON", "CRO", "CSL", "CSO", "CTV", "CVA", "CVT", "CYX",
-    "DAC", "DCL", "DDL", "DGI", "DIF", "DIX", "DLM", "DMI", "DMT", "DPC", "DPL", "DSC", "DTV", "DVI", "DZX",
-    "ECS", "ELD", "EMC", "ETC", "EXP",
-    "FGT", "FL_", "FMX", "FNI", "FOX", "FQV", "FRT", "FST", "FUN", "FZC",
-    "GBM", "GDH", "GEN", "GER", "GKE", "GKK", "GLE", "GML", "GNR", "GPI", "GRM", "GVT",
-    "HCG", "HCW", "HDM", "HHT", "HIB", "HIC", "HIM", "HJW", "HKL", "HQB", "HRG", "HRX", "HR_", "HSI", "HXA", "HYD", "HYO", "HYT",
-    "IFS", "INS", "IPS", "IOD", "ITE", # Songren (IPS)?
-    "JCH", "JRY", "JXJ", "JXT",
-    "KDC", "KEB", "KET", "KLF", "KNK", "KON", "KRF", "KSI", "KTC", "KVM", "KWD",
-    "LLE", "LLP", "LLL", "LMV", "LOE", "LOS", "LPD", "LSC", "LTM", "LYC", "LYT", "LZT",
-    "MIT", "MLT", "MON", "MOT", "MTD", "MTK", # MotoAttach (MOT)? VIZIO (MTK)?
-    "NCR", "NCS", "NEO", "NEX", "NME", "NOD", "NOV", "NTK", "NTS", "NUL", "NXG", "NXP",
-    "ODE", "OEC", "OEM", "OLT", "OMS", "ONB", "OOO", "ORM", "OUT",
-    "PAR", "PBN", "PDI", "PKV", "PNP", "PPC", "PPP", "PRI", "PTC", "PTF", "PVS", "PVT", "PZG",
-    "QCM",
-    "RAT", "RCA", "RGB", "RHT", "RIS", "RJT", "RLT", "ROW", "RRR", "RTD", "RTK", "RXT", "RX_",
-    "SAC", "SBI", "SEL", "SFX", "SGD", "SGT", "SHI", "SIS", "SKK", "SKY", "SLD", "SLT", "SMC", "SMP", "SNC", "SNT", "SSD", "STA", "STB", "STD", "SYK", "SYT",
-    "TAA", "TAL", "TBD", "TFC", "TMA", "TSL", "TSN", "TVT", "TVW", "TXD",
-    "UME", "UTV", "UGD", "UPD",
+    "AAA", "AAN", "ABC", "ACA", "ADA", "ADE", "ADP", "ADV", "AGO", "ALP", "AML", "AMO", "APD", "ARS", "ASA", "ATN", "ATS", "AVO", "AVX", "AQU", # Prestigio (ARS)?
+    "BBY", "BDS", "BGT", "BMD",
+    "CAN", "CAP", "CDD", "CDR", "CEA", "CGC", "CHD", "CHE", "CHI", "CHO", "CHR", "CLT", "CNA", "CNC", "CON", "CRO", "CSL", "CSO", "CTC", "CTT", "CTV", "CVA", "CVT", "CYX",
+    "DAC", "DAO", "DCL", "DDL", "DGI", "DIF", "DIX", "DLM", "DMI", "DMT", "DPC", "DPL", "DPP", "DSC", "DTV", "DVI", "DZX",
+    "ECS", "EDI", "EIG", "ELD", "ELU", "EMC", "ETC", "EXP",
+    "FCM", "FGT", "FL_", "FMX", "FNI", "FOS", "FOX", "FQV", "FRT", "FSR", "FST", "FUN", "FZC",
+    "GBM", "GDH", "GEN", "GER", "GKE", "GKK", "GLE", "GML", "GNR", "GPI", "GRM", "GVT", "GVV",
+    "HCG", "HCW", "HCZ", "HDM", "HER", "HHT", "HIB", "HIC", "HIK", "HIM", "HJW", "HKL", "HON", "HQB", "HRG", "HRX", "HR_", "HSI", "HXA", "HXS", "HYD", "HYO", "HYT",
+    "IFS", "IMR", "INS", "IPS", "IOD", "ITE", # Songren (IPS)?
+    "JCH", "JHF", "JRY", "JWY", "JXJ", "JXT",
+    "KDC", "KEB", "KET", "KJT", "KLF", "KNK", "KON", "KRF", "KSI", "KTC", "KTL", "KVM", "KWD",
+    "LED", "LKM", "LLE", "LLP", "LLL", "LMV", "LNG", "LOE", "LOS", "LPD", "LSC", "LTM", "LYC", "LYT", "LZT",
+    "MIG", "MIT", "MLK", "MLT", "MON", "MOT", "MPI", "MQP", "MTD", "MTK", # MotoAttach (MOT)? VIZIO (MTK)?
+    "NCR", "NCS", "NEO", "NEW", "NEX", "NME", "NOD", "NOV", "NTK", "NTS", "NUL", "NXG", "NXP",
+    "ODE", "ODH", "OEC", "OEM", "OLT", "OMS", "ONB", "OOO", "ORM", "OST", "OTC", "OUT",
+    "PAR", "PBN", "PDI", "PEP", "PKV", "PNP", "PPC", "PPP", "PRI", "PTC", "PTF", "PVS", "PVT", "PZG",
+    "QCM", "QUS",
+    "RAT", "RCA", "REN", "RGB", "RHT", "RIS", "RJT", "RLT", "ROW", "RRR", "RTD", "RTK", "RXT", "RX_",
+    "SAC", "SBI", "SCH", "SEG", "SEL", "SFX", "SGD", "SGT", "SHI", "SHL", "SIS", "SKK", "SKY", "SKW", "SLD", "SLT", "SMC", "SMP", "SNC", "SNT", "SSD", "STA", "STB", "STD", "SUG", "SUM", "SVT", "SYK", "SYM", "SYT",
+    "TAA", "TAL", "TBD", "TBT", "TFC", "TGL", "TMA", "TMX", "TSL", "TSN", "TUP", "TVT", "TVW", "TXD",
+    "UME", "UTV", "UGD", "UPD", "UPP", "USR",
     "VBO", "VFV", "VHT", "VIE", "VID", "VMO", "VOR", "VSD", "VST",
-    "WAN", "WIN", "WRP", "WST", "WYT",
-    "XKX", "XXE", "XXX", "XYK", "XYY",
+    "WAN", "WCS", "WIN", "WRP", "WST", "WYT",
+    "XKX", "XSP", "XXE", "XXX", "XYK", "XYY",
     "YHI", "YSP", "YTH",
     "ZDG", "ZLS", "ZLX", "ZTY",
     "___"
@@ -1784,7 +1864,7 @@ my %TypeOrder = (
     "graphics card"=>"A"
 );
 
-my $ALL_DRIVE_VENDORS = "ADATA|A\-DATA|addlink|Advantech|AEGO|AMD|Anobit|Apacer|Apple|ASUS|Avant|AXIOMTEK Corp\.|BHT|BIOSTAR|BIWIN|BLUERAY|BRAVEEAGLE|Chiprex|CLOVER|Colorful|Corsair|Crucial|Dell|DeTech|DOGFISH|DREVO|Emtec|Espada|ExcelStor Technology|e2e4|faspeed|FASTDISK|Fordisk|FORESEE|Foxline|FUJITSU|GALAX|Geil|GelL|GIGABYTE|Gigastone|GLOWAY|Goldendisk|Goldenfir|Golden memory|Goldkey|GOODRAM|Gost|Hajaan|HECTRON|HGST|Hitachi|Hoodisk|HP|HYPERDISK|Hyundai|i-FlashDisk|IBM-Hitachi|IBM|Indilinx|INDMEM|innodisk|INNOVATION[^\x00-\x7F]+IT|INTEL|INTENSO|JIAWEI|KINGBANK|Kingchuxing|KingDian|KingFast|KINGMAX|KingPower|KINGRICH|KINGSHARE|KingSpec|Kingston|KIOXIA-EXCERIA|KLEVV|KODAK|Kston|LDLC|LDNDISK|Lenovo|LEXAR|Lite-On|LITEON|LITEONIT|LONDISK|Magnetic Data|MARSHAL|MARVELL|Maximus|Maxtor|MediaMax|MENGMI|MicroData|Micron|MIXZA|Mushkin|Myung|Netac|OCZ|OEM|ORICO|ORTIAL|OWC|oyunkey|PALIT|Patriot|PHINOCOM|PHISON|Platinet|PLEXTOR|PNY|PRETEC|QUANTUM|QUMO|Radeon|Ramaxel|Ramsta|Reeinno|RunCore|Samsung Electronics|SAMSUNG|SandForce|SanDisk|SATADOM|Seagate|SenDisk|ShanDianZhe|Shinedisk|SILICONMOTION|Silicon Motion|SK hynix|SMART|Smartbuy|SMI|Solidata|SPCC|SUNEAST|SuperMicro|SuperTalent|T\-FORCE|TAISU|TAMMUZ|TEAM|Teclast|TEUTONS|TCSUNBOW|TEKET|THU|tigo|TopSunligt|TOSHIBA|Transcend|UNIC2|V-Gen|Vaseky|Verbatim|VBOX|WDC|Western Digital|Wolf Aure|XPG|XrayDisk|XUNZHE|Zheino|ZOTAC";
+my $ALL_DRIVE_VENDORS = "ADATA|A\-DATA|addlink|AFOX|Advantech|AEGO|AMD|Anobit|Aoluska|Apacer|Apple|ASUS|Avant|AVEXIR|Axiom|AXIOMTEK Corp\.|Bamba|BHT|BIOSTAR|BIWIN|BLUERAY|BRAVEEAGLE|Centerm|Chiprex|CLOVER|Colorful|Corsair|Crucial|CWDISK|Dahua|Dell|DERLAR|DeTech|DGM|DOGFISH|DOGGO|DREVO|ELSKY|Emtec|Espada|ExcelStor Technology|e2e4|faspeed|FASTDISK|Fordisk|FORESEE|Foxline|FUJITSU|GALAX|Geil|GelL|Getrich|GIGABYTE|Gigastone|GLOWAY|Goldendisk|Goldenfir|Golden memory|Golden\-Memory|Goldkey|GOODRAM|Gost|GOWE|Hajaan|HECTRON|HGST|Hitachi|Hoodisk|HP|HYPERDISK|Hyundai|i-FlashDisk|IBM-Hitachi|IBM|imation|Indilinx|INDMEM|innodisk|InnoLite|INNOVATION[^\x00-\x7F]+IT|INTEL|INTENSO|JIAWEI|KINGBANK|Kingchuxing|KingDian|KingFast|KINGMAX|KingPower|KINGRICH|KINGSHARE|KingSpec|Kingspeed|Kingston|KIOXIA-EXCERIA|KLEVV|KLLISRE|KODAK|Kston|LDLC|LDNDISK|Lenovo|Leven|LEXAR|Lite-On|LITEON|LITEONIT|LONDISK|LuminouTek|Magnetic Data|MARSHAL|MARVELL|Maximus|Maxtor|MediaMax|MENGMI|MicroData|MicroDream|Micron|Microtech|MidasForce|MIXZA|Mushkin|Myung|Netac|OCZ|OEM|ORICO|ORTIAL|OWC|oyunkey|PALIT|Patriot|PHINOCOM|PHISON|Pichau|Platinet|PLEXTOR|PNY|PRETEC|Protectli|QNIX|QUANTUM|QUMO|Radeon|Ramaxel|Ramsta|RCESSD|Reeinno|RunCore|Samsung Electronics|SAMSUNG|SandForce|SanDisk|SATADOM|Seagate|SenDisk|ShanDianZhe|Shinedisk|SILICONMOTION|Silicon Motion|SK hynix|SMART|Smartbuy|SMI|Solidata|SPCC|Star Drive|SUNEAST|SuperMicro|SuperTalent|T\-FORCE|TAISU|TAMMUZ|TEAM|Teclast|TEUTONS|TCSUNBOW|TEKET|THU|tigo|TopSunligt|TOSHIBA|Transcend|UDinfo|UMAX|UNIC2|V-Gen|Vaseky|Verbatim|VBOX|ViperTeq|VisionTek|WDC|Western Digital|Wintec|Wolf Aure|XPG|XrayDisk|XSTAR|XUNZHE|Zheino|ZOTAC|2\-Power";
 
 my $ALL_CDROM_VENDORS = "AOPEN|ASUS|ASUSTek Computer|ATAPI|BENQ|CDEmu|COMBO|Compaq|Hewlett-Packard|Hitachi|HL-DT-ST|HP|JLMS|LG|Lite-On|LITEON|MAD DOG|MATSHITA|Memorex|MITSUMI|NEC Computers|Optiarc|PBDS|PHILIPS|PIONEER|PLDS|PLEXTOR|QSI|Samsung Electronics|Slimtype|Sony|TEAC|Toshiba|TSSTcorp|ZTE";
 
@@ -1792,7 +1872,7 @@ my $ALL_VENDORS = "Brother|Canon|Epson|HP|Hewlett\-Packard|Kyocera|Samsung|Xerox
 
 my $ALL_MON_VENDORS = "Acer|ADI|AGO|ALP|Ancor Communications Inc|AOC|Apple|Arnos Instruments|AU Optronics Corporation|AUS|BBY|BEK|BenQ|BOE Technology Group Co\., Ltd|Chi Mei Optoelectronics corp\.|CHI|CIS|CMN|CNC|COMPAL|COMPAQ|cPATH|CRO|CVTE|DELL|DENON, Ltd\.|Eizo|ELO|EQD|FNI|FUS|Gateway|GRUNDIG|HannStar Display Corp|HII|Hisense|HKC|HP|HPN|IBM|Idek Iiyama|ITR INFOTRONIC|IQT|KOA|Lenovo Group Limited|LGD|LG Electronics|LPL|Maxdata\/Belinea|MEB|Medion|Microstep|MS_ Nvidia|MSH|MST|MStar|NEC|NEX|Nvidia|OEM|ONKYO Corporation|Panasonic|Philips|Pioneer Electronic Corporation|PLN|Princeton Graphics|PRI|PKB|Samsung|Sangyo|Sceptre|SDC|Seiko\/Epson|SEK|SHARP|SONY|STN|TAR|Targa|Tech Concepts|TOSHIBA|Toshiba Matsushita Display Technology Co\., Ltd|UMC|Vestel|ViewSonic|VIZ|Wacom Tech|WDT";
 
-my $ALL_MEM_VENDORS = "Atermiter|Axiom|BiNFUL|DeTech|DigiBoard|HEXON|KETECH|Kimtigo|Kllisre|LEADMAX|MARKVISION|MLLSE|PLEXHD|Princeton|Reboto|RZX|Saikano|SHARETRONIC|STARKORTIS|SUPER KINGSTEK|Team|Tigo|TOP MEDIA";
+my $ALL_MEM_VENDORS = "Ankowall|Atermiter|Axiom|BiNFUL|CompuStocx|DeTech|DigiBoard|e2e4|HEXON|KETECH|Kimtigo|KingBank|Kllisre|LEADMAX|MARKVISION|MINPO|MLLSE|OSCOO|PLEXHD|Princeton|Ramsta|Reboto|RZX|Saikano|SemsoTai|SHARETRONIC|STARKORTIS|SUPER KINGSTEK|Team|Tigo|TIMETEC|TOP MEDIA|TRS Star|Vaseky|ZION";
 
 my @KNOWN_BSD = ("clonos", "desktopbsd", "dragonfly", "freenas", "fuguita", "furybsd", "ghostbsd", "hardenedbsd", "hellosystem", "libertybsd", "midnightbsd", "nomadbsd", "opnsense", "os108", "pcbsd", "pfsense", "truenas", "trueos", "xigmanas", "arisblu");
 my $KNOWN_BSD_ALL = join("|", @KNOWN_BSD);
@@ -2043,6 +2123,7 @@ sub hideDmesg($)
     $Content = hideEmail($Content);
     
     $Content=~s/(Serial Number).+/$1.../g;
+    $Content=~s/(\s+s\/n\s+)[^\s]+/$1.../g;
     $Content=~s/(serial\s*=\s*)[^\s]+/$1.../g;
     $Content=~s/(removable serial\.).+/$1.../g;
     
@@ -4660,8 +4741,7 @@ sub probeHW()
         {
             if($Bus eq "ps/2")
             {
-                if($Device{"Type"} eq "touchpad"
-                or $Device{"Type"} eq "mouse")
+                if($Device{"Type"}=~/touchpad|touchscreen|mouse/)
                 {
                     if($Device{"Device"}=~s/(\w+) (DualPoint Touchpad)/$2/i)
                     { # AlpsPS/2 ALPS DualPoint TouchPad
@@ -4679,11 +4759,8 @@ sub probeHW()
                     elsif($Device{"Device"}=~/(Sony) Vaio Jogdial/i) {
                         $Device{"Vendor"} = $1;
                     }
-                    elsif($Device{"Device"}=~/\A(Wacom) /i) {
+                    elsif($Device{"Device"}=~/\A(ALPS|Goodix|Wacom) /i) {
                         $Device{"Vendor"} = $1;
-                    }
-                    elsif($Device{"Device"}=~/\A(ALPS) /i) {
-                        $Device{"Vendor"} = "ALPS";
                     }
                     
                     if($Device{"Vendor"} eq "FocalTech") {
@@ -7197,14 +7274,14 @@ sub probeHW()
                 }
             }
             
-            if(not $Device{"Vendor"} or isUnknownRam($Device{"Vendor"}))
+            if(not $Device{"Vendor"} or isUnknownRam($Device{"Vendor"}) or isJedecRam($Device{"Vendor"}))
             {
                 if(my $GuessVendor = guessRamVendor($Device{"Device"})) {
                     $Device{"Vendor"} = $GuessVendor;
                 }
             }
             
-            if(not $Device{"Vendor"} or isUnknownRam($Device{"Vendor"}))
+            if(not $Device{"Vendor"} or isUnknownRam($Device{"Vendor"}) or isJedecRam($Device{"Vendor"}))
             {
                 if(defined $RamVendor{$Device{"Device"}}) {
                     $Device{"Vendor"} = $RamVendor{$Device{"Device"}};
@@ -8920,6 +8997,9 @@ sub probeHW()
             
             if(index($LinVer, "neverware\@cloudready-builder") != -1) {
                 $Sys{"System"} = "chrome_os";
+            }
+            elsif(index($LinVer, "Binutils for Uos") != -1) {
+                $Sys{"System"} = "deepin";
             }
         }
     }
@@ -11880,6 +11960,18 @@ sub isUnknownRam($)
     return 0;
 }
 
+sub isJedecRam($)
+{
+    my $Vendor = $_[0];
+    
+    if($Vendor=~/\A[A-F0-9]{16}\Z/
+    or $Vendor=~/\A[A-F0-9]{4}\Z/) {
+        return 1;
+    }
+    
+    return 0;
+}
+
 sub guessRamVendor($)
 {
     my $Name = $_[0];
@@ -11911,9 +12003,16 @@ sub guessDriveVendor($)
         return $DiskModelVendor{$Name};
     }
     
+    if($Name=~/\A(.+?)[-_ ]\d+GB?\Z/)
+    {
+        if(defined $DiskModelVendor{$1}) {
+            return $DiskModelVendor{$1};
+        }
+    }
+    
     foreach my $Len (6, 5, 4, 3)
     {
-        if($Name=~/\A([A-Z\d\-\_]{$Len})([A-Z\d\-]+|\Z)/
+        if($Name=~/\A([A-Z\d\-\_]{$Len})([A-Z\d\-\s]+|\Z)/
         and defined $DiskVendor{$1}) {
             return $DiskVendor{$1};
         }
@@ -12640,7 +12739,7 @@ sub emptyProduct($)
 {
     my $Val = $_[0];
     
-    if(not $Val or $Val=~/\b(System manufacturer|Board Vendor|Mainboard|System Manufacter|stem manufacturer|Name|Version|to be filled|empty|Not Specified|Default[ _]string|board version|Unknow|n\/a|Not)\b/i or $Val=~/\A([_0O\-\.\s]+|[X]+|NA|N\/A|\-O|1234567890|0123456789)\Z/i or emptyVal($Val)) {
+    if(not $Val or $Val=~/\b(System manufacturer|Board Vendor|Mainboard|System Manufacter|stem manufacturer|System Manufact|SYSTEM_MANUFACTURER|Name|Version|to be filled|empty|Not Specified|Default[ _]string|board version|Unknow|n\/a|Not)\b/i or $Val=~/\A([_0O\-\.\s]+|[X]+|NA|N\/A|\-O|1234567890|0123456789)\Z/i or emptyVal($Val)) {
         return 1;
     }
     
@@ -12692,7 +12791,7 @@ sub fixFFByCPU($)
     
     if($Sys{"Type"}!~/$MOBILE_TYPE/)
     {
-        if($CPU=~/Athlon Neo X2 .* L3/) {
+        if($CPU=~/Athlon Neo X2 .* L3|Core i3 CPU M 380/) {
             $Sys{"Type"} = "notebook";
         }
     }
@@ -12801,6 +12900,10 @@ sub fixFFByModel($$)
     if($Sys{"Type"} ne "stick pc")
     {
         if($V=~/MEEGOPAD/i) {
+            $Sys{"Type"} = "stick pc";
+        }
+        
+        if($M=~/IdeaCentre Stick/i) {
             $Sys{"Type"} = "stick pc";
         }
     }
@@ -13601,14 +13704,23 @@ sub fixDistr($$$$)
     }
     
     # Support for MX
-    if($Distr=~/\Adebian/)
+    if($Distr=~/\A(debian|ubuntu)/)
     {
         my $Debs = readFile("$FixProbe_Logs/debs");
-        if($Debs=~/(mx-system|ddm-mx) (\d+)/)
+        if($Debs=~/(mx-system|ddm-mx|q4os-desktop|kubuntu-desktop|xubuntu-desktop|lubuntu-desktop|ubuntu-budgie-desktop|ubuntu-mate-desktop) ([\d\.]+)/)
         {
-            $Distr = "mx";
-            $DistrVersion = $2;
-            $Rel = undef;
+            $Distr = $1;
+            my $PkgVersion = $2;
+            
+            if($Distr=~/(mx|q4os)/)
+            {
+                $Distr = $1;
+                $DistrVersion = $PkgVersion;
+                $Rel = undef;
+            }
+            elsif($Distr=~/(kubuntu|xubuntu|lubuntu|ubuntu-budgie|ubuntu-mate)/) {
+                $Distr = $1;
+            }
         }
     }
     
@@ -18225,10 +18337,10 @@ sub scenario()
     {
         if(not $Admin)
         {
-            if($SNAP_DESKTOP) {
+            if($Opt{"Snap"}) {
                 printMsg("WARNING", "run as root for better results ('sudo -E' or 'su')");
             }
-            elsif($FLATPAK_DESKTOP) {
+            elsif($Opt{"Flatpak"}) {
                 printMsg("WARNING", "run as root for better results");
             }
             else
@@ -18551,6 +18663,25 @@ sub scenario()
                 if($Sys{"DE"} ne "KDE" or $FixDE=~/KDE/) {
                     $Sys{"DE"} = $FixDE;
                 }
+            }
+        }
+        
+        if($Sys{"System"}=~/\Aubuntu(-\d|\Z)/)
+        {
+            if($Sys{"DE"}=~/KDE/) {
+                $Sys{"System"}=~s/\Aubuntu/kubuntu/;
+            }
+            elsif($Sys{"DE"}=~/LXDE|LXQt/) {
+                $Sys{"System"}=~s/\Aubuntu/lubuntu/;
+            }
+            elsif($Sys{"DE"}=~/XFCE/) {
+                $Sys{"System"}=~s/\Aubuntu/xubuntu/;
+            }
+            elsif($Sys{"DE"}=~/MATE/) {
+                $Sys{"System"}=~s/\Aubuntu/ubuntu-mate/;
+            }
+            elsif($Sys{"DE"}=~/Budgie/) {
+                $Sys{"System"}=~s/\Aubuntu/ubuntu-budgie/;
             }
         }
         
