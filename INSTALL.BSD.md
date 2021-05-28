@@ -19,8 +19,10 @@ Contents
 * [ Install on helloSystem ](#install-on-hellosystem)
 * [ Install on DragonFly   ](#install-on-dragonfly)
 * [ Install on MidnightBSD ](#install-on-midnightbsd)
-* [ Install on pfSense     ](#install-on-pfsense)
 * [ Install on OPNsense    ](#install-on-opnsense)
+* [ Install on TrueNAS     ](#install-on-truenas)
+* [ Install on FreeNAS     ](#install-on-freenas)
+* [ Install on pfSense     ](#install-on-pfsense)
 * [ Install on XigmaNAS    ](#install-on-xigmanas)
 * [ Install on other BSD   ](#install-on-other-bsd)
 * [ Easy way to contribute ](#easy-way-to-contribute)
@@ -30,7 +32,7 @@ Contents
 Install on FreeBSD
 ------------------
 
-On FreeBSD and derivatives (GhostBSD, NomadBSD, FuryBSD, TrueOS, PC-BSD, HardenedBSD, FreeNAS, TrueNAS, DesktopBSD, ArisbluBSD, helloSystem, etc.).
+On FreeBSD and derivatives (GhostBSD, NomadBSD, FuryBSD, TrueOS, PC-BSD, HardenedBSD, DesktopBSD, ArisbluBSD, helloSystem, etc.).
 
 ###### Latest systems
 
@@ -232,6 +234,38 @@ Probe your computer:
     perl hw-probe -all -upload
 
 
+Install on OPNsense
+-------------------
+
+For OPNsense 20.7.8 and newer.
+
+Install os-hw-probe plugin under Menu->System->Firmware->Plugins.
+
+
+Install on TrueNAS
+------------------
+
+For TrueNAS 12 and newer:
+
+    pkg add https://pkg.freebsd.org/FreeBSD:12:amd64/latest/All/lscpu-1.2.0.txz https://pkg.freebsd.org/FreeBSD:12:amd64/latest/All/hwstat-0.5.1.txz https://pkg.freebsd.org/FreeBSD:12:amd64/latest/All/hw-probe-1.6.b2.txz
+
+Probe your computer:
+
+    /usr/local/bin/hw-probe -all -upload
+
+
+Install on FreeNAS
+------------------
+
+For FreeNAS 11.x:
+
+    pkg add https://pkg.freebsd.org/FreeBSD:11:amd64/latest/All/lscpu-1.2.0.txz https://pkg.freebsd.org/FreeBSD:11:amd64/latest/All/hwstat-0.5.1.txz https://pkg.freebsd.org/FreeBSD:11:amd64/latest/All/hw-probe-1.6.b2.txz
+
+Probe your computer:
+
+    /usr/local/bin/hw-probe -all -upload
+
+
 Install on pfSense
 ------------------
 
@@ -246,14 +280,6 @@ For pfSense 2.4.x:
 Probe your computer:
 
     /usr/local/bin/hw-probe -all -upload
-
-
-Install on OPNsense
--------------------
-
-For OPNsense 20.7.8 and newer.
-
-Install os-hw-probe plugin under Menu->System->Firmware->Plugins.
 
 
 Install on XigmaNAS
