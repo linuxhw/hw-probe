@@ -249,9 +249,15 @@ For TrueNAS 12 and newer:
 
     pkg add https://pkg.freebsd.org/FreeBSD:12:amd64/latest/All/lscpu-1.2.0.txz https://pkg.freebsd.org/FreeBSD:12:amd64/latest/All/hwstat-0.5.1.txz https://pkg.freebsd.org/FreeBSD:12:amd64/latest/All/hw-probe-1.6.b2.txz
 
+Alternatively you can enable FreeBSD repository and install the package from there:
+
+    sed 's/enabled: yes/enabled: no/' /usr/local/etc/pkg/repos/local.conf
+    sed 's/enabled: no/enabled: yes/' /usr/local/etc/pkg/repos/FreeBSD.conf
+    pkg install hw-probe
+
 Probe your computer:
 
-    /usr/local/bin/hw-probe -all -upload
+    hw-probe -all -upload
 
 
 Install on FreeNAS
@@ -261,9 +267,15 @@ For FreeNAS 11.x:
 
     pkg add https://pkg.freebsd.org/FreeBSD:11:amd64/latest/All/lscpu-1.2.0.txz https://pkg.freebsd.org/FreeBSD:11:amd64/latest/All/hwstat-0.5.1.txz https://pkg.freebsd.org/FreeBSD:11:amd64/latest/All/hw-probe-1.6.b2.txz
 
+Alternatively you can enable FreeBSD repository and install the package from there:
+
+    sed 's/enabled: yes/enabled: no/' /usr/local/etc/pkg/repos/local.conf
+    sed 's/enabled: no/enabled: yes/' /usr/local/etc/pkg/repos/FreeBSD.conf
+    pkg install hw-probe
+
 Probe your computer:
 
-    /usr/local/bin/hw-probe -all -upload
+    hw-probe -all -upload
 
 
 Install on pfSense
