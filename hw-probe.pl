@@ -167,6 +167,7 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "upload|confirm-upload-of-hashed-ids!" => \$Opt{"Upload"},
   "hwinfo-path=s" => \$Opt{"HWInfoPath"},
   "log!" => \$Opt{"ShowLog"},
+  "proxy=s" => \$Opt{"Proxy"},
 # Inventory
   "inventory|inventory-id|i|group|g=s" => \$Opt{"Group"},
   "generate-inventory|generate-inventory-id|get-inventory-id|get-group!" => \$Opt{"GenerateGroup"},
@@ -354,6 +355,9 @@ GENERAL OPTIONS:
   
   -hwinfo-path PATH
       Path to a local hwinfo binary.
+
+  -proxy address:port
+      Set outgoing http/https proxy using syntax: proxy.domain.local:3128
 
 INVENTORY OPTIONS:
   -i|-inventory-id ID
@@ -2475,6 +2479,11 @@ sub postRequest($$$)
     require LWP::UserAgent;
     
     my $UAgent = LWP::UserAgent->new(parse_head => 0);
+
+    if($Opt{"Proxy"}) {
+        my $proxy = $Opt{"Proxy"};
+        $UAgent->proxy([ [ 'http', 'https' ] => "http://$proxy" ]);
+    }
     
     if($SSL eq "NoSSL" or not checkModule("Mozilla/CA.pm"))
     {
