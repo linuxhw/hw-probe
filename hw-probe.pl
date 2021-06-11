@@ -355,8 +355,8 @@ GENERAL OPTIONS:
   
   -hwinfo-path PATH
       Path to a local hwinfo binary.
-
-  -proxy address:port
+  
+  -proxy ADDRESS:PORT
       Set outgoing http/https proxy using syntax: proxy.domain.local:3128
 
 INVENTORY OPTIONS:
@@ -812,7 +812,7 @@ my %VendorDisk = (
     "Iod"      => ["MST1001"],
     "IPLEX"    => ["TITAN256"],
     "KingDian" => ["SSD-S400"],
-    "KingSpec" => ["ACJ", "ACS", "CHA", "KSQ120", "SPK", "Q-90", "Q-180", "Q-360"],
+    "KingSpec" => ["ACJ", "ACS", "CHA", "KSQ120", "P3-512", "SPK", "Q-90", "Q-180", "Q-360"],
     "Kingston" => ["EK60H", "HyperX", "RBU-SN"],
     "Kross Elegance" => ["KE-SSD"],
     "Lite-On"  => ["PH2", "PH3", "PH4"],
@@ -830,7 +830,7 @@ my %VendorDisk = (
     "Ramaxel"  => ["RDM", "RTITF"],
     "S3+"      => ["S3SSD"],
     "Samsung"  => ["MBG4", "MZM", "MZ7", "SG9"],
-    "SanDisk"  => ["CF Card", "DB40", "sandisk", "SDCFHS", "SU04G", "SU08G", "TE2"],
+    "SanDisk"  => ["CF Card", "DB40", "sandisk", "SDCFHS", "SDSA6MM", "SU04G", "SU08G", "TE2"],
     "Seagate"  => ["2E256-TU2", "OOS500G", "OOS1000G", "OOS2000G", "ST", "ST_", "XA1920", "XF1230", "ZA1"],
     "SK hynix" => ["HFS", "SHGS"],
     "SNR"      => ["SNR-ML"],
@@ -1868,7 +1868,7 @@ my %TypeOrder = (
     "graphics card"=>"A"
 );
 
-my $ALL_DRIVE_VENDORS = "ADATA|A\-DATA|addlink|AFOX|Advantech|AEGO|AMD|Anobit|Aoluska|Apacer|Apple|ASUS|Avant|AVEXIR|Axiom|AXIOMTEK Corp\.|Bamba|BHT|BIOSTAR|BIWIN|BLUERAY|BRAVEEAGLE|Centerm|Chiprex|CLOVER|Colorful|Corsair|Crucial|CWDISK|Dahua|Dell|DERLAR|DeTech|DGM|DOGFISH|DOGGO|DREVO|ELSKY|Emtec|Espada|ExcelStor Technology|e2e4|faspeed|FASTDISK|Fordisk|FORESEE|Foxline|FUJITSU|GALAX|Geil|GelL|Getrich|GIGABYTE|Gigastone|GLOWAY|Goldendisk|Goldenfir|Golden memory|Golden\-Memory|Goldkey|GOODRAM|Gost|GOWE|Hajaan|HECTRON|HGST|Hitachi|Hoodisk|HP|HYPERDISK|Hyundai|i-FlashDisk|IBM-Hitachi|IBM|imation|Indilinx|INDMEM|innodisk|InnoLite|INNOVATION[^\x00-\x7F]+IT|INTEL|INTENSO|JIAWEI|KINGBANK|Kingchuxing|KingDian|KingFast|KINGMAX|KingPower|KINGRICH|KINGSHARE|KingSpec|Kingspeed|Kingston|KIOXIA-EXCERIA|KLEVV|KLLISRE|KODAK|Kston|LDLC|LDNDISK|Lenovo|Leven|LEXAR|Lite-On|LITEON|LITEONIT|LONDISK|LuminouTek|Magnetic Data|MARSHAL|MARVELL|Maximus|Maxtor|MediaMax|MENGMI|MicroData|MicroDream|Micron|Microtech|MidasForce|MIXZA|Mushkin|Myung|Netac|OCZ|OEM|ORICO|ORTIAL|OWC|oyunkey|PALIT|Patriot|PHINOCOM|PHISON|Pichau|Platinet|PLEXTOR|PNY|PRETEC|Protectli|QNIX|QUANTUM|QUMO|Radeon|Ramaxel|Ramsta|RCESSD|Reeinno|RunCore|Samsung Electronics|SAMSUNG|SandForce|SanDisk|SATADOM|Seagate|SenDisk|ShanDianZhe|Shinedisk|SILICONMOTION|Silicon Motion|SK hynix|SMART|Smartbuy|SMI|Solidata|SPCC|Star Drive|SUNEAST|SuperMicro|SuperTalent|T\-FORCE|TAISU|TAMMUZ|TEAM|Teclast|TEUTONS|TCSUNBOW|TEKET|THU|tigo|TopSunligt|TOSHIBA|Transcend|UDinfo|UMAX|UNIC2|V-Gen|Vaseky|Verbatim|VBOX|ViperTeq|VisionTek|WDC|Western Digital|Wintec|Wolf Aure|XPG|XrayDisk|XSTAR|XUNZHE|Zheino|ZOTAC|2\-Power";
+my $ALL_DRIVE_VENDORS = "ADATA|A\-DATA|addlink|AFOX|Advantech|AEGO|AMD|Anobit|Aoluska|Apacer|Apple|ASUS|Avant|AVEXIR|Axiom|AXIOMTEK Corp\.|Bamba|BHT|BIOSTAR|BIWIN|BLUERAY|BRAVEEAGLE|Centerm|Chiprex|CLOVER|Colorful|Corsair|Crucial|CWDISK|Dahua|Dell|DERLAR|DeTech|DGM|DOGFISH|DOGGO|DREVO|ELSKY|Emtec|Espada|ExcelStor Technology|e2e4|faspeed|FASTDISK|Fordisk|FORESEE|Foxline|FUJITSU|GALAX|Geil|GelL|Getrich|GIGABYTE|Gigastone|GLOWAY|Goldendisk|Goldenfir|Golden memory|Golden\-Memory|Goldkey|GOODRAM|Gost|GOWE|Hajaan|HECTRON|HGST|Hitachi|Hoodisk|HP|HYPERDISK|Hyundai|i-FlashDisk|IBM-Hitachi|IBM|imation|Indilinx|INDMEM|innodisk|InnoLite|INNOVATION[^\x00-\x7F]+IT|INTEL|INTENSO|JIAWEI|KINGBANK|Kingchuxing|KingDian|KingFast|KINGMAX|KingPower|KINGRICH|KINGSHARE|KingSpec|Kingspeed|Kingston|KIOXIA-EXCERIA|KLEVV|KLLISRE|KODAK|Kston|LDLC|LDNDISK|Lenovo|Leven|LEXAR|Lite-On|LITEON|LITEONIT|LONDISK|LuminouTek|Magnetic Data|MARSHAL|MARVELL|Maximus|Maxtor|MediaMax|MENGMI|MicroData|MicroDream|Micron|Microtech|MidasForce|minisforum|MIXZA|Mushkin|Myung|Netac|OCZ|OEM|ORICO|ORTIAL|OWC|oyunkey|PALIT|Patriot|PHINOCOM|PHISON|Pichau|Platinet|PLEXTOR|PNY|PRETEC|Protectli|QNIX|QUANTUM|QUMO|Radeon|Ramaxel|Ramsta|RCESSD|Reeinno|RunCore|Samsung Electronics|SAMSUNG|SandForce|SanDisk|SATADOM|Seagate|SenDisk|ShanDianZhe|Shinedisk|SILICONMOTION|Silicon Motion|SK hynix|SMART|Smartbuy|SMI|Solidata|SPCC|Star Drive|SUNEAST|SuperMicro|SuperTalent|T\-FORCE|TAISU|TAMMUZ|TEAM|Teclast|TEUTONS|TCSUNBOW|TEKET|THU|tigo|TopSunligt|TOSHIBA|Transcend|UDinfo|UMAX|UNIC2|V-Gen|Vaseky|Verbatim|VBOX|ViperTeq|VisionTek|WDC|Western Digital|Wintec|Wolf Aure|XPG|XrayDisk|XSTAR|XUNZHE|Zheino|ZOTAC|2\-Power";
 
 my $ALL_CDROM_VENDORS = "AOPEN|ASUS|ASUSTek Computer|ATAPI|BENQ|CDEmu|COMBO|Compaq|Hewlett-Packard|Hitachi|HL-DT-ST|HP|JLMS|LG|Lite-On|LITEON|MAD DOG|MATSHITA|Memorex|MITSUMI|NEC Computers|Optiarc|PBDS|PHILIPS|PIONEER|PLDS|PLEXTOR|QSI|Samsung Electronics|Slimtype|Sony|TEAC|Toshiba|TSSTcorp|ZTE";
 
@@ -2130,6 +2130,7 @@ sub hideDmesg($)
     $Content=~s/(\s+s\/n\s+)[^\s]+/$1.../g;
     $Content=~s/(serial\s*=\s*)[^\s]+/$1.../g;
     $Content=~s/(removable serial\.).+/$1.../g;
+    $Content=~s/( SN ).+?( MFG )/$1...$2/g;
     
     return $Content;
 }
@@ -2479,10 +2480,9 @@ sub postRequest($$$)
     require LWP::UserAgent;
     
     my $UAgent = LWP::UserAgent->new(parse_head => 0);
-
+    
     if($Opt{"Proxy"}) {
-        my $proxy = $Opt{"Proxy"};
-        $UAgent->proxy([ [ 'http', 'https' ] => "http://$proxy" ]);
+        $UAgent->proxy([ [ 'http', 'https' ] => "http://".$Opt{"Proxy"} ]);
     }
     
     if($SSL eq "NoSSL" or not checkModule("Mozilla/CA.pm"))
@@ -3873,6 +3873,13 @@ sub probeHW()
     {
         $Sys{"Type"} = "system on chip";
         $Sys{"Model"} = "Raspberry Pi";
+    }
+    
+    if($Kldstat_v=~/rockchip_dwmmc/)
+    {
+        $Sys{"Type"} = "system on chip";
+        $Sys{"Vendor"} = "Pine Microsystems";
+        $Sys{"Model"} = "Rockpro64";
     }
     
     my $Modstat = "";
@@ -5403,6 +5410,7 @@ sub probeHW()
         $Geom = runCmd("geom disk list 2>/dev/null");
         $Geom = encryptSerials($Geom, "ident");
         $Geom=~s/(lunid:\s*[a-f\d]{7})[a-f\d]{9}\n/$1...\n/g; # WWN
+        $Geom=~s/( SN ).+?( MFG )/$1...$2/g;
         writeLog($LOG_DIR."/geom", $Geom);
     }
     
@@ -8518,6 +8526,7 @@ sub probeHW()
         }
         
         $Diskinfo=~s/[^\s]+(\s+# Disk ident.+\n)/...$1/g;
+        $Diskinfo=~s/( SN ).+?( MFG )/$1...$2/g;
         
         writeLog($LOG_DIR."/diskinfo", $Diskinfo);
     }
@@ -8634,15 +8643,34 @@ sub probeHW()
             $Bat{"Technology"} = $1;
         }
         
-        if($Info=~/Design capacity:\s+(\d+)/i)
+        if($Info=~/Design voltage\s+(\d+)/i) {
+            $Bat{"Voltage"} = $1/1000;
+        }
+        
+        if($Info=~/Remaining capacity:\s+(\d+)/i) {
+            $Bat{"Capacity"} = $1;
+        }
+        
+        if($Info=~/Design capacity:\s+(\d+)\s+([^\s]+)/i)
         {
             if(my $EFullDesign = $1)
             {
-                $Bat{"Size"} = ($EFullDesign/1000)." Wh";
+                my $Unit = $2;
                 
-                if($Info=~/Last full capacity:\s+(\d+)/i) {
-                    $Bat{"Capacity"} = $1*100/$EFullDesign;
+                if($Unit eq "mWh")
+                {
+                    $Bat{"Size"} = ($EFullDesign/1000)." Wh";
                 }
+                elsif($Unit eq "mAh")
+                {
+                    if($Bat{"Voltage"}) {
+                        $Bat{"Size"} = ($EFullDesign*$Bat{"Voltage"}/1000)." Wh";
+                    }
+                }
+                
+                # if(not $Bat{"Capacity"} and $Info=~/Last full capacity:\s+(\d+)/i) {
+                #     $Bat{"Capacity"} = $1*100/$EFullDesign;
+                # }
             }
         }
         
@@ -10089,7 +10117,7 @@ sub probeHW()
         $Sys{"Space_used"} = roundFloat($SpaceUsed, 2);
     }
     
-    if($NewDf and $Df=~/^[^\s]+[ \t]+([^\s]+).*[ \t]+\/$/m)
+    if($NewDf and $Df=~/^[^\s]+[ \t]+([^\s\/]+)[ \t]+.*[ \t]+\/$/m)
     {
         if($1 ne "squashfs") {
             $Sys{"Filesystem"} = $1;
@@ -12750,7 +12778,7 @@ sub emptyProduct($)
 {
     my $Val = $_[0];
     
-    if(not $Val or $Val=~/\b(System manufacturer|Board Vendor|Mainboard|System Manufacter|stem manufacturer|System Manufact|SYSTEM_MANUFACTURER|Name|Version|to be filled|empty|Not Specified|Default[ _]string|board version|Unknow|n\/a|Not)\b/i or $Val=~/\A([_0O\-\.\s]+|[X]+|NA|N\/A|\-O|1234567890|0123456789)\Z/i or emptyVal($Val)) {
+    if(not $Val or $Val=~/\b(System manufacturer|System Product|Board Vendor|Mainboard|System Manufacter|stem manufacturer|System Manufact|SYSTEM_MANUFACTURER|Name|Version|to be filled|empty|Not Specified|Default[ _]string|board version|Unknow|n\/a|Not)\b/i or $Val=~/\A([_0O\-\.\s]+|[X]+|NA|N\/A|\-O|1234567890|0123456789|[\.\,]+)\Z/i or emptyVal($Val)) {
         return 1;
     }
     
@@ -13157,6 +13185,10 @@ sub fixChassis()
         {
             $Sys{"Type"} = "smartphone";
             $Sys{"System"} = "android";
+        }
+        elsif($Sys{"Kernel"}=~/\-qcom\-msm8916/i)
+        {
+            $Sys{"Type"} = "smartphone";
         }
     }
 }
@@ -17685,7 +17717,7 @@ sub fixLogs($)
             unlink($Dir."/$L");
         }
     }
-
+    
     foreach my $L ("glxinfo", "xdpyinfo", "xinput", "vdpauinfo", "xrandr")
     {
         if(-e "$Dir/$L"
@@ -17696,7 +17728,7 @@ sub fixLogs($)
             }
         }
     }
-
+    
     if(-f "$Dir/vulkaninfo")
     { # Support for HW Probe 1.3
         if(readFile("$Dir/vulkaninfo")=~/Cannot create/i) {
@@ -17791,6 +17823,7 @@ sub fixLogs($)
             {
                 $Content=~s/can't get device qualifier: Resource temporarily unavailable\n//g;
                 $Content=~s/cannot read device status, Resource temporarily unavailable \(11\)\n//g;
+                $Content=~s/cannot read port 1 status, Resource temporarily unavailable \(11\)\n//g;
                 $Content=~s/can't get debug descriptor: Resource temporarily unavailable\n//g;
                 $Content=~s/can't get hub descriptor, LIBUSB_ERROR_(IO|PIPE) \(Resource temporarily unavailable\)\n//g;
                 writeFile("$Dir/$L", $Content);
@@ -17817,9 +17850,9 @@ sub fixLogs($)
         }
         elsif($L eq "lspci" or $L eq "lspci_all")
         {
-            if(index($Content, "lspci: Unable to load libkmod resources: error -12")!=-1)
+            if(index($Content, "lspci: Unable to load libkmod resources: error")!=-1)
             {
-                $Content=~s/lspci: Unable to load libkmod resources: error -12\n//g;
+                $Content=~s/lspci: Unable to load libkmod resources: error -\d+\n//g;
                 writeFile("$Dir/$L", $Content);
             }
             
@@ -18565,7 +18598,7 @@ sub scenario()
         
         if($Opt{"RmObsolete"})
         {
-            foreach my $L ("boot.log", "dmesg.1", "findmnt", "fstab", "grub.cfg", "mount", "pstree", "systemctl", "top", "xorg.log.1", "modprobe.d", "interrupts")
+            foreach my $L ("boot.log", "dmesg.1", "findmnt", "fstab", "grub.cfg", "mount", "pstree", "systemctl", "top", "xorg.log.1", "modprobe.d", "interrupts", "gl_conf-alternatives")
             {
                 if(-e "$FixProbe_Logs/$L") {
                     unlink("$FixProbe_Logs/$L");
