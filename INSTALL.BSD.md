@@ -289,6 +289,11 @@ For pfSense 2.4.x:
 
     pkg add https://pkg.freebsd.org/FreeBSD:11:amd64/latest/All/lscpu-1.2.0.txz https://pkg.freebsd.org/FreeBSD:11:amd64/latest/All/hwstat-0.5.1.txz https://pkg.freebsd.org/FreeBSD:11:amd64/latest/All/hw-probe-1.6.b2.txz
 
+Alternatively you can enable FreeBSD repository and install the package from there:
+
+    sed 's/enabled: no/enabled: yes/' /usr/local/etc/pkg/repos/pfSense.conf
+    pkg install hw-probe
+
 Probe your computer:
 
     /usr/local/bin/hw-probe -all -upload
