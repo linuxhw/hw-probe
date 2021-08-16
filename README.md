@@ -127,9 +127,6 @@ Docker hub repository: https://hub.docker.com/r/linuxhw/hw-probe/
 Live CD
 -------
 
-Live CD/USB
------------
-
 If the tool is not pre-installed in your system or you have troubles with installing the tool or its dependencies (e.g. hwinfo is not available in the repository) then try one of the following Live images with hw-probe pre-installed: [Debian](https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/), [OpenMandriva](https://sourceforge.net/projects/openmandriva/files/release/), [ArcoLinux](https://sourceforge.net/projects/arcolinux-community-editions/files/).
 
 Write the image to CD or USB drive, boot from it on your computer and create a probe (see [Usage](#usage)).
