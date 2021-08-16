@@ -52,7 +52,7 @@ Contents
 Run without Installing
 ----------------------
 
-You can probe your computer by [AppImage](README.md#appimage), [Docker](README.md#docker), [Snap](README.md#snap), [Flatpak](README.md#flatpak) or [Live CD](README.md#live-cd) without the need to install anything on your host.
+You can probe your computer by [AppImage](README.md#appimage), [Docker](README.md#docker), [Snap](README.md#snap), [Flatpak](README.md#flatpak) or [Live CD/USB](README.md#live-cd) without the need to install anything on your host.
 
 
 Command line to Run
@@ -160,7 +160,7 @@ On Arch Linux and derivatives (Artix, EndeavourOS, RebornOS, Garuda, KaOS, Archm
 
 ###### From AUR
 
-When using LiveCD you need to add `cow_spacesize=512M` boot option to have enough space.
+When using Live CD/USB you need to add `cow_spacesize=512M` boot option to have enough space.
 
 Install edid-decode dependency:
 

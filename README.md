@@ -15,7 +15,7 @@ Contents
 * [ Review       ](#review)
 * [ AppImage     ](#appimage)
 * [ Docker       ](#docker)
-* [ Live CD      ](#live-cd)
+* [ Live CD/USB  ](#live-cd)
 * [ Snap         ](#snap)
 * [ Flatpak      ](#flatpak)
 * [ Periodic run ](#periodic-run)
@@ -38,7 +38,7 @@ If some of your computer devices doesn't work due to a missed driver then the to
 
 Sample probe: https://linux-hardware.org/?probe=b394035f90
 
-You can create a probe of your computer with the help of [AppImage](#appimage), [Docker](#docker), [Snap](#snap), [Flatpak](#flatpak), [Live CD](#live-cd) or RPM/Deb package.
+You can create a probe of your computer with the help of [AppImage](#appimage), [Docker](#docker), [Snap](#snap), [Flatpak](#flatpak), [Live CD/USB](#live-cd) or RPM/Deb package.
 
 By creating probes you contribute to the "HDD/SSD Desktop-Class Reliability Test" study: https://github.com/linuxhw/SMART
 
@@ -46,7 +46,7 @@ By creating probes you contribute to the "HDD/SSD Desktop-Class Reliability Test
 Install
 -------
 
-You can probe your computer by [AppImage](#appimage), [Docker](#docker), [Snap](#snap), [Flatpak](#flatpak) or [Live CD](#live-cd).
+You can probe your computer by [AppImage](#appimage), [Docker](#docker), [Snap](#snap), [Flatpak](#flatpak) or [Live CD/USB](#live-cd).
 
 Also you can install a native package (RPM, Deb, Pkg, etc.) for your Linux distribution or install from source. See install instructions in the [INSTALL.md](INSTALL.md) file.
 
@@ -127,9 +127,12 @@ Docker hub repository: https://hub.docker.com/r/linuxhw/hw-probe/
 Live CD
 -------
 
-If the tool is not pre-installed in your system or you have troubles with installing the tool or its dependencies (e.g. hwinfo is not available in the repository) then try this [Linux CD1](https://sourceforge.net/projects/openmandriva/files/release/) or [Linux CD2](https://sourceforge.net/projects/arcolinux-community-editions/files/) with hw-probe pre-installed.
+Live CD/USB
+-----------
 
-Boot this Linux CD on your computer and create a probe (see [Usage](#usage)).
+If the tool is not pre-installed in your system or you have troubles with installing the tool or its dependencies (e.g. hwinfo is not available in the repository) then try one of the following Live images with hw-probe pre-installed: [Debian](https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/), [OpenMandriva](https://sourceforge.net/projects/openmandriva/files/release/), [ArcoLinux](https://sourceforge.net/projects/arcolinux-community-editions/files/).
+
+Write the image to CD or USB drive, boot from it on your computer and create a probe (see [Usage](#usage)).
 
 
 Snap
