@@ -286,9 +286,12 @@ The tool checks operability of devices on board by analysis of collected log fil
 |----------|---------|
 | works    | Driver is found and operates properly (passed static or dynamic tests) |
 | limited  | Works, but with limited functionality |
+| fixed*   | Works, fixed by user |
 | detected | Device is detected, driver is found, but not tested yet |
 | failed   | Driver is not found or device is broken |
 | malfunc  | Error operation of the device or driver |
+
+*The 'fixed' status is manually assigned by users during [probe review](#review).
 
 You can perform additional operability sanity tests by the following command:
 
