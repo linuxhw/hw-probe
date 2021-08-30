@@ -18,8 +18,9 @@ Contents
 * [ Live CD/USB  ](#live-cd)
 * [ Snap         ](#snap)
 * [ Flatpak      ](#flatpak)
-* [ Periodic run ](#periodic-run)
 * [ Inventory    ](#inventory)
+* [ Monitoring   ](#monitoring)
+* [ Periodic run ](#periodic-run)
 * [ Offline view ](#offline-view)
 * [ ACPI dump    ](#acpi-dump)
 * [ Operability  ](#operability)
@@ -127,9 +128,9 @@ Docker hub repository: https://hub.docker.com/r/linuxhw/hw-probe/
 Live CD
 -------
 
-If the tool is not pre-installed in your system or you have troubles with installing the tool or its dependencies (e.g. hwinfo is not available in the repository) then try one of the following Live images with hw-probe pre-installed: [Debian](https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/), [OpenMandriva](https://sourceforge.net/projects/openmandriva/files/release/), [ArcoLinux](https://sourceforge.net/projects/arcolinux-community-editions/files/).
+If the tool is not pre-installed in your system or you have troubles with installing the tool or its dependencies (e.g. hwinfo is not available in the repository) then try one of the following Live images with hw-probe pre-installed: [Debian](https://cdimage.debian.org/debian-cd/current-live/amd64/iso-hybrid/), [ArcoLinux](https://sourceforge.net/projects/arcolinux-community-editions/files/) or [OpenMandriva](https://sourceforge.net/projects/openmandriva/files/release/).
 
-Write the image to CD or USB drive, boot from it on your computer and create a probe (see [Usage](#usage)).
+Write the image to USB or CD drive, boot from it on your computer and create a probe (see [Usage](#usage)).
 
 
 Snap
@@ -222,23 +223,6 @@ Need to setup Flatpak (https://flatpak.org/setup/):
 * Chrome OS
 
 
-Periodic run
-------------
-
-If your distribuition is running under systemd and you want to generate and upload hw-probe report periodically, please install:
-
-    cp -a periodic/hw-probe.{service,timer} $(systemdsystemunitdir)/
-
-Normally systemd units dir is located at `/usr/lib/systemd/system`. You may want to get systemd unit dir by running `pkg-config --variable=systemdsystemunitdir systemd`
-
-Enable hw-probe.timer by running:
-
-    systemctl enable --now hw-probe.timer
-
-This timer will execute one time per month a hw-probe.service that will generate and upload report to the database.
-
-User may edit hw-probe.timer and change OnCalendar value to execute hw-probe report on different time period (yearly, semiannually, quarterly, etc.). Values lower than month are STRONGLY not recommended.
-
 Inventory
 ---------
 
@@ -255,6 +239,36 @@ Mark your probes by this ID:
 Find your computers by the inventory ID on this page: https://linux-hardware.org/?view=computers
 
 The Email is needed to get notifications if hardware failures are detected on your computer in future probes.
+
+
+Monitoring
+----------
+
+LHWM — Linux Hardware Monitoring (c) allows you to monitor most kinds of hardware-related changes (operating system failures, configuration changes and degradation of hardware components) on all your Linux servers or personal stations with E-mail notifications. The service protects your cluster from unexpected hardware failures by regular hardware probing and monitoring of system logs for failures with the help of the Linux-Hardware.org knowledge base.
+
+All you need is to generate your personal [inventory ID](#inventory) (if you don't have it yet) and start monitoring of each server by one simple command line:
+
+    sudo hw-probe -start -i INVENTORY_ID
+
+The command will add a daily cron job to make a probe of the server and you'll be notified by E-mail in the case of hardware failures or important hardware-related changes detected.
+
+
+Periodic run
+------------
+
+If your distribuition is running under systemd and you want to generate and upload hw-probe report periodically, please install:
+
+    cp -a periodic/hw-probe.{service,timer} $(systemdsystemunitdir)/
+
+Normally systemd units dir is located at `/usr/lib/systemd/system`. You may want to get systemd unit dir by running `pkg-config --variable=systemdsystemunitdir systemd`
+
+Enable hw-probe.timer by running:
+
+    systemctl enable --now hw-probe.timer
+
+This timer will execute one time per month a hw-probe.service that will generate and upload report to the database.
+
+User may edit hw-probe.timer and change OnCalendar value to execute hw-probe report on different time period (yearly, semiannually, quarterly, etc.). Values lower than month are STRONGLY not recommended.
 
 
 Offline view
