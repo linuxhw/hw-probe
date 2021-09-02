@@ -64,7 +64,7 @@ Command line to Run
 Install on Ubuntu
 -----------------
 
-On Ubuntu and Ubuntu based Linux distributions (Kubuntu, Lubuntu, Xubuntu, Linux Mint, Zorin, Pop!_OS, elementary OS, KDE neon, Peppermint, Linuxfx, Linux Lite, HamoniKR, WindowsFX, Trisquel, etc.).
+On Ubuntu and Ubuntu based Linux distributions (Kubuntu, Lubuntu, Xubuntu, Linux Mint, Zorin, Pop!_OS, elementary OS, KDE neon, Peppermint, Linuxfx, Linux Lite, HamoniKR, WindowsFX, Trisquel, Makulu Linux, etc.).
 
 ###### Ubuntu package
 
@@ -99,7 +99,7 @@ The [Snap package](README.md#snap) is also available to install and run easily o
 Install on Debian
 -----------------
 
-On Debian and Debian based Linux distributions (Kali, LMDE, MX Linux, antiX, Devuan, PureOS, Parrot, Pardus, deepin, BunsenLabs, SolydXK, SparkyLinux, Q4OS, Tails, Raspbian, BigLinux, siduction, etc.).
+On Debian and Debian based Linux distributions (Kali, LMDE, MX Linux, antiX, Devuan, PureOS, Parrot, Pardus, deepin, BunsenLabs, SolydXK, SparkyLinux, Q4OS, Tails, Raspbian, BigLinux, siduction, Nitrux, etc.).
 
 Enable sudo by https://wiki.debian.org/sudo if not enabled.
 
@@ -146,7 +146,7 @@ On Fedora 28 and newer:
 Install on Manjaro
 ------------------
 
-For Manjaro 18 and newer:
+On Manjaro 18 or newer and derivatives (Mabox, etc.):
 
     sudo pacman -S hw-probe
 
@@ -351,7 +351,7 @@ openSUSE Tumbleweed:
 Install on OpenVZ
 -----------------
 
-On OpenVZ 7:
+On OpenVZ 8 and OpenVZ 7:
 
     sudo yum install epel-release
     sudo yum install hw-probe
@@ -393,10 +393,16 @@ Install on QTS
 Use [Docker](README.md#docker).
 
 
+Install on RHCOS
+----------------
+
+Use [Docker](README.md#docker).
+
+
 Install on RHEL
 ---------------
 
-On RHEL 6-8 and RHEL based Linux distributions (CentOS, Scientific Linux, etc.):
+On RHEL 6-8 and RHEL based Linux distributions (CentOS, AlmaLinux, Rocky Linux, Scientific Linux, Springdale Linux, etc.):
 
     sudo yum install epel-release
     sudo yum install hw-probe
@@ -406,6 +412,12 @@ Install on ROSA
 ---------------
 
 Pre-installed on ROSA Fresh R4 and newer.
+
+
+Install on Sabayon
+------------------
+
+Use [AppImage](README.md#appimage).
 
 
 Install on Slackware
@@ -426,6 +438,15 @@ Install on Void Linux
 ---------------------
 
 Use [AppImage](README.md#appimage) or [Flatpak](README.md#flatpak).
+
+
+Install on VzLinux
+------------------
+
+On VzLinux 8:
+
+    sudo dnf install epel-release
+    sudo dnf install hw-probe
 
 
 Install from Source
