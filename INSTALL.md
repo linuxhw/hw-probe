@@ -64,7 +64,7 @@ Command line to Run
 Install on Ubuntu
 -----------------
 
-On Ubuntu and Ubuntu based Linux distributions (Kubuntu, Lubuntu, Xubuntu, Linux Mint, Zorin, Pop!_OS, elementary OS, KDE neon, Peppermint, Linuxfx, Linux Lite, HamoniKR, WindowsFX, Trisquel, Makulu Linux, etc.).
+On Ubuntu and Ubuntu based Linux distributions (Kubuntu, Lubuntu, Xubuntu, Linux Mint, Zorin, Pop!_OS, elementary OS, KDE neon, Peppermint, Linuxfx, Linux Lite, HamoniKR, WindowsFX, Trisquel, Makulu Linux, GalliumOS, etc.).
 
 ###### Ubuntu package
 
@@ -99,7 +99,7 @@ The [Snap package](README.md#snap) is also available to install and run easily o
 Install on Debian
 -----------------
 
-On Debian and Debian based Linux distributions (Kali, LMDE, MX Linux, antiX, Devuan, PureOS, Parrot, Pardus, deepin, BunsenLabs, SolydXK, SparkyLinux, Q4OS, Tails, Raspbian, BigLinux, siduction, Nitrux, etc.).
+On Debian and Debian based Linux distributions (Kali, LMDE, MX Linux, antiX, Devuan, PureOS, Parrot, Pardus, deepin, BunsenLabs, SolydXK, SparkyLinux, Q4OS, Tails, Raspbian, BigLinux, siduction, Nitrux, Kaisen, etc.).
 
 Enable sudo by https://wiki.debian.org/sudo if not enabled.
 
