@@ -369,7 +369,7 @@ INVENTORY OPTIONS:
   -email ADDR
       Email for node status notifications.
 
-MONITORING OPTIONS (COMING SOON!):
+MONITORING OPTIONS:
   -start
       Start monitoring of the node.
   
@@ -3870,6 +3870,8 @@ sub probeHW()
             writeLog($LOG_DIR."/kldstat_v", $Kldstat_v);
         }
     }
+    
+    # TODO: clarification of the condition is required
     
     # if($Kldstat_v=~/bcm2835_/)
     # {
@@ -14938,7 +14940,7 @@ sub writeLogs()
             $XRandr = clearLog_X11($XRandr);
             
             if(not $XRandr and defined $ENV{"XDG_SESSION_TYPE"}) {
-                printMsg("WARNING", "X11-related logs are not collected (try to run 'sudo -E')");
+                printMsg("WARNING", "X11-related logs are not collected (try to run 'sudo -E hw-probe ...')");
             }
             
             writeLog($LOG_DIR."/xrandr", $XRandr);
@@ -18494,14 +18496,14 @@ sub scenario()
         if(not $Admin)
         {
             if($Opt{"Snap"}) {
-                printMsg("WARNING", "run as root for better results ('sudo -E' or 'su')");
+                printMsg("WARNING", "run as root for better results ('sudo -E hw-probe ...' or with 'su')");
             }
             elsif($Opt{"Flatpak"}) {
                 printMsg("WARNING", "run as root for better results");
             }
             else
             {
-                printMsg("ERROR", "you should run as root ('sudo -E' or 'su')");
+                printMsg("ERROR", "you should run as root ('sudo -E hw-probe ...' or with 'su')");
                 exitStatus(1);
             }
         }
@@ -18918,7 +18920,7 @@ sub scenario()
             }
             chdir($ORIG_DIR);
             
-            rmtree($Opt{"FixProbe"});
+            rmtree($Opt{"FixProbe"}); # remove temp directory
         }
     }
     

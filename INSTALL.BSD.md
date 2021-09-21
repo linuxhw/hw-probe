@@ -1,7 +1,7 @@
 INSTALL HOWTO FOR BSD
 =====================
 
-HW Probe 1.6 BETA (May 20, 2020)
+HW Probe 1.6 (Sep 21, 2021)
 
 This file explains how to install and setup environment for the tool in your computer.
 

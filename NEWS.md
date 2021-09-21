@@ -1,6 +1,7 @@
 Contents
 --------
 
+* [ HW PROBE 1.6 ](#hw-probe-16)
 * [ HW PROBE 1.6 BETA ](#hw-probe-16-beta)
 * [ HW PROBE 1.5 ](#hw-probe-15)
 * [ HW PROBE 1.4 ](#hw-probe-14)
@@ -10,15 +11,112 @@ Contents
 * [ HW PROBE 1.0 ](#hw-probe-10)
 
 
+HW PROBE 1.6
+------------
+
+Released on Sep 21, 2021.
+
+In this release we have properly tested and fixed support for almost all *BSD systems, expanded support for more Linux systems, implemented probing of HP Smart Array and improved decorating of possibly significant data in collected logs.
+
+LHWM — Linux/BSD Hardware Monitoring feature is publicly available.
+
+Changes since 1.6 BETA:
+
+### New Features
+* Support for HP Smart Array
+* Introduced 'fixed' status of the device
+* Improve decorating of possibly significant data in logs
+* Automatically generate and upload report by using systemd timer
+* Display size of unknown RAM module(s) as extra device in the list
+* Add outgoing http/https proxy support
+* Identify Kubuntu, Xubuntu, Lubuntu, Ubuntu Budgie and Ubuntu Mate
+* Probe for ofwdump (BSD)
+* Probe for sndstat (BSD)
+* Collect system build number (BSD)
+* Support for helloSystem
+* Probe for neofetch
+* Identify OPNsense, TrueNAS, XigmaNAS, ArisbluBSD and LibertyBSD (BSD)
+* Identify FFS filesystem (BSD)
+* Identify wm (BSD)
+* Collect `pkg_info -qP` on OpenBSD (BSD)
+* Probe for getprop (Android)
+* Identifying of video driver (BSD)
+* Identifying of LMDE and CryptoDATA
+* Probe for /var/log/messages if dmesg output is incomplete
+* Probe for drm_info
+* Probe for /var/run/dmesg.boot (BSD)
+* Identify Trinity and Unity DEs
+* Identify more Synaptics fingerprint readers
+* Add -show-dmesg option
+* Detect computer form-factor on OpenBSD
+
+### Bug Fixes
+* Final fixes for LHWM — Linux/BSD Hardware Monitoring
+* Do not probe for systemctl by default
+* Disable automatic upload if no arguments are passed
+* Fix identifying of partition scheme
+* Fix identifying of LightDM
+* Fix identifying of OS version
+* Fix identifying of drives and batteries
+* Fix decorating of MMC s/n (BSD)
+* Decorate user name in systemctl log
+* Fix identifying of GhostBSD version
+* Fix identifying of memory modules, drives and monitors
+* Fix identifying of processor microarchitecture
+* Fix identifying of small memory modules
+* Fix identifying of notebook computer type (BSD)
+* Fix counting of NICs (BSD)
+* Fix identifying of computer form-factor
+* Fix identifying of DE
+* Fix identifying of HWaddr
+* Fix identifying of Synaptics fingerprint readers
+* Fix decorating of UUID in efibootmgr log
+* Fix identifying of computer type
+* Fix identifying of Linux distribution
+* Fix identifying of CD-ROMs
+* Fix identifying of CPU model
+* Change memory modules IDs
+* Update list of processor microarchitectures
+* Fix collector of Xorg log
+* Fix identifying of window managers (BSD)
+* Do not hang on empty floppy drives (BSD)
+* Fix probe of acpidump (BSD)
+* Fix anonymization of audit log in dmesg
+* Fix anonymization of grub.cfg
+* Fix anonymization of private paths
+* Fix identifying of PhoenixOS, siduction and NixOS
+* Add -m option to inxi probe
+* Fix identifying of Devuan
+* Fix identifying of video driver (BSD)
+* Hide private strings in ifconfig (BSD)
+* Fix status of network devices
+* Do not handle large boot logs
+* Fix collecting of SMART attributes from NVMe drives (BSD)
+* Fix identifying of NomadBSD
+* Do not require hwstat and lscpu on unknown BSD systems
+* Do not require dmidecode on non-x86 systems (pfSense)
+* Identify kind of network device properly (BSD)
+* Fix -save option to make a probe first
+* Fix identifying of motherboard
+* Fix identifying of graphics card
+* Set status of webcam to default if driver is missed (BSD)
+* Identify CPU by sysctl (BSD)
+* Identify partitioning scheme by fdisk (BSD)
+
+### Other
+* Added Debian 11 Live images with hw-probe preinstalled
+* Update install instructions for Linux and BSD
+
 HW PROBE 1.6 BETA
 -----------------
 
-Released on May 20, 2020.
+Released on May 29, 2020 (0e0162f).
 
 In this release we add support for BSD systems (FreeBSD, OpenBSD, NetBSD, DragonFly, MidnightBSD, GhostBSD, NomadBSD, FreeNAS, pfSense, OS108, etc.), improve identification of hardware devices on board and fix several security issues in collected logs.
 
 ### New Features
 * Support for BSD systems (FreeBSD, OpenBSD, NetBSD, DragonFly, MidnightBSD, GhostBSD, NomadBSD, FreeNAS, pfSense, OS108, etc.)
+* Dual license: LGPL-2.1-or-later or BSD-4-Clause
 * Probe for monitor DDC by ddcutil
 * Probe for display manager
 * Probe for locale language
