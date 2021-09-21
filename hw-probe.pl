@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 #####################################################################
-# Hardware Probe 1.6 BETA
+# Hardware Probe 1.6
 # A tool to probe for hardware, check operability and find drivers
 #
 # WWW (Linux): https://linux-hardware.org
@@ -173,10 +173,10 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "generate-inventory|generate-inventory-id|get-inventory-id|get-group!" => \$Opt{"GenerateGroup"},
   "email=s" => \$Opt{"Email"},
 # Monitoring
-  "monitoring!" => \$Opt{"Monitoring"},
   "start|start-monitoring!" => \$Opt{"StartMonitoring"},
   "stop|stop-monitoring!" => \$Opt{"StopMonitoring"},
   "remind-inventory!" => \$Opt{"RemindGroup"},
+  "monitoring!" => \$Opt{"Monitoring"},
 # Other
   "src|source=s" => \$Opt{"Source"},
   "save=s" => \$Opt{"Save"},
@@ -1128,7 +1128,7 @@ my %DisplayManager_Fix = (
     "ENTRANCED" => "Entrance"
 );
 
-my @ALL_DISPLAY_MANAGERS = qw(tdm lightdm sddm xdm gdm gdm3 slim kdm ldm lxdm cdm entranced mdm nodm pcdm wdm xenodm ly);
+my @ALL_DISPLAY_MANAGERS = qw(lightdm tdm sddm xdm gdm gdm3 slim kdm ldm lxdm cdm entranced mdm nodm pcdm wdm xenodm ly);
 
 my @DisplayManager_Package = ();
 foreach my $DM (@ALL_DISPLAY_MANAGERS) {
@@ -2152,7 +2152,7 @@ sub hideHost($)
 sub hidePaths($)
 {
     my $Content = $_[0];
-    my @Paths = ("mnt", "mount", "home", "media", "data", "shares", "vhosts", "mapper", "pstorage", "storage", "snap", "shm", "dev/serno", "serno", "exports", "usr/obj");
+    my @Paths = ("storage", "mount", "home", "media", "data", "shares", "vhosts", "mapper", "snap", "shm", "dev/serno", "serno", "exports", "usr/obj", "mnt");
     if(isBSD()) {
         push(@Paths, "diskid", "ufsid");
     }
@@ -2286,7 +2286,7 @@ sub hideByRegexp(@)
     
     my @Matches = ($Content=~/$Regexp/gi);
     
-    my @Skip = ("cdrom", "live", "livecd", "live-rw", "tmpfs", "control", "system");
+    my @Skip = ("cdrom", "live", "livecd", "live-rw", "tmpfs", "control", "system", "vstorage");
     
     foreach my $Match (sort {length($b)<=>length($a)} @Matches)
     {
@@ -2454,6 +2454,8 @@ sub remindGroup()
     my $GroupURL = $URL."/remind_group.php";
     
     my $Log = "";
+    
+    printMsg("INFO", "Please wait...");
     
     if(checkCmd("curl"))
     {
@@ -3869,18 +3871,18 @@ sub probeHW()
         }
     }
     
-    if($Kldstat_v=~/bcm2835_/)
-    {
-        $Sys{"Type"} = "system on chip";
-        $Sys{"Model"} = "Raspberry Pi";
-    }
+    # if($Kldstat_v=~/bcm2835_/)
+    # {
+    #     $Sys{"Type"} = "system on chip";
+    #     $Sys{"Model"} = "Raspberry Pi";
+    # }
     
-    if($Kldstat_v=~/rockchip_dwmmc/)
-    {
-        $Sys{"Type"} = "system on chip";
-        $Sys{"Vendor"} = "Pine Microsystems";
-        $Sys{"Model"} = "Rockpro64";
-    }
+    # if($Kldstat_v=~/rockchip_dwmmc/)
+    # {
+    #     $Sys{"Type"} = "system on chip";
+    #     $Sys{"Vendor"} = "Pine Microsystems";
+    #     $Sys{"Model"} = "Rockpro64";
+    # }
     
     my $Modstat = "";
     
@@ -8365,8 +8367,7 @@ sub probeHW()
         }
     }
     
-    my $Smartctl = "";
-    my $Smartctl_MegaRAID = "";
+    my %Smartctl = ();
     
     my $SmartctlCmd = undef;
     if(not $Opt{"FixProbe"} and $Opt{"HWLogs"})
@@ -8381,11 +8382,11 @@ sub probeHW()
     
     if($Opt{"FixProbe"})
     {
-        $Smartctl = readFile($FixProbe_Logs."/smartctl");
+        $Smartctl{"Normal"} = readFile($FixProbe_Logs."/smartctl");
         
         my $CurDev = undef;
         my %DriveDesc = ();
-        foreach my $SL (split(/\n/, $Smartctl))
+        foreach my $SL (split(/\n/, $Smartctl{"Normal"}))
         {
             if(index($SL, "/dev/")==0) {
                 $CurDev = $SL;
@@ -8421,7 +8422,7 @@ sub probeHW()
                 
                 my $Id = $HDD{$Dev};
                 
-                if($HW{$Id}{"Driver"}=~/megaraid/)
+                if($HW{$Id}{"Driver"}=~/megaraid|hpsa/)
                 {
                     my $RAID = $HW{$Id}{"Device"};
                     $RAID=~s/\s+\d.+?B\Z//;
@@ -8435,8 +8436,19 @@ sub probeHW()
                         next;
                     }
                     
-                    foreach my $N (0 .. 23) {
-                        $Smartctl_MegaRAID .= runSmartctl($SmartctlCmd, undef, $Dev, $Dev, "MegaRAID", "-d megaraid,$N", $N);
+                    my $RaidMax = 23;
+                    if($HW{$Id}{"Driver"}=~/hpsa/) {
+                        $RaidMax = 15;
+                    }
+                    
+                    foreach my $N (0 .. $RaidMax)
+                    {
+                        if($HW{$Id}{"Driver"}=~/megaraid/) {
+                            $Smartctl{"MegaRAID"} .= runSmartctl($SmartctlCmd, undef, $Dev, $Dev, "MegaRAID", "-d megaraid,$N", $N);
+                        }
+                        elsif($HW{$Id}{"Driver"}=~/hpsa/) {
+                            $Smartctl{"HPSA"} .= runSmartctl($SmartctlCmd, undef, $Dev, $Dev, "HPSA", "-d cciss,$N", $N);
+                        }
                     }
                     
                     $ProbedRAID{$RAID} = 1;
@@ -8463,15 +8475,19 @@ sub probeHW()
                         }
                     }
                 }
-                $Smartctl .= $DiskReport;
+                $Smartctl{"Normal"} .= $DiskReport;
             }
             
-            if($Smartctl) {
-                writeLog($LOG_DIR."/smartctl", $Smartctl);
+            if($Smartctl{"Normal"}) {
+                writeLog($LOG_DIR."/smartctl", $Smartctl{"Normal"});
             }
             
-            if($Smartctl_MegaRAID) {
-                writeLog($LOG_DIR."/smartctl_megaraid", $Smartctl_MegaRAID);
+            if($Smartctl{"MegaRAID"}) {
+                writeLog($LOG_DIR."/smartctl_megaraid", $Smartctl{"MegaRAID"});
+            }
+            
+            if($Smartctl{"HPSA"}) {
+                writeLog($LOG_DIR."/smartctl_hpsa", $Smartctl{"HPSA"});
             }
         }
         else
@@ -8815,34 +8831,38 @@ sub probeHW()
     
     if($Opt{"FixProbe"})
     {
-        $Smartctl_MegaRAID = readFile($FixProbe_Logs."/smartctl_megaraid");
-        
-        my ($CurDev, $CurDid) = (undef, undef);
-        my %DriveDesc = ();
-        foreach my $SL (split(/\n/, $Smartctl_MegaRAID))
+        foreach my $RAID_Vendor ("MegaRAID", "HPSA")
         {
-            if(index($SL, "/dev/")==0)
+            my $RAID_Prefix = lc($RAID_Vendor);
+            $Smartctl{$RAID_Vendor} = readFile($FixProbe_Logs."/smartctl_$RAID_Prefix");
+            
+            my ($CurDev, $CurDid) = (undef, undef);
+            my %DriveDesc = ();
+            foreach my $SL (split(/\n/, $Smartctl{$RAID_Vendor}))
             {
-                if($SL=~/(.+),megaraid_disk_(.+)/) {
-                    ($CurDev, $CurDid) = ($1, int($2));
+                if(index($SL, "/dev/")==0)
+                {
+                    if($SL=~/(.+),($RAID_Prefix)_disk_(.+)/) {
+                        ($CurDev, $CurDid) = ($1, int($3));
+                    }
+                }
+                elsif($CurDev) {
+                    $DriveDesc{$CurDev}{$CurDid} .= $SL."\n";
                 }
             }
-            elsif($CurDev) {
-                $DriveDesc{$CurDev}{$CurDid} .= $SL."\n";
-            }
-        }
-        foreach my $Dev (sort keys(%DriveDesc))
-        {
-            foreach my $Did (sort keys(%{$DriveDesc{$Dev}}))
+            foreach my $Dev (sort keys(%DriveDesc))
             {
-                my $Desc = $DriveDesc{$Dev}{$Did};
-                if(my $Id = detectDrive($Desc, $Dev, "MegaRAID", $Did)) {
-                    setDriveStatus($Desc, $Id);
+                foreach my $Did (sort keys(%{$DriveDesc{$Dev}}))
+                {
+                    my $Desc = $DriveDesc{$Dev}{$Did};
+                    if(my $Id = detectDrive($Desc, $Dev, $RAID_Vendor, $Did)) {
+                        setDriveStatus($Desc, $Id);
+                    }
                 }
             }
         }
     }
-    elsif($Admin and not $Smartctl_MegaRAID)
+    elsif($Admin and not $Smartctl{"MegaRAID"})
     { # try by storcli
         my $StorcliCmd = undef;
         
@@ -8908,19 +8928,19 @@ sub probeHW()
                     foreach my $Dev (sort keys(%DID))
                     {
                         foreach my $Did (sort {int($a)<=>int($b)} keys(%{$DID{$Dev}})) {
-                            $Smartctl_MegaRAID .= runSmartctl($SmartctlCmd, undef, $Dev, $Dev, "MegaRAID", "-d megaraid,$Did", $Did);
+                            $Smartctl{"MegaRAID"} .= runSmartctl($SmartctlCmd, undef, $Dev, $Dev, "MegaRAID", "-d megaraid,$Did", $Did);
                         }
                     }
                 }
                 
-                if($Smartctl_MegaRAID) {
-                    writeLog($LOG_DIR."/smartctl_megaraid", $Smartctl_MegaRAID);
+                if($Smartctl{"MegaRAID"}) {
+                    writeLog($LOG_DIR."/smartctl_megaraid", $Smartctl{"MegaRAID"});
                 }
             }
         }
     }
     
-    if(not $Opt{"FixProbe"} and not $Smartctl_MegaRAID
+    if(not $Opt{"FixProbe"} and not $Smartctl{"MegaRAID"}
     and enabledLog("megacli"))
     {
         my $MegacliCmd = undef;
@@ -9028,15 +9048,20 @@ sub probeHW()
                     if($Sys{"System"} eq "suse linux") {
                         $Sys{"System"} = "opensuse";
                     }
+                    $Sys{"System_version"} = undef;
                     last;
                 }
             }
             
-            if(index($LinVer, "neverware\@cloudready-builder") != -1) {
+            if(index($LinVer, "neverware\@cloudready-builder") != -1)
+            {
                 $Sys{"System"} = "chrome_os";
+                $Sys{"System_version"} = undef;
             }
-            elsif(index($LinVer, "Binutils for Uos") != -1) {
+            elsif(index($LinVer, "Binutils for Uos") != -1)
+            {
                 $Sys{"System"} = "deepin";
+                $Sys{"System_version"} = undef;
             }
         }
     }
@@ -9147,6 +9172,11 @@ sub probeHW()
                 fixFFByModel($Sys{"Vendor"}, $Sys{"Model"});
             }
         }
+        elsif($Dmesg=~/(Raspberry Pi)/)
+        {
+            $Sys{"Model"} = $1;
+            $Sys{"Type"} = "system on chip";
+        }
     }
     
     my $XLog = "";
@@ -9251,8 +9281,10 @@ sub probeHW()
                 if(isBSD()) {
                     $Sys{"System"}=~s/\A(\w+)-/$Matched-/;
                 }
-                else {
+                else
+                {
                     $Sys{"System"} = $Matched;
+                    $Sys{"System_version"} = undef;
                 }
             }
         }
@@ -10380,6 +10412,8 @@ sub probeHW()
         $BootLog = clearLog(readFile("/var/log/boot.log"));
         $BootLog=~s&(Mounted|Mounting)\s+/.+&$1 XXXXX&g;
         $BootLog=~s&(Setting hostname\s+).+:&$1XXXXX:&g;
+        $BootLog=~s&(File System Check on) .+&$1 XXX&g;
+        $BootLog=~s& [^\s]+ (NET\[)& XXX $1&g;
         $BootLog = hideLVM($BootLog);
         $BootLog = encryptUUIDs($BootLog);
         $BootLog = hideDevDiskUUIDs($BootLog);
@@ -10388,8 +10422,10 @@ sub probeHW()
     
     if(not $Sys{"System"} or $Sys{"System"}=~/freedesktop/)
     {
-        if($BootLog=~/Endless OS/) {
+        if($BootLog=~/Endless OS/)
+        {
             $Sys{"System"} = "endless";
+            $Sys{"System_version"} = undef;
         }
     }
     
@@ -10406,9 +10442,10 @@ sub probeHW()
         {
             $Sctl = hideByRegexp($Sctl, qr/\/home\/([^\s]+)/);
             $Sctl = hideByRegexp($Sctl, qr/\/media\/([^\s]+)/);
-            
             $Sctl = hideByRegexp($Sctl, qr/home-([^\s]+)/);
             $Sctl = hideByRegexp($Sctl, qr/media-([^\s]+)/);
+            $Sctl = hideByRegexp($Sctl, qr/ cluster ([^\s]+)/);
+            $Sctl = hidePaths($Sctl);
             
             $Sctl=~s/(User Slice of|Session \d+ of user|Synchronization for).+/$1 XXXXX/g;
             
@@ -10426,11 +10463,11 @@ sub probeHW()
         }
     }
     
-    if(not $Sys{"Display_manager"} and $Sctl)
+    if((not $Sys{"Display_manager"} or $Sys{"Display_manager"} eq "TDM") and $Sctl)
     {
         foreach my $DM (@ALL_DISPLAY_MANAGERS)
         {
-            if(index($Sctl, $DM.".service")!=-1 and $Sctl=~/$DM\.service\s+loaded.+\s+running/)
+            if(index($Sctl, $DM.".service")!=-1 and $Sctl=~/\b$DM\.service\s+loaded.+\s+running/)
             {
                 $Sys{"Display_manager"} = fixDisplayManager($DM);
                 last;
@@ -10540,10 +10577,10 @@ sub probeHW()
         }
     }
     
-    if($Fdisk=~/Disklabel type: gpt/) {
+    if($Fdisk=~/Disk\s?label type: gpt/) {
         $Sys{"Part_scheme"} = "GPT";
     }
-    elsif($Fdisk=~/Disklabel type: dos/) {
+    elsif($Fdisk=~/Disk\s?label type: dos/) {
         $Sys{"Part_scheme"} = "MBR";
     }
     
@@ -10792,7 +10829,6 @@ sub runSmartctl(@)
     $Output = encryptSerials($Output, "Serial Number");
     $Output = encryptSerials($Output, "Serial number");
     $Output = hideWWNs($Output);
-    # $Output=~s/\A.*?(\=\=\=)/$1/sg;
     
     if(not $Id) {
         $Id = detectDrive($Output, $OrigDev, $Raid, $RNum);
@@ -10804,6 +10840,9 @@ sub runSmartctl(@)
     
     if($Raid and $Raid eq "MegaRAID") {
         $Output = $OrigDev.",megaraid_disk_".fNum($RNum)."\n".$Output."\n";
+    }
+    elsif($Raid and $Raid eq "HPSA") {
+        $Output = $OrigDev.",hpsa_disk_".fNum($RNum)."\n".$Output."\n";
     }
     else {
         $Output = $OrigDev."\n".$Output."\n";
@@ -11540,7 +11579,12 @@ sub detectDrive(@)
     if($Raid)
     {
         $Device->{"RAID"} = $Raid;
-        $Device->{"MegaRAID_Disk"} = fNum($RNum);
+        if($Raid eq "MegaRAID") {
+            $Device->{"MegaRAID_Disk"} = fNum($RNum);
+        }
+        elsif($Raid eq "HPSA") {
+            $Device->{"HPSA_Disk"} = fNum($RNum);
+        }
         $Device->{"File"} = $Dev;
         
         $Dev .= ",".fNum($RNum);
@@ -12561,10 +12605,7 @@ sub probeSys()
     }
     
     my ($Distr, $DistrVersion, $Rel) = probeDistr();
-    
-    $Sys{"System"} = $Distr."-".$DistrVersion;
-    $Sys{"System_version"} = $DistrVersion;
-    $Sys{"Systemrel"} = $Rel;
+    setDistr($Distr, $DistrVersion, $Rel, undef);
     
     if(not $Sys{"System"})
     {
@@ -12778,7 +12819,7 @@ sub emptyProduct($)
 {
     my $Val = $_[0];
     
-    if(not $Val or $Val=~/\b(System manufacturer|System Product|Board Vendor|Mainboard|System Manufacter|stem manufacturer|System Manufact|SYSTEM_MANUFACTURER|Name|Version|to be filled|empty|Not Specified|Default[ _]string|board version|Unknow|n\/a|Not)\b/i or $Val=~/\A([_0O\-\.\s]+|[X]+|NA|N\/A|\-O|1234567890|0123456789|[\.\,]+)\Z/i or emptyVal($Val)) {
+    if(not $Val or $Val=~/\b(System manufacturer|System Product|Board Vendor|Board Manufacturer|Mainboard|System Manufacter|stem manufacturer|System Manufact|SYSTEM_MANUFACTURER|Name|Version|to be filled|empty|Not Specified|Default[ _]string|board version|Unknow|n\/a|Not)\b/i or $Val=~/\A([_0O\-\.\s]+|[X]+|NA|N\/A|\-O|1234567890|0123456789|[\.\,]+|Board)\Z/i or emptyVal($Val)) {
         return 1;
     }
     
@@ -13767,44 +13808,37 @@ sub fixDistr($$$$)
         }
     }
     
-    if($Sys{"Kernel"}=~/\drosa\b/)
+    if(not $Distr or $Distr=~/freedesktop/)
     {
-        if(not $Distr or $Distr=~/freedesktop/)
+        if($Sys{"Kernel"}=~/\drosa\b/)
         {
-            if($Sys{"Kernel"}=~/\A3\.0\./)
-            {
-                $Distr = "rosa";
+            $Distr = "rosa";
+            if($Sys{"Kernel"}=~/\A3\.0\./) {
                 $DistrVersion = "2012lts";
             }
-            elsif($Sys{"Kernel"}=~/\A3\.(8|10)\./)
-            {
-                $Distr = "rosa";
+            elsif($Sys{"Kernel"}=~/\A3\.(8|10)\./) {
                 $DistrVersion = "2012.1";
             }
-            elsif($Sys{"Kernel"}=~/\A3\.(14|17|18|19)\./)
-            {
-                $Distr = "rosa";
+            elsif($Sys{"Kernel"}=~/\A3\.(14|17|18|19)\./) {
                 $DistrVersion = "2014.1";
             }
-            elsif($Sys{"Kernel"}=~/\A4\./)
-            {
-                $Distr = "rosa";
+            elsif($Sys{"Kernel"}=~/\A4\./) {
                 $DistrVersion = "2014.1";
             }
-            elsif($Sys{"Kernel"}=~/\A5\./)
-            {
-                $Distr = "rosa";
+            elsif($Sys{"Kernel"}=~/\A5\./) {
                 $DistrVersion = "2016.1";
             }
-            else
-            {
+            else {
                 printMsg("ERROR", "failed to fix 'system' attribute (kernel is '".$Sys{"Kernel"}."')");
             }
         }
-        
-        if(not $Rel)
+    }
+    
+    if(not $Rel)
+    {
+        if($Distr eq "rosa")
         {
-            if($Distr eq "rosa" and $DistrVersion eq "2012.1")
+            if($DistrVersion eq "2012.1")
             {
                 if($Sys{"Kernel"}=~/\A3\.10\.(3\d|4\d)\-/) {
                     $Rel = "rosafresh-r3";
@@ -13816,6 +13850,25 @@ sub fixDistr($$$$)
                     $Rel = "rosafresh-r1";
                 }
             }
+        }
+    }
+    
+    if($Distr eq "debian" and (not $DistrVersion or $DistrVersion!~/\A(\d|Testing|Unstable|Sid)/i))
+    {
+        if($Sys{"Kernel"}=~/\A5.1/) {
+            $DistrVersion = "11";
+        }
+        elsif($Sys{"Kernel"}=~/\A(4\.19|4\.20|5\.[023456789])/) {
+            $DistrVersion = "10";
+        }
+        elsif($Sys{"Kernel"}=~/\A(4\.9|4\.1[012345678])/) {
+            $DistrVersion = "9";
+        }
+        elsif($Sys{"Kernel"}=~/\A3\.16/) {
+            $DistrVersion = "8";
+        }
+        elsif($Sys{"Kernel"}=~/\A3\.2/) {
+            $DistrVersion = "7";
         }
     }
     
@@ -13886,18 +13939,21 @@ sub fixDistr($$$$)
                 $Distr = "opnsense";
                 $DistrVersion = $2;
             }
-            elsif($Pkgs=~/helloSystem\s+(.+)/i)
+            elsif(my @AllVers = ($Pkgs=~m/helloSystem\s+(.+)/gi))
             {
-                $Distr = "hellosystem";
-                
-                my $ReleaseString = $1;
-                if($ReleaseString=~/(\d[\d\.]*)_(.+)/)
+                foreach my $ReleaseString (@AllVers)
                 {
-                    $DistrVersion = $1;
-                    $Build = $2;
-                }
-                else {
-                    $DistrVersion = $ReleaseString;
+                    $Distr = "hellosystem";
+                    
+                    my $ReleaseString = $1;
+                    if($ReleaseString=~/(\d[\d\.]*)_(.+)/)
+                    {
+                        $DistrVersion = $1;
+                        $Build = $2;
+                    }
+                    else {
+                        $DistrVersion = $ReleaseString;
+                    }
                 }
             }
             
@@ -13909,7 +13965,32 @@ sub fixDistr($$$$)
         }
     }
     
-    return ($Distr, $DistrVersion, $Rel, $Build);
+    setDistr($Distr, $DistrVersion, $Rel, $Build);
+}
+
+sub setDistr($$$$)
+{
+    my ($Distr, $DistrVersion, $Rel, $Build) = @_;
+    
+    if($DistrVersion) {
+        $Distr = $Distr."-".$DistrVersion;
+    }
+    
+    if($Distr) {
+        $Sys{"System"} = $Distr;
+    }
+    
+    if($DistrVersion or $DistrVersion eq "0") {
+        $Sys{"System_version"} = $DistrVersion;
+    }
+    
+    if($Rel) {
+        $Sys{"Systemrel"} = $Rel;
+    }
+    
+    if($Build) {
+        $Sys{"Systembuild"} = $Build;
+    }
 }
 
 sub probeDistr()
@@ -14314,8 +14395,9 @@ sub probeDistr()
             $Descr = $1;
         }
         
-        if($Name=~/\ARedHatEnterprise/i) {
-            return ("rhel", $Release, "", "");
+        if($Name=~/\ARedHatEnterprise/i)
+        {
+            $Name = "rhel";
         }
         elsif($Name=~/\AROSAEnterpriseServer/i) {
             return ("rels", $Release, "", "");
@@ -14372,7 +14454,7 @@ sub probeDistr()
         elsif(lc($Name) eq "neon") {
             return ("kde-neon", $Release, "", "");
         }
-        elsif($Descr=~/\A(Maui|KDE neon|RED OS|Pop\!_OS|LMDE|Devuan|openSUSE Leap)/i) {
+        elsif($Descr=~/\A(Devuan|ECP VeiL|KDE neon|LMDE|Maui|openSUSE Leap|Pop\!_OS|RED OS|BigLinux)/i) {
             $Name = $1;
         }
         elsif($Descr=~/\A(antiX)-(\d+)/i)
@@ -14383,10 +14465,18 @@ sub probeDistr()
         elsif($Descr=~/\A(SUSE Linux Enterprise Desktop)/i) {
             $Name = "sled";
         }
+        elsif($Descr=~/\A(SUSE Linux Enterprise Server)/i) {
+            $Name = "sles";
+        }
         elsif($Name=~/\ACentOSStream/i)
         {
             $Name = "centos";
             $Release = "stream";
+        }
+        
+        if($Name=~/\A(CentOS|ClearOS|RHEL|Debian)/i)
+        {
+            $Release=~s/\A(\d+)\..+/$1/;
         }
     }
     
@@ -14413,7 +14503,7 @@ sub probeDistr()
         if($Descr=~/Easy Buster/) {
             $Name = "EasyOS";
         }
-        elsif($Descr=~/(LMDE|CryptoDATA|KDE neon)/) {
+        elsif($Descr=~/(LMDE|CryptoDATA|KDE neon|PuppyRus-A|BigLinux)/) {
             $Name = $1;
         }
     }
@@ -14438,7 +14528,7 @@ sub probeDistr()
         if($OS_Rel=~/\bNAME=[ \t]*[\"\']*([^"'\n]+)/)
         {
             my $RealName = $1;
-            if($RealName=~/(Peppermint|Pop\!_OS|KDE neon|Acronis Cyber Infrastructure)/) {
+            if($RealName=~/(Peppermint|Pop\!_OS|KDE neon|Acronis Cyber Infrastructure|Virtuozzo Infrastructure)/) {
                 $Name = $1;
             }
         }
@@ -14446,7 +14536,7 @@ sub probeDistr()
         if($OS_Rel=~/\bPRETTY_NAME=[ \t]*[\"\']*([^"'\n]+)/)
         {
             my $PrettyName = $1;
-            if($PrettyName=~/(OpenVZ|Docker Desktop|Pop\!_OS|Devuan|LMDE|CryptoDATA|SkiffOS|GNOME OS|Debian|Sn3rpOs|Porteus|MakuluLinux)/) {
+            if($PrettyName=~/(CryptoDATA|Debian|Docker Desktop|Devuan|ECP VeiL|GNOME OS|LMDE|MakuluLinux|Makululinux|OpenVZ|pearOS|Pop\!_OS|Porteus|SkiffOS|Sn3rpOs|SuperX|Windowsfx|Virtuozzo Hybrid Infrastructure|XCP-ng)/) {
                 $Name = $1;
             }
         }
@@ -14460,11 +14550,15 @@ sub probeDistr()
             }
         }
         
-        if($Name=~/Acronis|Ultimate/i)
+        if($Name=~/Acronis|Ultimate|Virtuozzo/i)
         {
             if($OS_Rel=~/\bVERSION=[ \t]*[\"\']*([^"'\n]+)/) {
                 $Release = lc($1);
             }
+        }
+        elsif($Name=~/\ARHEL/i)
+        {
+            $Release=~s/\A(\d+)\..+/$1/;
         }
         
         if($Release eq "n/a") {
@@ -14483,11 +14577,6 @@ sub probeDistr()
     
     if($Name=~/funtoo/) {
         $Release=~s/\A(intel64-skylake-|generic_64-)//;
-    }
-    elsif($Name=~/virtuozzo/i)
-    {
-        $Release = undef;
-        $Name = "Virtuozzo";
     }
     elsif($Name eq "blackpantheros") {
         $Name = "blackpanther-os";
@@ -14679,7 +14768,7 @@ sub readHost($)
     or ($Sys{"Arch"}=~/arm|aarch/i and -s $FixProbe_Logs."/dmesg")
     or -s $FixProbe_Logs."/sysctl")
     {
-        foreach ("Vendor", "Model", "Subvendor", "Submodel") {
+        foreach ("Vendor", "Model", "Subvendor", "Submodel", "Type") {
             delete($Sys{$_});
         }
     }
@@ -15506,6 +15595,7 @@ sub writeLogs()
             {
                 $SystemdAnalyze = decorateSystemd($SystemdAnalyze);
                 $SystemdAnalyze = hideDevDiskUUIDs($SystemdAnalyze);
+                $SystemdAnalyze = hideByRegexp($SystemdAnalyze, qr/shaman\@(.+?)\.service/);
                 writeLog($LOG_DIR."/systemd-analyze", $SystemdAnalyze);
             }
         }
@@ -16701,7 +16791,6 @@ my %EnabledLog = (
         "scanimage",
         "scsi",
         "smart-log",
-        "systemctl",
         "systemd-analyze",
         "uptime",
         "vainfo",
@@ -16730,6 +16819,7 @@ my %EnabledLog = (
         "numactl",
         "route",
         "slabtop",
+        "systemctl",
         "udev-db",
         "update-alternatives",
         "xvinfo"
@@ -18598,7 +18688,7 @@ sub scenario()
         
         if($Opt{"RmObsolete"})
         {
-            foreach my $L ("boot.log", "dmesg.1", "findmnt", "fstab", "grub.cfg", "mount", "pstree", "systemctl", "top", "xorg.log.1", "modprobe.d", "interrupts", "gl_conf-alternatives")
+            foreach my $L ("boot.log", "dmesg.1", "findmnt", "fstab", "grub.cfg", "mount", "pstree", "systemctl", "top", "xorg.log.1", "modprobe.d", "interrupts", "gl_conf-alternatives") # NOTE: systemctl is needed to detect Display_manager
             {
                 if(-e "$FixProbe_Logs/$L") {
                     unlink("$FixProbe_Logs/$L");
@@ -18667,32 +18757,7 @@ sub scenario()
         fixLogs($FixProbe_Logs);
         
         my ($Distr, $DistrVersion, $Rel, $Build) = probeDistr();
-        
-        ($Distr, $DistrVersion, $Rel, $Build) = fixDistr($Distr, $DistrVersion, $Rel, $Build);
-        
-        if($DistrVersion) {
-            $Distr = $Distr."-".$DistrVersion;
-        }
-        
-        if($Distr)
-        { # fix system name
-            $Sys{"System"} = $Distr;
-        }
-        
-        if($DistrVersion or $DistrVersion eq "0")
-        { # fix system version
-            $Sys{"System_version"} = $DistrVersion;
-        }
-        
-        if($Rel)
-        { # fix system name
-            $Sys{"Systemrel"} = $Rel;
-        }
-        
-        if($Build)
-        { # fix system name
-            $Sys{"Systembuild"} = $Build;
-        }
+        fixDistr($Distr, $DistrVersion, $Rel, $Build);
         
         if(isBSD())
         {
@@ -18705,6 +18770,10 @@ sub scenario()
         fixChassis();
         probeHWaddr();
         probeHW();
+        
+        if($Sys{"System"} eq "debian") {
+            fixDistr($Sys{"System"}, $Sys{"System_version"}, undef, undef);
+        }
         
         if(not $Sys{"System"}) {
             $Sys{"System"} = "lfs";
