@@ -20,6 +20,8 @@ description: >
      
 type: app
 confinement: strict
+license: LGPL-2.1-or-later OR BSD-4-Clause
+website: https://github.com/linuxhw/hw-probe
 grade: stable
 plugs:
   dot-local-share-xorg-logs:
