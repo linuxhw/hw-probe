@@ -334,7 +334,7 @@ For example, to disable collecting of `xdpyinfo` and `xorg.conf` run:
 Privacy
 -------
 
-Private information (including the username, machine's hostname, IP addresses, MAC addresses, UUIDs and serial numbers) is NOT uploaded to the database.
+We do our best to decorate all private information (including the username, machine's hostname, IP addresses, MAC addresses, UUIDs and serial numbers) before uploading to the database. Be aware that this may fail in certain edge cases.
 
 The tool uploads 32-byte prefix of salted SHA512 hash of MAC addresses and serial numbers to properly identify unique computers and hard drives. UUIDs are decorated in the same way, but formatted like regular UUIDs in order to save readability of logs. All the data is uploaded securely via HTTPS.
 

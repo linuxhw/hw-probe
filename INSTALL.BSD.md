@@ -103,13 +103,9 @@ On OpenBSD and derivatives (AdJ, FuguIta, etc.).
 
 ###### Latest systems
 
-For OpenBSD 6.8 and newer and derivatives install this port: https://openports.se/sysutils/hw-probe
+For OpenBSD, a package is available (see https://cvsweb.openbsd.org/ports/sysutils/hw-probe/):
 
     pkg_add hw-probe
-
-or manually add path to latest repository:
-
-    PKG_PATH=https://ftp.eu.openbsd.org/pub/OpenBSD/snapshots/packages/amd64/ pkg_add hw-probe
 
 Probe your computer:
 

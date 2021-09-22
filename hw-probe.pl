@@ -2129,6 +2129,7 @@ sub hideDmesg($)
     $Content=~s/(Serial Number).+/$1.../g;
     $Content=~s/(\s+s\/n\s+)[^\s]+/$1.../g;
     $Content=~s/(serial\s*=\s*)[^\s]+/$1.../g;
+    $Content=~s/ (serial\s+)[^\s]+/ $1.../g; # BSD
     $Content=~s/(removable serial\.).+/$1.../g;
     $Content=~s/( SN ).+?( MFG )/$1...$2/g;
     
@@ -5088,7 +5089,7 @@ sub probeHW()
         $Sysctl=~s/((kern\.hostname|serialno|-serial|-asset-tag)\s*[:=]\s*).+/$1.../g;
         $Sysctl=~s/ ([^\s]+) (login|syslogd)/ ... $2/g;
         $Sysctl=~s/(Serial Number\s+)(.+)/$1.../g;
-        $Sysctl=~s/(sernum=)[^\s]+/$1.../g;
+        $Sysctl=~s/((sernum|soiikey)=)[^\s]+/$1.../g;
         foreach my $Hide ("kern.msgbuf", "kern.geom.confxml", "kern.geom.confdot", "kern.geom.conftxt") {
             $Sysctl=~s/(\Q$Hide\E:).+?(\skern\.)/$1 ...$2/gs;
         }
