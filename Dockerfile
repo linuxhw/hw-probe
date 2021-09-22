@@ -1,4 +1,4 @@
-FROM alpine:3.11
+FROM alpine:3.13
 
 RUN apk update \
     && apk add --no-cache perl curl xz dmidecode pciutils usbutils \
@@ -14,7 +14,7 @@ RUN apk update \
     && rm -fr edid-decode \
     && git clone https://github.com/rockowitz/ddcutil.git \
     && cd ddcutil \
-    && git checkout 0.9.9-dev \
+    && git checkout 1.1.0-dev \
     && NOCONFIGURE=1 NO_CONFIGURE=1 sh autogen.sh \
     && ./configure --prefix=/usr \
     && make \
@@ -36,13 +36,13 @@ RUN apk update \
     && make install \
     && cd .. \
     && rm -fr hwinfo \
-    && curl -L https://github.com/linuxhw/build-stuff/releases/download/1.5/hw-probe-1.5-AI.tar.gz > hw-probe-1.5-AI.tar.gz \
-    && tar -xf hw-probe-1.5-AI.tar.gz \
-    && rm -fr hw-probe-1.5-AI.tar.gz \
-    && cd hw-probe-1.5-AI \
+    && curl -L https://github.com/linuxhw/build-stuff/releases/download/1.6/hw-probe-1.6-AI.tar.gz > hw-probe-1.6-AI.tar.gz \
+    && tar -xf hw-probe-1.6-AI.tar.gz \
+    && rm -fr hw-probe-1.6-AI.tar.gz \
+    && cd hw-probe-1.6-AI \
     && make install \
     && cd .. \
-    && rm -fr hw-probe-1.5-AI \
+    && rm -fr hw-probe-1.6-AI \
     && apk del build-deps \
     && rm -fr /usr/bin/acpibin /usr/bin/acpiexamples /usr/bin/acpiexec /usr/bin/acpihelp /usr/bin/acpinames /usr/bin/acpisrc /usr/bin/lsusb.py /usr/bin/usbhid-dump \
     && rm -fr /usr/sbin/convert_hd /usr/sbin/check_hd /usr/sbin/mk_isdnhwdb /usr/sbin/getsysinfo /usr/sbin/fancontrol /usr/sbin/pwmconfig /usr/sbin/isadump /usr/sbin/isaset /usr/sbin/ownership /usr/sbin/setpci /usr/sbin/vpddecode /usr/sbin/update-smart-drivedb /usr/sbin/smartd \
