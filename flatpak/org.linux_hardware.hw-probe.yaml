@@ -1,6 +1,6 @@
 app-id: org.linux_hardware.hw-probe
 runtime: org.freedesktop.Platform
-runtime-version: "20.08"
+runtime-version: "21.08"
 sdk: org.freedesktop.Sdk
 command: hw-probe
 finish-args:
@@ -145,6 +145,7 @@ modules:
       - make -j $FLATPAK_BUILDER_N_JOBS
       - find . -type f | perl -lne 'print if -B and -x' | xargs strip
       - make install DESTDIR=$FLATPAK_DEST
+      - install -D ./tools/lsmod $FLATPAK_DEST/bin/lsmod
     sources:
       - type: archive
         url: https://cdn.kernel.org/pub/linux/utils/kernel/kmod/kmod-12.tar.xz
@@ -192,8 +193,8 @@ modules:
       - make install DESTDIR=$FLATPAK_DEST PREFIX=/
     sources:
       - type: archive
-        url: https://acpica.org/sites/acpica/files/acpica-unix-20210105.tar.gz
-        sha256: a9be7b749025e60f93fde2fe531bfe0d84a33641d3e0c9b0f6049f996dbb1ff8
+        url: https://acpica.org/sites/acpica/files/acpica-unix-20210730.tar.gz
+        sha256: 4a0c14d5148666612aa0555c5179eaa86230602394fd1bc3d16b506fcf49b5de
   - name: hdparm
     buildsystem: simple
     build-commands:
@@ -202,8 +203,8 @@ modules:
       - install -D INST/sbin/hdparm $FLATPAK_DEST/sbin/hdparm
     sources:
       - type: archive
-        url: https://github.com/linuxhw/build-stuff/releases/download/1.5/hdparm-9.60.tar.gz
-        sha256: 8397739c73e44d5ab96c4aef28fa9c0147276d53a1b5657ce04c4565cf6635cc
+        url: https://github.com/linuxhw/build-stuff/releases/download/1.6/hdparm-9.62.tar.gz
+        sha256: 2c0f9d75cdbeda928a25a128cd3d0b7120445ec0910c0b29d4c1038ed1be777f
   - name: smartmontools
     buildsystem: simple
     build-commands:
@@ -229,12 +230,12 @@ modules:
       - install -D ./lscpu $FLATPAK_DEST/bin/lscpu
     sources:
       - type: archive
-        url: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.36/util-linux-2.36.1.tar.xz
-        sha256: 09fac242172cd8ec27f0739d8d192402c69417617091d8c6e974841568f37eed
+        url: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.37/util-linux-2.37.2.tar.xz
+        sha256: 6a0764c1aae7fb607ef8a6dd2c0f6c47d5e5fd27aa08820abaad9ec14e28e9d9
   - name: libx86emu
     buildsystem: simple
     build-commands:
-      - echo '3.1' > VERSION
+      - echo '3.2' > VERSION
       - rm -f git2log
       - sed -i -e 's/ -g / -s /' Makefile
       - make -j $FLATPAK_BUILDER_N_JOBS
@@ -243,8 +244,8 @@ modules:
       - cp -fr INST/usr/* $FLATPAK_DEST/
     sources:
       - type: archive
-        url: https://github.com/wfeldt/libx86emu/archive/3.1.tar.gz
-        sha256: 70b574ed84dcba2dc4f54a9a1c14539e84ddbe628842c638a2f98d987d879dac
+        url: https://github.com/wfeldt/libx86emu/archive/3.2.tar.gz
+        sha256: 4faf853cc3776bc089fe01917acf56043feb42dc7bae91f60b974b2b00b1b0f3
   - name: lex
     buildsystem: simple
     build-commands:
@@ -262,7 +263,7 @@ modules:
       - arm
     buildsystem: simple
     build-commands:
-      - echo '21.71' > VERSION
+      - echo '21.76' > VERSION
       - rm -f git2log
       - sed -i -e 's/ -g / -s /' Makefile.common
       - CFLAGS='-I'$FLATPAK_DEST'/include' LDFLAGS='-L'$FLATPAK_DEST'/lib64 -L'$FLATPAK_DEST'/lib -lx86emu' LD_LIBRARY_PATH=$FLATPAK_DEST'/lib64:'$FLATPAK_DEST'/lib' make
@@ -270,15 +271,15 @@ modules:
       - cp -fr INST/usr/* $FLATPAK_DEST/
     sources:
       - type: archive
-        url: https://github.com/openSUSE/hwinfo/archive/21.71.tar.gz
-        sha256: c4c573eb15cbc10103f5044b485d7e4ff941500ed559743a1c98e6a6deb0ebda
+        url: https://github.com/openSUSE/hwinfo/archive/21.76.tar.gz
+        sha256: 3011f7badfadce2e3f2d0201d8be87fdb92920a80b7df57e595a6c6cc2f4968d
   - name: hwinfo
     only-arches:
       - aarch64
       - arm
     buildsystem: simple
     build-commands:
-      - echo '21.71' > VERSION
+      - echo '21.76' > VERSION
       - rm -f git2log
       - sed -i -e 's/ -g / -s /' Makefile.common
       - make
@@ -286,8 +287,8 @@ modules:
       - cp -fr INST/usr/* $FLATPAK_DEST/
     sources:
       - type: archive
-        url: https://github.com/openSUSE/hwinfo/archive/21.71.tar.gz
-        sha256: c4c573eb15cbc10103f5044b485d7e4ff941500ed559743a1c98e6a6deb0ebda
+        url: https://github.com/openSUSE/hwinfo/archive/21.76.tar.gz
+        sha256: 3011f7badfadce2e3f2d0201d8be87fdb92920a80b7df57e595a6c6cc2f4968d
   - name: perl-uri
     buildsystem: simple
     build-commands:
@@ -427,8 +428,8 @@ modules:
       - install -D flatpak/pci.ids $FLATPAK_DEST/share/pci.ids
     sources:
       - type: archive
-        url: https://github.com/linuxhw/build-stuff/releases/download/1.5/hw-probe-1.5-AI.tar.gz
-        sha256: 248477e281e8b4f51f31d8581492d21fd0bfb64f7a29eca700f0cbf77434bd4d
+        url: https://github.com/linuxhw/build-stuff/releases/download/1.6/hw-probe-1.6-AI.tar.gz
+        sha256: fd32257e4ea260329df77362344ed6f0e56178964b32c16571c5c90bc8e03c6d
   - name: perl-base
     buildsystem: simple
     build-commands:
@@ -439,5 +440,5 @@ modules:
       - cd lib && cat $FLATPAK_DEST/share/PERL5_BASE | while read i; do mkdir -p $FLATPAK_DEST/share/perl5/`dirname $i`; cp -fr $i $FLATPAK_DEST/share/perl5/$i; done
     sources:
       - type: archive
-        url: https://www.cpan.org/src/5.0/perl-5.32.0.tar.xz
-        sha256: 6f436b447cf56d22464f980fac1916e707a040e96d52172984c5d184c09b859b
+        url: https://www.cpan.org/src/5.0/perl-5.34.0.tar.xz
+        sha256: 82c2e5e5c71b0e10487a80d79140469ab1f8056349ca8545140a224dbbed7ded
