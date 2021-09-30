@@ -425,7 +425,7 @@ Install on Slackware
 
 On Slackware and Slackware based Linux distributions (Porteus, etc.).
 
-Use [AppImage](README.md#appimage) or [Docker](README.md#docker).
+Use [AppImage](README.md#appimage), [Docker](README.md#docker) or [Flatpak](README.md#flatpak).
 
 
 Install on Solus
