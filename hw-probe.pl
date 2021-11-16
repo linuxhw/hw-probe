@@ -214,7 +214,8 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "truncate-log=s" => \$Opt{"TruncateLog"},
   "install-deps!" => \$Opt{"InstallDeps"},
   "nodeps!" => \$Opt{"SkipDeps"},
-  "rm-obsolete!" => \$Opt{"RmObsolete"}
+  "rm-obsolete!" => \$Opt{"RmObsolete"},
+  "output=s" => \$Opt{"OutputDir"}
 ) or die "\n".$ShortUsage;
 
 if($#ARGV_COPY==-1)
@@ -232,6 +233,15 @@ if($#ARGV_COPY==-1)
 }
 elsif($#ARGV_COPY==0 and grep { $ARGV_COPY[0] eq $_ } ("-snap", "-flatpak"))
 { # Run by desktop file
+    my $Gui = "hw-probe-pyqt5-gui";
+    
+    if(checkCmd($Gui))
+    {
+        print "Executing $Gui\n\n";
+        system("HW_PROBE_FLATPAK=1 $Gui");
+        exitStatus(0);
+    }
+    
     print "Executing hw-probe -all -upload\n\n";
     $Opt{"All"} = 1;
     $Opt{"Upload"} = 1;
@@ -253,6 +263,11 @@ elsif($Opt{"Flatpak"})
     mkpath($TMP_DIR);
     
     $PROBE_DIR = $ENV{"XDG_DATA_HOME"}."/HW_PROBE";
+}
+elsif($Opt{"OutputDir"})
+{
+    $PROBE_DIR = $Opt{"OutputDir"};
+    mkpath($PROBE_DIR);
 }
 
 my $LATEST_DIR = $PROBE_DIR."/LATEST";
@@ -657,8 +672,9 @@ my %VendorRam = (
     "Catalyst" => ["02GN"],
     "Centon"   => ["MICT"],
     "CFD"      => ["D4N"],
+    "Chun Well" => ["D4U"],
     "Corsair"  => ["CMD", "CMH", "CMK", "CML", "CMR", "CMS", "CMT", "CMU", "CMV", "CMW", "CMX", "CMZ", "CM2X", "CM3X", "CM4X", "VS2G"],
-    "Crucial"  => ["BLS", "BLT", "BLE", "BL4G", "BL5", "BL8G", "BL16G", "BL32G", "BL256", "BLM16G", "CB4G", "CB8G", "CB16G", "CT256", "CT512", "CT1024", "CT2048", "CT4G", "CT8G", "CT16G", "CT32G", "CT12864", "CT2G", "RM256", "RM512", "ST256", "ST512", "ST1024", "ZC256", "RM1024"],
+    "Crucial"  => ["BLS", "BLT", "BLE", "BL4G", "BL5", "BL8G", "BL16G", "BL32G", "BL256", "BLM8G", "BLM16G", "CB4G", "CB8G", "CB16G", "CT256", "CT512", "CT1024", "CT2048", "CT4G", "CT8G", "CT16G", "CT32G", "CT10", "CT12864", "CT2G", "RM256", "RM512", "ST256", "ST512", "ST1024", "ZC256", "RM1024"],
     "CSX"      => ["V01L", "V01D"],
     "Dane-Elec" => ["SS3D106"],
     "Dexcom"   => ["L23 06/11 DEXCOM"],
@@ -674,7 +690,7 @@ my %VendorRam = (
     "G.Skill"  => ["F3-", "F4-"],
     "GeIL"     => ["CL9-9", "CL9-10", "CL10-10", "CL10-11", "CL11-11", "CL11-12"], # Golden Empire
     "GIGABYTE" => ["AR36", "GP-GR"],
-    "Gloway"   => ["TYA"],
+    "Gloway"   => ["TYA", "TYP"],
     "Goldkey"  => ["BKH", "GKE", "GKH"],
     "Goldenmars" => ["GMT"],
     "GOODRAM"  => ["GL213", "GR32", "GR400", "GR667", "GR800", "GR1", "GR2", "GY1", "IRX", "IR1", "IR2"],
@@ -682,12 +698,14 @@ my %VendorRam = (
     "High Bridge" => ["HB3SU"],
     "Hikvision" => ["HKED"],
     "HMD"      => ["HMD"],
+    "HP"       => ["7EH"],
     "Huananzhi" => ["HNM"],
+    "Hypertec"  => ["G2BT", "G2RT"],
     "ISD Technology Limited" => ["IMT41"],
     "Juhor"    => ["JHD"],
     "KANMEIQi" => ["KAi-D"],
     "Kembona"  => ["KBN"],
-    "Kimtigo"  => ["KT4G"],
+    "Kimtigo"  => ["KT4G", "KT8G"],
     "KingFast" => ["KF"],
     "Kingmax"  => ["FLF", "FLG", "FSF", "FSG", "GLAH", "GLLG", "GSLG4"],
     "Kingston" => ["KHX", "ACR", "ASU", "BRAP", "D3L16", "HP53", "KMK", "KN2M", "SNY", "TSB", "CL4-", "CL7-", "CL9-", "CL11-", "CL15-", "CL16-", "CL-17-", "1024636"],
@@ -700,34 +718,38 @@ my %VendorRam = (
     "Magnum Tech" => ["MAGNUMTECH"],
     "MAXSUN"   => ["MSD"],
     "MDT"      => ["MDT"],
+    "Memory Solution" => ["MS3S"],
     "Memox"    => ["LN-SD"],
     "MemoWise" => ["MW0"],
     "Micron"   => ["16G2", "16HTF", "16JSF", "16JT", "16KTF", "18HF", "36JS", "4ATF", "53E", "864AY", "8ATF", "8JSF", "8JTF", "4KTF", "8KTF", "MT5"],
     "Mushkin"  => ["991769", "992017", "991529", "991558", "991713", "992070", "991705", "MB[A/B]"],
-    "Multilaser" => ["MD451", "MS301", "MS351"],
+    "Multilaser" => ["MD401", "MD451", "MS301", "MS351"],
     "Nanya"    => ["NT1", "NT2", "NT4", "NT8", "M2F", "M2N", "M2S"],
     "Neo Forza"=> ["NMGD", "NMS", "NMUD"],
     "Netlist"  => ["NL8"],
-    "Novatech" => ["N3S"],
+    "Novatech" => ["N3D", "N3S"],
     "OCZ"      => ["OCZ"],
     "Panasonic"=> ["CFW5W"],
     "Panram"   => ["PUD"],
     "Patriot"  => ["PSA", "PSD", "R6N", "1600EL", "1600LL", "1866EL", "186C0", "2000EL", "2133 CL11 Series", "2666 C15 Series", "2666 C16 Series", "2800 C16 Series", "3200 C16 Series"],
     "Pioneer"   => ["APS"],
     "PNY"      => ["64C0M", "4GBH", "8GBF1X", "8GBH2X", "8GBU1X", "64D0J", "16GF2X", "16GU1X"],
-    "PQI"      => ["BN109062"],
+    "PQI"      => ["BN109062", "MFPD"],
     "PSC"      => ["AS8"],
     "Puskill"  => ["PJ16"],
+    "Qbex"     => ["B9C40", "C2NA0"],
     "Qimonda"  => ["64T1280", "64T64", "64T12", "72T256"],
     "Qumo"     => ["QUM"],
+    "Rahonix"  => ["RXD"],
     "Ramaxel"  => ["RMT", "RMN", "RMR", "RMS", "RMU"],
     "Ramos"    => ["EMB", "EWB", "RMB"],
-    "Samsung"  => ["M04", "M378", "M393", "M4 70T", "M471", "K4E", "K4F", "K4U", "Ltd:R00MM"],
+    "RyzerX"   => ["RVR"],
+    "Samsung"  => ["M04", "M378", "M393", "M4 70T", "M471", "K4E", "K4F", "K4U", "Ltd:R00MM", "UBE"],
     "Sesame"   => ["S939", "S949"],
     "SGS/Thomson" => ["SD-D2", "SD-D3"],
     "Silicon Power" => ["DBLT", "DBST", "DCLT", "DCST", "SP0", "ESRD"],
     "SK hynix" => ["HCN", "HMA", "HMT", "HMP", "HYMP", "H9CC", "H9HC", "DMT3", "MMXIV", "MPP", "4GBPC1333512", "4GBPC"],
-    "Smart"    => ["SF464", "SF564", "SG56", "SH564", "SMS4"],
+    "Smart"    => ["SF464", "SF472", "SF564", "SG56", "SH564", "SMS4"],
     "Strontium" => ["SRT"],
     "Super Talent" => ["SUPERTALENT02", "SUPERTALENT"],
     "Swissbit" => ["MEN02", "SEU"],
@@ -737,18 +759,19 @@ my %VendorRam = (
     "Teikon"   => ["TMA", "TML", "TMT"],
     "Textorm"  => ["TXS"],
     "Thermaltake" => ["R009", "R019"],
-    "Transcend"=> ["JM1", "JM2", "JM320", "JM367", "JM667", "JM800", "TS1", "TS64", "TS128", "TS256"],
+    "Transcend"=> ["JM1", "JM2", "JM320", "JM367", "JM667", "JM800", "TS1", "TS64", "TS128", "TS256", "TS512"],
     "TwinMOS"  => ["9DEEB", "9DHTB", "9DETB", "8DP25KK", "8DE25KK", "7D-23KK", "M2GAO"],
     "Unifosa"  => ["GU3", "GU5", "GU6", "HU5", "HU6"],
     "Unigen"   => ["UG"],
     "Unknown"  => ["GRPFD"],
     "Uroad"    => ["WJD"],
-    "V-Color"  => ["TD4", "VCOLOR"],
+    "V-Color"  => ["TD4", "TL4", "VCOLOR"],
     "V-GeN"    => ["D3R", "D4H", "D4R", "D4S"],
     "Veineda"  => ["M08GD16P"],
     "Visipro"  => ["T2G", "T4G86"],
     "Walton Chaintech" => ["AS2G", "AU2G", "AU4G"], # APOGEE
-    "Wilk Elektronik" => ["IRP"]
+    "Wilk Elektronik" => ["IRP"],
+    "ZIFEI" => ["ZFN"] # Shenzhen Zhifeng Weiye Tech
 );
 
 my %RamVendor;
@@ -1918,7 +1941,7 @@ my $ALL_VENDORS = "Brother|Canon|Epson|HP|Hewlett\-Packard|Kyocera|Samsung|Xerox
 
 my $ALL_MON_VENDORS = "Acer|ADI|AGO|ALP|Ancor Communications Inc|AOC|Apple|Arnos Instruments|AU Optronics Corporation|AUS|BBY|BEK|BenQ|BOE Technology Group Co\., Ltd|Chi Mei Optoelectronics corp\.|CHI|CIS|CMN|CNC|COMPAL|COMPAQ|cPATH|CRO|CVTE|DELL|DENON, Ltd\.|Eizo|ELO|EQD|FNI|FUS|Gateway|GRUNDIG|HannStar Display Corp|HII|Hisense|HKC|HP|HPN|IBM|Idek Iiyama|ITR INFOTRONIC|IQT|KOA|Lenovo Group Limited|LGD|LG Electronics|LPL|Maxdata\/Belinea|MEB|Medion|Microstep|MS_ Nvidia|MSH|MST|MStar|NEC|NEX|Nvidia|OEM|ONKYO Corporation|Panasonic|Philips|Pioneer Electronic Corporation|PLN|Princeton Graphics|PRI|PKB|Samsung|Sangyo|Sceptre|SDC|Seiko\/Epson|SEK|SHARP|SONY|STN|TAR|Targa|Tech Concepts|TOSHIBA|Toshiba Matsushita Display Technology Co\., Ltd|UMC|Vestel|ViewSonic|VIZ|Wacom Tech|WDT";
 
-my $ALL_MEM_VENDORS = "Ankowall|Atermiter|Axiom|BiNFUL|CFD|CompuStocx|DERLAR|DeTech|DigiBoard|e2e4|HEXON|KETECH|Kimtigo|KingBank|Kllisre|LEADMAX|MARKVISION|MINPO|MLLSE|MTASE|OSCOO|PLEXHD|Princeton|Ramsta|Reboto|RZX|Saikano|SemsoTai|SHARETRONIC|STARKORTIS|SUPER KINGSTEK|Team|Tigo|TIMETEC|TOP MEDIA|TRS Star|Vaseky|ZION";
+my $ALL_MEM_VENDORS = "Ankowall|Atermiter|Axiom|BiNFUL|CFD|CompuStocx|DATEN|DERLAR|DeTech|DigiBoard|e2e4|HEXON|imation|JINSHA|KETECH|Kimtigo|KingBank|Kinlstuo|Kllisre|LEADMAX|MARKVISION|MINPO|MLLSE|MTASE|OSCOO|PLEXHD|Princeton|Ramsta|Reboto|RZX|Saikano|SemsoTai|SHARETRONIC|STARKORTIS|SUPER KINGSTEK|Team|Tigo|TIMETEC|TOP MEDIA|TRS Star|Vaseky|ZION";
 
 my @KNOWN_BSD = ("clonos", "desktopbsd", "dragonfly", "freenas", "fuguita", "furybsd", "ghostbsd", "hardenedbsd", "hellosystem", "libertybsd", "midnightbsd", "nomadbsd", "opnsense", "os108", "pcbsd", "pfsense", "truenas", "trueos", "xigmanas", "arisblu");
 my $KNOWN_BSD_ALL = join("|", @KNOWN_BSD);
@@ -2433,16 +2456,16 @@ sub decorateSystemd($)
 sub exitStatus($)
 {
     my $St = $_[0];
-    if($Opt{"Flatpak"} and -d $TMP_DIR) {
+    if($Opt{"Flatpak"} and $TMP_DIR and -d $TMP_DIR) {
         rmtree($TMP_DIR);
     }
-    if(-d $TMP_PROBE_DIR) {
+    if($TMP_PROBE_DIR and -d $TMP_PROBE_DIR) {
         rmtree($TMP_PROBE_DIR);
     }
-    if(-d $TMP_LOCAL) {
+    if($TMP_LOCAL and -d $TMP_LOCAL) {
         rmtree($TMP_LOCAL);
     }
-    if(not listDir($LATEST_DIR)) {
+    if($LATEST_DIR and not listDir($LATEST_DIR)) {
         rmtree($LATEST_DIR);
     }
     exit($St);
@@ -7564,7 +7587,7 @@ sub probeHW()
             or $Device{"Device"}=~/NOT AVAILABLE/i)
             {
                 $Device{"Device"} = $1;
-                if(not $Device{"Device"} or grep { lc($Device{"Device"}) eq $_ } ("part", "0x", "0")) {
+                if(not $Device{"Device"} or grep { lc($Device{"Device"}) eq $_ } ("part", "0x", "0", "sodimm")) {
                     $Device{"Device"} = "RAM Module";
                 }
                 
@@ -18229,6 +18252,12 @@ sub fixLogs($)
                 writeFile("$Dir/$L", $Content);
             }
             
+            if(index($Content, "pcilib: sysfs_read_vpd: read failed: Input/output error")!=-1)
+            {
+                $Content=~s/pcilib: sysfs_read_vpd: read failed: Input\/output error\n//g;
+                writeFile("$Dir/$L", $Content);
+            }
+            
             if($Opt{"PciIDs"})
             {
                 if($L eq "lspci" and index($Content, "Class:\tClass [")!=-1) {
@@ -19197,7 +19226,7 @@ sub scenario()
         }
     }
     
-    if($Admin and $Opt{"Flatpak"})
+    if($Admin and ($Opt{"Flatpak"} or $Opt{"OutputDir"}))
     { # Allow to mix root and non-root runs
         setPublic($PROBE_DIR, "-R");
     }
