@@ -264,7 +264,8 @@ elsif($Opt{"Flatpak"})
     
     $PROBE_DIR = $ENV{"XDG_DATA_HOME"}."/HW_PROBE";
 }
-elsif($Opt{"OutputDir"})
+
+if($Opt{"OutputDir"})
 {
     $PROBE_DIR = $Opt{"OutputDir"};
     mkpath($PROBE_DIR);
