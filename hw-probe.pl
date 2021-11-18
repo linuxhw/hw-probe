@@ -201,6 +201,7 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "appimage!" => \$Opt{"AppImage"},
   "snap!" => \$Opt{"Snap"},
   "flatpak!" => \$Opt{"Flatpak"},
+  "from-gui!" => \$Opt{"FromGUI"},
   "low-compress!" => \$Opt{"LowCompress"},
   "high-compress!" => \$Opt{"HighCompress"},
   "identify-drive=s" => \$Opt{"IdentifyDrive"},
@@ -2733,6 +2734,12 @@ sub uploadData()
     {
         @Cmd = (@Cmd, "-F flatpak=1");
         $Data{"flatpak"} = "1";
+    }
+    
+    if($Opt{"FromGUI"})
+    {
+        @Cmd = (@Cmd, "-F from_gui");
+        $Data{"from_gui"} = "1";
     }
     
     if($Opt{"PC_Name"})
