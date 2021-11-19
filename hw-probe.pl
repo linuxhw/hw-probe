@@ -239,7 +239,12 @@ elsif($#ARGV_COPY==0 and grep { $ARGV_COPY[0] eq $_ } ("-snap", "-flatpak"))
     if(checkCmd($Gui))
     {
         print "Executing $Gui\n\n";
-        system("HW_PROBE_FLATPAK=1 $Gui");
+        if($ARGV_COPY[0] eq "-flatpak") {
+            system("HW_PROBE_FLATPAK=1 $Gui");
+        }
+        else {
+            system("HW_PROBE_SNAP=1 $Gui");
+        }
         exitStatus(0);
     }
     

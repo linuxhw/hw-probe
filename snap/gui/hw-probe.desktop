@@ -3,7 +3,6 @@ Name=Hardware Probe
 Comment=Probe for hardware, check operability and find drivers
 Exec=hw-probe
 Icon=${SNAP}/usr/share/icons/hw-probe.png
-Terminal=true
 Type=Application
 StartupNotify=true
 Categories=System;

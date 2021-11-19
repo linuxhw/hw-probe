@@ -1,5 +1,5 @@
 name: hw-probe
-version: 1.6-1
+version: 1.6-2
 summary: Check operability of computer hardware and find drivers
 description: >
  A tool to probe for hardware, check operability and find drivers
@@ -19,8 +19,9 @@ description: >
  check health of all your hard drives.
      
 type: app
+base: core20
 confinement: strict
-license: LGPL-2.1-or-later OR BSD-4-Clause
+license: BSD-2-Clause
 website: https://github.com/linuxhw/hw-probe
 grade: stable
 plugs:
@@ -30,13 +31,15 @@ plugs:
     - $HOME/.local/share/xorg
 apps:
   hw-probe:
-    command: usr/bin/hw-probe -snap
-    plugs: [hardware-observe, system-observe, block-devices, log-observe, upower-observe, physical-memory-observe, network-observe, raw-usb, mount-observe, opengl, dot-local-share-xorg-logs]
+    extensions: [kde-neon]
+    command: usr/bin/hw-probe
+    plugs: [hardware-observe, system-observe, block-devices, log-observe, upower-observe, physical-memory-observe, network-observe, raw-usb, mount-observe, opengl, dot-local-share-xorg-logs, desktop-launch]
     environment:
-      PATH: $PATH:$SNAP/sbin:$SNAP/usr/sbin:$SNAP/usr/bin
+      PATH: $PATH:$SNAP/sbin:$SNAP/usr/sbin:$SNAP/usr/bin:$SNAP/usr/share/hw-probe-pyqt5-gui
       PERL5LIB: $SNAP/usr/share/perl5:$SNAP/usr/lib/x86_64-linux-gnu/perl-base:$SNAP/usr/lib/i386-linux-gnu/perl-base
       LD_LIBRARY_PATH: $SNAP/lib/x86_64-linux-gnu/:$SNAP/lib/i386-linux-gnu/:$SNAP/usr/lib64:$SNAP/usr/lib:$SNAP/usr/lib/x86_64-linux-gnu:$SNAP/usr/lib/i386-linux-gnu
       LC_ALL: C
+      PYTHONPATH: $SNAP/usr/lib/python3/dist-packages
 parts:
   edid-decode:
     source: https://github.com/linuxhw/build-stuff/releases/download/1.4/edid-decode-20180622.tar.gz
@@ -397,6 +400,9 @@ parts:
     plugin: make
     override-build: |
       make install DESTDIR=$SNAPCRAFT_PART_INSTALL
+      mv $SNAPCRAFT_PART_INSTALL/usr/bin/hw-probe $SNAPCRAFT_PART_INSTALL/usr/bin/hw-probe-snap
+      chmod +x snap/hw-probe.sh
+      cp -f snap/hw-probe.sh $SNAPCRAFT_PART_INSTALL/usr/bin/hw-probe
       mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/icons/
       cp -f flatpak/icon-64x64.png $SNAPCRAFT_PART_INSTALL/usr/share/icons/hw-probe.png
       mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/perl5/File/
@@ -409,8 +415,24 @@ parts:
       - perl-modules
     prime:
       - usr/bin/hw-probe
+      - usr/bin/hw-probe-snap
       - usr/lib/*-linux-gnu/perl-base
       - usr/bin/perl
       - usr/share/perl5/File/Copy.pm
       - usr/share/icons/hw-probe.png
+  hw-probe-pyqt5-gui:
+    source: https://github.com/linuxhw/build-stuff/releases/download/1.6/hw-probe-pyqt5-gui-1.6-AI.tar.gz
+    source-type: tar
+    plugin: make
+    override-build: |
+      mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/hw-probe-pyqt5-gui/
+      chmod +x Hardware\ Probe
+      cp -fr Resources $SNAPCRAFT_PART_INSTALL/usr/share/hw-probe-pyqt5-gui/
+      cp -f Hardware\ Probe $SNAPCRAFT_PART_INSTALL/usr/share/hw-probe-pyqt5-gui/hw-probe-pyqt5-gui
+    stage-packages:
+      - python3-sip
+      - python3-pyqt5
+      - xdg-utils
+    organize:
+      etc/sensors3.conf: etc/sensors3.conf.bak
 
