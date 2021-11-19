@@ -21,8 +21,6 @@ description: >
 type: app
 base: core20
 confinement: strict
-license: BSD-2-Clause
-website: https://github.com/linuxhw/hw-probe
 grade: stable
 plugs:
   dot-local-share-xorg-logs:
