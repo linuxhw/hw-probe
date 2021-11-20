@@ -19,7 +19,7 @@ description: >
  check health of all your hard drives.
      
 type: app
-base: core20
+base: core18
 confinement: strict
 grade: stable
 plugs:
@@ -431,6 +431,11 @@ parts:
       - python3-sip
       - python3-pyqt5
       - xdg-utils
+    prime:
+      - usr/lib/python3/dist-packages
+      - usr/share/hw-probe-pyqt5-gui
+      - usr/bin/xdg-open
+      - usr/bin/xdg-mime
     organize:
       etc/sensors3.conf: etc/sensors3.conf.bak
 
