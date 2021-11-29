@@ -31,7 +31,7 @@ apps:
   hw-probe:
     extensions: [kde-neon]
     command: usr/bin/hw-probe
-    plugs: [hardware-observe, system-observe, block-devices, log-observe, upower-observe, physical-memory-observe, network-observe, raw-usb, mount-observe, opengl, dot-local-share-xorg-logs, desktop-launch]
+    plugs: [hardware-observe, system-observe, block-devices, log-observe, upower-observe, physical-memory-observe, network-observe, raw-usb, mount-observe, opengl, dot-local-share-xorg-logs]
     environment:
       PATH: $PATH:$SNAP/sbin:$SNAP/usr/sbin:$SNAP/usr/bin:$SNAP/usr/share/hw-probe-pyqt5-gui
       PERL5LIB: $SNAP/usr/share/perl5:$SNAP/usr/lib/x86_64-linux-gnu/perl-base:$SNAP/usr/lib/i386-linux-gnu/perl-base
