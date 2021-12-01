@@ -1,5 +1,5 @@
 name: hw-probe
-version: 1.6-2
+version: 1.6-3
 summary: Check operability of computer hardware and find drivers
 description: >
  A tool to probe for hardware, check operability and find drivers
@@ -419,7 +419,7 @@ parts:
       - usr/share/perl5/File/Copy.pm
       - usr/share/icons/hw-probe.png
   hw-probe-pyqt5-gui:
-    source: https://github.com/linuxhw/build-stuff/releases/download/1.6/hw-probe-pyqt5-gui-1.6-AI.tar.gz
+    source: https://github.com/linuxhw/build-stuff/releases/download/1.6/hw-probe-pyqt5-gui-1.1-AI.tar.gz
     source-type: tar
     plugin: make
     override-build: |
