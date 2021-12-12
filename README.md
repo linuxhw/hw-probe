@@ -67,7 +67,7 @@ Review
 
 You can adjust device statuses in your probe and leave comments. Look for big green REVIEW button on the probe page.
 
-Look for **'Export template to forum'** link at the bottom of the probe page to generate BBCode review template to post on your favorite forum.
+Look for **'Export template to forum'** link at the bottom of the probe page to generate BBCode review template to post on your favorite forum. Please consider to post your reviews to [Linux Hardware Review](https://forum.linux-hardware.org/) forum.
 
 
 AppImage
