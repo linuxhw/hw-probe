@@ -250,7 +250,7 @@ LHWM — Linux Hardware Monitoring (c) allows you to monitor most kinds of hardw
 
 All you need is to generate your personal [inventory ID](#inventory) (if you don't have it yet) and start monitoring of each server by one simple command line:
 
-    hw-probe -start -i INVENTORY_ID
+    sudo -E hw-probe -start -i INVENTORY_ID
 
 The command will add a daily cron job to make a probe of the server and you'll be notified by E-mail in the case of hardware failures or important hardware-related changes detected.
 
