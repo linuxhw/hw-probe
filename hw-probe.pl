@@ -14433,22 +14433,21 @@ sub probeDistr()
                 $Name = "ghostbsd";
             }
             
-            my $GhostBSDPortsVer = "";
+            my $GhostBSDVer = "";
             if($Opt{"FixProbe"}) {
-                $GhostBSDPortsVer = readFile($FixProbe_Logs."/ports_ver");
+                $GhostBSDVer = readFile($FixProbe_Logs."/ghostbsd-version");
             }
             else
             {
-                if(checkCmd("pkg"))
+                if(checkCmd("ghostbsd-version"))
                 {
-                    $GhostBSDPortsVer = runCmd("pkg rquery \'\%v\' ports");
-                    chomp($GhostBSDPortsVer);
-                    writeLog($LOG_DIR."/ports_ver", $GhostBSDPortsVer);
+                    $GhostBSDVer = runCmd("ghostbsd-version");
+                    writeLog($LOG_DIR."/ghostbsd-version", $GhostBSDVer);
                 }
             }
             
-            if($GhostBSDPortsVer) {
-                $Release = $GhostBSDPortsVer;
+            if($GhostBSDVer) {
+                $Release = $GhostBSDVer;
             }
             
             # OPNsense
