@@ -15807,10 +15807,35 @@ sub writeLogs()
     and checkCmd("vainfo"))
     {
         listProbe("logs", "vainfo");
-        my $Vainfo = runCmd("vainfo 2>&1");
-        if($Vainfo=~/failed with error/i) {
-            $Vainfo = undef;
+        
+        my $Vainfo = "";
+        my $DriDir = "/dev/dri";
+        
+        foreach my $DriDev (listDir($DriDir))
+        {
+            if($DriDev!~/render/) {
+                next;
+            }
+            
+            my $VaInfoCmd = "vainfo --display drm --device $DriDir/$DriDev";
+            my $VaInfoRes = qx($VaInfoCmd 2>&1);
+            
+            if($VaInfoRes=~/failed with error/i) {
+                next;
+            }
+            
+            $Vainfo .= "# $VaInfoCmd\n";
+            $Vainfo .= "$VaInfoRes\n";
         }
+        
+        if(not $Vainfo)
+        {
+            $Vainfo = runCmd("vainfo 2>&1");
+            if($Vainfo=~/failed with error/i) {
+                $Vainfo = undef;
+            }
+        }
+        
         if($Vainfo) {
             writeLog($LOG_DIR."/vainfo", clearLog_X11($Vainfo));
         }
