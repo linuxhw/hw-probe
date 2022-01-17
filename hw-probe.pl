@@ -14444,6 +14444,12 @@ sub probeDistr()
                     $GhostBSDVer = runCmd("ghostbsd-version");
                     writeLog($LOG_DIR."/ghostbsd-version", $GhostBSDVer);
                 }
+                elsif(checkCmd("pkg"))
+                {
+                    $GhostBSDVer = runCmd("pkg rquery \'\%v\' ports");
+                    chomp($GhostBSDVer);
+                    writeLog($LOG_DIR."/ghostbsd-version", $GhostBSDVer);
+                }
             }
             
             if($GhostBSDVer) {
