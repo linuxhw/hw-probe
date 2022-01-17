@@ -1106,6 +1106,7 @@ my %DistPackage = (
 
 my @DE_Package = (
     [ "budgie-desktop", "Budgie" ],
+    [ "ukui-desktop", "UKUI" ],
     [ "pantheon-xsession-settings", "Pantheon" ],
     
     [ "gnustep ", "GNUstep" ],
@@ -2583,7 +2584,10 @@ sub generateGroup()
     {
         my $ID = $2;
         my $GroupLog = "INVENTORY\n=========\n".localtime(time)."\nInventory ID: $ID\n";
-        appendFile($PROBE_LOG, $GroupLog."\n");
+        
+        if(-w $PROBE_LOG) {
+            appendFile($PROBE_LOG, $GroupLog."\n");
+        }
     }
 }
 
@@ -3557,7 +3561,7 @@ sub getDefaultType($$$)
             return "fingerprint reader";
         }
         
-        if($Device->{"Vendor"}=~/Synaptics/ and $DId=~/0081|009a|009b|00a2|00a8|00bb|00bd|00be|00c7|00c9|00df|00e7|00e9/) {
+        if($Device->{"Vendor"}=~/Synaptics/ and $DId=~/0081|009a|009b|00a2|00a8|00bb|00bd|00be|00c7|00c9|00df|00e7|00e9|00f0/) {
             return "fingerprint reader";
         }
         
@@ -4541,8 +4545,11 @@ sub probeHW()
             elsif($Key eq "Size"
             and $Device{"Type"} eq "monitor")
             { # monitor
-                $Device{$Key} = $Val;
-                $Device{$Key}=~s/ //g;
+                if($Val ne "1600x900 mm")
+                {
+                    $Device{$Key} = $Val;
+                    $Device{$Key}=~s/ //g;
+                }
             }
             elsif($Key eq "Size")
             { # disk
@@ -7416,6 +7423,10 @@ sub probeHW()
             
             if($Info=~/Version:[ ]*(.+?)[ ]*(\n|\Z)/) {
                 $Sys{"Version"} = $1;
+            }
+            
+            if($Info=~/SKU Number:[ ]*(.+?)[ ]*(\n|\Z)/) {
+                $Sys{"Sku_number"} = $1;
             }
             
             # clear
@@ -11528,7 +11539,7 @@ sub registerBIOS($)
             delete($Sys{"Year"});
         }
         
-        if($Sys{"Year"} and $Sys{"Year"}>getYear(time) + 1) {
+        if($Sys{"Year"} and ($Sys{"Year"} > getYear(time) + 1 or $Sys{"Year"} < 1993)) {
             delete($Sys{"Year"});
         }
     }
@@ -13110,7 +13121,7 @@ sub emptyProduct($)
 {
     my $Val = $_[0];
     
-    if(not $Val or $Val=~/\b(System manufacturer|System Product|Board Vendor|Board Manufacturer|Mainboard|System Manufacter|stem manufacturer|System Manufact|SYSTEM_MANUFACTURER|Name|Version|to be filled|empty|Not Specified|Default[ _]string|board version|Unknow|n\/a|Not)\b/i or $Val=~/\A([_0O\-\.\s]+|[X]+|NA|N\/A|\-O|1234567890|0123456789|[\.\,]+|Board|\$|\$\(PROJECT_SKU_NAME\)|SYSTEM_PRODUCT_NAME)\Z/i or emptyVal($Val)) {
+    if(not $Val or $Val=~/\b(System manufacturer|System Product|Board Vendor|Board Manufacturer|Mainboard|System Manufacter|stem manufacturer|System Manufact|SYSTEM_MANUFACTURER|Name|Version|to be filled|empty|Not Specified|Default[ _]string|board version|Unknow|n\/a|Not)\b/i or $Val=~/\A([_0O\-\.\s]+|[X]+|NA|N\/A|\-O|1234567890|0123456789|[\.\,]+|Board|\$|\$\(PROJECT_SKU_NAME\)|SYSTEM_PRODUCT_NAME|Unknown Product)\Z/i or emptyVal($Val)) {
         return 1;
     }
     
@@ -13155,7 +13166,7 @@ sub fixFFByCPU($)
     
     if($Sys{"Type"}!~/$SERVER_TYPE/)
     {
-        if($CPU=~/Opteron X3216|Xeon Silver|Xeon Gold|Xeon Platinum/) {
+        if($CPU=~/Opteron X3216|Xeon Silver|Xeon Gold|Xeon Platinum|POWER/) {
             $Sys{"Type"} = "server";
         }
     }
@@ -14085,7 +14096,7 @@ sub fixDistr($$$$)
     if($Distr=~/\A(debian|ubuntu)/)
     {
         my $Debs = readFile("$FixProbe_Logs/debs");
-        if($Debs=~/(mx-system|ddm-mx|q4os-desktop|kubuntu-desktop|xubuntu-desktop|lubuntu-desktop|ubuntu-budgie-desktop|ubuntu-mate-desktop) ([\d\.]+)/)
+        if($Debs=~/(mx-system|ddm-mx|q4os-desktop|kubuntu-desktop|xubuntu-desktop|lubuntu-desktop|ubuntu-budgie-desktop|ubuntu-mate-desktop|ubuntudde-desktop|ubuntustudio-desktop|ubuntukylin-desktop) ([\d\.]+)/)
         {
             $Distr = $1;
             my $PkgVersion = $2;
@@ -14097,7 +14108,7 @@ sub fixDistr($$$$)
                 $Rel = undef;
                 $DistrVersion=~s/\A(\d+)\..+/$1/;
             }
-            elsif($Distr=~/(kubuntu|xubuntu|lubuntu|ubuntu-budgie|ubuntu-mate)/) {
+            elsif($Distr=~/(kubuntu|xubuntu|lubuntu|ubuntu-budgie|ubuntu-mate|ubuntudde|ubuntustudio|ubuntukylin)/) {
                 $Distr = $1;
             }
         }
@@ -14771,7 +14782,7 @@ sub probeDistr()
         elsif($Descr=~/\A(Devuan|ECP VeiL|KDE neon|LMDE|Maui|openSUSE Leap|Pop\!_OS|RED OS|BigLinux)/i) {
             $Name = $1;
         }
-        elsif($Descr=~/\A(antiX)-(\d+)/i)
+        elsif($Descr=~/\A(antiX|elementary OS)[-\s]([\d\.]+)/i)
         {
             $Name = $1;
             $Release = $2;
@@ -14812,8 +14823,13 @@ sub probeDistr()
         if($Descr=~/Easy Buster/) {
             $Name = "EasyOS";
         }
-        elsif($Descr=~/(LMDE|CryptoDATA|KDE neon|PuppyRus-A|BigLinux)/) {
+        elsif($Descr=~/(LMDE|CryptoDATA|KDE neon|PuppyRus-A|BigLinux|Bluestar Linux)/) {
             $Name = $1;
+        }
+        elsif($Descr=~/(Linux Lite) ([\d\.]+)/)
+        {
+            $Name = $1;
+            $Release = $2;
         }
     }
     
@@ -14845,12 +14861,17 @@ sub probeDistr()
         if($OS_Rel=~/\bPRETTY_NAME=[ \t]*[\"\']*([^"'\n]+)/)
         {
             my $PrettyName = $1;
-            if($PrettyName=~/(CryptoDATA|Debian|Docker Desktop|Devuan|ECP VeiL|GNOME OS|LMDE|MakuluLinux|Makululinux|OpenVZ|pearOS|Pop\!_OS|Porteus|SkiffOS|Sn3rpOs|SuperX|Windowsfx|Virtuozzo Hybrid Infrastructure|XCP-ng|Parrot)/) {
+            if($PrettyName=~/(CryptoDATA|Debian|Docker Desktop|Devuan|ECP VeiL|GNOME OS|Itd Os|KDE Neon|LMDE|MakuluLinux|Makululinux|MocaccinoOS|OpenVZ|Parrot|pearOS|Pop\!_OS|Porteus|SkiffOS|Sn3rpOs|SuperX|Virtuozzo Hybrid Infrastructure|Windowsfx|XCP-ng)/) {
                 $Name = $1;
+            }
+            elsif($PrettyName=~/(Linux Lite) ([\d\.]+)/)
+            {
+                $Name = $1;
+                $Release = $2;
             }
         }
         
-        if($OS_Rel=~/\bVERSION_ID=[ \t]*[\"\']*([^"'\n]+)/)
+        if($OS_Rel=~/\bVERSION_ID=[ \t]*[\"\']*([^"'\n]+)/ and $Name ne "Linux Lite")
         {
             $Release = lc($1);
             $Release=~s/\A\Q$Name\E[_\- ]//i;
@@ -14892,6 +14913,9 @@ sub probeDistr()
     }
     elsif($Name eq "blackpantheros") {
         $Name = "blackpanther-os";
+    }
+    elsif($Name eq "elementary OS") {
+        $Name = "elementary";
     }
     elsif($Name=~/kali/) {
         $Release=~s/\Akali-//;
@@ -18814,7 +18838,7 @@ sub scenario()
         $Opt{"HWLogs"} = 1;
     }
     
-    if($Opt{"Probe"} or $Opt{"GenerateGroup"} or $Opt{"StartMonitoring"} or $Opt{"StopMonitoring"} or $Opt{"ShowLog"})
+    if($Opt{"Probe"} or $Opt{"StartMonitoring"} or $Opt{"StopMonitoring"} or $Opt{"ShowLog"})
     {
         if(not $Admin)
         {
@@ -19134,6 +19158,12 @@ sub scenario()
             }
             elsif($Sys{"DE"}=~/Budgie/) {
                 $Sys{"System"}=~s/\Aubuntu/ubuntu-budgie/;
+            }
+            elsif($Sys{"DE"}=~/Deepin/) {
+                $Sys{"System"}=~s/\Aubuntu/ubuntudde/;
+            }
+            elsif($Sys{"DE"}=~/UKUI/) {
+                $Sys{"System"}=~s/\Aubuntu/ubuntukylin/;
             }
         }
         
