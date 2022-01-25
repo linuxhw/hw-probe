@@ -74,6 +74,8 @@ The package is available in Ubuntu 20.04 or newer and its derivatives (https://p
     sudo apt-get update
     sudo apt-get install hw-probe --no-install-recommends
 
+For older Ubuntu versions try package from Ubuntu 20.04: [hw-probe_1.5-1_all.deb](http://mirrors.kernel.org/ubuntu/pool/universe/h/hw-probe/hw-probe_1.5-1_all.deb)
+
 ###### Upstream package
 
 Download Debian package [hw-probe_1.5-1_all.deb](https://github.com/linuxhw/hw-probe/releases/download/1.5/hw-probe_1.5-1_all.deb) and install:
@@ -81,15 +83,6 @@ Download Debian package [hw-probe_1.5-1_all.deb](https://github.com/linuxhw/hw-p
     sudo add-apt-repository universe
     sudo apt-get update
     sudo apt-get install ./hw-probe_1.5-1_all.deb --no-install-recommends
-
-###### PPA
-
-https://launchpad.net/~mikhailnov/+archive/ubuntu/hw-probe
-
-    sudo add-apt-repository universe
-    sudo add-apt-repository ppa:mikhailnov/hw-probe
-    sudo apt-get update
-    sudo apt-get install hw-probe --no-install-recommends
 
 ###### Snap
 
