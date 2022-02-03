@@ -2979,21 +2979,36 @@ sub setupMonitoring()
         }
     }
     
+    my $CronDaily = "/etc/cron.daily";
+    
     # add/remove cron entry
-    if($Enable)
+    if(-e $CronDaily)
     {
-        my $CronTime = "0 0";
-        if(my $Time = getTimeStamp(time))
-        {
-            if($Time=~/\A(\d+):(\d+)\Z/) {
-                $CronTime = "$2 $1";
-            }
+        my $CronScript = $CronDaily."/hw-probe";
+        if($Enable) {
+            writeFile($CronScript, "#!/bin/bash\n\nhw-probe -all -check-hdd -check-cpu -upload -monitoring -i ".$Opt{"Group"}."\n");
         }
-        
-        system("(EDITOR=cat crontab -e 2>/dev/null | grep -v 'hw-probe' ; echo \"$CronTime * * * hw-probe -all -check -upload -monitoring -i ".$Opt{"Group"}."\") | crontab -");
+        elsif(-e $CronScript) {
+            unlink($CronScript);
+        }
     }
-    else {
-        system("EDITOR=cat crontab -e 2>/dev/null | grep -v 'hw-probe' | crontab -");
+    else
+    {
+        if($Enable)
+        {
+            my $CronTime = "0 0";
+            if(my $Time = getTimeStamp(time))
+            {
+                if($Time=~/\A(\d+):(\d+)\Z/) {
+                    $CronTime = "$2 $1";
+                }
+            }
+            
+            system("(EDITOR=cat crontab -e 2>/dev/null | grep -v 'hw-probe' ; echo \"$CronTime * * * hw-probe -all -check-hdd -check-cpu -upload -monitoring -i ".$Opt{"Group"}."\") | crontab -");
+        }
+        else {
+            system("EDITOR=cat crontab -e 2>/dev/null | grep -v 'hw-probe' | crontab -");
+        }
     }
 }
 
