@@ -14475,10 +14475,15 @@ sub probeDistr()
             }
             
             my $GhostBSDVer = "";
-            if($Opt{"FixProbe"}) {
+            if($Opt{"FixProbe"})
+            {
                 $GhostBSDVer = readFile($FixProbe_Logs."/ghostbsd-version");
+                
+                if(not $GhostBSDVer) {
+                    $GhostBSDVer = readFile($FixProbe_Logs."/ports_ver");
+                }
             }
-            else
+            elsif($Name eq "ghostbsd")
             {
                 if(checkCmd("ghostbsd-version"))
                 {
