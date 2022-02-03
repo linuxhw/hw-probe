@@ -6,7 +6,7 @@
 # WWW (Linux): https://linux-hardware.org
 # WWW (BSD):   https://bsd-hardware.info
 #
-# Copyright (C) 2014-2021 Andrey Ponomarenko's Linux Hardware Project
+# Copyright (C) 2014-2022 Linux Hardware Project
 #
 # Written by Andrey Ponomarenko (ABI Laboratory, LSB Infrastructure,
 # AZOV Framework testing technology, IEEE certified software test
@@ -14428,6 +14428,15 @@ sub probeDistr()
         }
         elsif($Release=~/(.+)-RELEASE\Z/) {
             $Release = $1;
+        }
+        
+        if(not $Opt{"FixProbe"})
+        {
+            if(my $OS_Release = readFile("/etc/os-release"))
+            { # For future (e.g. on GhostBSD)
+                listProbe("logs", "os-release");
+                writeLog($LOG_DIR."/os-release", $OS_Release);
+            }
         }
         
         if($OSname=~/freebsd/)
