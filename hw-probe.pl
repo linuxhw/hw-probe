@@ -2433,6 +2433,10 @@ sub hideByRegexp(@)
             next;
         }
         
+        if(length($Match) <= 2) {
+            next;
+        }
+        
         $Content = hideStr($Content, $Match);
         
         if($Subj and $Subj eq "systemd")
@@ -3230,6 +3234,10 @@ sub fixCpuVendor($)
     
     if($Vendor=~/Advanced Micro Devices/) {
         return "AMD";
+    }
+    
+    if($Vendor=~/unknown/i) {
+        return undef;
     }
     
     return $Vendor;
@@ -4207,6 +4215,10 @@ sub probeHW()
                     elsif($S eq "G") {
                         $N = $N*1.07355;
                     }
+                    elsif($S eq "X")
+                    { # incorrect anonymization
+                        next;
+                    }
                     
                     $HDD_Size = sprintf("%.1f", $N).$S;
                     $HDD_Size=~s/\.\d+//;
@@ -4966,6 +4978,7 @@ sub probeHW()
                     {
                         my $Suffix = $1;
                         $Suffix=~s/[_]+/ /g;
+                        $Suffix=~s/ 1XB\Z/ 1TB/; # wrong anonymization
                         $Device{"Device"} .= $Suffix;
                     }
                 }
@@ -4975,6 +4988,7 @@ sub probeHW()
                     my $Ser = $2;
                     
                     $Suffix=~s/[_]+/ /g;
+                    $Suffix=~s/ 1XB\Z/ 1TB/; # wrong anonymization
                     $Device{"Device"} .= $Suffix;
                     
                     if(not $Device{"Serial"} and index($Ser, "...") == -1) {
@@ -5215,8 +5229,11 @@ sub probeHW()
             countDevice($BusID, $Device{"Type"});
         }
         
-        if($Device{"Type"} eq "cpu") {
-            $CPU_ID = $BusID;
+        if($Device{"Type"} eq "cpu")
+        {
+            if($Device{"Vendor"}) {
+                $CPU_ID = $BusID;
+            }
         }
         else {
             $ComponentID{$Device{"Type"}}{$BusID} = 1;
@@ -7760,14 +7777,17 @@ sub probeHW()
                 next;
             }
             
+            if($Device{"Device"} eq "C1") {
+                next;
+            }
+            
             $CPU_Sockets += 1;
             
             cleanValues(\%Device);
             
             $Device{"Device"} = duplVendor($Device{"Vendor"}, $Device{"Device"});
             
-            if(not $Device{"Device"} and $CPU_Family_Name)
-            {
+            if(not $Device{"Device"} and $CPU_Family_Name) {
                 $Device{"Device"} = $CPU_Family_Name;
             }
             
@@ -7785,7 +7805,12 @@ sub probeHW()
                     $HW{$CPU_ID} = \%Device;
                 }
                 
-                setDevCount($CPU_ID, "cpu", $CPU_Threads);
+                if($CPU_Threads) {
+                    setDevCount($CPU_ID, "cpu", $CPU_Threads);
+                }
+                elsif($CPU_Cores) {
+                    setDevCount($CPU_ID, "cpu", $CPU_Cores);
+                }
             }
             else
             { # add info
@@ -11149,7 +11174,11 @@ sub registerRAM($)
     
     $Device{"Type"} = "memory";
     $Device{"Status"} = "works";
-    $Device{"Size"} = sprintf("%.0f", $TotalKb/1048576)."GB";
+    $Device{"Size"} = sprintf("%.0f", $TotalKb/1048576);
+    if(grep {$_ eq $Device{"Size"}} (63, 47, 31, 15, 7)) {
+        $Device{"Size"} += 1;
+    }
+    $Device{"Size"} .= "GB";
     if($Device{"Size"} eq "0GB") {
         $Device{"Size"} = sprintf("%.2f", $TotalKb/1048576)."GB";
     }
@@ -13245,7 +13274,8 @@ sub fixFFByModel($$)
         or ($V=~/NOTEBOOK/)
         or ($V=~/Samsung/i and $M=~/R50\/R51/)
         or ($V=~/Toshiba/i and $M=~/Satellite/)
-        or ($V=~/TPVAOC/i and $M=~/AA183M/)) {
+        or ($V=~/TPVAOC/i and $M=~/AA183M/)
+        or ($V=~/NCS/i and $M=~/ONE1/)) {
             $Sys{"Type"} = "notebook";
         }
     }
@@ -14237,9 +14267,9 @@ sub fixDistr($$$$)
     {
         if(my $Pkgs = readFile("$FixProbe_Logs/pkglist"))
         {
-            if($Pkgs=~/($KNOWN_BSD_ALL) /i) {
-                $Distr = lc($1);
-            }
+            # if($Pkgs=~/($KNOWN_BSD_ALL) /i) {
+            #     $Distr = lc($1);
+            # }
             
             if($Pkgs=~/ghostbsd-pkg-conf (\d[\.\d]+)/i)
             {
@@ -14779,7 +14809,7 @@ sub probeDistr()
         elsif(lc($Name) eq "neon") {
             return ("kde-neon", $Release, "", "");
         }
-        elsif($Descr=~/\A(Devuan|ECP VeiL|KDE neon|LMDE|Maui|openSUSE Leap|Pop\!_OS|RED OS|BigLinux)/i) {
+        elsif($Descr=~/\A(Devuan|ECP VeiL|KDE neon|LMDE|Maui|openSUSE Leap|Parrot|Pop\!_OS|RED OS|BigLinux)/i) {
             $Name = $1;
         }
         elsif($Descr=~/\A(antiX|elementary OS)[-\s]([\d\.]+)/i)
