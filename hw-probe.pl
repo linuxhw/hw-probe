@@ -3772,7 +3772,7 @@ sub probeHW()
                     @NeedProgs = grep {$_!~/dmidecode|lscpu/} @NeedProgs;
                 }
                 
-                if($Sys{"System"}!~/$KNOWN_BSD_ALL/)
+                if($Sys{"System"}!~/$KNOWN_BSD_ALL|freebsd/)
                 { # Unknown FreeBSD-based
                     @NeedProgs = grep {$_!~/hwstat|lscpu/} @NeedProgs;
                 }
