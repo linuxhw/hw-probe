@@ -13052,12 +13052,12 @@ sub probeSys()
     }
     elsif(isBSD())
     {
-        my $WMs = runCmd("ps x | grep wm");
+        my $WMs = runCmd("ps x | grep wm | grep -v grep");
         if($WMs=~/\s(\w+wm)/) {
             $Sys{"Current_wm"} = $1;
         }
         
-        if(runCmd("ps x | grep start-hello"))
+        if(runCmd("ps x | grep start-hello | grep -v grep"))
         {
             $Sys{"DE"} = "helloDesktop";
             $Sys{"Current_desktop"} = $Sys{"DE"};
