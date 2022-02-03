@@ -15647,11 +15647,11 @@ sub writeLogs()
         
         if(readLine($InxiCmd)=~/perl/)
         { # The new Perl inxi
-            $Inxi = runCmd("inxi -Fxxxzm --no-host 2>&1");
+            $Inxi = runCmd("inxi -Fxxxzmd --no-host 2>&1");
         }
         else
         { # Old inxi
-            $Inxi = runCmd("inxi -Fxz -c 0 -! 31 2>&1");
+            $Inxi = runCmd("inxi -Fxzd -c 0 -! 31 2>&1");
         }
         
         $Inxi=~s/\s+\w+\:\s*<filter>//g;
