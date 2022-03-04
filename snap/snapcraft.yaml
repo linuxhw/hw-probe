@@ -1,5 +1,5 @@
 name: hw-probe
-version: 1.6-3
+version: 1.6-4
 summary: Check operability of computer hardware and find drivers
 description: >
  A tool to probe for hardware, check operability and find drivers
@@ -144,7 +144,7 @@ parts:
       - usr/sbin/lspci
       - usr/share/pci.ids
   acpica-unix:
-    source: https://acpica.org/sites/acpica/files/acpica-unix-20210730.tar.gz
+    source: https://acpica.org/sites/acpica/files/acpica-unix-20211217.tar.gz
     source-type: tar
     plugin: make
     build-attributes: [no-patchelf]
@@ -160,7 +160,7 @@ parts:
       - usr/bin/iasl
       - usr/bin/acpixtract
   hdparm:
-    source: https://github.com/linuxhw/build-stuff/releases/download/1.6/hdparm-9.62.tar.gz
+    source: https://github.com/linuxhw/build-stuff/releases/download/1.6/hdparm-9.63.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -172,7 +172,7 @@ parts:
     prime:
       - sbin/hdparm
   smartmontools:
-    source: https://github.com/linuxhw/build-stuff/releases/download/1.5/smartmontools-7.2.tar.gz
+    source: https://github.com/linuxhw/build-stuff/releases/download/1.6/smartmontools-7.3.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -206,7 +206,7 @@ parts:
     prime:
       - usr/lib/libusb*.so*
   util-linux:
-    source: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.37/util-linux-2.37.2.tar.xz
+    source: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.37/util-linux-2.37.4.tar.xz
     source-type: tar
     plugin: make
     override-build: |
@@ -223,7 +223,7 @@ parts:
     prime:
       - usr/bin/dmesg
   libx86emu:
-    source: https://github.com/wfeldt/libx86emu/archive/3.2.tar.gz
+    source: https://github.com/wfeldt/libx86emu/archive/3.5.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -238,7 +238,7 @@ parts:
       - make
   hwinfo:
     after: [libx86emu]
-    source: https://github.com/openSUSE/hwinfo/archive/21.76.tar.gz
+    source: https://github.com/openSUSE/hwinfo/archive/21.80.tar.gz
     source-type: tar
     plugin: make
     override-build: |
