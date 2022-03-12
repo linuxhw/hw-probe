@@ -273,16 +273,6 @@ This timer will execute one time per month a hw-probe.service that will generate
 User may edit hw-probe.timer and change OnCalendar value to execute hw-probe report on different time period (yearly, semiannually, quarterly, etc.). Values lower than month are STRONGLY not recommended.
 
 
-Offline view
-------------
-
-Since hw-probe 1.5.
-
-Save your probes HTML view to a directory DIR for offline use:
-
-    hw-probe -import ./DIR -inventory-id ID
-
-
 ACPI dump
 ---------
 

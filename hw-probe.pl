@@ -104,8 +104,9 @@ use Cwd qw(abs_path cwd);
 
 my $TOOL_VERSION = "1.6";
 
-my $URL = "https://linux-hardware.org";
+my $URL_LINUX = "https://linux-hardware.org";
 my $URL_BSD = "https://bsd-hardware.info";
+my $URL = $URL_LINUX;
 
 my $GITHUB = "https://github.com/linuxhw/hw-probe";
 
@@ -158,11 +159,13 @@ GetOptions("h|help!" => \$Opt{"Help"},
   "printers!" => \$Opt{"Printers"},
   "scanners!" => \$Opt{"Scanners"},
   "check!" => \$Opt{"Check"},
+  "check-extended!" => \$Opt{"CheckExtended"},
   "check-graphics!" => \$Opt{"CheckGraphics"},
   "check-hdd!" => \$Opt{"CheckHdd"},
   "limit-check-hdd=s" => \$Opt{"LimitCheckHdd"},
   "check-memory!" => \$Opt{"CheckMemory"},
   "check-cpu!" => \$Opt{"CheckCpu"},
+  "check-7z!" => \$Opt{"Check7z"},
   "id|name=s" => \$Opt{"PC_Name"},
   "upload|confirm-upload-of-hashed-ids!" => \$Opt{"Upload"},
   "hwinfo-path=s" => \$Opt{"HWInfoPath"},
@@ -363,7 +366,11 @@ GENERAL OPTIONS:
       Probe for scanners.
   
   -check
-      Check devices operability.
+      Check devices operability. Test performance of CPU,
+      memory, graphics cards and drives.
+
+  -check-extended
+      Perform extended check.
   
   -id|-name DESC
       Any description of the probe.
@@ -2540,27 +2547,6 @@ sub runCmd($)
     return `LC_ALL=$LOCALE $AddPath$Cmd`;
 }
 
-sub getOldProbeDir()
-{
-    my $SubDir = "HW_PROBE";
-    my $Dir = undef;
-    
-    if(my $Home = $ENV{"HOME"}) {
-        $Dir = $Home."/".$SubDir;
-    }
-    
-    if($Dir and $Dir eq $PROBE_DIR)
-    {
-        $Dir = undef;
-        
-        if(my $SessUser = getUser()) {
-            $Dir = "/home/".$SessUser."/".$SubDir;
-        }
-    }
-    
-    return $Dir;
-}
-
 sub generateGroup()
 {
     my $GroupURL = $URL."/get_group.php";
@@ -2654,31 +2640,35 @@ sub postRequest($$$)
     return $Out;
 }
 
-sub getRequest($$)
+sub getFallbackUrl()
 {
-    my ($GetURL, $SSL) = @_;
-    
-    require LWP::UserAgent;
-    
-    my $UAgent = LWP::UserAgent->new(parse_head => 0);
-    
-    if($SSL eq "NoSSL" or not checkModule("Mozilla/CA.pm"))
+    my ($Zone, $FallbackURL) = ();
+
+    my %ReservedLocalMirror = (
+        # Reserved local BSDHW database zone
+        "BSD" => undef,
+        # Reserved local LHW database zone
+        "Linux" => undef
+    );
+
+    if(isBSD())
     {
-        $GetURL=~s/\Ahttps:/http:/g;
-        $UAgent->ssl_opts(verify_hostname => 0, SSL_verify_mode => 0x00);
+        if($Zone = $ReservedLocalMirror{"BSD"}) {
+            $FallbackURL = $URL_BSD;
+        }
     }
-    
-    $UAgent->agent("Mozilla/5.0 (X11; Linux x86_64; rv:50.0) Gecko/20100101 Firefox/50.123");
-    
-    my $Res = $UAgent->get($GetURL);
-    
-    my $Out = $Res->{"_content"};
-    
-    if(not $Out) {
-        return $Res->{"_headers"}{"x-died"};
+    else
+    {
+        if($Zone = $ReservedLocalMirror{"Linux"}) {
+            $FallbackURL = $URL_LINUX;
+        }
     }
-    
-    return $Out;
+
+    if($Zone and $FallbackURL) {
+        $FallbackURL=~s{\w+\Z}{$Zone};
+    }
+
+    return $FallbackURL;
 }
 
 sub saveProbe($)
@@ -2772,6 +2762,12 @@ sub uploadData()
         @Cmd = (@Cmd, "-F monitoring=1");
         $Data{"monitoring"} = "1";
     }
+
+    if(isBSD())
+    {
+        @Cmd = (@Cmd, "-F bsd=1");
+        $Data{"bsd"} = "1";
+    }
     
     @Cmd = (@Cmd, "-F tool_ver=\'$TOOL_VERSION\'");
     $Data{"tool_ver"} = $TOOL_VERSION;
@@ -2787,22 +2783,29 @@ sub uploadData()
     
     my $CurlCmd = join(" ", @Cmd);
     
-    my $Log = runCmd("$CurlCmd 2>&1");
-    my $Err = $?;
-    my $HttpsErr = 0;
-    
-    if(checkCmd("curl") and $Err and $Log=~/certificate|ssl/i)
+    my ($Log, $WWWLog, $HttpsErr, $Err) = ();
+
+    if(checkCmd("curl"))
     {
-        $CurlCmd=~s/https/http/;
         $Log = runCmd("$CurlCmd 2>&1");
         $Err = $?;
-        $HttpsErr = 1;
+
+        if($Err and $Log=~/certificate|ssl/i
+        and $CurlCmd=~s/https/http/)
+        {
+            $Log = runCmd("$CurlCmd 2>&1");
+            $Err = $?;
+            $HttpsErr = 1;
+        }
+    }
+    else {
+        $Err = 1;
     }
     
     if($Err)
     {
         if($Opt{"ListProbes"}) {
-            printMsg("ERROR", "failed to upload by curl: $Log");
+            printMsg("ERROR", "failed to upload by curl");
         }
         
         if(isNetBSD())
@@ -2811,28 +2814,67 @@ sub uploadData()
                 printMsg("ERROR", "'mozilla-rootcerts-openssl' package is not installed");
             }
         }
-        
-        if(my $WWWLog = postRequest($UploadURL, \%Data, "NoSSL"))
+
+        if($WWWLog = postRequest($UploadURL, \%Data, "NoSSL"))
         {
-            if(index($WWWLog, "probe=")==-1)
+            if(index($WWWLog, "probe=") != -1)
             {
-                print STDERR $WWWLog."\n";
-                printMsg("ERROR", "failed to upload data");
-                if(index($WWWLog, "Can't locate HTML/HeadParser.pm")!=-1) {
-                    printMsg("ERROR", "please add 'libhtml-parser-perl' or 'perl-HTML-Parser' package to your system");
-                }
-                exitStatus(1);
+                $Err = 0;
+                $Log = $WWWLog;
             }
-            
-            $Log = $WWWLog;
+            else
+            {
+                if(index($WWWLog, "Can't locate HTML/HeadParser.pm") != -1)
+                {
+                    printMsg("ERROR", "failed to upload data");
+                    printMsg("ERROR", "please add 'libhtml-parser-perl' or 'perl-HTML-Parser' package to your system");
+                    exitStatus(1);
+                }
+            }
+        }
+    }
+
+    if(my $FallbackURL = getFallbackUrl())
+    {
+        if($Err and $CurlCmd=~s/\Q$URL\E/$FallbackURL/)
+        {
+            $Log = runCmd("$CurlCmd 2>&1");
+            $Err = $?;
+
+            if($Err and $Log=~/certificate|ssl/i
+            and $CurlCmd=~s/https/http/)
+            {
+                $Log = runCmd("$CurlCmd 2>&1");
+                $Err = $?;
+                $HttpsErr = 1;
+            }
+        }
+
+        if($Err and $UploadURL=~s/\Q$URL\E/$FallbackURL/
+        and $WWWLog = postRequest($UploadURL, \%Data, "NoSSL"))
+        {
+            if(index($WWWLog, "probe=") != -1)
+            {
+                $Err = 0;
+                $Log = $WWWLog;
+            }
+        }
+    }
+
+    if($Err)
+    {
+        if($WWWLog)
+        {
+            print STDERR $WWWLog."\n";
+            printMsg("ERROR", "failed to upload data");
         }
         else
         {
             my $ECode = $Err>>8;
             print STDERR $Log."\n";
             printMsg("ERROR", "failed to upload data, curl error code \"".$ECode."\"");
-            exitStatus(1);
         }
+        exitStatus(1);
     }
     
     if($HttpsErr)
@@ -11190,8 +11232,11 @@ sub registerRAM($)
     $Device{"Type"} = "memory";
     $Device{"Status"} = "works";
     $Device{"Size"} = sprintf("%.0f", $TotalKb/1048576);
-    if(grep {$_ eq $Device{"Size"}} (63, 47, 31, 15, 7)) {
+    if(grep {$_ eq $Device{"Size"}} (63, 47, 31, 23, 15, 11, 7)) {
         $Device{"Size"} += 1;
+    }
+    elsif(grep {$_ eq $Device{"Size"}} (62, 46, 30, 22, 14)) {
+        $Device{"Size"} += 2;
     }
     $Device{"Size"} .= "GB";
     if($Device{"Size"} eq "0GB") {
@@ -11481,6 +11526,7 @@ sub shortModel($)
 sub shortOS($)
 {
     my $Name = $_[0];
+    $Name=~s/\s+(gnu\/linux)\Z//i;
     $Name=~s/\s+(linux|project|amd64|x86_64)\s+/ /i;
     $Name=~s/\s*(linux|project|amd64|x86_64)\Z//i;
     $Name=~s/\s+/\-/g;
@@ -12781,7 +12827,7 @@ sub fixVendorModel($$)
     
     if(not $V)
     {
-        if($M=~s/\A(Bananapi|BQ|Google Inc\.|Google|Khadas|LGE|MEDION|Motorola|Nokia|OrangePi|Purism|Qualcomm Technologies, Inc\.|Rockchip|Samsung|Shenzhen Amediatech Technology Co\., Ltd|SolidRun|Tanix|Xiaomi)(\s+|\Z)//i) {
+        if($M=~s/\A(Bananapi|BQ|Google Inc\.|Google|Khadas|LGE|MEDION|Motorola|Nokia|OrangePi|Purism|Qualcomm Technologies, Inc\.|Rockchip|Samsung|Shenzhen Amediatech Technology Co\., Ltd|SolidRun|Tanix|Ugoos|Xiaomi)(\s+|\Z)//i) {
             $V = $1;
         }
         elsif($M=~/\A(TravelMate)/) {
@@ -12834,7 +12880,7 @@ sub fixModel($$$)
             return undef;
         }
     }
-    
+
     $Model=~s/\A\-//;
     $Model=~s/\A-?\[(.+)\]\-?\Z/$1/; # IBM
     
@@ -12909,6 +12955,10 @@ sub fixModel($$$)
     }
     elsif($Version=~/ThinkPad/i and $Model!~/ThinkPad/i) {
         $Model = $Version." ".$Model;
+    }
+
+    if(emptyProduct($Model)) {
+        $Model = undef;
     }
     
     return $Model;
@@ -13165,7 +13215,7 @@ sub emptyProduct($)
 {
     my $Val = $_[0];
     
-    if(not $Val or $Val=~/\b(System manufacturer|System Product|Board Vendor|Board Manufacturer|Mainboard|System Manufacter|stem manufacturer|System Manufact|SYSTEM_MANUFACTURER|Name|Version|to be filled|empty|Not Specified|Default[ _]string|board version|Unknow|n\/a|Not)\b/i or $Val=~/\A([_0O\-\.\s]+|[X]+|NA|N\/A|\-O|1234567890|0123456789|[\.\,]+|Board|\$|\$\(PROJECT_SKU_NAME\)|SYSTEM_PRODUCT_NAME|Unknown Product)\Z/i or emptyVal($Val)) {
+    if(not $Val or $Val=~/\b(System manufacturer|System Product|Board Vendor|Board Manufacturer|Mainboard|System Manufacter|stem manufacturer|System Manufact|SYSTEM_MANUFACTURER|Name|Version|to be filled|empty|Not Specified|Default[ _]string|board version|Unknow|n\/a|Not)\b/i or $Val=~/\A([_0O\-\.\s]+|[X]+|NA|N\/A|\-O|1234567890|0123456789|[\.\,]+|Board|\$|\$\(PROJECT_SKU_NAME\)|SYSTEM_PRODUCT_NAME|Unknown Product|Product)\Z/i or emptyVal($Val)) {
         return 1;
     }
     
@@ -13228,6 +13278,13 @@ sub fixFFByCPU($)
             $Sys{"Type"} = "system on chip";
         }
     }
+
+    if(not $Sys{"Type"})
+    {
+        if($CPU=~/Dual CPU T3400/) {
+            $Sys{"Type"} = "notebook";
+        }
+    }
 }
 
 sub fixFFByCDRom($)
@@ -13280,17 +13337,19 @@ sub fixFFByModel($$)
     if($Sys{"Type"}!~/$MOBILE_TYPE/)
     { # can't distinguish all-in-ones vs notebooks (very similar hardware: same cdroms, mobile graphics cards, etc.)
       # so need to check by exact model name
-        if($M=~/(AO531h|Aspire (7720|5670|\d+Z)|EasyNote|Extensa \d+|MacBook|RoverBook|A410-K\.BE47P1|0PJTXT|R490-KR6WK)/
+        if($M=~/(AO531h|AOA110|Aspire (7720|5670|\d+Z)|EasyNote|Extensa \d+|MacBook|RoverBook|A410-K\.BE47P1|0PJTXT|R490-KR6WK)/
         or ($V=~/Alienware/i and $M=~/m15/)
         or ($V=~/Clevo/i and $M=~/M740TU|D40EV|M720R/)
         or ($V=~/IBM/i and $M=~/26474MG/)
         or ($V=~/Intel/i and $M=~/Corbett Park CRB/)
         or ($V=~/Fujitsu/i and $M=~/ESPRIMO Mobile/)
+        or ($V=~/Medion/i and $M=~/E16402/)
         or ($V=~/NOTEBOOK/)
         or ($V=~/Samsung/i and $M=~/R50\/R51/)
         or ($V=~/Toshiba/i and $M=~/Satellite/)
         or ($V=~/TPVAOC/i and $M=~/AA183M/)
-        or ($V=~/NCS/i and $M=~/ONE1/)) {
+        or ($V=~/NCS/i and $M=~/ONE1/)
+        or ($V=~/Google/i and $M=~/Auron_Yuna|Pantheon|Parrot/)) {
             $Sys{"Type"} = "notebook";
         }
     }
@@ -13348,7 +13407,8 @@ sub fixFFByModel($$)
     and $Sys{"Type"} ne "stick pc")
     {
         if(($V=~/Beelink/i and $M=~/\ASII/)
-        or ($V=~/Compulab/i and $M=~/\A(Intense|fitlet|Airtop)/)
+        or ($V=~/Compulab/i and $M=~/\A(Intense|fitlet|Airtop|fit-PC|1160405)/)
+        or ($V=~/congatec/i and $M=~/conga/)
         or ($V=~/Flytech/i and $M=~/C56/)
         or ($V=~/Intel/i and $M=~/\ANUC\d/)
         or ($V=~/Kontron/i and $M=~/SMX945/)
@@ -13356,6 +13416,7 @@ sub fixFFByModel($$)
         or ($V=~/Radiant/i and $M=~/P845/)
         or ($V=~/Supermicro/i and $M=~/X11SSE-F|A1SAi/)
         or ($V=~/THD/i and $M=~/RX2/)
+        or ($V=~/Ugoos/i and $M=~/UT2/)
         or ($V=~/ZOTAC/i and $M=~/\AZBOX/)
         or $M=~/TV Box/
         or $M=~/\AZBOX\-/
@@ -13363,7 +13424,7 @@ sub fixFFByModel($$)
             $Sys{"Type"} = "mini pc";
         }
     }
-    
+
     if($Sys{"Type"} ne "all in one")
     {
         if($M=~/( AiO PC|AFLMB-9652)/
@@ -13372,7 +13433,8 @@ sub fixFFByModel($$)
         or ($V=~/Apple/i and $M=~/\AiMac/)
         or ($V=~/Lenovo/i and $M=~/\A(S310|IdeaCentre B|ThinkCentre M90z) /)
         or ($V=~/Hewlett/i and $M=~/ Aio\Z/i)
-        or ($V=~/MiTAC/i and $M=~/\AAIO /)) {
+        or ($V=~/MiTAC/i and $M=~/\AAIO /)
+        or ($V=~/MICRO-STAR/i and $M=~/MS-AA1511/)) {
             $Sys{"Type"} = "all in one";
         }
     }
@@ -13403,7 +13465,7 @@ sub fixFFByMonitor($)
     
     if($Sys{"Type"}!~/$MOBILE_TYPE/)
     {
-        if($Mon=~/LGD02E9|SEC3445|LPLA500|CMO1680|LGD018B|APP9C20/) {
+        if($Mon=~/LGD02E9|SEC3445|LPLA500|CMO1680|LGD018B|APP9C20|AUO11ED/) {
             $Sys{"Type"} = "notebook";
         }
     }
@@ -13510,10 +13572,10 @@ sub fixChassis()
             }
         }
     }
-    
+
     ($Sys{"Vendor"}, $Sys{"Model"}) = fixVendorModel($Sys{"Vendor"}, $Sys{"Model"});
     $Sys{"Model"} = fixModel($Sys{"Vendor"}, $Sys{"Model"}, $Sys{"Version"});
-    
+
     if(not $Bios_ID) {
         $Bios_ID = registerBIOS(\%Bios);
     }
@@ -17079,22 +17141,33 @@ sub checkHW()
         $Md5 = "md5";
     }
     
-    if($Opt{"CheckCpu"} and checkCmd("dd") and checkCmd($Md5))
+    if(my @CPUs = grep { /\Acpu:/ } keys(%HW))
     {
-        if(my @CPUs = grep { /\Acpu:/ } keys(%HW))
+        my $CPU_Info = $HW{$CPUs[0]};
+        my $CPU_Title = $CPU_Info->{"Vendor"}." ".$CPU_Info->{"Device"};
+
+        if($Opt{"CheckCpu"} and checkCmd("dd") and checkCmd($Md5))
         {
             print "Check CPU ... ";
-            my $CPU_Info = $HW{$CPUs[0]};
+
             runCmd("dd if=/dev/zero bs=1M count=512 2>$TMP_DIR/cpu_perf | $Md5");
-            my $CPUPerf = $CPU_Info->{"Vendor"}." ".$CPU_Info->{"Device"}."\n";
+            my $CPUPerf = $CPU_Title."\n";
             $CPUPerf .= "dd if=/dev/zero bs=1M count=512 | $Md5\n";
             $CPUPerf .= readFile("$TMP_DIR/cpu_perf");
             writeLog($TEST_DIR."/cpu_perf", $CPUPerf);
             print "Ok\n";
-            
+
             if($CPUPerf=~/copied,.+, (.+?)\Z/) {
                 $HW{$CPUs[0]}{"Rate"} = $1;
             }
+        }
+
+        if($Opt{"Check7z"} and checkCmd("7z"))
+        {
+            print "Run 7z benchmark ... ";
+            my $SevenZBench = runCmd("7z b | grep -v Copyright");
+            writeLog($TEST_DIR."/7z_b", $SevenZBench);
+            print "Ok\n";
         }
     }
 }
@@ -17604,419 +17677,6 @@ sub readSdioIds($$$)
             }
         }
     }
-}
-
-sub downloadProbe($$)
-{
-    my ($ID, $Dir) = @_;
-    
-    my $Page = downloadFileContent("$URL/index.php?probe=$ID");
-    
-    if(index($Page, "ERROR(3):")!=-1) {
-        return -1;
-    }
-    
-    if(index($Page, "ERROR(1):")!=-1)
-    {
-        printMsg("ERROR", "You are not allowed temporarily to download probes");
-        rmtree($Dir."/logs");
-        exitStatus(1);
-    }
-    
-    if(not $Page)
-    {
-        printMsg("ERROR", "Internet connection is required");
-        exitStatus(1);
-    }
-    
-    print "Importing probe $ID\n";
-    
-    my %LogDir = ("log"=>$Dir."/logs", "test"=>$Dir."/tests");
-    mkpath($LogDir{"log"});
-    mkpath($LogDir{"test"});
-    
-    my $NPage = "";
-    foreach my $Line (split(/\n/, $Page))
-    {
-        if($Line=~/(href|src)=['"]([^"']+?)['"]/)
-        {
-            my $Url = $2;
-
-            if($Url=~/((css|js|images)\/[^?]+)/)
-            {
-                my ($SPath, $Subj) = ($1, $2);
-                my $Content = downloadFileContent($URL."/".$Url);
-                writeFile($Dir."/".$SPath, $Content);
-                
-                if($Subj eq "css")
-                {
-                    while($Content=~s{url\(['"]([^'"]+)['"]\)}{})
-                    {
-                        my $FPath = dirname($SPath)."/".$1;
-                        mkpath($Dir."/".dirname($FPath));
-                        downloadFile($URL."/".$FPath, $Dir."/".$FPath);
-                    }
-                }
-            }
-            elsif($Url=~/(log|test)\=([^&?]+)/)
-            {
-                my ($LogType, $LogName) = ($1, $2);
-                my $LogPath = $LogDir{$LogType}."/".$LogName.".html";
-                my $Log = downloadFileContent($URL."/".$Url);
-                
-                if(index($Log, "ERROR(1):")!=-1)
-                {
-                    printMsg("ERROR", "You are not allowed temporarily to download probes");
-                    rmtree($Dir."/logs");
-                    exitStatus(1);
-                }
-
-                $Log = preparePage($Log);
-                $Log=~s{(['"])(css|js|images)/}{$1../$2/}g;
-                $Log=~s{index.php\?probe=$ID}{../index.html};
-
-                writeFile($LogPath, $Log);
-                
-                my $LogD = basename($LogDir{$LogType});
-                $Line=~s/\Q$Url\E/$LogD\/$LogName.html/;
-            }
-            elsif($Url eq "index.php?probe=$ID") {
-                $Line=~s/\Q$Url\E/index.html/;
-            }
-            elsif($Url=~/\A#/) {
-                # Do nothing
-            }
-            else {
-                $Line=~s/\Q$Url\E/$URL\/$Url/g;
-            }
-        }
-        
-        $NPage .= $Line."\n";
-    }
-    $NPage=~s&\Q<!-- descr -->\E(.|\n)+\Q<!-- descr end -->\E\n&This probe is available online by <a href=\'$URL/?probe=$ID\'>this URL</a> in the <a href=\'$URL\'>Hardware Database</a>.<p/>&;
-    writeFile($Dir."/index.html", preparePage($NPage));
-    
-    return 0;
-}
-
-sub preparePage($)
-{
-    my $Content = $_[0];
-    $Content=~s&\Q<!-- meta -->\E(.|\n)+?\Q<!-- meta end -->\E\n&&;
-    $Content=~s&\Q<!-- menu -->\E(.|\n)+?\Q<!-- menu end -->\E\n&&;
-    $Content=~s&\Q<!-- review -->\E(.|\n)+?\Q<!-- review end -->\E\n&&;
-    $Content=~s&\Q<!-- sign -->\E(.|\n)+?\Q<!-- sign end -->\E\n&<hr/>\n<div align='right'><a class='sign' href=\'$GITHUB\'>Linux Hardware Project</a></div><br/>\n&;
-    return $Content;
-}
-
-sub downloadFileContent($)
-{
-    my $Url = $_[0];
-    $Url=~s/&amp;/&/g;
-    if(checkCmd("curl"))
-    {
-        my $Cmd = getCurlCmd($Url);
-        return `$Cmd`;
-        
-    }
-    else {
-        return getRequest($Url, "NoSSL");
-    }
-}
-
-sub downloadFile($$)
-{
-    my ($Url, $Output) = @_;
-    $Url=~s/&amp;/&/g;
-    if(checkCmd("curl"))
-    {
-        my $Cmd = getCurlCmd($Url)." --output \"$Output\"";
-        return `$Cmd`;
-        
-    }
-    else {
-        writeFile($Output, getRequest($Url, "NoSSL"));
-    }
-}
-
-sub getCurlCmd($)
-{
-    my $Url = $_[0];
-    my $Cmd = "curl -s -L \"$Url\"";
-    $Cmd .= " --ipv4 --compressed";
-    $Cmd .= " --connect-timeout 5";
-    $Cmd .= " --retry 1";
-    $Cmd .= " -A \"Mozilla/5.0 (X11; Linux x86_64; rv:50.0) Gecko/20100101 Firefox/50.123\"";
-    return $Cmd;
-}
-
-sub importProbes($)
-{
-    my $Dir = $_[0];
-    
-    if($Opt{"Snap"}) {
-        $Dir = $ENV{"SNAP_USER_COMMON"}."/".$Dir;
-    }
-    elsif($Opt{"Flatpak"}) {
-        $Dir = $ENV{"XDG_DATA_HOME"}."/".$Dir;
-    }
-    
-    if(not -d $Dir)
-    {
-        mkpath($Dir);
-        if(not $Opt{"Group"}) {
-            setPublic($Dir);
-        }
-    }
-
-    my ($Imported, $OneProbe) = (undef, undef);
-    
-    my $IndexInfo = eval ( readFile($Dir."/index.info") ) || {};
-    
-    if(my $Inv = $Opt{"Group"})
-    {
-        my $TopPage = downloadFileContent("$URL/index.php?view=computers&inventory=".$Inv);
-        my @Computers = ($TopPage=~/Computer ([a-f\d]+) /g);
-        foreach my $C (@Computers)
-        {
-            print "Computer $C\n";
-            
-            my $ComputerPage = downloadFileContent("$URL/index.php?computer=".$C."&inventory=".$Inv);
-            my @ComputerProbes = ($ComputerPage=~/ Probe ([a-f\d]+) /g);
-            my $MaxElems = 2;
-            
-            if($#ComputerProbes>$MaxElems-1) {
-                splice(@ComputerProbes, $MaxElems);
-            }
-            
-            foreach my $P (@ComputerProbes)
-            {
-                if(defined $IndexInfo->{"SkipProbes"}{$P}) {
-                    next;
-                }
-                
-                my $To = $Dir."/".$P;
-                if(not -e $To or not -e "$To/logs")
-                {
-                    if(downloadProbe($P, $To)!=-1)
-                    {
-                        my %Prop = ();
-                        $Prop{"hwaddr"} = uc($C);
-                        
-                        if($ComputerPage=~/Probe $P (.+?) -->/)
-                        {
-                            foreach (split(";", $1))
-                            {
-                                if(/\A(\w+?):'(.+)'\Z/) {
-                                    $Prop{$1} = $2;
-                                }
-                            }
-                        }
-                        
-                        writeFile($To."/probe.info", Data::Dumper::Dumper(\%Prop));
-                        $Imported = $P;
-                    }
-                    else {
-                        $IndexInfo->{"SkipProbes"}{$P} = 1;
-                    }
-                }
-            }
-        }
-    }
-    else
-    {
-        my @Paths = ();
-        if(-d $PROBE_DIR)
-        {
-            foreach my $P (listDir($PROBE_DIR)) {
-                push(@Paths, $PROBE_DIR."/".$P);
-            }
-        }
-        
-        my $OldProbes = getOldProbeDir();
-        if($OldProbes and -d $OldProbes)
-        { # ROSA: changed probe place in 1.3
-            foreach my $P (listDir($OldProbes)) {
-                push(@Paths, $OldProbes."/".$P);
-            }
-        }
-        
-        foreach my $D (@Paths)
-        {
-            my $P = basename($D);
-            if($P eq "LATEST" or not -d $D or not listDir($D)) {
-                next;
-            }
-            
-            if(defined $IndexInfo->{"SkipProbes"}{$P}) {
-                next;
-            }
-            
-            my $To = $Dir."/".$P;
-            if(not -e $To or not -e "$To/logs")
-            {
-                if(downloadProbe($P, $To)!=-1)
-                {
-                    my $TmpDir = $TMP_DIR."/hw.info";
-                    system("tar -xf $D/* -C $TMP_DIR");
-                    
-                    my %Prop = ();
-                    foreach my $Line (split(/\n/, readFile($TmpDir."/host")))
-                    {
-                        if($Line=~/(\w+):(.*)/) {
-                            $Prop{$1} = $2;
-                        }
-                    }
-                    
-                    my @DStat = stat($TmpDir);
-                    $Prop{"date"} = $DStat[9]; # last modify time
-                    $Prop{"hwaddr"} = uc($Prop{"hwaddr"});
-                    writeFile($To."/probe.info", Data::Dumper::Dumper(\%Prop));
-                    $Imported = $P;
-                    setPublic($To, "-R");
-                    rmtree($TmpDir);
-                }
-                else {
-                    $IndexInfo->{"SkipProbes"}{$P} = 1;
-                }
-            }
-        }
-    }
-    
-    writeFile($Dir."/index.info", Data::Dumper::Dumper($IndexInfo));
-    if(not $Opt{"Group"}) {
-        setPublic($Dir."/index.info");
-    }
-    
-    if(not $Imported) {
-        print "No probes to import\n";
-    }
-    
-    my %Indexed = ();
-    foreach my $P (listDir($Dir))
-    {
-        if(not -d "$Dir/$P") {
-            next;
-        }
-        my $D = $Dir."/".$P;
-        my $Prop = eval ( readFile($D."/probe.info") ) || {};
-        $Indexed{uc($Prop->{"hwaddr"})}{$P} = $Prop;
-        $OneProbe = $P;
-    }
-    
-    if(not $OneProbe) {
-        return -1;
-    }
-    
-    my $LIST = "";
-    foreach my $HWaddr (sort keys(%Indexed))
-    {
-        my @Probes = sort {$Indexed{$HWaddr}{$b}->{"date"} cmp $Indexed{$HWaddr}{$a}->{"date"}} keys(%{$Indexed{$HWaddr}});
-        my $Hw = $Indexed{$HWaddr}{$Probes[0]};
-        my $Title = undef;
-        if($Hw->{"vendor"} and $Hw->{"model"}) {
-            $Title = join(" ", $Hw->{"vendor"}, $Hw->{"model"});
-        }
-        elsif($Hw->{"type"})
-        {
-            if($Hw->{"vendor"}) {
-                $Title = $Hw->{"vendor"}." ".ucfirst($Hw->{"type"})." (".getShortHWid($Hw->{"hwaddr"}).")";
-            }
-            else {
-                $Title = ucfirst($Hw->{"type"})." (".getShortHWid($Hw->{"hwaddr"}).")";
-            }
-        }
-        else
-        {
-            if($Hw->{"vendor"}) {
-                $Title = $Hw->{"vendor"}." Computer (".getShortHWid($Hw->{"hwaddr"}).")";
-            }
-            else {
-                $Title = "Computer (".getShortHWid($Hw->{"hwaddr"}).")";
-            }
-        }
-        
-        $LIST .= "<h2>$Title</h2>\n";
-        $LIST .= "<table class='tbl highlight local_timeline'>\n";
-        $LIST .= "<tr>\n";
-        $LIST .= "<th>Probe</th><th>Arch</th><th>System</th><th>Date</th>";
-        if(not $Opt{"Group"}) {
-            $LIST .= "<th>Desc</th>";
-        }
-        $LIST .= "\n</tr>\n";
-        foreach my $P (@Probes)
-        {
-            my $System = $Indexed{$HWaddr}{$P}->{"system"};
-            my $SystemClass = $System;
-            if($System=~s/\A(\w+)-/$1 /) {
-                $SystemClass = $1;
-            }
-            
-            $LIST .= "<tr class='pointer' onclick=\"document.location='$P/index.html'\">\n";
-            
-            $LIST .= "<td>\n";
-            $LIST .= "<a href='$P/index.html'>$P</a>\n";
-            $LIST .= "</td>\n";
-            
-            $LIST .= "<td>\n";
-            $LIST .= $Indexed{$HWaddr}{$P}->{"arch"};
-            $LIST .= "</td>\n";
-            
-            $LIST .= "<td>\n";
-            $LIST .= "<span class=\'$SystemClass\'>&nbsp;</span> ".ucfirst($System);
-            $LIST .= "</td>\n";
-            
-            $LIST .= "<td title='".getTimeStamp($Indexed{$HWaddr}{$P}->{"date"})."'>\n";
-            $LIST .= getDateStamp($Indexed{$HWaddr}{$P}->{"date"});
-            $LIST .= "</td>\n";
-            
-            if(not $Opt{"Group"})
-            {
-                $LIST .= "<td>\n";
-                $LIST .= $Indexed{$HWaddr}{$P}->{"id"};
-                $LIST .= "</td>\n";
-            }
-            
-            $LIST .= "</tr>\n";
-        }
-        $LIST .= "</table>\n";
-        $LIST .= "<br/>\n";
-    }
-    
-    my $Descr = "This is your collection of probes. See more probes and computers online in the <a href=\'$URL\'>Hardware Database</a>.";
-    my $INDEX = readFile($Dir."/".$OneProbe."/index.html");
-    $INDEX=~s{\Q<!-- body -->\E(.|\n)+\Q<!-- body end -->\E\n}{<h1>Probes Timeline</h1>\n$Descr\n$LIST\n};
-    $INDEX=~s{(\Q<title>\E)(.|\n)+(\Q</title>\E)}{$1 Probes Timeline $3};
-    $INDEX=~s{(['"])(css|js|images)/}{$1$OneProbe/$2/}g;
-
-    writeFile($Dir."/index.html", $INDEX);
-    
-    if(not $Opt{"Group"}) {
-        setPublic($Dir."/index.html");
-    }
-    
-    print "Created index: $Dir/index.html\n";
-}
-
-sub getShortHWid($)
-{
-    my $HWid = $_[0];
-    if(length($HWid) eq $HASH_LEN_CLIENT) {
-        $HWid = substr($HWid, 0, 5);
-    }
-    else {
-        $HWid=~s/\A(\w+\-\w+).+\-(\w+)\Z/$1...$2/;
-    }
-    return $HWid;
-}
-
-sub getDateStamp($)
-{
-    my $Date = localtime($_[0]);
-    if($Date=~/\w+\s+(\w+\s+\d+)\s+\d+:\d+:\d+\s+(\d+)/) {
-        return "$1, $2";
-    }
-    return $Date;
 }
 
 sub getTimeStamp($)
@@ -18973,16 +18633,21 @@ sub scenario()
         ($DATA_DIR, $LOG_DIR, $TEST_DIR) = initDataDir($TMP_PROBE);
     }
     
-    if($Opt{"Check"})
+    if($Opt{"Check"} or $Opt{"CheckExtended"})
     {
         $Opt{"CheckGraphics"} = 1;
         $Opt{"CheckMemory"} = 1;
         $Opt{"CheckHdd"} = 1;
         $Opt{"CheckCpu"} = 1;
     }
+
+    if($Opt{"CheckExtended"})
+    {
+        $Opt{"Check7z"} = 1;
+    }
     
     if($Opt{"CheckGraphics"} or $Opt{"CheckMemory"}
-    or $Opt{"CheckHdd"} or $Opt{"CheckCpu"})
+    or $Opt{"CheckHdd"} or $Opt{"CheckCpu"} or $Opt{"Check7z"})
     {
         $Opt{"Check"} = 1;
         $Opt{"Logs"} = 1;
@@ -19195,7 +18860,7 @@ sub scenario()
                 $Sys{"Arch"} = "amd64";
             }
         }
-        
+
         fixProduct();
         fixChassis();
         probeHWaddr();
