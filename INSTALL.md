@@ -373,12 +373,13 @@ Install on Puppy
 
 The package is available in Puppy 9 and newer (FossaPup64, etc.):
 
-* Update local database by Menu > Setup > Puppy Package Manager > Configure > Update database > Update now
+* Open Menu > Setup > Puppy Package Manager
+* Update local package database by Configure > Update database > Update now
 * Find hw-probe package and install
 
-On Puppy 7 and newer (XenialPup64, BionicPup64, etc.):
+On Puppy 7 XenialPup64 and Puppy 8 BionicPup64:
 
-Update local database by Menu > Setup > Puppy Package Manager > Configure > Update database > Update now.
+Update local package database by Menu > Setup > Puppy Package Manager > Configure > Update database > Update now.
 Install `perl-base`, `hwinfo`, `util-linux` and `smartmontools` by Menu > Setup > Puppy Package Manager.
 
     curl https://raw.githubusercontent.com/linuxhw/hw-probe/master/hw-probe.pl | sudo dd of=/usr/bin/hw-probe
