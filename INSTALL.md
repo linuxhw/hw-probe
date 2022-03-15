@@ -371,6 +371,11 @@ Use [AppImage](README.md#appimage).
 Install on Puppy
 ----------------
 
+The package is available in Puppy 9 and newer (FossaPup64, etc.):
+
+* Update local database by Menu > Setup > Puppy Package Manager > Configure > Update database > Update now
+* Find hw-probe package and install
+
 On Puppy 7 and newer (XenialPup64, BionicPup64, etc.):
 
 Update local database by Menu > Setup > Puppy Package Manager > Configure > Update database > Update now.
