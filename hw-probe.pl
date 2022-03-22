@@ -18920,10 +18920,11 @@ sub scenario()
         if($Opt{"PC_Name"}) {
             $Sys{"Name"} = $Opt{"PC_Name"}; # fix PC name
         }
-        
+
         # 1.6: added Current_desktop to identify probe of XDG_*
         # We identify early 1.6 pre-releases (version is not bumped yet) by presence of Uuid property in Sys
-        if(not $Sys{"DE"} or (not $Sys{"Current_desktop"} and $Sys{"Probe_ver"} ne "1.5") or $Sys{"DE"} eq "KDE")
+        if(not $Sys{"DE"} or $Sys{"DE"} eq "KDE"
+        or (not $Sys{"Current_desktop"} and $Sys{"Probe_ver"} ne "1.5"))
         {
             if(my $FixDE = fixByPkgs("DE"))
             {
@@ -18932,7 +18933,7 @@ sub scenario()
                 }
             }
         }
-        
+
         if($Sys{"System"}=~/\Aubuntu(-\d|\Z)/)
         {
             if($Sys{"DE"}=~/KDE/) {
@@ -18978,20 +18979,21 @@ sub scenario()
             and (not $Sys{"DE"} or $Sys{"DE"}=~/openbox/i)) {
                 $Sys{"DE"} = "helloDesktop";
             }
-            elsif($Sys{"Current_wm"}) {
-                $Sys{"DE"} = $Sys{"Current_wm"};
-            }
-            elsif($Sys{"Wm"}) {
-                $Sys{"DE"} = $Sys{"Wm"};
-            }
-            elsif(-s $FixProbe_Logs."/xorg.log")
+
+            if(not $Sys{"DE"})
             {
-                if(isOpenBSD()) {
-                    $Sys{"DE"} = "fvwm";
+                if($Sys{"Current_wm"}) {
+                    $Sys{"DE"} = $Sys{"Current_wm"};
                 }
-                #else {
-                #    $Sys{"DE"} = "Unknown";
-                #}
+                elsif($Sys{"Wm"}) {
+                    $Sys{"DE"} = $Sys{"Wm"};
+                }
+                elsif(-s $FixProbe_Logs."/xorg.log")
+                {
+                    if(isOpenBSD()) {
+                        $Sys{"DE"} = "fvwm";
+                    }
+                }
             }
         }
         
