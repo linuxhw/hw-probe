@@ -1,5 +1,5 @@
 name: hw-probe
-version: 1.6-4
+version: 1.6-5
 summary: Check operability of computer hardware and find drivers
 description: >
  A tool to probe for hardware, check operability and find drivers
