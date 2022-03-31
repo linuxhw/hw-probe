@@ -88,7 +88,7 @@ parts:
       - etc/sensors3.conf
       - usr/lib/libsensors*
   libkmod:
-    source: http://ftp.riken.jp/Linux/kernel.org/linux/utils/kernel/kmod/kmod-25.tar.xz
+    source: https://cdn.kernel.org/pub/linux/utils/kernel/kmod/kmod-25.tar.xz
     source-type: tar
     plugin: make
     override-build: |
@@ -107,7 +107,7 @@ parts:
     source-type: tar
     plugin: make
     override-build: |
-      curl http://www.linux-usb.org/usb.ids > usb.ids
+      curl https://raw.githubusercontent.com/usbids/usbids/master/usb.ids > usb.ids
       sed -i -e 's/usbhid-dump//' Makefile.* configure
       ./configure --prefix=/usr
       sed -i -e 's/ -g / -s /' Makefile
@@ -130,7 +130,7 @@ parts:
     source-type: tar
     plugin: make
     override-build: |
-      curl https://pci-ids.ucw.cz/v2.2/pci.ids > pci.ids
+      curl https://raw.githubusercontent.com/pciutils/pciids/master/pci.ids > pci.ids
       make install PREFIX=/usr DESTDIR=$SNAPCRAFT_PART_INSTALL SHARED=no LIBKMOD=yes HWDB=no ZLIB=no DNS=no
       sed -i -e 's|/usr/share/pci.ids|/tmp/HW_PROBE_PCI_|' $SNAPCRAFT_PART_INSTALL/usr/sbin/lspci
     build-packages:
