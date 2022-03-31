@@ -103,6 +103,7 @@ use File::Basename qw(basename dirname);
 use Cwd qw(abs_path cwd);
 
 my $TOOL_VERSION = "1.6";
+my $TOOL_RELEASE = "3";
 
 my $URL_LINUX = "https://linux-hardware.org";
 my $URL_BSD = "https://bsd-hardware.info";
@@ -2453,7 +2454,7 @@ sub hideByRegexp(@)
     
     my @Matches = ($Content=~/$Regexp/gi);
     
-    my @Skip = ("apex", "bin/", "boot", "cdrom", "data", "live", "livecd", "live-rw", "tmpfs", "control", "shared", "start", "system", "utab", "vstorage");
+    my @Skip = ("apex", "bin/", "boot", "cdrom", "data", "live", "livecd", "live-rw", "tmpfs", "control", "shared", "start", "system", "swap", "utab", "vstorage");
     
     foreach my $Match (sort {length($b)<=>length($a)} @Matches)
     {
@@ -2792,6 +2793,9 @@ sub uploadData()
     
     @Cmd = (@Cmd, "-F tool_ver=\'$TOOL_VERSION\'");
     $Data{"tool_ver"} = $TOOL_VERSION;
+
+    @Cmd = (@Cmd, "-F tool_rel=\'$TOOL_RELEASE\'");
+    $Data{"tool_rel"} = $TOOL_RELEASE;
     
     @Cmd = (@Cmd, "-F salt=\'$Salt\'");
     $Data{"salt"} = $Salt;
@@ -3642,16 +3646,12 @@ sub getDefaultType($$$)
         if(defined $Device->{"ActiveDriver"}{"btusb"}) {
             return "bluetooth";
         }
-        
-        if($Device->{"Vendor"}=~/AuthenTec|Validity Sensors/) {
-            return "fingerprint reader";
-        }
-        
-        if($Device->{"Vendor"}=~/Synaptics/ and $DId=~/0081|009a|009b|00a2|00a8|00bb|00bd|00be|00c7|00c9|00df|00e7|00e9|00f0/) {
-            return "fingerprint reader";
-        }
-        
-        if($Device->{"Vendor"}=~/Goodix/ and $DId=~/533c/) {
+
+        if($Device->{"Vendor"}=~/AuthenTec|Validity Sensors/
+        or $Device->{"Vendor"}=~/Synaptics/ and $DId=~/0081|009a|009b|00a2|00a8|00bb|00bd|00be|00c7|00c9|00df|00e7|00e9|00f0/
+        or $Device->{"Vendor"}=~/Goodix/ and $DId=~/533c/
+        or $Device->{"Vendor"}=~/Elan/ and $DId=~/0c00/
+        or $Device->{"Vendor"}=~/EgisTec/ and $DId=~/0575/) {
             return "fingerprint reader";
         }
     }
@@ -10540,7 +10540,7 @@ sub probeHW()
                 next;
             }
             
-            if($Line=~/ (ext[234]) / and index($Line, "/")==-1) {
+            if($Line=~/ (ext[234]|btrfs|xfs) / and index($Line, "/")==-1) {
                 $Sys{"Dual_boot"} = 1;
             }
         }
@@ -13416,7 +13416,7 @@ sub fixFFByModel($$)
             undef => [ "AO531h", "AOA110", "Aspire (7720|5670|\\d+Z)", "EasyNote", "Extensa \\d+", "MacBook", "RoverBook", "A410-K\\.BE47P1", "0PJTXT", "R490-KR6WK" ],
             "Alienware" => [ "m15" ],
             "Clevo"   => [ "M740TU", "D40EV", "M720R" ],
-            "IBM"     => [ "26474MG" ],
+            "IBM"     => [ "26474MG", "2658MNG" ],
             "Intel"   => [ "Corbett Park CRB" ],
             "Fujitsu" => [ "ESPRIMO Mobile" ],
             "Medion"  => [ "E16402" ],
@@ -13452,6 +13452,7 @@ sub fixFFByModel($$)
             "Compulab" => [ "Intense", "fitlet", "Airtop", "fit-PC", "1160405" ],
             "congatec" => [ "conga" ],
             "Flytech"  => [ "C56" ],
+            "Gigabyte" => [ "GB-BSi3-6100" ],
             "Intel"    => [ "NUC\\d" ],
             "Kontron"  => [ "SMX945" ],
             "Orbsmart" => [ "\\AAW" ],
@@ -14992,8 +14993,8 @@ sub probeDistr()
     if(grep { $Release eq $_ } ("amd64", "x86_64")) {
         $Release = undef;
     }
-    
-    if((not $Name or not $Release or $Name=~/arcolinux/i) and $OS_Rel)
+
+    if((not $Name or not $Release or $Name=~/arcolinux|ubuntu/i) and $OS_Rel)
     {
         if($OS_Rel=~/\bID=[ \t]*[\"\']*([^"'\n]+)/)
         {
@@ -15017,7 +15018,7 @@ sub probeDistr()
         if($OS_Rel=~/\bPRETTY_NAME=[ \t]*[\"\']*([^"'\n]+)/)
         {
             my $PrettyName = $1;
-            if($PrettyName=~/(CryptoDATA|Debian|Docker Desktop|Devuan|ECP VeiL|GNOME OS|Itd Os|KDE Neon|LMDE|MakuluLinux|Makululinux|MocaccinoOS|OpenVZ|Parrot|pearOS|Pop\!_OS|Porteus|SkiffOS|Sn3rpOs|SuperX|Virtuozzo Hybrid Infrastructure|Windowsfx|XCP-ng)/) {
+            if($PrettyName=~/(CryptoDATA|Debian|Docker Desktop|Devuan|ECP VeiL|Feren OS|GNOME OS|Itd Os|KDE Neon|LMDE|MakuluLinux|Makululinux|MocaccinoOS|OpenVZ|Parrot|pearOS|Pop\!_OS|Porteus|SkiffOS|Sn3rpOs|SuperX|Virtuozzo Hybrid Infrastructure|Windowsfx|XCP-ng)/) {
                 $Name = $1;
             }
             elsif($PrettyName=~/(Linux Lite) ([\d\.]+)/)
@@ -16600,7 +16601,7 @@ sub decodeACPI($$)
 sub clearLog_X11($)
 {
     if(length($_[0])<$EMPTY_LOG_SIZE
-    and $_[0]=~/No protocol specified|Can't open display|unable to open display|Unable to connect to|cannot connect to|couldn't open display/i) {
+    and $_[0]=~/No protocol specified|Can't open display|unable to open display|Unable to connect to|cannot connect to|couldn't open display|cannot open shared object file/i) {
         return "";
     }
     
@@ -18812,7 +18813,7 @@ sub scenario()
         }
         
         if($Opt{"RmObsolete"})
-        {
+        { # Leave only hardware-specific logs, do not save logs necessary for investigating problems
             foreach my $L ("boot.log", "dmesg.1", "findmnt", "fstab", "grub.cfg", "mount", "pstree", "systemctl", "top", "xorg.log.1", "xorg.conf.d", "xorg.conf", "modprobe.d", "interrupts", "gl_conf-alternatives", "alsactl") # NOTE: systemctl is needed to detect Display_manager
             {
                 if(-e "$FixProbe_Logs/$L") {
