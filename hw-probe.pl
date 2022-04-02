@@ -2289,6 +2289,7 @@ sub hideDmesg(@)
     $Content=~s/(dev-disk-by\\x2did-(ata|usb|nvme).+?_)[^_]+?(\\x2d.+?\.)/$1...$3/g;
     $Content=~s/( Checking was requested for )"[^\n]+?( but )/$1...$2/g;
     $Content=~s/(systemd-fstab-generator\[\d+\]: ).+/$1.../g;
+    $Content=~s/(\/user-)\d+(\.)/$1XXXX$2/g;
     
     if(isBSD() or $Opt{"ForBSD"})
     {
@@ -2320,7 +2321,7 @@ sub hideHost($)
 sub hidePaths($)
 {
     my $Content = $_[0];
-    my @Paths = ("storage", "mount", "home", "media", "data", "shares", "vhosts", "mapper", "photos", "snap", "shm", "srv/nfs", "dev/serno", "serno", "exports", "usr/obj", "mnt");
+    my @Paths = ("storage", "mount", "home", "media", "data", "shares", "vhosts", "mapper", "photos", "snap", "shm", "srv/nfs", "dev/serno", "serno", "exports", "usr/obj", "mnt", "run/user");
     if(isBSD()) {
         push(@Paths, "diskid", "ufsid");
     }
@@ -2491,6 +2492,7 @@ sub decorateSystemd($)
 {
     my $Content = $_[0];
     $Content = hideByRegexp($Content, qr/systemd-cryptsetup@(.+?)\.service/, "systemd");
+    $Content=~s/(\@)\d+(\.)/$1XXXX$2/g;
     return $Content;
 }
 
@@ -4254,6 +4256,7 @@ sub probeHW()
         $Lsblk = hideLVM($Lsblk);
         $Lsblk = encryptUUIDs($Lsblk);
         $Lsblk = hideByRegexp($Lsblk, qr/\s([a-f\d]{8})\-\d\d\n/); # PARTUUID
+        $Lsblk=~s/(\s)[A-Z\d]{16}(\s)/$1XXXXXXXXXXXXXXXX$2/g; # ntfs UUID
         writeLog($LOG_DIR."/lsblk", $Lsblk);
     }
     
@@ -15398,6 +15401,8 @@ sub writeLogs()
         listProbe("logs", "grub");
         my $Grub = readFile("/etc/default/grub");
         $Grub = hidePaths($Grub);
+        $Grub = encryptUUIDs($Grub);
+        $Grub = hideMACs($Grub);
         writeLog($LOG_DIR."/grub", $Grub);
     }
     
@@ -15410,6 +15415,7 @@ sub writeLogs()
             my $GrubCfg = readFile("/boot/grub2/grub.cfg");
             $GrubCfg = hidePaths($GrubCfg);
             $GrubCfg = encryptUUIDs($GrubCfg);
+            $GrubCfg = hideMACs($GrubCfg);
             $GrubCfg=~s/.*password.+/###/g;
             writeLog($LOG_DIR."/grub.cfg", $GrubCfg);
         }
@@ -16137,6 +16143,7 @@ sub writeLogs()
             $Mprobe .= $Content;
             $Mprobe .= "\n\n";
         }
+        $Mprobe=~s/#.*\n//g;
         writeLog($LOG_DIR."/modprobe.d", $Mprobe);
     }
     
@@ -16170,6 +16177,8 @@ sub writeLogs()
                 $XConfig .= "\n\n";
             }
         }
+
+        $XConfig=~s/#.*\n//g;
         
         if(not $Opt{"Docker"} or $XConfig) {
             writeLog($LOG_DIR."/xorg.conf.d", $XConfig);
