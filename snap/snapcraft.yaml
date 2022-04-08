@@ -19,7 +19,7 @@ description: >
  check health of all your hard drives.
      
 type: app
-base: core18
+base: core20
 confinement: strict
 grade: stable
 plugs:
