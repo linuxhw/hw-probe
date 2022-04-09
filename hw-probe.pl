@@ -103,7 +103,7 @@ use File::Basename qw(basename dirname);
 use Cwd qw(abs_path cwd);
 
 my $TOOL_VERSION = "1.6";
-my $TOOL_RELEASE = "3";
+my $TOOL_RELEASE = "4";
 
 my $URL_LINUX = "https://linux-hardware.org";
 my $URL_BSD = "https://bsd-hardware.info";
@@ -239,6 +239,9 @@ if($#ARGV_COPY==-1)
 elsif($#ARGV_COPY==0 and grep { $ARGV_COPY[0] eq $_ } ("-snap", "-flatpak"))
 { # Run by desktop file
     my $Gui = "hw-probe-pyqt5-gui";
+    if(not checkCmd($Gui)) {
+        $Gui = "hw-probe-pyqt6-gui";
+    }
     
     if(checkCmd($Gui))
     {
@@ -1809,6 +1812,8 @@ my %BatType = (
     "lithium-polymer" => "Li-poly"
 );
 
+# We are not going to update it anymore
+# This is resolved at server side
 my @WrongAddr = (
     # MAC/clientHash(MAC)
     "00-00-00-00-00-00", "9B615E889BC3EDDF63600C8DAA6D56CC",
@@ -7481,6 +7486,11 @@ sub probeHW()
             $Dmidecode = encryptSerials($Dmidecode, "UUID");
             $Dmidecode = encryptSerials($Dmidecode, "Serial Number");
             $Dmidecode = encryptSerials($Dmidecode, "Asset Tag");
+
+            if(length($Dmidecode) < 2*$EMPTY_LOG_SIZE
+            and index($Dmidecode, "/dev/mem: Permission denied") != -1) {
+                $Dmidecode = undef;
+            }
             
             if(not $Dmidecode and isOpenBSD()) {
                 printMsg("WARNING", "failed to run dmidecode");
@@ -18822,7 +18832,7 @@ sub scenario()
         }
         
         if($Opt{"RmObsolete"})
-        { # Leave only hardware-specific logs, do not save logs necessary for investigating problems
+        { # Leave only hardware-specific logs, do not save logs and configs necessary for investigating problems
             foreach my $L ("boot.log", "dmesg.1", "findmnt", "fstab", "grub.cfg", "mount", "pstree", "systemctl", "top", "xorg.log.1", "xorg.conf.d", "xorg.conf", "modprobe.d", "interrupts", "gl_conf-alternatives", "alsactl") # NOTE: systemctl is needed to detect Display_manager
             {
                 if(-e "$FixProbe_Logs/$L") {
