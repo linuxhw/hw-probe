@@ -68,9 +68,9 @@
   </content_rating>
 
   <releases>
-    <release version="1.6" date="2021-09-21" urgency="high">
+    <release version="1.6.4" date="2022-04-10" urgency="high">
       <description>
-        Hardware Probe Tool 1.6
+        Hardware Probe Tool 1.6.4
       </description>
       <url>https://github.com/linuxhw/hw-probe/blob/master/NEWS.md#hw-probe-16</url>
     </release>
