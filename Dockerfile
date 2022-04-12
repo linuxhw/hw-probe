@@ -3,7 +3,7 @@ FROM alpine:3.13
 RUN apk update \
     && apk add --no-cache perl curl xz dmidecode pciutils usbutils \
     smartmontools hdparm sysstat util-linux lm_sensors acpi iw wireless-tools glib libxrandr zlib eudev-libs libusb libdrm  \
-    alsa-utils xrandr xdpyinfo xinput acpica iasl perl-libwww i2c-tools \
+    alsa-utils xrandr xdpyinfo xinput acpica iasl perl-libwww i2c-tools hwinfo libx86emu \
     && apk add --no-cache --virtual build-deps git gcc g++ make autoconf automake libtool file bsd-compat-headers libc-dev util-linux-dev flex linux-headers glib-dev libxrandr-dev zlib-dev eudev-dev libusb-dev libdrm-dev i2c-tools-dev \
     && git clone https://git.linuxtv.org/edid-decode.git 2>/dev/null \
     && cd edid-decode \
@@ -22,20 +22,6 @@ RUN apk update \
     && make install \
     && cd .. \
     && rm -fr ddcutil \
-    && git clone https://github.com/wfeldt/libx86emu.git \
-    && cd libx86emu \
-    && make \
-    && find . -type f | perl -lne 'print if -B and -x' | xargs strip \
-    && make install \
-    && cd .. \
-    && rm -fr libx86emu \
-    && git clone https://github.com/openSUSE/hwinfo.git \
-    && cd hwinfo \
-    && make \
-    && find . -type f | perl -lne 'print if -B and -x' | xargs strip \
-    && make install \
-    && cd .. \
-    && rm -fr hwinfo \
     && curl -L https://github.com/linuxhw/build-stuff/releases/download/1.6/hw-probe-1.6-AI.tar.gz > hw-probe-1.6-AI.tar.gz \
     && tar -xf hw-probe-1.6-AI.tar.gz \
     && rm -fr hw-probe-1.6-AI.tar.gz \
