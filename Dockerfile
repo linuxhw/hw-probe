@@ -3,8 +3,8 @@ FROM alpine:3.13
 RUN apk update \
     && apk add --no-cache perl curl xz dmidecode pciutils usbutils \
     smartmontools hdparm sysstat util-linux lm_sensors acpi iw wireless-tools glib libxrandr zlib eudev-libs libusb libdrm  \
-    alsa-utils xrandr xdpyinfo xinput acpica iasl perl-libwww \
-    && apk add --no-cache --virtual build-deps git gcc g++ make autoconf automake libtool file bsd-compat-headers libc-dev util-linux-dev flex linux-headers glib-dev libxrandr-dev zlib-dev eudev-dev libusb-dev libdrm-dev \
+    alsa-utils xrandr xdpyinfo xinput acpica iasl perl-libwww i2c-tools \
+    && apk add --no-cache --virtual build-deps git gcc g++ make autoconf automake libtool file bsd-compat-headers libc-dev util-linux-dev flex linux-headers glib-dev libxrandr-dev zlib-dev eudev-dev libusb-dev libdrm-dev i2c-tools-dev \
     && git clone https://git.linuxtv.org/edid-decode.git 2>/dev/null \
     && cd edid-decode \
     && make \
