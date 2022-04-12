@@ -14,7 +14,7 @@ RUN apk update \
     && rm -fr edid-decode \
     && git clone https://github.com/rockowitz/ddcutil.git \
     && cd ddcutil \
-    && git checkout 1.1.0-dev \
+    && git checkout 1.2.2-release \
     && NOCONFIGURE=1 NO_CONFIGURE=1 sh autogen.sh \
     && ./configure --prefix=/usr \
     && make \
