@@ -178,7 +178,7 @@ Download package [hw-probe-1.5-ArchLinux-any.pkg.tar.xz](https://github.com/linu
 Install on CentOS
 -----------------
 
-On CentOS 8, CentOS 7 and CentOS 6:
+On CentOS 9, CentOS 8, CentOS 7 and CentOS 6:
 
     sudo yum install epel-release
     sudo yum install hw-probe
@@ -401,7 +401,7 @@ Use [Docker](README.md#docker).
 Install on RHEL
 ---------------
 
-On RHEL 6-8 and RHEL based Linux distributions (CentOS, AlmaLinux, Rocky Linux, Scientific Linux, Springdale Linux, etc.):
+On RHEL 6-9 and RHEL based Linux distributions (CentOS, AlmaLinux, Rocky Linux, Scientific Linux, Springdale Linux, etc.):
 
     sudo yum install epel-release
     sudo yum install hw-probe
