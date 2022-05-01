@@ -33,7 +33,7 @@ About
 
 Probe — is a snapshot of your computer's hardware state and logs. The tool checks operability of devices by analysis of logs and returns a permanent url to view the probe of the computer.
 
-Share your probes and logs with Linux/BSD developers in order to debug and fix problems on your computer. Simplify inventory of hardware in your company. Please read more in [our blog](https://github.com/linuxhw/Blog/blob/master/Linux_Hardware_Blog.pdf).
+Share your probes and logs with Linux/BSD developers in order to debug and fix problems on your computer. Simplify inventory of hardware in your company. Please read more in [our blog](https://forum.linux-hardware.org/).
 
 If some of your computer devices doesn't work due to a missed driver then the tool will suggest a proper Linux kernel version according to the LKDDb or third-party drivers.
 
