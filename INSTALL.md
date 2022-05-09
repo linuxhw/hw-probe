@@ -64,7 +64,7 @@ Command line to Run
 Install on Ubuntu
 -----------------
 
-On Ubuntu and Ubuntu based Linux distributions (Kubuntu, Lubuntu, Xubuntu, Linux Mint, Zorin, Pop!_OS, elementary OS, KDE neon, Peppermint, Linuxfx, Linux Lite, HamoniKR, WindowsFX, Trisquel, Makulu Linux, GalliumOS, etc.).
+On Ubuntu and Ubuntu based Linux distributions (elementary OS, GalliumOS, HamoniKR, KDE neon, Kubuntu, Linuxfx, Linux Lite, Linux Mint, Lubuntu, Makulu Linux, Peppermint, Pop!_OS, Trisquel, Ubuntu Kylin, WindowsFX, Xubuntu, Zorin, etc.).
 
 ###### Ubuntu package
 
