@@ -330,9 +330,9 @@ Install on openSUSE
 
 Select and install an RPM package for your openSUSE distribution and derivatives (GeckoLinux, etc.): https://software.opensuse.org/package/hw-probe
 
-openSUSE Leap 15.1:
+openSUSE Leap 15.3:
 
-    sudo zypper addrepo https://download.opensuse.org/repositories/hardware/openSUSE_Leap_15.1/ hardware
+    sudo zypper addrepo https://download.opensuse.org/repositories/hardware/openSUSE_Leap_15.3/ hardware
     sudo zypper install hw-probe
 
 openSUSE Tumbleweed:
