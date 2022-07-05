@@ -43,8 +43,10 @@ Contents
 * [ Install on QTS          ](#install-on-qts)
 * [ Install on RHEL         ](#install-on-rhel)
 * [ Install on ROSA         ](#install-on-rosa)
+* [ Install on Sabayon      ](#install-on-sabayon)
 * [ Install on Slackware    ](#install-on-slackware)
 * [ Install on Solus        ](#install-on-solus)
+* [ Install on SteamOS      ](#install-on-steamos)
 * [ Install on Void Linux   ](#install-on-void-linux)
 * [ Install from Source     ](#install-from-source)
 
@@ -330,9 +332,9 @@ Install on openSUSE
 
 Select and install an RPM package for your openSUSE distribution and derivatives (GeckoLinux, etc.): https://software.opensuse.org/package/hw-probe
 
-openSUSE Leap 15.3:
+openSUSE Leap 15.4:
 
-    sudo zypper addrepo https://download.opensuse.org/repositories/hardware/openSUSE_Leap_15.3/ hardware
+    sudo zypper addrepo https://download.opensuse.org/repositories/hardware/openSUSE_Leap_15.4/ hardware
     sudo zypper install hw-probe
 
 openSUSE Tumbleweed:
@@ -429,6 +431,12 @@ Use [AppImage](README.md#appimage), [Docker](README.md#docker) or [Flatpak](READ
 
 Install on Solus
 ----------------
+
+Use [AppImage](README.md#appimage) or [Flatpak](README.md#flatpak).
+
+
+Install on SteamOS
+------------------
 
 Use [AppImage](README.md#appimage) or [Flatpak](README.md#flatpak).
 
