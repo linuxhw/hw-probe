@@ -9329,12 +9329,15 @@ sub probeHW()
     {
         my $MegacliCmd = undef;
         
-        foreach my $Cmd ("megacli", "MegaCli64", "MegaCli")
+        if(not (checkCmd("mega-version")))
         {
-            if(checkCmd($Cmd))
+            foreach my $Cmd ("megacli", "MegaCli64", "MegaCli")
             {
-                $MegacliCmd = $Cmd;
-                last;
+                if(checkCmd($Cmd))
+                {
+                    $MegacliCmd = $Cmd;
+                    last;
+                }
             }
         }
         
