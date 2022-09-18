@@ -103,7 +103,7 @@ use File::Basename qw(basename dirname);
 use Cwd qw(abs_path cwd);
 
 my $TOOL_VERSION = "1.6";
-my $TOOL_RELEASE = "4";
+my $TOOL_RELEASE = "5";
 
 my $URL_LINUX = "https://linux-hardware.org";
 my $URL_BSD = "https://bsd-hardware.info";
@@ -725,7 +725,7 @@ my %VendorRam = (
     "Kingmax"  => ["FLF", "FLG", "FSF", "FSG", "GLAH", "GLLG", "GSLG4"],
     "Kingston" => ["KHX", "ACR", "ASU", "BRAP", "D3L16", "HP53", "KMK", "KN2M", "SNY", "TSB", "CL4-", "CL7-", "CL9-", "CL11-", "CL15-", "CL16-", "CL-17-", "1024636"],
     "KingTiger"=> ["KingTiger000000000", "KingTige"],
-    "Klevv"    => ["KD4"],
+    "KLEVV"    => ["KD4"],
     "Kllisre"  => ["KRE-"],
     "KomputerBay" => ["KB_8G", "KB8G"],
     "Kreton"   => ["516230", "51631x", "51634x", "51731x"],
@@ -1890,6 +1890,7 @@ my @ProtectedLogs = (
     "dmidecode",
     "dmi_id",
     "drm_info",
+    "edac-util",
     "edid",
     "ethtool_p",
     "fdisk",
@@ -2295,6 +2296,7 @@ sub hideDmesg(@)
     $Content=~s/( Checking was requested for )"[^\n]+?( but )/$1...$2/g;
     $Content=~s/(systemd-fstab-generator\[\d+\]: ).+/$1.../g;
     $Content=~s/(\/user-)\d+(\.)/$1XXXX$2/g;
+    $Content=~s/(failed to look up) (.+?) (on)/$1 XXX $3/g;
     
     if(isBSD() or $Opt{"ForBSD"})
     {
@@ -4171,7 +4173,14 @@ sub probeHW()
     if($Neofetch and $USE_JSON_XS)
     {
         require Encode;
-        $Neofetch = JSON::XS::decode_json(Encode::encode_utf8($Neofetch));
+        eval {
+            $Neofetch = JSON::XS::decode_json(Encode::encode_utf8($Neofetch));
+        }
+        or do
+        {
+            $Neofetch = ();
+            print STDERR "ERROR: failed to parse neofetch log\n";
+        };
         if(not $Sys{"Wm"} and $Neofetch) {
             $Sys{"Wm"} = $Neofetch->{"WM"};
         }
@@ -4234,7 +4243,7 @@ sub probeHW()
         }
         else
         {
-            $LsblkCmd = "lsblk -al -o NAME,SIZE,TYPE,FSTYPE,UUID,MOUNTPOINT,MODEL,PARTUUID";
+            $LsblkCmd = "lsblk -al -o NAME,SIZE,TYPE,FSTYPE,UUID,MOUNTPOINT,MODEL,PTTYPE,PARTUUID";
             if($Opt{"Flatpak"}) {
                 $LsblkCmd .= " 2>/dev/null";
             }
@@ -4248,6 +4257,13 @@ sub probeHW()
         if($Lsblk=~/unknown column/)
         { # CentOS 6: no PARTUUID column
             if($LsblkCmd=~s/\,PARTUUID//g) {
+                $Lsblk = runCmd($LsblkCmd);
+            }
+        }
+
+        if($Lsblk=~/unknown column/)
+        {
+            if($LsblkCmd=~s/\,PTTYPE//g) {
                 $Lsblk = runCmd($LsblkCmd);
             }
         }
@@ -5263,6 +5279,10 @@ sub probeHW()
         cleanValues(\%Device);
         
         $ID = fmtID($ID);
+
+        if(not $ID) {
+            next;
+        }
         
         my $BusID = $Bus.":".$ID;
         
@@ -5469,8 +5489,13 @@ sub probeHW()
     
     my $Dmesg = "";
     
-    if($Opt{"FixProbe"}) {
+    if($Opt{"FixProbe"})
+    {
         $Dmesg = readFile($FixProbe_Logs."/dmesg");
+        if(length($Dmesg) <= 1024
+        and -e $FixProbe_Logs."/dmesg.1") {
+            $Dmesg = readFile($FixProbe_Logs."/dmesg.1");
+        }
     }
     elsif(checkCmd("dmesg"))
     {
@@ -7977,7 +8002,8 @@ sub probeHW()
     {
         fixFFByBoard($HW{$Board_ID}{"Device"});
         
-        if($Sys{"Type"}=~/$DESKTOP_TYPE|$SERVER_TYPE/ or not $Sys{"Type"})
+        if($Sys{"Vendor"}!~/VMware/i
+        and ($Sys{"Type"}=~/$DESKTOP_TYPE|$SERVER_TYPE/ or not $Sys{"Type"}))
         {
             my ($MVendor, $MModel) = ($HW{$Board_ID}{"Vendor"}, shortModel($HW{$Board_ID}{"Device"}));
             
@@ -7997,6 +8023,12 @@ sub probeHW()
                 
                 $Sys{"Vendor"} = $MVendor;
                 $Sys{"Model"} = $MModel;
+
+                if($MModel eq "VirtualBox")
+                {
+                    $Sys{"Subvendor"} = undef;
+                    $Sys{"Submodel"} = undef;
+                }
                 
                 if($Sys{"Subvendor"} eq $Sys{"Vendor"} and $Sys{"Submodel"} eq $Sys{"Model"})
                 {
@@ -8739,7 +8771,22 @@ sub probeHW()
         
         writeLog($LOG_DIR."/hdparm", $Hdparm);
     }
-    
+
+    my $EdacUtil = "";
+    if($Opt{"FixProbe"}) {
+        $EdacUtil = readFile($FixProbe_Logs."/edac-util");
+    }
+    elsif($Opt{"HWLogs"} and enabledLog("edac-util"))
+    {
+        if($Admin and checkCmd("edac-util"))
+        {
+            listProbe("logs", "edac-util");
+            $EdacUtil = runCmd("edac-util -vs 2>/dev/null");
+            $EdacUtil .= runCmd("edac-util -v 2>/dev/null");
+            writeLog($LOG_DIR."/edac-util", $EdacUtil);
+        }
+    }
+
     if($Opt{"HWLogs"})
     {
         if(enabledLog("hddtemp") and checkCmd("hddtemp"))
@@ -9509,8 +9556,8 @@ sub probeHW()
             $Sys{"Ram_used"} = $Sys{"Ram_total"} - $2*1024.0;
         }
     }
-    
-    if((not $Sys{"Model"} or $Sys{"Model"} eq "rpi") and $Sys{"Arch"}=~/arm|aarch/i)
+
+    if((not $Sys{"Model"} or grep { $Sys{"Model"} eq $_ } ("rpi", "Raspberry Pi")) and $Sys{"Arch"}=~/arm|aarch/i)
     {
         if($Dmesg=~/(Machine(| model)|Hardware name): (.+)/)
         {
@@ -10800,9 +10847,11 @@ sub probeHW()
         $BootLog=~s&(Setting hostname\s+).+:&$1XXXXX:&g;
         $BootLog=~s&(File System Check on) .+&$1 XXX&g;
         $BootLog=~s& [^\s]+ (NET\[)& XXX $1&g;
+        $BootLog=~s&(failed to look up) (.+?) (on)&$1 XXX $3&g;
         $BootLog = hideLVM($BootLog);
         $BootLog = encryptUUIDs($BootLog);
         $BootLog = hideDevDiskUUIDs($BootLog);
+        $BootLog = hideIPs($BootLog);
         writeLog($LOG_DIR."/boot.log", $BootLog);
     }
     
@@ -11569,7 +11618,7 @@ sub shortOS($)
     $Name=~s/\s+(linux|project|amd64|x86_64)\s+/ /i;
     $Name=~s/\s*(linux|project|amd64|x86_64)\Z//i;
     $Name=~s/\s+/\-/g;
-    $Name=~s/\.\Z//g;
+    $Name=~s/[\.\-]\Z//g;
     return $Name;
 }
 
@@ -13408,7 +13457,7 @@ sub fixFFByBoard($)
     my $Board = $_[0];
 
     my %UnknownBoard = (
-        "desktop"  => [ "D510MO", "GA-K8NMF-9", "DG965RY", "DG33BU", "D946GZIS", "N3150ND3V", "D865GSA", "DP55WG", "H61MXT1", "D875PBZ", "F2A55", "Z68XP-UD3", "Z77A-GD65", "M4A79T", "775Dual-880Pro", "P4Dual-915GL", "P4i65GV", "D5400XS", "D201GLY", "MicroServer", "IPPSB-DB", "MS-AA53", "C2016-BSWI-D2", "N3160TN", "D915PBL", "EIRD-SAM", "D865PERL", "D410PT", "D525MW", "D945GCNL", "BSWI-D2", "B202", "D865GBF", "G1-CPU-IMP", "Aptio CRB", "A1SRi", "D865GVHZ", "IC17X", "N3050ND3H", "Bettong CRB", "E3C246D2I", "Pine Trail - M CRB", "Ultra 24" ],
+        "desktop"  => [ "D510MO", "GA-K8NMF-9", "DG965RY", "DG33BU", "D946GZIS", "N3150ND3V", "D865GSA", "DP55WG", "H61MXT1", "D875PBZ", "F2A55", "Z68XP-UD3", "Z77A-GD65", "M4A79T", "775Dual-880Pro", "P4Dual-915GL", "P4i65GV", "D5400XS", "D201GLY", "MicroServer", "IPPSB-DB", "MS-AA53", "C2016-BSWI-D2", "N3160TN", "D915PBL", "EIRD-SAM", "D865PERL", "D410PT", "D525MW", "D945GCNL", "BSWI-D2", "B202", "D865GBF", "G1-CPU-IMP", "Aptio CRB", "A1SRi", "D865GVHZ", "IC17X", "N3050ND3H", "Bettong CRB", "E3C246D2I", "Pine Trail - M CRB", "Ultra 24", "DP55WB", "J3160NH", "CM-iAM" ],
         "server"   => [ "X10DRT-P", "X10DRW-i", "X10SDV-TP8F", "X10DRH-iT", "CS24-SC", "K1SPE-IN001" ],
         "notebook" => [ "W7430", "Poyang", "PSMBOU", "Lhotse-II", "Nettiling", "EI Capitan", "JV11-ML", "M7x0S Bottom", "M720SR", "26446AG", "S5610", "SANTA ROSA CRB", "PowerBook\\d+", "VivoBook", "VPCF12C5E" ],
         "tablet"   => [ "SurfTab" ],
@@ -13462,6 +13511,7 @@ sub fixFFByModel($$)
             undef => [ "Macmini", "ESPRIMO Q510", "MMLP5AP-SI", "Mini PC", "TL-WR842N", "Thin Client", "Thin Mini", "VMac mini", "Aptio CRB", "Propc Nano", "XS35V5", "M6JR120", "D425KT", "TV Box", "ZBOX\\-" ],
             "Beelink" => [ "\\ASII" ],
             "Chuwi"   => [ "Box" ],
+            "Clientron" => [ "C800" ],
             "Compulab" => [ "Intense", "fitlet", "Airtop", "fit-PC", "1160405" ],
             "congatec" => [ "conga" ],
             "Flytech"  => [ "C56" ],
@@ -13627,7 +13677,7 @@ sub fixChassis()
     if(not $Board_ID) {
         $Board_ID = registerBoard(\%Board);
     }
-    
+
     if(not $Sys{"Type"}
     or grep {$Sys{"Type"} eq $_} ("soc", "system on chip", "notebook", "hand held"))
     {
@@ -13686,6 +13736,12 @@ sub fixChassis()
         elsif($Sys{"Kernel"}=~/\-qcom\-msm8916/i)
         {
             $Sys{"Type"} = "smartphone";
+        }
+        elsif($Sys{"Kernel"}=~/microsoft-standard-WSL2/i)
+        {
+            $Sys{"Type"} = "virtual machine";
+            $Sys{"Vendor"} = "Microsoft";
+            $Sys{"Model"} = "Windows Subsystem for Linux ";
         }
     }
 }
@@ -13936,7 +13992,7 @@ sub detectHWaddr(@)
     {
         my $Addr = undef;
         
-        if($Block=~/\A(docker|vboxnet|vmnet|tun\d)/) {
+        if($Block=~/\A(docker|vboxnet|vmnet|tun\d|cali|vxlan\.calico|dummy)/) {
             next;
         }
         
@@ -14098,7 +14154,7 @@ sub selectHWAddr(@)
     }
     
     my $Sel = undef;
-    
+
     if(@Eth) {
         $Sel = $Eth[0];
     }
@@ -14119,7 +14175,6 @@ sub selectHWAddr(@)
     elsif(@Virtual) {
         $Sel = $Virtual[0];
     }
-    
     if(not $Sel) {
         return clientHash("DEFAULT");
     }
@@ -14247,7 +14302,7 @@ sub fixDistr($$$$)
     if($Distr=~/\A(debian|ubuntu)/)
     {
         my $Debs = readFile("$FixProbe_Logs/debs");
-        if($Debs=~/(mx-system|ddm-mx|q4os-desktop|kubuntu-desktop|xubuntu-desktop|lubuntu-desktop|ubuntu-budgie-desktop|ubuntu-mate-desktop|ubuntudde-desktop|ubuntustudio-desktop|ubuntukylin-desktop) ([\d\.]+)/)
+        if($Debs=~/(mx-system|ddm-mx|q4os-desktop|kubuntu-desktop|xubuntu-desktop|lubuntu-desktop|ubuntu-budgie-desktop|ubuntu-mate-desktop|ubuntu-unity-desktop|ubuntudde-desktop|ubuntustudio-desktop|ubuntukylin-desktop) ([\d\.]+)/)
         {
             $Distr = $1;
             my $PkgVersion = $2;
@@ -14259,7 +14314,7 @@ sub fixDistr($$$$)
                 $Rel = undef;
                 $DistrVersion=~s/\A(\d+)\..+/$1/;
             }
-            elsif($Distr=~/(kubuntu|xubuntu|lubuntu|ubuntu-budgie|ubuntu-mate|ubuntudde|ubuntustudio|ubuntukylin)/) {
+            elsif($Distr=~/(kubuntu|xubuntu|lubuntu|ubuntu-budgie|ubuntu-mate|ubuntu-unity|ubuntudde|ubuntustudio|ubuntukylin)/) {
                 $Distr = $1;
             }
         }
@@ -14469,6 +14524,14 @@ sub setDistr($$$$)
     }
 }
 
+sub getPrettyName($)
+{
+    if($_[0]=~/\bPRETTY_NAME=[ \t]*[\"\']*([^"'\n]+)/) {
+        return $1;
+    }
+    return undef;
+}
+
 sub probeDistr()
 {
     my ($Name, $Release, $Descr) = ();
@@ -14536,9 +14599,13 @@ sub probeDistr()
             $Release = $1;
         }
         
-        if(not $Opt{"FixProbe"})
+        my $OS_Release = undef;
+        if($Opt{"FixProbe"}) {
+            $OS_Release = readFile($FixProbe_Logs."/os-release");
+        }
+        else
         {
-            if(my $OS_Release = readFile("/etc/os-release"))
+            if($OS_Release = readFile("/etc/os-release"))
             { # For future (e.g. on GhostBSD)
                 listProbe("logs", "os-release");
                 writeLog($LOG_DIR."/os-release", $OS_Release);
@@ -14773,6 +14840,13 @@ sub probeDistr()
         if($Uname=~/RELENG_(\d+)_(\d+)_(\d+)/i) {
             $Release = $1.".".$2.".".$3;
         }
+
+        if(my $PrettyName = getPrettyName($OS_Release))
+        {
+            if($PrettyName=~/(MyBee)/) {
+                $Name = lc($1);
+            }
+        }
         
         if($Name!~/dragonfly/)
         { # There is os-release on DragonFly
@@ -14889,7 +14963,7 @@ sub probeDistr()
         if($LSB_Rel=~/Description:\s*(.*)/) {
             $Descr = $1;
         }
-        
+
         if($Name=~/\ARedHatEnterprise/i)
         {
             $Name = "rhel";
@@ -14939,9 +15013,9 @@ sub probeDistr()
         elsif($Name=~/\AOpenMandriva/i) {
             return ("openmandriva", $Release, "", "");
         }
-        elsif($Name=~/\AopenSUSE Tumbleweed/i
-        and $Release=~/\A\d\d\d\d\d\d\d\d\Z/) {
-            return ("opensuse", $Release, "", "");
+        elsif($Name=~/\AopenSUSE (Tumbleweed|MicroOS)/i
+        or $Descr=~/\AopenSUSE (Tumbleweed|MicroOS)/i) {
+            return ("opensuse", lc($1)."-XXXXXXXX", "", "");
         }
         elsif($Name eq "Pop") {
             return ("pop!_os", $Release, "", "");
@@ -14949,7 +15023,7 @@ sub probeDistr()
         elsif(lc($Name) eq "neon") {
             return ("kde-neon", $Release, "", "");
         }
-        elsif($Descr=~/\A(Devuan|ECP VeiL|KDE neon|LMDE|Maui|openSUSE Leap|Parrot|Pop\!_OS|RED OS|BigLinux)/i) {
+        elsif($Descr=~/\A(BigLinux|Devuan|ECP VeiL|KDE neon|LMDE|Maui|Neptune|openSUSE Leap|Parrot|Pop\!_OS|RED OS)/i) {
             $Name = $1;
         }
         elsif($Descr=~/\A(antiX|elementary OS)[-\s]([\d\.]+)/i)
@@ -14993,7 +15067,7 @@ sub probeDistr()
         if($Descr=~/Easy Buster/) {
             $Name = "EasyOS";
         }
-        elsif($Descr=~/(LMDE|CryptoDATA|KDE neon|PuppyRus-A|BigLinux|Bluestar Linux)/) {
+        elsif($Descr=~/(BigLinux|Bluestar Linux|CryptoDATA|KDE neon|LMDE|Neptune|PuppyRus-A)/) {
             $Name = $1;
         }
         elsif($Descr=~/(Linux Lite) ([\d\.]+)/)
@@ -15007,7 +15081,7 @@ sub probeDistr()
         $Release = undef;
     }
 
-    if((not $Name or not $Release or $Name=~/arcolinux|ubuntu/i) and $OS_Rel)
+    if((not $Name or not $Release or $Name=~/\A(arcolinux|ubuntu|alt)/i) and $OS_Rel)
     {
         if($OS_Rel=~/\bID=[ \t]*[\"\']*([^"'\n]+)/)
         {
@@ -15028,10 +15102,9 @@ sub probeDistr()
             }
         }
         
-        if($OS_Rel=~/\bPRETTY_NAME=[ \t]*[\"\']*([^"'\n]+)/)
+        if(my $PrettyName = getPrettyName($OS_Rel))
         {
-            my $PrettyName = $1;
-            if($PrettyName=~/(CryptoDATA|Debian|Docker Desktop|Devuan|ECP VeiL|Feren OS|GNOME OS|Itd Os|KDE Neon|LMDE|MakuluLinux|Makululinux|MocaccinoOS|OpenVZ|Parrot|pearOS|Pop\!_OS|Porteus|SkiffOS|Sn3rpOs|SuperX|Virtuozzo Hybrid Infrastructure|Windowsfx|XCP-ng)/) {
+            if($PrettyName=~/(CryptoDATA|Debian|Docker Desktop|Devuan|ECP VeiL|Feren OS|GNOME OS|Itd Os|KDE Neon|LMDE|MakuluLinux|Makululinux|MocaccinoOS|Neptune|OpenVZ|Parrot|pearOS|Pop\!_OS|Porteus|SkiffOS|Sn3rpOs|SuperX|Virtuozzo Hybrid Infrastructure|Windowsfx|XCP-ng)/) {
                 $Name = $1;
             }
             elsif($PrettyName=~/(Linux Lite) ([\d\.]+)/)
@@ -15061,9 +15134,12 @@ sub probeDistr()
             $Release = "";
         }
     }
-    
+
     if($Name=~/\A(CentOS|ClearOS|RHEL|Debian|MX)/i) {
         $Release=~s/\A(\d+)\..+/$1/;
+    }
+    elsif($Name=~/\Aopensuse-(tumbleweed|microos)/) {
+        $Release="XXXXXXXX";
     }
     #elsif($Name=~/\A(Endless)/i) {
     #    $Release=~s/\A(\d+\.\d+)\..+/$1/;
@@ -15090,6 +15166,8 @@ sub probeDistr()
     elsif($Name=~/kali/) {
         $Release=~s/\Akali-//;
     }
+
+    $Release=~s/\s+\(.+?\)\Z//;
     
     $Name = shortOS($Name);
     $Name = lc($Name);
@@ -15134,7 +15212,7 @@ sub writeDevsDump()
             $HW{$ID}{"Status"} = "detected";
         }
     }
-    
+
     my $HWDump = JSON::XS->new->pretty->indent->space_after->canonical->encode(\%HW);
     
     if($Opt{"FixProbe"})
@@ -17213,7 +17291,7 @@ sub checkHW()
         }
 
         if($Opt{"Check7z"} and checkCmd("7z"))
-        {
+        { # 7z from p7zip-plugins on Fedora
             print "Run 7z benchmark ... ";
             my $SevenZBench = runCmd("7z b | grep -v Copyright");
             writeLog($TEST_DIR."/7z_b", $SevenZBench);
@@ -17246,6 +17324,7 @@ my %EnabledLog = (
         "dmesg.1",
         "dmidecode",
         "dmi_id",
+        "edac-util",
         "edid",
         "edid-decode",
         "ethtool_p",
@@ -18835,7 +18914,13 @@ sub scenario()
         { # Leave only hardware-specific logs, do not save logs and configs necessary for investigating problems
             foreach my $L ("boot.log", "dmesg.1", "findmnt", "fstab", "grub.cfg", "mount", "pstree", "systemctl", "top", "xorg.log.1", "xorg.conf.d", "xorg.conf", "modprobe.d", "interrupts", "gl_conf-alternatives", "alsactl") # NOTE: systemctl is needed to detect Display_manager
             {
-                if(-e "$FixProbe_Logs/$L") {
+                if(-e "$FixProbe_Logs/$L")
+                {
+                    if($L eq "dmesg.1"
+                    and -s "$FixProbe_Logs/dmesg" <= 1024) {
+                        next;
+                    }
+                    printMsg("INFO", "removing $L");
                     unlink("$FixProbe_Logs/$L");
                 }
             }
@@ -18967,6 +19052,9 @@ sub scenario()
             }
             elsif($Sys{"DE"}=~/MATE/) {
                 $Sys{"System"}=~s/\Aubuntu/ubuntu-mate/;
+            }
+            elsif($Sys{"DE"}=~/Unity/) {
+                $Sys{"System"}=~s/\Aubuntu/ubuntu-unity/;
             }
             elsif($Sys{"DE"}=~/Budgie/) {
                 $Sys{"System"}=~s/\Aubuntu/ubuntu-budgie/;
