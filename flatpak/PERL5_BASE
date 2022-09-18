@@ -11,6 +11,7 @@
 ./auto/re/re.so
 ./auto/Socket/Socket.so
 ./base.pm
+./builtin.pm
 ./bytes_heavy.pl
 ./bytes.pm
 ./Carp/Heavy.pm
