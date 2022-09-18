@@ -1,4 +1,4 @@
-FROM alpine:3.15
+FROM alpine:3.16
 
 RUN apk update \
     && apk add --no-cache perl curl xz dmidecode pciutils usbutils \
