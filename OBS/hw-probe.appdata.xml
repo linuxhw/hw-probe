@@ -3,7 +3,7 @@
 <component type="desktop-application">
   <id>org.linux_hardware.hw-probe</id>
   <metadata_license>CC-BY-3.0</metadata_license>
-  <project_license>LGPL-2.1+</project_license>
+  <project_license>BSD-2-Clause</project_license>
   <name>Hardware Probe</name>
   <summary>Check operability of computer hardware and find drivers</summary>
   <developer_name>Linux Hardware Project</developer_name>
@@ -15,33 +15,27 @@
     </p>
     <p>
       Probe — is a snapshot of your computer hardware state.
-      The tool checks operability of devices by analysis of logs and
-      returns a permanent url to view the probe of the computer.
-    </p>
-    <p>
-      The probes are intended to simplify collecting of logs necessary for
-      investigating hardware related problems. Just run one simple command
-      to check hardware and collect all the system logs at once:
+      The tool checks operability of devices by analysis of logs, uploads
+      anonymized hardware info to the database and returns a permanent url
+      to view the probe of the computer:
     </p>
     <p>
       sudo -E hw-probe -all -upload
     </p>
     <p>
-      If some of hardware devices don't work due to a missed driver
+      If some of hardware devices doesn't work due to a missed driver
       then the tool will suggest a proper Linux kernel version according
       to the LKDDb or third-party drivers.
-    </p>
-    <p>
-      By creating a probe, you contribute to the HDD/SSD desktop-class
-      reliability study: https://github.com/linuxhw/SMART
-    </p>
-    <p>
-      Private info is not collected.
     </p>
   </description>
 
   <categories>
-      <category>System</category>
+    <category>
+      System
+    </category>
+    <category>
+      Utility
+    </category>
   </categories>
 
   <launchable type="desktop-id">org.linux_hardware.hw-probe.desktop</launchable>
@@ -64,4 +58,17 @@
   <provides>
     <binary>hw-probe</binary>
   </provides>
+
+  <content_rating type="oars-1.0">
+  </content_rating>
+
+  <releases>
+    <release version="1.6.5" date="2022-09-18" urgency="high">
+      <description>
+        Hardware Probe Tool 1.6.5
+      </description>
+      <url>https://github.com/linuxhw/hw-probe/blob/master/NEWS.md#hw-probe-16</url>
+    </release>
+  </releases>
+
 </component>
