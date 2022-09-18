@@ -1,5 +1,5 @@
 name: hw-probe
-version: 1.6.4-1
+version: 1.6.5-1
 summary: Check operability of computer hardware and find drivers
 description: >
  A tool to probe for hardware, check operability and find drivers
@@ -53,7 +53,7 @@ parts:
     prime:
       - usr/bin/edid-decode
   dmidecode:
-    source: https://download-mirror.savannah.gnu.org/releases/dmidecode/dmidecode-3.3.tar.xz
+    source: https://download-mirror.savannah.gnu.org/releases/dmidecode/dmidecode-3.4.tar.xz
     source-type: tar
     plugin: make
     override-build: |
@@ -160,7 +160,7 @@ parts:
       - usr/bin/iasl
       - usr/bin/acpixtract
   hdparm:
-    source: https://github.com/linuxhw/build-stuff/releases/download/1.6/hdparm-9.63.tar.gz
+    source: https://github.com/linuxhw/build-stuff/releases/download/1.6/hdparm-9.65.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -206,15 +206,17 @@ parts:
     prime:
       - usr/lib/libusb*.so*
   util-linux:
-    source: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.38/util-linux-2.38.tar.xz
+    source: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.38/util-linux-2.38.1.tar.xz
     source-type: tar
     plugin: make
     override-build: |
       ./configure --prefix=/usr
       sed -i -e 's/ -g / -s /' Makefile
       make dmesg
+      make lscpu
+      make lsblk
       mkdir -p $SNAPCRAFT_PART_INSTALL/usr/bin/
-      cp -f ./dmesg $SNAPCRAFT_PART_INSTALL/usr/bin/
+      cp -f ./dmesg ./lscpu ./lsblk $SNAPCRAFT_PART_INSTALL/usr/bin/
       find $SNAPCRAFT_PART_INSTALL -type f | perl -lne 'print if -B and -x' | xargs strip
     build-packages:
       - gcc
@@ -238,11 +240,11 @@ parts:
       - make
   hwinfo:
     after: [libx86emu]
-    source: https://github.com/openSUSE/hwinfo/archive/21.80.tar.gz
+    source: https://github.com/openSUSE/hwinfo/archive/22.1.tar.gz
     source-type: tar
     plugin: make
     override-build: |
-      echo '21.76' > VERSION
+      echo '22.1' > VERSION
       rm -f git2log
       sed -i -e 's/ -g / -s /' Makefile.common
       CFLAGS='-I'$SNAPCRAFT_STAGE'/usr/include' LDFLAGS='-L'$SNAPCRAFT_STAGE'/usr/lib64 -L'$SNAPCRAFT_STAGE'/usr/lib -lx86emu' make
@@ -258,7 +260,7 @@ parts:
       - usr/share/hwinfo/*
       - usr/sbin/hwinfo
   perl-uri:
-    source: https://cpan.metacpan.org/authors/id/E/ET/ETHER/URI-1.74.tar.gz
+    source: https://cpan.metacpan.org/authors/id/E/ET/ETHER/URI-5.08.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -270,7 +272,7 @@ parts:
       - make
       - perl
   perl-http-message:
-    source: https://cpan.metacpan.org/authors/id/O/OA/OALDERS/HTTP-Message-6.18.tar.gz
+    source: https://cpan.metacpan.org/authors/id/O/OA/OALDERS/HTTP-Message-6.37.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -282,7 +284,7 @@ parts:
       - make
       - perl
   perl-net-http:
-    source: https://cpan.metacpan.org/authors/id/O/OA/OALDERS/Net-HTTP-6.18.tar.gz
+    source: https://cpan.metacpan.org/authors/id/O/OA/OALDERS/Net-HTTP-6.22.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -294,7 +296,7 @@ parts:
       - make
       - perl
   perl-try-tiny:
-    source: https://cpan.metacpan.org/authors/id/E/ET/ETHER/Try-Tiny-0.30.tar.gz
+    source: https://cpan.metacpan.org/authors/id/E/ET/ETHER/Try-Tiny-0.31.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -342,7 +344,7 @@ parts:
       - make
       - perl
   libwww-perl:
-    source: https://cpan.metacpan.org/authors/id/E/ET/ETHER/libwww-perl-6.35.tar.gz
+    source: https://cpan.metacpan.org/authors/id/E/ET/ETHER/libwww-perl-6.36.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -357,7 +359,7 @@ parts:
       - usr/share/perl5/LWP
       - usr/share/perl5/LWP.pm
   perl-parent:
-    source: https://cpan.metacpan.org/authors/id/C/CO/CORION/parent-0.237.tar.gz
+    source: https://cpan.metacpan.org/authors/id/C/CO/CORION/parent-0.238.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -381,7 +383,7 @@ parts:
       - make
       - perl
   perl-time-local:
-    source: https://cpan.metacpan.org/authors/id/D/DR/DROLSKY/Time-Local-1.28.tar.gz
+    source: https://cpan.metacpan.org/authors/id/D/DR/DROLSKY/Time-Local-1.30.tar.gz
     source-type: tar
     plugin: make
     override-build: |
