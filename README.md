@@ -73,10 +73,10 @@ Look for **'Export template to forum'** link at the bottom of the probe page to 
 AppImage
 --------
 
-The portable app that runs anywhere (with `glibc >= 2.17`), no need to install anything. Just download [hw-probe-1.6.4-186-x86_64.AppImage](https://github.com/linuxhw/hw-probe/releases/download/1.6/hw-probe-1.6.4-186-x86_64.AppImage) and run the following command in terminal to probe your computer:
+The portable app that runs anywhere (with `glibc >= 2.17`), no need to install anything. Just download [hw-probe-1.6.5-189-x86_64.AppImage](https://github.com/linuxhw/hw-probe/releases/download/1.6/hw-probe-1.6.5-189-x86_64.AppImage) and run the following command in terminal to probe your computer:
 
-    chmod +x ./hw-probe-1.6.4-186-x86_64.AppImage
-    sudo -E ./hw-probe-1.6.4-186-x86_64.AppImage -all -upload
+    chmod +x ./hw-probe-1.6.5-189-x86_64.AppImage
+    sudo -E ./hw-probe-1.6.5-189-x86_64.AppImage -all -upload
 
 You may need to install `fuse-libs` or `libfuse2` package if it is not pre-installed in your Linux distribution to run appimages. Try [old AppImage](https://github.com/linuxhw/hw-probe/releases/download/1.4/hw-probe-1.4-135-x86_64.AppImage) if you have troubles to run the latest image (e.g. on ancient Linux distributions with `glibc < 2.17`).
 
