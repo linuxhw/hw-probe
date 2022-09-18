@@ -1,7 +1,7 @@
 INSTALL HOWTO FOR BSD
 =====================
 
-HW Probe 1.6.4 (Apr 10, 2022)
+HW Probe 1.6.5 (Sep 18, 2022)
 
 This file explains how to install and setup environment for the tool in your computer.
 
@@ -17,6 +17,7 @@ Contents
 * [ Install on OpenBSD     ](#install-on-openbsd)
 * [ Install on NetBSD      ](#install-on-netbsd)
 * [ Install on helloSystem ](#install-on-hellosystem)
+* [ Install on MyBee       ](#install-on-mybee)
 * [ Install on DragonFly   ](#install-on-dragonfly)
 * [ Install on MidnightBSD ](#install-on-midnightbsd)
 * [ Install on OPNsense    ](#install-on-opnsense)
@@ -164,6 +165,12 @@ Install on helloSystem
 Pre-installed on helloSystem 0.3.0 and newer. From the menu, launch the __Hardware Probe__ utility and follow the on-screen instructions:
 
 ![image](https://user-images.githubusercontent.com/2480569/103484839-12564480-4df2-11eb-8c57-d6ee6ef48e2b.png)
+
+
+Install on MyBee
+----------------
+
+Pre-installed on MyBee 13.1 and newer.
 
 
 Install on DragonFly
