@@ -15558,6 +15558,15 @@ sub writeLogs()
         }
         writeLog($LOG_DIR."/biosdecode", $BiosDecode);
     }
+
+    if(enabledLog("boltctl")
+    and checkCmd("boltctl"))
+    {
+        listProbe("logs", "boltctl");
+        if(my $BoltCtl = runCmd("boltctl list --all")) {
+            writeLog($LOG_DIR."/boltctl", $BoltCtl);
+        }
+    }
     
     # level=default
     if(not $Opt{"AppImage"}
@@ -17317,6 +17326,7 @@ my %EnabledLog = (
         "acpidump_decoded",
         "arcconf",
         "biosdecode",
+        "boltctl",
         "cpuinfo",
         "dev",
         "df",
