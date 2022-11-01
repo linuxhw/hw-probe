@@ -11199,7 +11199,7 @@ sub runSmartctl(@)
             $Cmd = $SmartctlCmd." -a \"".$Dev."\"";
         }
     }
-    
+    $Cmd .= " -T permissive";
     if($AddOpt) {
         $Cmd .= " ".$AddOpt;
     }
