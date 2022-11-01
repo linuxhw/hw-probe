@@ -5514,8 +5514,11 @@ sub probeHW()
         {
             if(index($Dmesg, "] Command line:") == -1)
             {
-                $Dmesg = runCmd("grep -I ' kernel: \\[' $Messages | sed 's/.* kernel: \\[/\\[/g'");
-                $Dmesg=~s/(.|\n)+(\[    0.000000\] Linux version)/$2/g; # last boot only
+                $KernelMessages = runCmd("grep -I ' kernel: \\[' $Messages | sed 's/.* kernel: \\[/\\[/g'");
+                $KernelMessages=~s/(.|\n)+(\[    0.000000\] Linux version)/$2/g; # last boot only
+                if(length $KernelMessages) {
+                    $Dmesg = $KernelMessages;
+                }
             }
         }
         
