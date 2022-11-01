@@ -17539,7 +17539,9 @@ my %EnabledLog_BSD = (
         "rc.conf",
         "sysinfo"
     ],
-    "optional" => []
+    "optional" => [
+        "pstree"
+    ]
 );
 
 sub completeEnabledLogs()
