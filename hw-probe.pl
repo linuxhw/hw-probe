@@ -17437,6 +17437,7 @@ my %EnabledLog = (
         "iw_scan",
         "modinfo",
         "mount",
+        "vmstat",
         "neofetch",
         "numactl",
         "route",
