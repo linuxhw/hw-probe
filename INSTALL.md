@@ -22,6 +22,7 @@ Contents
 * [ Install on Manjaro      ](#install-on-manjaro)
 * [ Install on Arch Linux   ](#install-on-arch-linux)
 * [ Install on CentOS       ](#install-on-centos)
+* [ Install on Acronis Cyber Infrastructure ](#install-on-acronis-cyber-infrastructure)
 * [ Install on Alpine       ](#install-on-alpine)
 * [ Install on ArcoLinux    ](#install-on-arcolinux)
 * [ Install on blackPanther ](#install-on-blackpanther)
@@ -204,6 +205,12 @@ On early CentOS 6 installations:
     sudo yum install -y http://mirror.ghettoforge.org/distributions/gf/el/6/gf/x86_64/libx86emu-1.1-1.gf.el6.x86_64.rpm
     sudo yum install -y http://mirror.ghettoforge.org/distributions/gf/el/6/gf/x86_64/hwinfo-20.2-1.gf.el6.x86_64.rpm
     sudo yum install -y curl dmidecode smartmontools hdparm lm_sensors usbutils pciutils mcelog
+
+
+Install on Acronis Cyber Infrastructure
+---------------------------------------
+
+Use [AppImage](README.md#appimage) on Acronis Cyber Infrastructure and Virtuozzo Hybrid Infrastructure.
 
 
 Install on Alpine
