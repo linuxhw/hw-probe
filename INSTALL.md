@@ -410,7 +410,7 @@ Use [Docker](README.md#docker).
 Install on RHEL
 ---------------
 
-On RHEL 6-9 and RHEL based Linux distributions (CentOS, AlmaLinux, Rocky Linux, Scientific Linux, Springdale Linux, etc.):
+On RHEL 6-9 and RHEL based Linux distributions (AlmaLinux, CentOS, CloudLinux, Rocky Linux, Scientific Linux, Springdale Linux, etc.):
 
     sudo yum install epel-release
     sudo yum install hw-probe
