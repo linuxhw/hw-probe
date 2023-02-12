@@ -20,12 +20,12 @@ Contents
 * [ Install on BSD          ](#install-on-bsd)
 * [ Install on Fedora       ](#install-on-fedora)
 * [ Install on Manjaro      ](#install-on-manjaro)
-* [ Install on Arch Linux   ](#install-on-arch-linux)
-* [ Install on CentOS       ](#install-on-centos)
 * [ Install on Acronis Cyber Infrastructure ](#install-on-acronis-cyber-infrastructure)
 * [ Install on Alpine       ](#install-on-alpine)
+* [ Install on Arch Linux   ](#install-on-arch-linux)
 * [ Install on ArcoLinux    ](#install-on-arcolinux)
 * [ Install on blackPanther ](#install-on-blackpanther)
+* [ Install on CentOS       ](#install-on-centos)
 * [ Install on Chrome OS    ](#install-on-chrome-os)
 * [ Install on Clear Linux  ](#install-on-clear-linux)
 * [ Install on ClearOS      ](#install-on-clearos)
@@ -48,6 +48,7 @@ Contents
 * [ Install on Slackware    ](#install-on-slackware)
 * [ Install on Solus        ](#install-on-solus)
 * [ Install on SteamOS      ](#install-on-steamos)
+* [ Install on Virtuozzo Linux ](#install-on-virtuozzo-linux)
 * [ Install on Void Linux   ](#install-on-void-linux)
 * [ Install from Source     ](#install-from-source)
 
@@ -149,6 +150,18 @@ On Manjaro 18 or newer and derivatives (Mabox, etc.):
 Try `sudo pacman -Syu` if pacman can't find the package.
 
 
+Install on Acronis Cyber Infrastructure
+---------------------------------------
+
+Use [AppImage](README.md#appimage) on Acronis Cyber Infrastructure and Virtuozzo Hybrid Infrastructure.
+
+
+Install on Alpine
+-----------------
+
+    sudo apk add --no-cache -X http://dl-cdn.alpinelinux.org/alpine/edge/testing hw-probe
+
+
 Install on Arch Linux
 ---------------------
 
@@ -178,6 +191,22 @@ Download package [hw-probe-1.5-ArchLinux-any.pkg.tar.xz](https://github.com/linu
     sudo pacman -U ./hw-probe-1.5-ArchLinux-any.pkg.tar.xz
 
 
+Install on ArcoLinux
+---------------------
+
+Pre-installed on ArcoLinux v20.11.9 and newer.
+
+
+Install on blackPanther
+-----------------------
+
+On blackPanther OS 16.2 and newer:
+
+    installing hw-probe
+
+This command will install all the dependencies as well.
+
+
 Install on CentOS
 -----------------
 
@@ -205,34 +234,6 @@ On early CentOS 6 installations:
     sudo yum install -y http://mirror.ghettoforge.org/distributions/gf/el/6/gf/x86_64/libx86emu-1.1-1.gf.el6.x86_64.rpm
     sudo yum install -y http://mirror.ghettoforge.org/distributions/gf/el/6/gf/x86_64/hwinfo-20.2-1.gf.el6.x86_64.rpm
     sudo yum install -y curl dmidecode smartmontools hdparm lm_sensors usbutils pciutils mcelog
-
-
-Install on Acronis Cyber Infrastructure
----------------------------------------
-
-Use [AppImage](README.md#appimage) on Acronis Cyber Infrastructure and Virtuozzo Hybrid Infrastructure.
-
-
-Install on Alpine
------------------
-
-    sudo apk add --no-cache -X http://dl-cdn.alpinelinux.org/alpine/edge/testing hw-probe
-
-
-Install on ArcoLinux
----------------------
-
-Pre-installed on ArcoLinux v20.11.9 and newer.
-
-
-Install on blackPanther
------------------------
-
-On blackPanther OS 16.2 and newer:
-
-    installing hw-probe
-
-This command will install all the dependencies as well.
 
 
 Install on Chrome OS
@@ -353,10 +354,10 @@ openSUSE Tumbleweed:
 Install on OpenVZ
 -----------------
 
-On OpenVZ 8 and OpenVZ 7:
+On OpenVZ 9, OpenVZ 8 and OpenVZ 7:
 
-    sudo yum install epel-release
-    sudo yum install hw-probe
+    yum install epel-release --nogpgcheck
+    yum install hw-probe --nogpgcheck
 
 
 Install on Oracle Linux
@@ -446,6 +447,15 @@ Install on SteamOS
 ------------------
 
 Use [AppImage](README.md#appimage) or [Flatpak](README.md#flatpak).
+
+
+Install on Virtuozzo Linux
+--------------------------
+
+On Virtuozzo Linux 9 and Virtuozzo Linux 8:
+
+    yum install tar epel-release --nogpgcheck
+    yum install hw-probe --nogpgcheck
 
 
 Install on Void Linux
