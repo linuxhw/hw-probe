@@ -347,7 +347,6 @@ openSUSE Leap 15.4:
 
 openSUSE Tumbleweed:
 
-    sudo zypper addrepo https://download.opensuse.org/repositories/hardware/openSUSE_Tumbleweed/ hardware
     sudo zypper install hw-probe
 
 
