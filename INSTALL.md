@@ -355,8 +355,8 @@ Install on OpenVZ
 
 On OpenVZ 9, OpenVZ 8 and OpenVZ 7:
 
-    yum install epel-release --nogpgcheck
-    yum install hw-probe --nogpgcheck
+    sudo yum install epel-release --nogpgcheck
+    sudo yum install hw-probe --nogpgcheck
 
 
 Install on Oracle Linux
@@ -368,7 +368,7 @@ On Oracle Linux 7:
     sudo yum install epel-release
     sudo yum install hw-probe
 
-On Oracle Linux 8 use [AppImage](README.md#appimage).
+On Oracle Linux 8 and newer use [AppImage](README.md#appimage).
 
 
 Install on PCLinuxOS
@@ -451,25 +451,16 @@ Use [AppImage](README.md#appimage) or [Flatpak](README.md#flatpak).
 Install on Virtuozzo Linux
 --------------------------
 
-On Virtuozzo Linux 9 and Virtuozzo Linux 8:
+On Virtuozzo Linux 8 and newer:
 
-    yum install tar epel-release --nogpgcheck
-    yum install hw-probe --nogpgcheck
+    sudo dnf install tar epel-release --nogpgcheck
+    sudo dnf install hw-probe --nogpgcheck
 
 
 Install on Void Linux
 ---------------------
 
 Use [AppImage](README.md#appimage) or [Flatpak](README.md#flatpak).
-
-
-Install on VzLinux
-------------------
-
-On VzLinux 8:
-
-    sudo dnf install epel-release
-    sudo dnf install hw-probe
 
 
 Install from Source
@@ -515,11 +506,5 @@ To uninstall:
 * vulkan-utils
 * i2c-tools
 * opensc
-
-###### Suggests
-
-* hplip (hp-probe)
-* sane-backends (sane-find-scanner)
-* pnputils (lspnp)
 
 Enjoy!
