@@ -338,16 +338,16 @@ Pre-installed on OpenMandriva Lx 4.0 and newer.
 Install on openSUSE
 -------------------
 
-Select and install an RPM package for your openSUSE distribution and derivatives (GeckoLinux, etc.): https://software.opensuse.org/package/hw-probe
+On openSUSE Leap 15.5 and newer / Tumbleweed and derivatives (GeckoLinux, etc.):
+
+    sudo zypper install hw-probe
 
 openSUSE Leap 15.4:
 
     sudo zypper addrepo https://download.opensuse.org/repositories/hardware/openSUSE_Leap_15.4/ hardware
     sudo zypper install hw-probe
 
-openSUSE Tumbleweed:
-
-    sudo zypper install hw-probe
+For other versions select and install an RPM package: https://software.opensuse.org/package/hw-probe
 
 
 Install on OpenVZ
