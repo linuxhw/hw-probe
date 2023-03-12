@@ -432,7 +432,7 @@ Use [AppImage](README.md#appimage).
 Install on Slackware
 --------------------
 
-On Slackware and Slackware based Linux distributions (Porteus, etc.).
+On Slackware and Slackware based Linux distributions (Porteus, Slax, etc.).
 
 Use [AppImage](README.md#appimage), [Docker](README.md#docker) or [Flatpak](README.md#flatpak).
 
