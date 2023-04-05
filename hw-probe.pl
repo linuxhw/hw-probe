@@ -645,6 +645,7 @@ my %VendorRam = (
     "Axiom"    => ["51264Y"],
     "Apacer"   => ["76.", "78.", "D12."],
     "Apotop"   => ["S3A", "U3A"],
+    "Asgard"   => ["VMA45U"],
     "ASint"    => ["B1YJ", "B2YJ", "B3KJ", "C1RE", "C2RE", "SSA", "SSY", "SSZ", "SLA", "SLB", "SLZ"],
     "ATLA"     => ["AD3SHT"],
     "Avant"    => ["F64", "H64", "J64", "W64"],
@@ -652,7 +653,7 @@ my %VendorRam = (
     "Centon"   => ["MICT"],
     "CFD"      => ["D4N"],
     "Chun Well" => ["D4U"],
-    "Corsair"  => ["CMD", "CMH", "CMK", "CML", "CMR", "CMS", "CMT", "CMU", "CMV", "CMW", "CMX", "CMZ", "CM2X", "CM3X", "CM4X", "VS2G"],
+    "Corsair"  => ["CMD", "CMG", "CMH", "CMK", "CML", "CMR", "CMS", "CMT", "CMU", "CMV", "CMW", "CMX", "CMZ", "CM2X", "CM3X", "CM4X", "VS2G"],
     "Crucial"  => ["BLS", "BLT", "BLE", "BL4G", "BL5", "BL8G", "BL16G", "BL32G", "BL256", "BLM8G", "BLM16G", "CB4G", "CB8G", "CB16G", "CT256", "CT512", "CT1024", "CT2048", "CT4G", "CT8G", "CT16G", "CT32G", "CT10", "CT12864", "CT2G", "RM256", "RM512", "ST256", "ST512", "ST1024", "ZC256", "RM1024"],
     "CSX"      => ["V01L", "V01D"],
     "Dane-Elec" => ["SS3D106"],
@@ -666,18 +667,20 @@ my %VendorRam = (
     "EVGA"     => ["08G-D3", "16G-D4-2400-MR"],
     "Foxline"  => ["FL1", "FL2"],
     "G-Alantic"=> ["D3SS"],
-    "G.Skill"  => ["F2-", "F3-", "F4-"],
+    "G.Skill"  => ["F2-", "F3-", "F4-", "F5-"],
     "GeIL"     => ["CL9-9", "CL9-10", "CL10-10", "CL10-11", "CL11-11", "CL11-12"], # Golden Empire
     "GIGABYTE" => ["AR32", "AR36", "GP-GR"],
+    "GigaRam"  => ["GR4GU"],
     "Gloway"   => ["TYA", "TYP"],
     "Goldkey"  => ["BKH", "GKE", "GKH"],
     "Goldenmars" => ["GMT"],
-    "GOODRAM"  => ["GL213", "GR32", "GR400", "GR667", "GR800", "GR1", "GR2", "GY1", "IRX", "IR1", "IR2"],
+    "GOODRAM"  => ["GL213", "GR32", "GR400", "GR667", "GR800", "GR1", "GR2", "GY1", "IRX", "IR1", "IR2", "W-MEM"],
     "HBS"      => ["HB2", "HB3"],
     "High Bridge" => ["HB3SU"],
     "Hikvision" => ["HKED"],
     "HMD"      => ["HMD"],
-    "HP"       => ["7EH"],
+    "HomeNet"  => ["HomeNet"],
+    "HP"       => ["2E2M5AA", "7EH"],
     "Huananzhi" => ["HNM"],
     "Hypertec"  => ["G2BT", "G2RT"],
     "ISD Technology Limited" => ["IMT41"],
@@ -704,7 +707,7 @@ my %VendorRam = (
     "Memory Solution" => ["MS3S"],
     "Memox"    => ["LN-SD"],
     "MemoWise" => ["MW0"],
-    "Micron"   => ["16G2", "16HTF", "16JSF", "16JT", "16KTF", "18HF", "36JS", "4ATF", "53E", "864AY", "8ATF", "8JSF", "8JTF", "4KTF", "8KTF", "MT5"],
+    "Micron"   => ["16G2", "16HTF", "16JS", "16JT", "16ATF", "16KTF", "18HF", "36JS", "4ATF", "53E", "864AY", "8ATF", "8JSF", "8JTF", "4KTF", "8KTF", "EDF8132", "MT5", "MT62F1"],
     "Mushkin"  => ["991769", "992017", "991529", "991558", "991713", "992070", "991705", "MB[A/B]", "MR[A/B]"],
     "Multilaser" => ["MD401", "MD451", "MS301", "MS351"],
     "Nanya"    => ["NT1", "NT2", "NT4", "NT8", "M2F", "M2N", "M2S"],
@@ -723,16 +726,17 @@ my %VendorRam = (
     "Puskill"  => ["PJ16"],
     "Qbex"     => ["B9C40", "C2NA0"],
     "Qimonda"  => ["64T1280", "64T64", "64T12", "72T256"],
+    "Quadratica" => ["QDE"],
     "Qumo"     => ["QUM"],
     "Rahonix"  => ["RXD"],
     "Ramaxel"  => ["RMT", "RMN", "RMR", "RMS", "RMU"],
     "Ramos"    => ["EMB", "EWB", "RMB"],
     "RyzerX"   => ["RVR"],
-    "Samsung"  => ["M04", "M378", "M393", "M4 70T", "M471", "K3Q", "K4A", "K4E", "K4F", "K4U", "Ltd:R00MM", "U6E", "UBE"],
+    "Samsung"  => ["23R1G", "M04", "M378", "M393", "M4 70T", "M471", "MSC3S", "K3LK", "K3Q", "K4A", "K4E", "K4F", "K4U", "Ltd:R00MM", "U6E", "UBE"],
     "Sesame"   => ["S939", "S949"],
     "SGS/Thomson" => ["SD-D2", "SD-D3"],
-    "Silicon Power" => ["DBLT", "DBST", "DCLT", "DCST", "SP0", "ESRD"],
-    "SK hynix" => ["HCN", "HMA", "HMT", "HMP", "HYMP", "H5AN", "H9CC", "H9HC", "DMT3", "MMXIV", "MPP", "4GBPC1333512", "4GBPC"],
+    "Silicon Power" => ["D8LR", "DBLT", "DBST", "DCLT", "DCST", "SP0", "ESRD"],
+    "SK hynix" => ["2G25U6", "CG88ME", "HCN", "HMA", "HMT", "HMP", "HYMP", "H5AN", "H54G", "H9CC", "H9HC", "H9JC", "DMT3", "MMXIV", "MPP", "4GBPC1333512", "4GBPC"],
     "Smart"    => ["SF464", "SF472", "SF564", "SG56", "SH564", "SMS4"],
     "Strontium" => ["EVMT", "SRT"],
     "Super Talent" => ["SUPERTALENT02", "SUPERTALENT"],
@@ -742,7 +746,7 @@ my %VendorRam = (
     "Team"     => ["Team-Eli", "Team--El", "Dark", "Vulcan"],
     "Teikon"   => ["TMA", "TML", "TMT"],
     "Textorm"  => ["TXS", "TXU"],
-    "Thermaltake" => ["R009", "R019"],
+    "Thermaltake" => ["R009", "R019", "R022"],
     "Transcend"=> ["JM1", "JM2", "JM320", "JM367", "JM667", "JM800", "TS1", "TS64", "TS128", "TS256", "TS512"],
     "TwinMOS"  => ["9DEEB", "9DHTB", "9DETB", "8DP25KK", "8DE25KK", "7D-23KK", "M2GAO"],
     "Unifosa"  => ["GU3", "GU5", "GU6", "HU5", "HU6"],
@@ -756,6 +760,7 @@ my %VendorRam = (
     "Visipro"  => ["T2G", "T4G86"],
     "Walton Chaintech" => ["AS2G", "AU2G", "AU4G"], # APOGEE
     "Wilk Elektronik" => ["IRP"],
+    "Wodposit" => ["WPB"],
     "ZIFEI" => ["ZFN"] # Shenzhen Zhifeng Weiye Tech
 );
 
@@ -795,7 +800,6 @@ my %DiskVendor = (
     "RD-S"      => "RECADATA",
     "RTOTJ"     => "Union Memory",
     "SPCC"      => "SPCC",
-    "SSD2S240"  => "Hypertec",
     "TEAM"      => "Team",
     "Thinklife" => "Lenovo",
     "TRO-SSD7"  => "Eluktro",
@@ -807,11 +811,11 @@ my %DiskVendor = (
     "XUNZHE"    => "XUNZHE",
     "Y6-"       => "Yunhaitian",
     "ZALMAN"    => "ZALMAN",
-    "ZF18-64"   => "Espada",
     "ZTSSD"     => "ZOTAC"
 );
 
 my %VendorDiskPrefix = (
+    "ACOS"     => ["AS-512"],
     "ADATA"    => ["ASU800SS", "AXM", "AXN", "IM2P", "IM2S", "SP600"],
     "ADLINK"   => ["SSO"],
     "ADTEC"    => ["ADC-S25D1S-2TB"],
@@ -834,9 +838,10 @@ my %VendorDiskPrefix = (
     "Corsair"  => ["CSSD-F", "CSSD-V", "Force MP"],
     "Crucial"  => ["CT", "FCCT", "M4-CT"],
     "Delkin Devices" => ["ME16"],
-    "Digma"    => ["1TB RUN S9", "256GB RUN S9", "RUN S9", "RUN Y2"],
+    "Digma"    => ["1TB RUN S9", "256GB RUN S9", "512GB RUN S9 512GB", "RUN S9", "RUN Y2"],
     "DST"      => ["DST"],
     "Emphase"  => ["G5RM"],
+    "Espada"   => ["C3000.6-M064", "ZF18-64"],
     "Exascend" => ["EXS"],
     "ExeGate"  => ["EX2"],
     "Faspeed"  => ["H5-240G"],
@@ -847,7 +852,8 @@ my %VendorDiskPrefix = (
     "GOKE"     => ["GG2ZT"],
     "Goldenfir" => ["T650-120", "T650-256"],
     "GOODRAM"  => ["GOODRAM", "IR_SSDPR", "IR-SSDPR", "IRIDIUM", "IRP-SSDPR", "IRP_SSDPR", "SSDPR"],
-    "GS Nanotech" => ["GSP", "GSS", "GS SSD"],
+    "Greenliant" => ["32GB NANDrive"],
+    "GS Nanotech" => ["256-16 GSPTA", "512-16 GSPTA", "GSP", "GSS", "GS SSD"],
     "GSemi"    => ["GSDSM"],
     "Hanye"    => ["W400-256GMP"],
     "HCiPC"    => ["P2MSM"],
@@ -857,19 +863,22 @@ my %VendorDiskPrefix = (
     "HP"       => ["FB0", "FB1", "FK00", "GB0", "GB1000EA", "GJ0", "MB1000", "MB2000", "VB0", "VK0"],
     "HP Phison" => ["PSSBN"],
     "HPE"      => ["LK04", "LK16", "MB0", "MB8", "MB4000", "MK0", "MM1000", "MM2000", "MR00024", "VR00024", "VR00048"],
+    "Hypertec" => [ "SSD2S120", "SSD2S240" ],
     "Hyundai"  => ["C2S3T"],
     "IBM/Hitachi" => ["IC25", "IC35"],
     "Indilinx" => ["IND-S", "InM2"],
     "Innodisk" => ["DEM24", "DEMSR", "DES25", "mSATA 3TG6"],
+    "Integral" => ["V Series SATA SSD"],
     "Intel"    => ["N18A", "SSDPAMM", "SSDSA2S", "SSDSC2"],
     "Intenso"  => ["JAJ", "lntenso"],
     "iODD"     => ["MST100",],
     "IPLEX"    => ["TITAN256"],
     "KeepData" => ["GIM128", "GIM512"],
     "KingDian" => ["SSD-S400"],
-    "KingSpec" => ["ACJ", "ACS", "CHA", "IM032-S220", "KSD-PA", "KSQ120", "NT-32", "P3-512", "PA25-16", "SPK", "Q-90", "Q-180", "Q-360"],
-    "Kingston" => ["AS400", "EK60H", "HyperX", "KC600", "KF-S42240", "Kingston", "RBU-SN"],
+    "KingSpec" => ["ACJ", "ACS", "CHA", "IM032-S220", "KSD-PA", "KSQ120", "NT-32", "P3-512", "PA25-16", "PA25-32", "SPK", "Q-90", "Q-180", "Q-360"],
+    "Kingston" => ["A400", "AS400", "EK60H", "HyperX", "KC600", "KF-S42240", "Kingston", "RBU-SN", "SMSM151S3"],
     "KIOXIA"   => ["KBG", "KXG"],
+    "KOOTION"  => ["X12 SSD"],
     "Kross Elegance" => ["KE-SSD"],
     "LENSEN"  => ["LS600"],
     "Lite-On"  => ["NVMe CA5", "PH2", "PH3", "PH4", "PH5"],
@@ -881,7 +890,7 @@ my %VendorDiskPrefix = (
     "MEMXPRO"  => ["mSATA M3B"],
     "MOVESPEED" => ["YSSDMDS"],
     "MyDigitalSSD" => ["BP5", "SC2 M2", "SB M2", "SB2"],
-    "Netac"    => ["N600"],
+    "Netac"    => ["N600", "NS512GSS"],
     "Nfortec"  => ["ALCYON"],
     "NTC"      => ["NTC "],
     "OCZ"      => ["AGILITY", "D2C", "D2R", "DEN", "OCZ", "VTX3"],
@@ -894,7 +903,8 @@ my %VendorDiskPrefix = (
     "PNY"      => ["69D03", "CS900", "SSD2SC", "SSD9SC"],
     "Quaroni"  => ["QSSD"],
     "QUMO"     => ["Q3DT"],
-    "Ramaxel"  => ["RDM", "RTITF", "RTFM", "RTN"],
+    "Ramaxel"  => ["RDM", "RTIRB", "RTITF", "RTFM", "RTN"],
+    "RESCUE"   => ["RESCUE"],
     "S3+"      => ["S3SSD"],
     "Samgporse" => ["SP-8"],
     "Samsung"  => ["MBG4", "MCBOE", "MZM", "MZ7", "SG9"],
@@ -903,6 +913,7 @@ my %VendorDiskPrefix = (
     "Seagate"  => ["2E256-TU2", "OOS500G", "OOS1000G", "OOS2000G", "ST", "ST_", "XA1920", "XF1230", "ZA1"],
     "Seapiy"   => ["E535N"],
     "Silicon Motion" => ["AAR", "GSD"],
+    "Silicon Power" => ["SP128GI"],
     "SK hynix" => ["HFS", "SHGS"],
     "Smart"    => ["SGMST"],
     "SNR"      => ["SNR-ML"],
@@ -910,6 +921,8 @@ my %VendorDiskPrefix = (
     "SSSTC"    => ["CVB-CD"],
     "Supersonic" => ["SUPERSONIC"],
     "Super Talent" => ["FNX256MORM"],
+    "SXMicro"  => ["NF830"],
+    "Tammuz"   => ["RX440"],
     "Terabit"  => ["T50S3"],
     "Timetec"  => ["30TT", "35TT"],
     "Toshiba"  => ["MG0", "Q200 EX", "SSD0256XQ", "THNSF"],
@@ -929,11 +942,12 @@ my %VendorDiskPrefix = (
     "XPG"      => ["SX8200"],
     "XUM"      => ["HX128GSSD", "HX240GSSD", "HX256GSSD"],
     "Yeyian"   => ["VALK"],
+    "Zebronics" => ["ZEB"],
     "Zheino"   => ["CHN", "CHN "],
     "ZTC"      => ["ZTC-MS", "ZTC-SM"]
 );
 
-my $ALL_DRIVE_VENDORS = "Aarvex|Acer|ACPI|ADATA|A\-DATA|addlink|ADROITLARK|AFOX|Advantech|AEGO|Agile|AirDisk|ALLIED|AMD|AMP|ANACOMDA|Anobit|Aoluska|Apacer|Apple|ASUS|ATP|Aura|Avant|AVEXIR|Axiom|AXIOMTEK Corp\.|Azerty|Bamba|BaseTech|BHT|BIOSTAR|BIWIN|Bliksem|BlitzWolf|BLUERAY|BORY|BRAVEEAGLE|BUFFALO|Centerm|Chiprex|CLOVER|Colorful|Corsair|Crucial|CWDISK|Dahua|Dell|DEPO|DERLAR|DERLER|DeTech|DGM|DIERYA|Dogeish|DOGFISH|DOGGO|DREVO|DRVEO|EAGET|EGON|ELSKY|EMTEC|Espada|EXBOM|ExcelStor Technology|EYOTA|EZCOOL|e2e4|Fanxiang|Faspeed|FASTDISK|FATTYDOVE|FCS|FLEXXON|Fordisk|FORESEE|Force Le|Foxline|FUJITSU|GALAX|Galaxy|GAMER|Geil|GelL|geonix|Getrich|GIGABYTE|Gigastone|GLOWAY|Goldendisk|Goldenfir|Golden memory|Golden\-Memory|Goldkey|GOODRAM|Gost|GOWE|Gritronix|Hajaan|HECTRON|HEORIADY|HGST|Hitachi|Hoodisk|HP|HYPERDISK|Hyundai|i-FlashDisk|IBM-Hitachi|IBM|imation|Indilinx|INDMEM|Inland|Innodisk|InnoLite|INNOVATION[^\x00-\x7F]+IT|INNOVATION IT|INTEL|INTENSO|J\.ZAO|JAMESDONKEY|JASTER|JD|JIAWEI|JIESHUO|JMicron|JUHOR|JUMPER|KDATA|KimMiDi|Kimtigo|KINGBANK|Kingchuxing|KingDian|KingFast|KINGMAX|KINGPAN|KingPower|KINGRICH|Kingsand|KINGSHARE|King Share|KingSpec|Kingspeed|Kingston|KIOXIA-EXCERIA|KLEVV|KLLISRE|KLONER|KODAK|Kston|KUIJIA|KUU|Lanbo Flourishing|LDLC|LDNDISK|LenovoSPEED UP|Lenovo|LEQIXIANG|Leven|LEXAR|Lite-On|LITEON|LITEONIT|LONDISK|LuminouTek|LVCARDS|Magnetic Data|MARSHAL|MARVELL|Maximus|Maxmemroy|Maxtor|MediaMax|MENGMI|MicroData|MicroDream|Micron|Microtech|MidasForce|minisforum|MIXZA|Mushkin|Myung|Neo Forza|Netac|NFORCE|OCZ|OEM|ORICO|Origin Inception|ORTIAL|OWC|oyunkey|PALIT|Patriot|Pccooler|Pear|PHINOCOM|Phison|Pichau|Platinet|PLEXTOR|PNY|POLION|POWER X|PRETEC|Protectli|PUSKILL|Qianghe|QNIX|QUANTUM|QUMO|Qunion|Radeon|Ramaxel|RAMOS|Ramsta|RCESSD|Reeinno|Redapple|Reeioon|Reletech|RevuAhn|Rogueware|RunCore|RZX|Samsung Electronics|SAMSUNG|SAMSWEET|SandForce|SanDisk|SanPin|SATADOM|SATAFIRM|SCY|Seagate|SemsoTai|SenDisk|SETHRISE|ShanDianZhe|ShiJi|Shinedisk|SILICONMOTION|Silicon Motion|SK hynix|SMART|Smartbuy|SMI|Solidata|SOYO|SPCC|SSSTC|Star Drive|SUNEAST|SUNTRSI|SuperMicro|SuperSSpeed|SuperTalent|Synology|T\-CREATE|T\-FORCE|TAISU|takeMS|TAMMUZ|TANCA|TCSUNB0W|TCSUNBOW|TEAM|Teclast|tecmiyo|TEUTONS|TEXTORM|TEKET|THU|tigo|Timetec|TOPMORE|TopSunligt|TOSHIBA|Transcend|TurXun|TUSUNBOW|TwinMOS|TXRUI|UDinfo|UMAX|UMIS|UNIC2|V-Gen|Value Tech|Valuetech|Vaseky|VENO SCORP|Veno|Verbatim|VERICO|VBOX|VICKTER|VICK|ViperTeq|VisionTek|VISIPRO|VIVA|VNYEZ|WALRAM|WDC|Wdstars|Wdxsky|WellcommMaster|Western Digital|Wintec|Wolf Aure|Xinhaike|XPG|XrayDisk|XSTAR|XUNZHE|YMTC|Zheino|ZhiTai|ZOTAC|ZOZT|2\-Power";
+my $ALL_DRIVE_VENDORS = "Aarvex|Acer|ACPI|ADATA|A\-DATA|addlink|ADROITLARK|AFOX|Advantech|AEGO|Agile|AirDisk|ALLIED|AMD|AMP|ANACOMDA|Anobit|Aoluska|Apacer|Apple|ASint|ASUS|ATP|Aura|Avant|AVEXIR|Axiom|AXIOMTEK Corp\.|Azerty|Bamba|BaseTech|BHT|BIOSTAR|BIWIN|Blackpcs|Bliksem|BlitzWolf|BLUERAY|BORY|Brainzap|BRAVEEAGLE|BUFFALO|Centerm|Chiprex|CLOVER|Colorful|Corsair|Crucial|CWDISK|Dahua|Dell|DEPO|DERLAR|DERLER|DeTech|DGM|DIERYA|Dogeish|DOGFISH|DOGGO|DREVO|DRVEO|EAGET|EDGE|EGON|ELSKY|EMTEC|Espada|EXBOM|ExcelStor Technology|EYOTA|EZCOOL|e2e4|Fanxiang|Faspeed|FASTDISK|FATTYDOVE|FCS|FLEXXON|Fordisk|FORESEE|Force Le|Foxline|FUJITSU|GALAX|Galaxy|GAMER|Geil|GelL|geonix|Getrich|GIGABYTE|Gigastone|GLOWAY|Goldendisk|Goldenfir|Golden memory|Golden\-Memory|Goldkey|GOODRAM|Gost|GOWE|Gritronix|HAGIWARA SOLUTIONS|Hajaan|HECTRON|HEORIADY|HGST|Hitachi|Hoodisk|HP|HYPERDISK|Hyundai|i-FlashDisk|IBM-Hitachi|IBM|imation|Indilinx|INDMEM|Inland|Innodisk|InnoLite|INNOVATION[^\x00-\x7F]+IT|INNOVATION IT|INTEL|INTENSO|J\.ZAO|JAMESDONKEY|JASTER|JD|JIAWEI|JIESHUO|JMicron|JUHOR|JUMPER|JWX|KDATA|KimMiDi|Kimtigo|KINGBANK|Kingchuxing|KingDian|KingFast|KINGMAX|KINGPAN|KingPower|KINGRICH|Kingsand|KINGSHARE|King Share|KingSpec|Kingspeed|Kingston|KIOXIA-EXCERIA|KLEVV|KLLISRE|KLONER|KODAK|Kston|KUIJIA|KUU|Lanbo Flourishing|LDLC|LDNDISK|LenovoSPEED UP|Lenovo|LEQIXIANG|Leven|LEXAR|Lite-On|LITEON|LITEONIT|LONDISK|LuminouTek|LVCARDS|MACROVIP|Magnetic Data|MaiChai|MARSHAL|MARVELL|MAX SPEED|Maximus|Maxmemroy|Maxtor|MediaMax|MENGMI|MicroData|MicroDream|Micron|Microtech|MidasForce|minisforum|MIXZA|MSI|Mushkin|Myung|Neo Forza|Netac|NFORCE|OCZ|OEM|ORICO|Origin Inception|ORTIAL|OWC|oyunkey|PALIT|Patriot|Pccooler|Pear|PHINOCOM|Phison|Pichau|Platinet|PLEXTOR|PNY|POLION|POWER X|PRETEC|Protectli|PUSKILL|Qianghe|QNIX|QUANTUM|QUMO|Qunion|Radeon|Ramaxel|RAMOS|Ramsta|RCESSD|Reeinno|Redapple|Reeioon|Reletech|RENICE|RevuAhn|ROKOT|Rogueware|RunCore|RZX|Samsung Electronics|SAMSUNG|SAMSWEET|SandForce|SanDisk|SanPin|SATADOM|SATAFIRM|SCY|Seagate|SemsoTai|SenDisk|SETHRISE|SFAS|ShanDianZhe|SHAREVDI|ShiJi|Shinedisk|SILICONMOTION|Silicon Motion|SK hynix|SMART|Smartbuy|SMI|Solidata|SomnAmbulist|SOYO|SPCC|SSSTC|Star Drive|SUNEAST|SUNTRSI|SuperMicro|SuperSSpeed|SuperTalent|Synology|T\-CREATE|T\-FORCE|TAISU|takeMS|TAMMUZ|TANCA|TCSUNB0W|TCSUNBOW|TEAM|Teclast|tecmiyo|TEUTONS|TEXTORM|TEKET|THU|tigo|Timetec|TOPMORE|TopSunligt|TOSHIBA|Transcend|TurXun|TUSUNBOW|TwinMOS|TXRUI|UDinfo|UMAX|UMIS|UNIC2|V-Gen|Value Tech|Valuetech|Vaseky|VENO SCORP|Veno|Verbatim|VERICO|VBOX|VICKTER|VICK|ViperTeq|VisionTek|VISIPRO|VIVA|VNYEZ|WALRAM|WDC|Wdstars|Wdxsky|WellcommMaster|Western Digital|Wintec|Wolf Aure|Xinhaike|XPG|XrayDisk|XSTAR|XUNZHE|Yeestor|YMTC|Zheino|ZhiTai|ZOTAC|ZOZT|2\-Power";
 
 my $ALL_DRIVE_VENDORS_SHORT = "BR|FiD|HXY|KST|RX7|TMI";
 
@@ -943,25 +957,25 @@ my %VendorDiskModel = (
     "Apacer"   => ["8GB SATA Flash Drive", "16GB SATA Flash Drive", "32GB SATA Flash Drive", "64GB SATA Flash Drive", "128GB SATA Flash Drive", "256GB SATA Flash Drive", "480GB SATA Flash Drive", "SATA Flash Drive"],
     "Blackpcs" => ["AS201 SSD"],
     "China"    => [
-        "128MB ATA Flash Disk", "1TB PCS 2.5-inch SSD", "1TB QLC SATA SSD", "1TBE 1TB", "2.5 SATA SSD", "2.5 SSD 240GB", "2.5'' SSD 120GB", "240G SATA III SSD", "256GB PCS 2.5-inch SSD", "256GB QLC SATA SSD", "256GB SATA SSD", "512GB PCS 2.5-inch SSD", "512GB QLC SATA SSD",
+        "128MB ATA Flash Disk", "120GB SATA Flash Drive_K", "1TB PCS 2.5-inch SSD", "1TB QLC SATA SSD", "1TBE 1TB", "2.5 SATA SSD", "2.5 SSD 240GB", "2.5'' SSD 120GB", "240G SATA III SSD", "256GB PCS 2.5-inch SSD", "256GB QLC SATA SSD", "256GB SATA SSD", "512GB PCS 2.5-inch SSD", "512GB QLC SATA SSD",
         "AC211-480GB", "ASS-120",
         "BF9SSD 256S", "BiCS", "BK-32GB MSATA SSD", "BK-64GB MSATA SSD", "BTO-240GB",
         "C-Series 128G SSD SATA 2", "C500", "CF", "CF120GB", "CHESHI-128G", "CIE M8 M350 128GB W", "CNCTION", "CYX-SSD-S1000",
-        "D128GSSDQ400S", "DHMSR64GD81BC1QC",
+        "D128GSSDQ400S", "Destiny4_4000G_DVT", "DHMSR64GD81BC1QC",
         "EDGSD25240GBOOSTS37M", "EK V100", "G7-240G PLUS",
         "G521N 256GB", "G521N256GB", "G535NW-512G", "GCM2IN2280256C", "Generic S050 Hard drive", "GIM64", "GIM256", "GM016", "GM16", "GM128", "GM1TB", "GSDSL128TY2AAQGCX",
-        "HOM128M-46XI2",
-        "IM256-WG30", "IM3D L06B B0KB",
-        "JDa He SATA DISK", "JWX 16GB MSATA",
-        "K1", "KCG SSD", "KR 32G", "Kston128GB",
+        "HOM128M-46XI2", "HS1TBQE",
+        "IM128-P130", "IM256-WG30", "IM3D L06B B0KB", "IT128-P130",
+        "JDa He SATA DISK", "JOYSSD512", "JWX 16GB MSATA",
+        "K1", "KCG SSD", "KR 32G", "Kston128GB", "KZ128",
         "L06B B0KB", "LS 256G M300", "LS 512GB M300",
-        "M.2 2280-1TB SSD", "M.2 2280 SATA SSD", "M.2 SSD", "M10C", "M900-1T", "Mit-SSD128A", "MKSCE1BD060M4", "MLC", "MS06", "MS07", "MS201-512G", "mSATA SSD", "mSATA-64GB SSD", "Msata", "mSATAS3-0060-XQE8(010)", "mSATA 128GB", "MTG-480GB", "MW02 128GB MSATA",
-        "N86-256GB", "N900-128", "NGFF 2242 32GB SSD", "NGFF 2242 240GB SSD", "NGFF 2242 512GB SSD", "NGFF 2280 128GB SSD", "NGFF 2280 256GB SSD", "NGFF 2280 512GB", "NGFF 2280 512GB SSD", "NGFF 2280 1TB SSD",
+        "M.2 2280-1TB SSD", "M.2 2280 SATA SSD", "M.2 SSD", "M.2 SSD 1TB", "M10C", "M900-1T", "Mit-SSD128A", "MKSCE1BD060M4", "MLC", "MS06", "MS07", "MS201-512G", "mSATA SSD", "mSATA-64GB SSD", "Msata", "mSATAS3-0060-XQE8(010)", "mSATA 128GB", "MTG-480GB", "MV-32", "MW02 128GB MSATA",
+        "N86-256GB", "N900-128", "NGFF 2242 32GB SSD", "NGFF 2242 128GB SSD", "NGFF 2242 240GB SSD", "NGFF 2242 512GB SSD", "NGFF 2280 128GB SSD", "NGFF 2280 256GB SSD", "NGFF 2280 512GB", "NGFF 2280 512GB SSD", "NGFF 2280 1TB SSD", "NT-1TB 2280",
         "OEMSSD240GB", "OOS250G",
         "PATA SSD", "PSX-NGFF256G",
         "QST8-512",
         "R580", "REVOLUTIONS500_256",
-        "S3 SSD", "S500", "s60 60gb", "SATA SSD", "SATA2 32GB SSD", "SCCTS-603-128G SSD", "SHMST6D128GHM11EMC 118000102", "SIC-1TB", "SK 64GB", "SK 256GB", "SK600-32GB", "sk600 128gb", "Solid", "SSD-128GB", "SSD-1TB", "SSD512M2S80", "SSDG2-240G", "SSDG2-256G", "SSDS2TA120G-BULK", "SSE128GMLCT-SBC-2S", "SSE256GMLCT-SBC-2S", "SSE256GMLCT-SBC-4S", "SSV4", "SSV5", "SW-120GB", "SV9SAT6B480GLM21DR",
+        "S3 SSD", "S500", "s60 60gb", "SATA SSD", "SATA2 32GB SSD", "SCCTS-603-128G SSD", "SHMST6D128GHM11EMC 118000102", "SIC-1TB", "SK 64GB", "SK 128GB", "SK 256GB", "SK600-32GB", "sk600 128gb", "Solid", "SSD-128G", "SSD-128GB", "SSD-256GB", "SSD-1TB", "SSD512M2S80", "SSDG2-240G", "SSDG2-256G", "SSDS2TA120G-BULK", "SSE128GMLCT-SBC-2S", "SSE256GMLCT-SBC-2S", "SSE256GMLCT-SBC-4S", "SSV4", "SSV5", "SW-120GB", "SV9SAT6B480GLM21DR",
         "T240", "TR960GB", "TYPEC 120GB PSSD",
         "W2EM120GDTA-S71AAB-2Q4-SP", "W552-256G", "W653-64GB", "WPC-240GB",
         "X160EB", "XJH",
@@ -972,7 +986,7 @@ my %VendorDiskModel = (
     "Greenliant" => ["32GB ArmourDrive"],
     "G.Skill" => ["FM-25S3-120GBP3"],
     "Innodisk" => ["M.2 (S80) 3TE7", "mSATA 3MG2-P"],
-    "INNOVATION IT" => ["SSD_M.2_256GB_InnovationIT", "SSD_2.5-inch_TLC_256GB_InnovationIT", "SSD_2.5-inch_TLC_240GB_InnovationIT", "SSD_2.5-inch_TLC_512GB_InnovationIT", "SSD_2.5-inch_1TB_InnovationIT_QLC", "SSD_M.2_512GB_InnovationIT_QLC"],
+    "INNOVATION IT" => ["SSD_M.2_256GB_InnovationIT", "SSD_2.5-inch_TLC_256GB_InnovationIT", "SSD_2.5-inch_TLC_240GB_InnovationIT", "SSD_2.5-inch_TLC_512GB_InnovationIT", "SSD_2.5-inch_1TB_InnovationIT_QLC", "SSD_M.2_512GB_InnovationIT_QLC", "SSD_M.2_1TB_InnovationIT", "SSD_M.2_512GB_InnovationIT", "SSD_2.5-inch_256GB_InnovationIT_QLC"],
     "Integral" => ["V Series SATA SSD"],
     "Micron"   => ["P400m100-MTFDDAK100MAN 118032953"],
     "NITRINOnet" => ["240GB SSD NITRINOnet RUS"],
@@ -1967,6 +1981,7 @@ my @ProtectedLogs = (
     "sensors",
     "smartctl",
     "smartctl_megaraid",
+    "smartctl_hpsa",
     "system-release",
     "upower",
     "usb-devices",
@@ -3160,7 +3175,13 @@ sub readHostAttr($$)
 sub createPackage()
 {
     my ($Pkg, $HWaddr) = ();
-    
+
+    if(checkCmd("tar"))
+    {
+        printMsg("ERROR", "tar is not installed");
+        exitStatus(1);
+    }
+
     if($Opt{"Source"})
     {
         if(-f $Opt{"Source"})
@@ -14601,7 +14622,7 @@ sub fixDistr($$$$)
             $Distr = lc($1);
         }
     }
-    
+
     setDistr($Distr, $DistrVersion, $Rel, $Build);
 }
 
@@ -14612,7 +14633,7 @@ sub setDistr($$$$)
     if($DistrVersion) {
         $Distr = $Distr."-".$DistrVersion;
     }
-    
+
     if($Distr) {
         $Sys{"System"} = $Distr;
     }
@@ -15173,7 +15194,7 @@ sub probeDistr()
         if($Descr=~/Easy Buster/) {
             $Name = "EasyOS";
         }
-        elsif($Descr=~/(BigLinux|Bluestar Linux|CryptoDATA|KDE neon|LMDE|Neptune|Pop\!_OS|PuppyRus-A)/) {
+        elsif($Descr=~/(BigLinux|Bluestar Linux|CryptoDATA|KDE neon|LMDE|Neptune|Netrunner|Pop\!_OS|PuppyRus-A)/) {
             $Name = $1;
         }
         elsif($Descr=~/(Linux Lite) ([\d\.]+)/)
@@ -15210,7 +15231,7 @@ sub probeDistr()
         
         if(my $PrettyName = getPrettyName($OS_Rel))
         {
-            if($PrettyName=~/(CryptoDATA|Debian|Docker Desktop|Devuan|ECP VeiL|Feren OS|GNOME OS|Itd Os|KDE Neon|LMDE|MakuluLinux|Makululinux|MocaccinoOS|Neptune|OpenVZ|Parrot|pearOS|Pop\!_OS|Porteus|SkiffOS|Sn3rpOs|SuperX|Virtuozzo Hybrid Infrastructure|Windowsfx|XCP-ng)/) {
+            if($PrettyName=~/(CryptoDATA|Debian|Docker Desktop|Devuan|ECP VeiL|Feren OS|GNOME OS|Itd Os|KDE Neon|LMDE|MakuluLinux|Makululinux|MocaccinoOS|Neptune|OpenVZ|Parrot|pearOS|Pop\!_OS|Porteus|SkiffOS|Sn3rpOs|SuperX|Virtuozzo Hybrid Infrastructure|Windowsfx|XCP-ng|Zorin)/) {
                 $Name = $1;
             }
             elsif($PrettyName=~/(Linux Lite) ([\d\.]+)/)
@@ -15226,6 +15247,15 @@ sub probeDistr()
             $Release=~s/\A\Q$Name\E[_\- ]//i;
             if($Release eq "i") {
                 $Release = undef;
+            }
+        }
+
+        if(not $Release and $OS_Rel=~/\bVERSION_CODENAME=[ \t]*([^"'\n]+)/)
+        {
+            my $VerCode = $1;
+
+            if($VerCode eq "bookworm") {
+                $Release = "12";
             }
         }
         
@@ -18768,9 +18798,12 @@ sub scenario()
             exitStatus(1);
         }
 
-        foreach my $DriveDesc (split("\n\n\n", readFile($Opt{"IdentifyDrive"})))
+        my $SmartOut = readFile($Opt{"IdentifyDrive"});
+        my $MultiSmart = (index($SmartOut, "/dev") == 0);
+
+        foreach my $DriveDesc (split("\n\n\n", $SmartOut))
         {
-            if(index($DriveDesc, "/dev") != 0) {
+            if($MultiSmart and index($DriveDesc, "/dev") != 0) {
                 next;
             }
 
