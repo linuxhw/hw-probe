@@ -53,7 +53,7 @@ parts:
     prime:
       - usr/bin/edid-decode
   dmidecode:
-    source: https://download-mirror.savannah.gnu.org/releases/dmidecode/dmidecode-3.4.tar.xz
+    source: https://download-mirror.savannah.gnu.org/releases/dmidecode/dmidecode-3.5.tar.xz
     source-type: tar
     plugin: make
     override-build: |
