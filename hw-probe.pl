@@ -3176,7 +3176,7 @@ sub createPackage()
 {
     my ($Pkg, $HWaddr) = ();
 
-    if(checkCmd("tar"))
+    if(not checkCmd("tar"))
     {
         printMsg("ERROR", "tar is not installed");
         exitStatus(1);
@@ -16733,7 +16733,7 @@ sub checkCmd(@)
     if(@_) {
         $Verify = shift(@_);
     }
-    
+
     if(index($Cmd, "/")!=-1 and -x $Cmd)
     { # relative or absolute path
         return $Cmd;
@@ -16752,7 +16752,7 @@ sub checkCmd(@)
     foreach my $Dir (@Paths)
     {
         $Dir=~s{/+\Z}{}g;
-        
+
         if(-x "$Dir/$Cmd")
         {
             if($Verify)
