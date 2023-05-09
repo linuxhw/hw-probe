@@ -34,6 +34,7 @@ Contents
 * [ Install on Gentoo       ](#install-on-gentoo)
 * [ Install on Hefftor      ](#install-on-hefftor)
 * [ Install on Mageia       ](#install-on-mageia)
+* [ Install on Navy Linux   ](#install-on-navy-linux)
 * [ Install on NixOS        ](#install-on-nixos)
 * [ Install on OpenMandriva ](#install-on-openmandriva)
 * [ Install on openSUSE     ](#install-on-opensuse)
@@ -135,7 +136,7 @@ See [INSTALL.BSD.md](INSTALL.BSD.md).
 Install on Fedora
 -----------------
 
-On Fedora 28 and newer:
+On Fedora 28 or newer and derivatives (Nobara, risiOS, Ultramarine, etc.):
 
     sudo dnf install hw-probe
 
@@ -322,6 +323,14 @@ For Mageia 5 and newer:
     su
     urpmi https://github.com/linuxhw/hw-probe/releases/download/1.5/hw-probe-1.5-Mageia5.noarch.rpm edid-decode
 
+
+Install on Navy Linux
+---------------------
+
+On Navy Linux 8:
+
+    dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+    dnf install hw-probe
 
 Install on NixOS
 ----------------
