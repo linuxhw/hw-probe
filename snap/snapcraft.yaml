@@ -1,5 +1,5 @@
 name: hw-probe
-version: 1.6.5-2
+version: 1.6.5-3
 summary: Check operability of computer hardware and find drivers
 description: >
  A tool to probe for hardware, check operability and find drivers
@@ -144,7 +144,7 @@ parts:
       - usr/sbin/lspci
       - usr/share/pci.ids
   acpica-unix:
-    source: https://acpica.org/sites/acpica/files/acpica-unix-20230331.tar.gz
+    source: https://acpica.org/sites/acpica/files/acpica-unix-20230628.tar.gz
     source-type: tar
     plugin: make
     build-attributes: [no-patchelf]
@@ -172,7 +172,7 @@ parts:
     prime:
       - sbin/hdparm
   smartmontools:
-    source: https://github.com/linuxhw/build-stuff/releases/download/1.6/smartmontools-7.3.tar.gz
+    source: https://github.com/linuxhw/build-stuff/releases/download/1.6/smartmontools-7.4.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -206,7 +206,7 @@ parts:
     prime:
       - usr/lib/libusb*.so*
   util-linux:
-    source: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.38/util-linux-2.38.1.tar.xz
+    source: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.39/util-linux-2.39.1.tar.xz
     source-type: tar
     plugin: make
     override-build: |
@@ -217,7 +217,7 @@ parts:
       make lsblk
       mkdir -p $SNAPCRAFT_PART_INSTALL/usr/bin/
       cp -f ./dmesg ./lscpu ./lsblk $SNAPCRAFT_PART_INSTALL/usr/bin/
-      find $SNAPCRAFT_PART_INSTALL -type f | perl -lne 'print if -B and -x' | xargs strip
+      find $SNAPCRAFT_PART_INSTALL -type f | grep -v img.xz | perl -lne 'print if -B and -x' | xargs strip
     build-packages:
       - gcc
       - make
@@ -240,11 +240,11 @@ parts:
       - make
   hwinfo:
     after: [libx86emu]
-    source: https://github.com/openSUSE/hwinfo/archive/22.1.tar.gz
+    source: https://github.com/openSUSE/hwinfo/archive/23.2.tar.gz
     source-type: tar
     plugin: make
     override-build: |
-      echo '22.1' > VERSION
+      echo '23.2' > VERSION
       rm -f git2log
       sed -i -e 's/ -g / -s /' Makefile.common
       CFLAGS='-I'$SNAPCRAFT_STAGE'/usr/include' LDFLAGS='-L'$SNAPCRAFT_STAGE'/usr/lib64 -L'$SNAPCRAFT_STAGE'/usr/lib -lx86emu' make
@@ -260,7 +260,7 @@ parts:
       - usr/share/hwinfo/*
       - usr/sbin/hwinfo
   perl-uri:
-    source: https://cpan.metacpan.org/authors/id/E/ET/ETHER/URI-5.08.tar.gz
+    source: https://www.cpan.org/modules/by-module/URI/URI-5.19.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -272,7 +272,7 @@ parts:
       - make
       - perl
   perl-http-message:
-    source: https://cpan.metacpan.org/authors/id/O/OA/OALDERS/HTTP-Message-6.37.tar.gz
+    source: https://www.cpan.org/modules/by-module/HTTP/HTTP-Message-6.44.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -284,7 +284,7 @@ parts:
       - make
       - perl
   perl-net-http:
-    source: https://cpan.metacpan.org/authors/id/O/OA/OALDERS/Net-HTTP-6.22.tar.gz
+    source: https://www.cpan.org/modules/by-module/LWP/OALDERS/Net-HTTP-6.23.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -308,7 +308,7 @@ parts:
       - make
       - perl
   perl-lwp-mediatypes:
-    source: https://cpan.metacpan.org/authors/id/G/GA/GAAS/LWP-MediaTypes-6.02.tar.gz
+    source: https://www.cpan.org/modules/by-module/LWP/LWP-MediaTypes-6.04.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -320,7 +320,7 @@ parts:
       - make
       - perl
   perl-http-date:
-    source: https://cpan.metacpan.org/authors/id/G/GA/GAAS/HTTP-Date-6.02.tar.gz
+    source: https://www.cpan.org/modules/by-module/LWP/OALDERS/HTTP-Date-6.06.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -332,7 +332,7 @@ parts:
       - make
       - perl
   perl-timedate:
-    source: https://cpan.metacpan.org/authors/id/G/GB/GBARR/TimeDate-2.30.tar.gz
+    source: https://www.cpan.org/modules/by-module/Time/TimeDate-2.33.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -344,7 +344,7 @@ parts:
       - make
       - perl
   libwww-perl:
-    source: https://cpan.metacpan.org/authors/id/E/ET/ETHER/libwww-perl-6.36.tar.gz
+    source: https://www.cpan.org/modules/by-module/LWP/libwww-perl-6.72.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -359,7 +359,7 @@ parts:
       - usr/share/perl5/LWP
       - usr/share/perl5/LWP.pm
   perl-parent:
-    source: https://cpan.metacpan.org/authors/id/C/CO/CORION/parent-0.238.tar.gz
+    source: https://cpan.metacpan.org/authors/id/C/CO/CORION/parent-0.241.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -371,7 +371,7 @@ parts:
       - make
       - perl
   perl-data-dumper:
-    source: https://cpan.metacpan.org/authors/id/S/SM/SMUELLER/Data-Dumper-2.161.tar.gz
+    source: https://www.cpan.org/modules/by-module/Data/Data-Dumper-2.183.tar.gz
     source-type: tar
     plugin: make
     override-build: |
@@ -383,7 +383,7 @@ parts:
       - make
       - perl
   perl-time-local:
-    source: https://cpan.metacpan.org/authors/id/D/DR/DROLSKY/Time-Local-1.30.tar.gz
+    source: https://www.cpan.org/modules/by-module/Time/Time-Local-1.35.tar.gz
     source-type: tar
     plugin: make
     override-build: |
