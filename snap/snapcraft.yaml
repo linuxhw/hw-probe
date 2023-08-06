@@ -375,10 +375,10 @@ parts:
     source-type: tar
     plugin: make
     override-build: |
-      perl Makefile.PL
-      make install DESTDIR=`pwd`/INST INSTALLSITELIB=/SITELIB
+      perl Makefile.PL PREFIX=/SITELIB
+      make install DESTDIR=`pwd`/INST
       mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/perl5/
-      cp -fr ./INST/usr/local/lib/perl5/*/* $SNAPCRAFT_PART_INSTALL/usr/share/perl5/
+      cp -fr ./INST/SITELIB/lib*/perl5/*/* $SNAPCRAFT_PART_INSTALL/usr/share/perl5/
     build-packages:
       - make
       - perl
