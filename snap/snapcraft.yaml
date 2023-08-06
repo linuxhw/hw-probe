@@ -144,7 +144,7 @@ parts:
       - usr/sbin/lspci
       - usr/share/pci.ids
   acpica-unix:
-    source: https://acpica.org/sites/acpica/files/acpica-unix-20230628.tar.gz
+    source: https://github.com/linuxhw/build-stuff/releases/download/1.6/acpica-unix-20230628.tar.gz
     source-type: tar
     plugin: make
     build-attributes: [no-patchelf]
