@@ -378,7 +378,7 @@ parts:
       perl Makefile.PL
       make install DESTDIR=`pwd`/INST INSTALLSITELIB=/SITELIB
       mkdir -p $SNAPCRAFT_PART_INSTALL/usr/share/perl5/
-      cp -fr ./INST/usr/local/lib/perl5/*/* $SNAPCRAFT_PART_INSTALL/usr/share/perl5/
+      cp -fr ./INST/usr/local/lib64/perl5/*/* $SNAPCRAFT_PART_INSTALL/usr/share/perl5/
     build-packages:
       - make
       - perl
