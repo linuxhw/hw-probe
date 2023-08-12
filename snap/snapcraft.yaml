@@ -1,5 +1,5 @@
 name: hw-probe
-version: 1.6.5-2
+version: 1.6.5-3
 summary: Check operability of computer hardware and find drivers
 description: >
  A tool to probe for hardware, check operability and find drivers
@@ -240,11 +240,11 @@ parts:
       - make
   hwinfo:
     after: [libx86emu]
-    source: https://github.com/openSUSE/hwinfo/archive/22.1.tar.gz
+    source: https://github.com/openSUSE/hwinfo/archive/23.2.tar.gz
     source-type: tar
     plugin: make
     override-build: |
-      echo '22.1' > VERSION
+      echo '23.2' > VERSION
       rm -f git2log
       sed -i -e 's/ -g / -s /' Makefile.common
       CFLAGS='-I'$SNAPCRAFT_STAGE'/usr/include' LDFLAGS='-L'$SNAPCRAFT_STAGE'/usr/lib64 -L'$SNAPCRAFT_STAGE'/usr/lib -lx86emu' make
