@@ -335,8 +335,9 @@ On Navy Linux 8:
 Install on NixOS
 ----------------
 
-Use [Docker](README.md#docker) or [Flatpak](README.md#flatpak).
+`hw-probe` is available in nixpkgs:
 
+    nix-shell -p hw-probe --command "sudo -E hw-probe -all -upload"
 
 Install on OpenMandriva
 -----------------------
