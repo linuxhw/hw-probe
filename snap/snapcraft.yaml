@@ -1,5 +1,5 @@
 name: hw-probe
-version: 1.6.5-3
+version: 1.6.5-4
 summary: Check operability of computer hardware and find drivers
 description: >
  A tool to probe for hardware, check operability and find drivers
@@ -53,7 +53,7 @@ parts:
     prime:
       - usr/bin/edid-decode
   dmidecode:
-    source: https://download-mirror.savannah.gnu.org/releases/dmidecode/dmidecode-3.5.tar.xz
+    source: https://download-mirror.savannah.gnu.org/releases/dmidecode/dmidecode-3.6.tar.xz
     source-type: tar
     plugin: make
     override-build: |
@@ -144,7 +144,7 @@ parts:
       - usr/sbin/lspci
       - usr/share/pci.ids
   acpica-unix:
-    source: https://github.com/linuxhw/build-stuff/releases/download/1.6/acpica-unix-20230628.tar.gz
+    source: https://github.com/acpica/acpica/files/14718333/acpica-unix-20240321.tar.gz
     source-type: tar
     plugin: make
     build-attributes: [no-patchelf]
@@ -206,7 +206,7 @@ parts:
     prime:
       - usr/lib/libusb*.so*
   util-linux:
-    source: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.38/util-linux-2.38.1.tar.xz
+    source: https://mirrors.edge.kernel.org/pub/linux/utils/util-linux/v2.40/util-linux-2.40.2.tar.xz
     source-type: tar
     plugin: make
     override-build: |
