@@ -210,7 +210,7 @@ parts:
     source-type: tar
     plugin: make
     override-build: |
-      ./configure --prefix=/usr
+      ./configure --prefix=/usr --disable-liblastlog2
       sed -i -e 's/ -g / -s /' Makefile
       make dmesg
       make lscpu
