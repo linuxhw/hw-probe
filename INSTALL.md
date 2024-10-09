@@ -360,7 +360,7 @@ Using configuration.nix
 Using Home Manager:
 
     { pkgs, ...}: {
-        home.packages = [ pkgs.jdk8 ];
+        home.packages = [ pkgs.hw-probe ];
     }
 
 Install on OpenMandriva
