@@ -70,7 +70,7 @@ use File::Basename qw(basename dirname);
 use Cwd qw(abs_path cwd);
 
 my $TOOL_VERSION = "1.6";
-my $TOOL_RELEASE = "5";
+my $TOOL_RELEASE = "6";
 
 my $URL_LINUX = "https://linux-hardware.org";
 my $URL_BSD = "https://bsd-hardware.info";

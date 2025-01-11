@@ -1,5 +1,5 @@
-HW PROBE 1.6
-============
+HW PROBE 1.6.6
+==============
 
 Hardware Probe Tool (hw-probe) — a tool to probe for hardware, check operability and find drivers with the help of Linux hardware database: https://linux-hardware.org
 
