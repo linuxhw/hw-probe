@@ -337,6 +337,31 @@ Install on NixOS
 
 Use [Docker](README.md#docker) or [Flatpak](README.md#flatpak).
 
+Alternatively, a nixpkg is available:
+
+Via nix-shell:
+
+    nix-shell -p hw-probe
+
+Via nix-env:
+
+    nix-env -iA nixos.hw-probe
+
+Using flakes:
+
+    nix profile install nixpkgs#hw-probe
+
+Using configuration.nix
+
+    environment.systemPackages = [
+        pkgs.hw-probe
+    ];
+
+Using Home Manager:
+
+    { pkgs, ...}: {
+        home.packages = [ pkgs.hw-probe ];
+    }
 
 Install on OpenMandriva
 -----------------------
