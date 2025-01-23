@@ -14056,6 +14056,7 @@ sub probeHWaddr()
             $IFConfig = hideIPs($IFConfig);
             $IFConfig = encryptMACs($IFConfig);
             $IFConfig=~s/(inet6 |inet |netmask |broadcast )[^\s]+/$1\XXX/g;
+            $IFConfig=~s/(ipx .+ +|IPX\/.+ addr:)[^\s]+/$1\XXXXXXXX:XXXXXXXXXXXX/g;
             $IFConfig=~s/(ssid )(.+?)( channel)/$1...$3/g;
             
             if(isBSD())
