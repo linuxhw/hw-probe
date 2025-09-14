@@ -211,12 +211,12 @@ Out of the box:
 * Fedora 27 and newer
 * CentOS 7.6 GNOME and newer
 * Pop!_OS 20.04 and newer
+* Solus 3 and newer
 
 Need to setup Flatpak (https://flatpak.org/setup/):
 
 * elementary OS 5 and newer
 * Pop!_OS 18.04 and newer
-* Solus 3 and newer
 * Clear Linux of any version
 * Mageia 6 and newer
 * openSUSE Leap 15 and newer
