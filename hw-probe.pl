@@ -4344,6 +4344,21 @@ sub probeHW()
             writeLog($LOG_DIR."/modstat", $Modstat);
         }
     }
+
+    my $Sndctl = "";
+
+    if($Opt{"FixProbe"}) {
+        $Sndctl = readFile($FixProbe_Logs."/sndctl");
+    }
+    elsif(enabledLog("sndctl") and checkCmd("sndctl"))
+    {
+        listProbe("logs", "sndctl");
+        $Sndctl = runCmd("ls /dev/dsp* | xargs -n1 sndctl -v -f 2>/dev/null");
+
+        if($Opt{"HWLogs"}) {
+            writeLog($LOG_DIR."/sndctl", $Sndctl);
+        }
+    }
     
     my $Sndstat = "";
     
@@ -17787,6 +17802,7 @@ my %EnabledLog_BSD = (
         "shasum",
         "smartctl",
         "smartctl_megaraid",
+        "sndctl",
         "sndstat",
         "sysctl",
         "usbconfig",
