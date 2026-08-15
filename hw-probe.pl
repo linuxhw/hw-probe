@@ -10824,7 +10824,7 @@ sub probeHW()
                 next;
             }
             
-            if($Line=~/ (ext[234]|btrfs|xfs) / and index($Line, "/")==-1) {
+            if($Line=~/ (ext[234]|btrfs|xfs|bcachefs) / and index($Line, "/")==-1) {
                 $Sys{"Dual_boot"} = 1;
             }
         }
@@ -10996,7 +10996,7 @@ sub probeHW()
     
     if(not $Sys{"Filesystem"})
     {
-        my @Filesystems = ("btrfs", "jfs", "reiserfs", "xfs", "zfs", "aufs", "ext[234]", "overlay", "hammer2", "ufs", "ffs");
+        my @Filesystems = ("btrfs", "jfs", "reiserfs", "xfs", "zfs", "aufs", "ext[234]", "overlay", "hammer2", "ufs", "ffs", "bcachefs");
         
         LOOP: foreach my $Log ($Df, $Lsblk, $Findmnt)
         {
