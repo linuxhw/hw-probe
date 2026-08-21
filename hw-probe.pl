@@ -9722,7 +9722,7 @@ sub probeHW()
         delete($Sys{"Secureboot"});
     }
     
-    if(-e $FixProbe_Logs."/boot_efi" or index($Dmesg, "] efi:")!=-1) {
+    if(-d "/sys/firmware/efi") {
         $Sys{"Boot_mode"} = "EFI";
     }
     else {
